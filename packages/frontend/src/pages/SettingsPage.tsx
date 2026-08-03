@@ -1,0 +1,1167 @@
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { api } from '@/lib/api'
+import { useToast } from '@/lib/toast'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { DataTable } from '@/components/ui/data-table'
+import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { useTheme } from '@/lib/theme'
+import { useAuthStore } from '@/lib/auth'
+import { TIMEZONES, DATE_FORMATS, COUNTRIES, SOCIAL_FIELDS } from '@/lib/constants'
+import { OrgSettings } from '@/pages/settings/OrgSettings'
+import { AccessSettings } from '@/pages/settings/AccessSettings'
+import { PicklistSettings } from '@/pages/settings/PicklistSettings'
+import { EmailSettings } from '@/pages/settings/EmailSettings'
+import { AuditSettings } from '@/pages/settings/AuditSettings'
+import { AutomationSettings } from '@/pages/settings/AutomationSettings'
+import { CommunicationSettings } from '@/pages/settings/CommunicationSettings'
+import { DataSettings } from '@/pages/settings/DataSettings'
+import { TermsSettings } from '@/pages/settings/TermsSettings'
+
+const TINTS: Record<string, string> = {
+  users: 'from-sky-500 to-blue-600',
+  roles: 'from-indigo-500 to-violet-600',
+  groups: 'from-fuchsia-500 to-pink-600',
+  sharing: 'from-violet-500 to-purple-600',
+  company: 'from-blue-500 to-indigo-600',
+  org: 'from-cyan-500 to-sky-600',
+  currencies: 'from-emerald-500 to-teal-600',
+  tax: 'from-lime-500 to-green-600',
+  terms: 'from-amber-500 to-orange-600',
+  picklists: 'from-rose-500 to-pink-600',
+  email: 'from-orange-500 to-amber-600',
+  audit: 'from-slate-500 to-slate-700',
+  automation: 'from-purple-500 to-violet-700',
+  data: 'from-teal-500 to-emerald-700',
+  announcements: 'from-pink-500 to-rose-600',
+}
+
+const CATEGORIES = [
+  {
+    label: 'Users & Access',
+    blurb: 'People, roles, groups and record visibility',
+    keys: ['users', 'roles', 'groups', 'sharing'],
+  },
+  {
+    label: 'Organization',
+    blurb: 'Company branding, regional, financial and document defaults',
+    keys: ['company', 'org', 'currencies', 'tax', 'terms'],
+  },
+  {
+    label: 'Data & Automation',
+    blurb: 'Fields, email, audit, workflows and data tools',
+    keys: ['picklists', 'email', 'automation', 'audit', 'data'],
+  },
+  {
+    label: 'Communication',
+    blurb: 'Keep your team informed',
+    keys: ['announcements'],
+  },
+]
+
+const settingSections = [
+  { key: 'users', label: 'Users', icon: Users, desc: 'Manage CRM users and their access' },
+  { key: 'roles', label: 'Roles', icon: Shield, desc: 'Define role hierarchy and module permissions' },
+  { key: 'groups', label: 'Groups', icon: UserCircle, desc: 'Organize users into groups' },
+  { key: 'sharing', label: 'Sharing Access', icon: Share2, desc: 'Record visibility rules and permission profiles' },
+  { key: 'company', label: 'Company', icon: Building2, desc: 'Organization details and branding' },
+  { key: 'org', label: 'Organization', icon: Settings2, desc: 'Password policy, login security, lead config, regional, inventory' },
+  { key: 'currencies', label: 'Currencies', icon: Banknote, desc: 'Manage currencies and exchange rates' },
+  { key: 'tax', label: 'Tax', icon: Percent, desc: 'Configure tax rates' },
+  { key: 'terms', label: 'Document Terms', icon: FileText, desc: 'Default terms for quotes, orders, and invoices' },
+  { key: 'picklists', label: 'Picklists & Fields', icon: ListChecks, desc: 'Picklist editor, custom fields, module manager' },
+  { key: 'email', label: 'Email / SMTP', icon: Mail, desc: 'Outgoing mail server, test and send emails' },
+  { key: 'automation', label: 'Workflows & Tasks', icon: Workflow, desc: 'Workflows, scheduled tasks, and webforms' },
+  { key: 'audit', label: 'Audit Trail', icon: ScrollText, desc: 'Audit trail and per-org login history' },
+  { key: 'data', label: 'Data Management', icon: Database, desc: 'Backup, export, and CSV import' },
+  { key: 'announcements', label: 'Announcements', icon: Megaphone, desc: 'Announcements, notifications, and holidays' },
+]
+
+const sectionMap = Object.fromEntries(settingSections.map(s => [s.key, s]))
+
+export function SettingsPage() {
+  const [activeSection, setActiveSection] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const { theme, toggleTheme } = useTheme()
+  const isSuperAdmin = !!useAuthStore(s => s.user?.isSuperAdmin)
+
+  const visibleSections = settingSections.filter(s => isSuperAdmin || s.key !== 'data')
+  const filtered = visibleSections.filter(s =>
+    s.label.toLowerCase().includes(search.toLowerCase()) ||
+    s.desc.toLowerCase().includes(search.toLowerCase())
+  )
+
+  if (activeSection) {
+    const sec = sectionMap[activeSection]
+    return (
+      <div className="space-y-5">
+        <button
+          onClick={() => setActiveSection(null)}
+          className="group inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft size={15} className="transition-transform group-hover:-translate-x-0.5" /> All Settings
+        </button>
+        <div className="p-5 md:p-6 rounded-2xl border bg-card relative overflow-hidden">
+          <div className={`absolute -top-16 -right-16 w-48 h-48 rounded-full bg-gradient-to-br ${TINTS[activeSection] || 'from-primary to-indigo-600'} opacity-20 blur-2xl pointer-events-none`} />
+          <div className="relative flex items-start gap-4">
+            <div className={`shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${TINTS[activeSection] || 'from-primary to-indigo-600'} text-white flex items-center justify-center shadow-lg shadow-indigo-500/20`}>
+              <sec.icon size={22} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-xl md:text-2xl font-bold tracking-tight flex items-center gap-2">{sec.label}</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">{sec.desc}</p>
+            </div>
+          </div>
+        </div>
+        {activeSection === 'users' && <UsersSettings />}
+        {activeSection === 'roles' && <RolesSettings />}
+        {activeSection === 'groups' && <GroupsSettings />}
+        {activeSection === 'currencies' && <CurrenciesSettings />}
+        {activeSection === 'tax' && <TaxSettings />}
+        {activeSection === 'company' && <CompanySettings />}
+        {activeSection === 'org' && <OrgSettings />}
+        {activeSection === 'sharing' && <AccessSettings />}
+        {activeSection === 'picklists' && <PicklistSettings />}
+        {activeSection === 'email' && <EmailSettings />}
+        {activeSection === 'audit' && <AuditSettings />}
+        {activeSection === 'automation' && <AutomationSettings />}
+        {activeSection === 'announcements' && <CommunicationSettings />}
+        {activeSection === 'data' && isSuperAdmin && <DataSettings />}
+        {activeSection === 'terms' && <TermsSettings />}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Hero */}
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-sky-600 via-blue-600 to-indigo-700 px-6 py-8 md:px-8 md:py-10 text-white shadow-xl shadow-blue-500/20">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/15 via-transparent to-transparent" />
+        <div className="absolute -top-20 -right-16 w-72 h-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 left-1/3 w-80 h-80 rounded-full bg-indigo-400/20 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-100/90 bg-white/10 border border-white/15 rounded-full px-3 py-1 mb-3">
+              <Sparkles size={13} /> Control Center
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Settings</h1>
+            <p className="text-sm text-blue-100 mt-1 max-w-xl">
+              Configure your workspace — users, permissions, fields, automation, and more.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleTheme}
+            className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white backdrop-blur"
+          >
+            {theme === 'dark' ? <Sun size={16} className="mr-2" /> : <Moon size={16} className="mr-2" />}
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search settings..."
+          className="pl-9 rounded-xl h-11"
+        />
+      </div>
+
+      {/* Categories */}
+      {CATEGORIES.map(cat => {
+        const items = cat.keys
+          .map(k => sectionMap[k])
+          .filter(s => s && filtered.some(f => f.key === s.key))
+        if (items.length === 0) return null
+        return (
+          <section key={cat.label} className="space-y-3">
+            <div>
+              <h2 className="text-sm font-semibold tracking-wide text-foreground/90">{cat.label}</h2>
+              <p className="text-xs text-muted-foreground">{cat.blurb}</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map(s => (
+                <button
+                  key={s.key}
+                  onClick={() => setActiveSection(s.key)}
+                  className="group text-left p-4 rounded-2xl border bg-card hover:shadow-lg hover:shadow-indigo-500/5 hover:-translate-y-0.5 hover:border-primary/40 transition-all duration-200"
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className={`shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br ${TINTS[s.key]} text-white flex items-center justify-center shadow-md shadow-black/5 group-hover:scale-105 transition-transform`}>
+                      <s.icon size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold flex items-center justify-between gap-2">
+                        {s.label}
+                        <ChevronRight size={15} className="text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{s.desc}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )
+      })}
+
+      {filtered.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground">
+          <Search size={32} className="mx-auto mb-3 opacity-40" />
+          <p className="text-sm">No settings match "{search}"</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const MODULES = [
+  { key: 'accounts', label: 'Accounts' },
+  { key: 'contacts', label: 'Contacts' },
+  { key: 'leads', label: 'Leads' },
+  { key: 'potentials', label: 'Potentials' },
+  { key: 'campaigns', label: 'Campaigns' },
+  { key: 'products', label: 'Products' },
+  { key: 'services', label: 'Services' },
+  { key: 'vendors', label: 'Vendors' },
+  { key: 'pricebooks', label: 'Price Books' },
+  { key: 'quotes', label: 'Quotes' },
+  { key: 'salesorders', label: 'Sales Orders' },
+  { key: 'purchaseorders', label: 'Purchase Orders' },
+  { key: 'invoices', label: 'Invoices' },
+  { key: 'tickets', label: 'Tickets' },
+  { key: 'faq', label: 'FAQ' },
+  { key: 'documents', label: 'Documents' },
+  { key: 'emails', label: 'Emails' },
+  { key: 'emailtemplates', label: 'Email Templates' },
+  { key: 'projects', label: 'Projects' },
+  { key: 'projecttasks', label: 'Project Tasks' },
+  { key: 'projectmilestones', label: 'Project Milestones' },
+  { key: 'assets', label: 'Assets' },
+  { key: 'servicecontracts', label: 'Service Contracts' },
+  { key: 'smsnotifier', label: 'SMS Notifier' },
+]
+
+function PermissionsMatrix({ roleId }: { roleId: string }) {
+  const { addToast } = useToast()
+  const queryClient = useQueryClient()
+  const [perms, setPerms] = useState<Record<string, any>>({})
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['role-permissions', roleId],
+    queryFn: () => api.getRolePermissions(roleId),
+  })
+
+  useEffect(() => {
+    if (data?.data) {
+      const map: Record<string, any> = {}
+      data.data.forEach((p: any) => { map[p.moduleName] = p })
+      setPerms(map)
+    }
+  }, [data])
+
+  const saveMutation = useMutation({
+    mutationFn: (permissions: any[]) => api.updateRolePermissions(roleId, permissions),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['role-permissions'] }); addToast({ title: 'Permissions saved', variant: 'success' }) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const toggle = (moduleName: string, action: string) => {
+    const current = perms[moduleName] || { view: false, create: false, edit: false, delete: false, import: false, export: false }
+    setPerms(p => ({ ...p, [moduleName]: { ...current, [action]: !current[action] } }))
+  }
+
+  const handleSave = () => {
+    const list = Object.entries(perms).map(([moduleName, p]) => ({ moduleName, ...p }))
+    saveMutation.mutate(list)
+  }
+
+  if (isLoading) return <p className="text-sm text-muted-foreground">Loading permissions...</p>
+
+  return (
+    <div className="space-y-2">
+      <div className="text-xs font-medium text-muted-foreground uppercase mb-1">Module Permissions</div>
+      <div className="rounded-xl border overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="text-left px-3 py-3 font-semibold text-muted-foreground uppercase tracking-wider">Module</th>
+              {(['view', 'create', 'edit', 'delete', 'import', 'export'] as const).map(a => (
+                <th key={a} className="text-center px-3 py-3 font-semibold text-muted-foreground uppercase tracking-wider">{a}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {MODULES.map((m, i) => {
+              const p = perms[m.key] || { view: false, create: false, edit: false, delete: false, import: false, export: false }
+              return (
+                <tr key={m.key} className={`border-b last:border-0 hover:bg-muted/40 transition-colors ${i % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                  <td className="px-3 py-2 font-medium">{m.label}</td>
+                  {(['view', 'create', 'edit', 'delete', 'import', 'export'] as const).map(action => (
+                    <td key={action} className="text-center px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => toggle(m.key, action)}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${p[action] ? 'bg-emerald-500' : 'bg-muted'}`}
+                        title={p[action] ? `Disable ${action}` : `Enable ${action}`}
+                      >
+                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${p[action] ? 'translate-x-[18px]' : 'translate-x-1'}`} />
+                      </button>
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex justify-end pt-2">
+        <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending}>
+          {saveMutation.isPending ? 'Saving...' : 'Save Permissions'}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function UsersSettings() {
+  const { addToast } = useToast()
+  const queryClient = useQueryClient()
+  const [editId, setEditId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '' })
+
+  const { data: usersData } = useQuery({
+    queryKey: ['all-users'],
+    queryFn: () => fetch('/api/users', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()).catch(() => ({ data: [] })),
+  })
+
+  const { data: rolesData } = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => api.listAll('roles').catch(() => ({ data: [] })),
+  })
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) =>
+      fetch('/api/users', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data),
+      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User created', variant: 'success' }); setShowForm(false); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '' }) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (data: any) =>
+      fetch(`/api/users/${editId}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data),
+      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User updated', variant: 'success' }); setEditId(null); setShowForm(false) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () =>
+      fetch(`/api/users/${deleteId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User deactivated', variant: 'success' }); setDeleteId(null) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const roles = rolesData?.data || []
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Users</h2>
+        <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '' }) }}>
+          <Plus size={16} className="mr-2" /> New User
+        </Button>
+      </div>
+      <Card>
+        <CardContent className="p-0">
+          <DataTable
+            columns={[
+              { key: 'name', label: 'Name', render: (_: any, u: any) => (
+                <div className="flex items-center gap-2.5">
+                  <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                    {((u.firstName?.[0] || '') + (u.lastName?.[0] || '')).toUpperCase() || '?'}
+                  </span>
+                  <span className="font-medium">{u.firstName} {u.lastName}</span>
+                </div>
+              ) },
+              { key: 'email', label: 'Email' },
+              { key: 'roleName', label: 'Role', render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 text-xs font-medium">{v}</span> : '—' },
+              { key: 'isAdmin', label: 'Admin', render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium">Yes</span> : <span className="text-muted-foreground text-xs">No</span> },
+              { key: 'status', label: 'Status', render: (_: any, u: any) => u.isActive === false ? <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">Inactive</span> : <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs">Active</span> },
+            ]}
+            data={(usersData?.data || []).map((u: any) => ({ ...u, name: `${u.firstName} ${u.lastName}` }))}
+            loading={!usersData}
+            emptyMessage="No users found"
+            pageSize={10}
+            actions={(u: any) => (
+              <div className="flex items-center justify-end gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(u.id); setForm({ userName: u.userName, email: u.email, firstName: u.firstName, lastName: u.lastName, password: '', isAdmin: u.isAdmin, roleId: u.roleId || '' }); setShowForm(true) }} title="Edit">
+                  <Pencil size={14} />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(u.id)} title="Deactivate">
+                  <Trash2 size={14} className="text-destructive" />
+                </Button>
+              </div>
+            )}
+          />
+        </CardContent>
+      </Card>
+
+      <Dialog open={showForm} onOpenChange={(o) => { if (!o) setEditId(null); setShowForm(o) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editId ? 'Edit User' : 'New User'}</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault()
+            const payload = editId ? { ...form, isAdmin: form.isAdmin } : form
+            if (editId) updateMutation.mutate(payload)
+            else createMutation.mutate(payload)
+          }} className="space-y-3">
+            <div>
+              <label className="text-sm font-medium">Username *</label>
+              <Input value={form.userName} onChange={e => setForm(f => ({ ...f, userName: e.target.value }))} required />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Email *</label>
+              <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-sm font-medium">First Name *</label>
+                <Input value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Last Name *</label>
+                <Input value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} required />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">{editId ? 'New Password (leave blank to keep)' : 'Password *'}</label>
+              <PasswordInput value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} required={!editId} />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Role</label>
+              <select value={form.roleId} onChange={e => setForm(f => ({ ...f, roleId: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                <option value="">No role</option>
+                {roles.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="isAdmin" checked={form.isAdmin} onChange={e => setForm(f => ({ ...f, isAdmin: e.target.checked }))} />
+              <label htmlFor="isAdmin" className="text-sm">Admin</label>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="submit">{editId ? 'Update' : 'Create'}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={() => setDeleteId(null)}
+        onConfirm={() => deleteMutation.mutate()}
+        title="Deactivate User"
+        description="Are you sure you want to deactivate this user?"
+        confirmLabel="Deactivate"
+      />
+    </div>
+  )
+}
+
+function RolesSettings() {
+  const { addToast } = useToast()
+  const queryClient = useQueryClient()
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
+  const [form, setForm] = useState({ name: '', description: '', parentId: '' })
+
+  const { data: rolesData } = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => api.listAll('roles').catch(() => ({ data: [] })),
+  })
+
+  const { data: treeData } = useQuery({
+    queryKey: ['role-tree'],
+    queryFn: () => api.getRoleTree().catch(() => ({ data: [] })),
+  })
+
+  const roles = rolesData?.data || []
+
+  const createMutation = useMutation({
+    mutationFn: (d: any) => api.create('roles', d),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['roles'] }); queryClient.invalidateQueries({ queryKey: ['role-tree'] }); addToast({ title: 'Role created', variant: 'success' }); setShowForm(false); setForm({ name: '', description: '', parentId: '' }) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (d: any) => api.update('roles', editId!, d),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['roles'] }); queryClient.invalidateQueries({ queryKey: ['role-tree'] }); addToast({ title: 'Role updated', variant: 'success' }); setEditId(null); setShowForm(false) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.delete('roles', deleteId!),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['roles'] }); queryClient.invalidateQueries({ queryKey: ['role-tree'] }); addToast({ title: 'Role deleted', variant: 'success' }); setDeleteId(null); setSelectedRoleId(null) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  function renderTree(children: any[], depth = 0) {
+    return children.map((node: any) => (
+      <div key={node.id}>
+        <div
+          className={`flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-muted/30 ${selectedRoleId === node.id ? 'bg-primary/10' : ''}`}
+          style={{ paddingLeft: `${12 + depth * 24}px` }}
+          onClick={() => setSelectedRoleId(node.id)}
+        >
+          <Shield size={14} className="text-muted-foreground shrink-0" />
+          <span className="text-sm font-medium">{node.name}</span>
+          {node.description && <span className="text-xs text-muted-foreground">— {node.description}</span>}
+        </div>
+        {node.children && renderTree(node.children, depth + 1)}
+      </div>
+    ))
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Roles</h2>
+        <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ name: '', description: '', parentId: '' }) }}>
+          <Plus size={16} className="mr-2" /> New Role
+        </Button>
+      </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader><CardTitle className="text-sm">Role Hierarchy</CardTitle></CardHeader>
+          <CardContent className="p-0">
+            {treeData?.data?.length ? renderTree(treeData.data) : (
+              <p className="text-sm text-muted-foreground p-4">No roles defined</p>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle className="text-sm">Permissions {selectedRoleId ? <span className="text-muted-foreground font-normal">— {roles.find((r: any) => r.id === selectedRoleId)?.name}</span> : ''}</CardTitle></CardHeader>
+          <CardContent>
+            {selectedRoleId ? <PermissionsMatrix roleId={selectedRoleId} /> : (
+              <p className="text-sm text-muted-foreground">Select a role to edit permissions</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle className="text-sm">All Roles</CardTitle></CardHeader>
+        <CardContent className="p-0">
+          <DataTable
+            columns={[
+              { key: 'name', label: 'Name', render: (v: any) => <span className="font-medium">{v}</span> },
+              { key: 'parentId', label: 'Parent', render: (_: any, r: any) => roles.find((p: any) => p.id === r.parentId)?.name || '—' },
+              { key: 'description', label: 'Description', render: (v: any) => <span className="text-muted-foreground">{v || '—'}</span> },
+            ]}
+            data={roles}
+            loading={!rolesData}
+            emptyMessage="No roles defined"
+            pageSize={10}
+            actions={(r: any) => (
+              <div className="flex items-center justify-end gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(r.id); setForm({ name: r.name, description: r.description || '', parentId: r.parentId || '' }); setShowForm(true) }} title="Edit">
+                  <Pencil size={14} />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(r.id)} title="Delete">
+                  <Trash2 size={14} className="text-destructive" />
+                </Button>
+              </div>
+            )}
+          />
+        </CardContent>
+      </Card>
+
+      <Dialog open={showForm} onOpenChange={(o) => { if (!o) setEditId(null); setShowForm(o) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editId ? 'Edit Role' : 'New Role'}</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); const d = { ...form, parentId: form.parentId || undefined }; if (editId) updateMutation.mutate(d); else createMutation.mutate(d) }} className="space-y-3">
+            <Input placeholder="Role Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+            <Input placeholder="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+            <div>
+              <label className="text-sm font-medium">Parent Role</label>
+              <select value={form.parentId} onChange={e => setForm(f => ({ ...f, parentId: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                <option value="">None (top-level)</option>
+                {roles.filter(r => r.id !== editId).map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="submit">{editId ? 'Update' : 'Create'}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={() => setDeleteId(null)}
+        onConfirm={() => deleteMutation.mutate()}
+        title="Delete Role"
+        description="Are you sure you want to delete this role?"
+        confirmLabel="Delete"
+      />
+    </div>
+  )
+}
+
+function GroupsSettings() {
+  const { addToast } = useToast()
+  const queryClient = useQueryClient()
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [showMembers, setShowMembers] = useState<string | null>(null)
+  const [form, setForm] = useState({ name: '', description: '' })
+  const [addMemberUserId, setAddMemberUserId] = useState('')
+
+  const { data: groupsData } = useQuery({
+    queryKey: ['usergroups'],
+    queryFn: () => api.listGroups().catch(() => ({ data: [] })),
+  })
+
+  const { data: usersData } = useQuery({
+    queryKey: ['all-users'],
+    queryFn: () => fetch('/api/users', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()).catch(() => ({ data: [] })),
+  })
+
+  const createMutation = useMutation({
+    mutationFn: (d: any) => api.createGroup(d),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['usergroups'] }); addToast({ title: 'Group created', variant: 'success' }); setShowForm(false); setForm({ name: '', description: '' }) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (d: any) => api.updateGroup(editId!, d),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['usergroups'] }); addToast({ title: 'Group updated', variant: 'success' }); setEditId(null); setShowForm(false) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.deleteGroup(deleteId!),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['usergroups'] }); addToast({ title: 'Group deleted', variant: 'success' }); setDeleteId(null) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const addMemberMutation = useMutation({
+    mutationFn: () => api.addGroupMember(showMembers!, addMemberUserId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['usergroups'] }); setAddMemberUserId(''); addToast({ title: 'Member added', variant: 'success' }) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const removeMemberMutation = useMutation({
+    mutationFn: (userId: string) => api.removeGroupMember(showMembers!, userId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['usergroups'] }); addToast({ title: 'Member removed', variant: 'success' }) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const groups = groupsData?.data || []
+  const users = usersData?.data || []
+  const selectedGroup = groups.find((g: any) => g.id === showMembers)
+
+  const availableUsers = users.filter((u: any) => !selectedGroup?.members?.some((m: any) => m.userId === u.id))
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">User Groups</h2>
+        <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ name: '', description: '' }) }}>
+          <Plus size={16} className="mr-2" /> New Group
+        </Button>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle className="text-sm">All Groups</CardTitle></CardHeader>
+          <CardContent className="p-0">
+            <DataTable
+              columns={[
+                { key: 'name', label: 'Name', render: (v: any) => <span className="font-medium">{v}</span> },
+                { key: 'description', label: 'Description', render: (v: any) => <span className="text-muted-foreground">{v || '—'}</span> },
+                { key: 'members', label: 'Members', render: (v: any) => (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-semibold">
+                    <Users size={11} /> {v?.length || 0}
+                  </span>
+                )},
+              ]}
+              data={groups}
+              loading={!groupsData}
+              emptyMessage="No groups defined"
+              pageSize={10}
+              actions={(g: any) => (
+                <div className="flex items-center justify-end gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowMembers(g.id)} title="Manage members">
+                    <Users size={14} />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(g.id); setForm({ name: g.name, description: g.description || '' }); setShowForm(true) }} title="Edit">
+                    <Pencil size={14} />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(g.id)} title="Delete">
+                    <Trash2 size={14} className="text-destructive" />
+                  </Button>
+                </div>
+              )}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="text-sm">{selectedGroup ? `Members: ${selectedGroup.name}` : 'Group Members'}</CardTitle></CardHeader>
+          <CardContent>
+            {!selectedGroup ? (
+              <p className="text-sm text-muted-foreground">Click the members icon on a group</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <select value={addMemberUserId} onChange={e => setAddMemberUserId(e.target.value)} className="flex-1 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    <option value="">Select user...</option>
+                    {availableUsers.map((u: any) => <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.email})</option>)}
+                  </select>
+                  <Button size="sm" onClick={() => addMemberMutation.mutate()} disabled={!addMemberUserId}>Add</Button>
+                </div>
+                <div className="space-y-1">
+                  {selectedGroup.members?.map((m: any) => {
+                    const user = users.find((u: any) => u.id === m.userId)
+                    return (
+                      <div key={m.userId} className="flex items-center justify-between px-3 py-2 rounded bg-muted/30">
+                        <span className="text-sm">{user?.firstName} {user?.lastName} <span className="text-muted-foreground">({user?.email})</span></span>
+                        <Button variant="ghost" size="icon" onClick={() => removeMemberMutation.mutate(m.userId)}>
+                          <Trash2 size={12} className="text-destructive" />
+                        </Button>
+                      </div>
+                    )
+                  })}
+                  {(!selectedGroup.members || selectedGroup.members.length === 0) && (
+                    <p className="text-sm text-muted-foreground">No members yet</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Dialog open={showForm} onOpenChange={(o) => { if (!o) setEditId(null); setShowForm(o) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editId ? 'Edit Group' : 'New Group'}</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); if (editId) updateMutation.mutate(form); else createMutation.mutate(form) }} className="space-y-3">
+            <Input placeholder="Group Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+            <Input placeholder="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="submit">{editId ? 'Update' : 'Create'}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={() => setDeleteId(null)}
+        onConfirm={() => deleteMutation.mutate()}
+        title="Delete Group"
+        description="Are you sure you want to delete this group?"
+        confirmLabel="Delete"
+      />
+    </div>
+  )
+}
+
+function CurrenciesSettings() {
+  const { addToast } = useToast()
+  const queryClient = useQueryClient()
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [form, setForm] = useState({ name: '', code: '', symbol: '', rate: '1', isDefault: false })
+
+  const { data } = useQuery({
+    queryKey: ['currencies'],
+    queryFn: () => api.listAll('currencies').catch(() => ({ data: [] })),
+  })
+
+  const createMutation = useMutation({
+    mutationFn: (d: any) => api.create('currencies', d),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['currencies'] }); addToast({ title: 'Currency created', variant: 'success' }); setShowForm(false) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (d: any) => api.update('currencies', editId!, d),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['currencies'] }); addToast({ title: 'Currency updated', variant: 'success' }); setEditId(null); setShowForm(false) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.delete('currencies', deleteId!),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['currencies'] }); addToast({ title: 'Currency deleted', variant: 'success' }); setDeleteId(null) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Currencies</h2>
+        <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ name: '', code: '', symbol: '', rate: '1', isDefault: false }) }}>
+          <Plus size={16} className="mr-2" /> New Currency
+        </Button>
+      </div>
+      <Card>
+        <CardContent className="p-0">
+          <DataTable
+            columns={[
+              { key: 'name', label: 'Name', render: (v: any) => <span className="font-medium">{v}</span> },
+              { key: 'code', label: 'Code', render: (v: any) => <span className="inline-flex rounded-md border bg-muted/50 px-2 py-0.5 text-xs font-mono">{v}</span> },
+              { key: 'symbol', label: 'Symbol', render: (v: any) => <span className="text-base">{v}</span> },
+              { key: 'rate', label: 'Rate', className: 'text-right', render: (v: any) => <span className="tabular-nums">{Number(v).toFixed(4)}</span> },
+              { key: 'isDefault', label: 'Default', render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium">Default</span> : '—' },
+            ]}
+            data={data?.data || []}
+            loading={!data}
+            emptyMessage="No currencies configured"
+            pageSize={10}
+            actions={(c: any) => (
+              <div className="flex items-center justify-end gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(c.id); setForm({ name: c.name, code: c.code, symbol: c.symbol, rate: String(c.rate), isDefault: c.isDefault }); setShowForm(true) }} title="Edit">
+                  <Pencil size={14} />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(c.id)} title="Delete">
+                  <Trash2 size={14} className="text-destructive" />
+                </Button>
+              </div>
+            )}
+          />
+        </CardContent>
+      </Card>
+
+      <Dialog open={showForm} onOpenChange={(o) => { if (!o) setEditId(null); setShowForm(o) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editId ? 'Edit Currency' : 'New Currency'}</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); const d = { ...form, rate: parseFloat(form.rate) }; if (editId) updateMutation.mutate(d); else createMutation.mutate(d) }} className="space-y-3">
+            <Input placeholder="Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+            <Input placeholder="Code (e.g. USD)" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} required />
+            <Input placeholder="Symbol (e.g. $)" value={form.symbol} onChange={e => setForm(f => ({ ...f, symbol: e.target.value }))} required />
+            <Input type="number" step="0.0001" placeholder="Rate" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} required />
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="curIsDefault" checked={form.isDefault} onChange={e => setForm(f => ({ ...f, isDefault: e.target.checked }))} />
+              <label htmlFor="curIsDefault" className="text-sm">Set as default currency</label>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="submit">{editId ? 'Update' : 'Create'}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={() => setDeleteId(null)}
+        onConfirm={() => deleteMutation.mutate()}
+        title="Delete Currency"
+        description="Are you sure you want to delete this currency?"
+        confirmLabel="Delete"
+      />
+    </div>
+  )
+}
+
+function TaxSettings() {
+  const { addToast } = useToast()
+  const queryClient = useQueryClient()
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [form, setForm] = useState({ taxName: '', taxRate: '' })
+
+  const { data } = useQuery({
+    queryKey: ['taxinfo'],
+    queryFn: () => api.listAll('taxinfo').catch(() => ({ data: [] })),
+  })
+
+  const createMutation = useMutation({
+    mutationFn: (d: any) => api.create('taxinfo', d),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['taxinfo'] }); addToast({ title: 'Tax created', variant: 'success' }); setShowForm(false); setForm({ taxName: '', taxRate: '' }) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (d: any) => api.update('taxinfo', editId!, d),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['taxinfo'] }); addToast({ title: 'Tax updated', variant: 'success' }); setEditId(null); setShowForm(false) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.delete('taxinfo', deleteId!),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['taxinfo'] }); addToast({ title: 'Tax deleted', variant: 'success' }); setDeleteId(null) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Tax Rates</h2>
+        <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ taxName: '', taxRate: '' }) }}>
+          <Plus size={16} className="mr-2" /> New Tax
+        </Button>
+      </div>
+      <Card>
+        <CardContent className="p-0">
+          <DataTable
+            columns={[
+              { key: 'taxName', label: 'Tax Name', render: (v: any) => <span className="font-medium">{v}</span> },
+              { key: 'taxRate', label: 'Rate (%)', render: (v: any) => (
+                <span className="inline-flex items-center gap-1">
+                  <span className="font-semibold tabular-nums">{Number(v).toFixed(2)}%</span>
+                </span>
+              )},
+            ]}
+            data={data?.data || []}
+            loading={!data}
+            emptyMessage="No tax rates configured"
+            pageSize={10}
+            actions={(t: any) => (
+              <div className="flex items-center justify-end gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(t.id); setForm({ taxName: t.taxName, taxRate: String(t.taxRate) }); setShowForm(true) }} title="Edit">
+                  <Pencil size={14} />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(t.id)} title="Delete">
+                  <Trash2 size={14} className="text-destructive" />
+                </Button>
+              </div>
+            )}
+          />
+        </CardContent>
+      </Card>
+
+      <Dialog open={showForm} onOpenChange={(o) => { if (!o) setEditId(null); setShowForm(o) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editId ? 'Edit Tax' : 'New Tax'}</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); const d = { taxName: form.taxName, taxRate: parseFloat(form.taxRate) }; if (editId) updateMutation.mutate(d); else createMutation.mutate(d) }} className="space-y-3">
+            <Input placeholder="Tax Name (e.g. VAT)" value={form.taxName} onChange={e => setForm(f => ({ ...f, taxName: e.target.value }))} required />
+            <Input type="number" step="0.01" placeholder="Tax Rate %" value={form.taxRate} onChange={e => setForm(f => ({ ...f, taxRate: e.target.value }))} required />
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="submit">{editId ? 'Update' : 'Create'}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={() => setDeleteId(null)}
+        onConfirm={() => deleteMutation.mutate()}
+        title="Delete Tax"
+        description="Are you sure you want to delete this tax rate?"
+        confirmLabel="Delete"
+      />
+    </div>
+  )
+}
+
+function CompanySettings() {
+  const { addToast } = useToast()
+  const [form, setForm] = useState<any>({})
+  const [loaded, setLoaded] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [activeTab, setActiveTab] = useState('general')
+
+  const { data, refetch } = useQuery({
+    queryKey: ['company'],
+    queryFn: () => {
+      const token = localStorage.getItem('token')
+      return fetch('/api/company', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json())
+    },
+  })
+
+  const { data: currencies } = useQuery({
+    queryKey: ['currencies'],
+    queryFn: () => api.list('currencies', { limit: '200' }),
+  })
+
+  if (data && !loaded) {
+    setForm(data)
+    setLoaded(true)
+  }
+
+  const saveCompany = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/company', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(form)
+      })
+      if (!res.ok) throw new Error('Failed')
+      addToast({ title: 'Company settings updated', variant: 'success' })
+      refetch()
+    } catch (err: any) {
+      addToast({ title: 'Error', description: err.message, variant: 'destructive' })
+    }
+  }
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const res = await api.uploadLogo(file)
+      setForm((prev: any) => ({ ...prev, logo: res.path }))
+      addToast({ title: 'Logo uploaded', variant: 'success' })
+    } catch (err: any) {
+      addToast({ title: 'Error', description: err.message, variant: 'destructive' })
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const currencyList = (currencies?.data || []).map((c: any) => ({
+    value: c.code,
+    label: `${c.symbol} ${c.code} — ${c.name}`
+  }))
+
+  const sel = (field: string) => ({
+    value: form[field] || '_none_',
+    onValueChange: (v: string) => setForm((prev: any) => ({ ...prev, [field]: v === '_none_' ? '' : v }))
+  })
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Company Settings</h2>
+        <Button onClick={saveCompany}>
+          <Save size={16} className="mr-2" /> Save
+        </Button>
+      </div>
+
+      <div className="p-5 rounded-xl border bg-card flex flex-col sm:flex-row items-start sm:items-center gap-5">
+        <div className="relative group shrink-0">
+          <div className="w-20 h-20 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center overflow-hidden bg-muted/20">
+            {form.logo ? (
+              <img src={form.logo} alt="Logo" className="w-full h-full object-contain" />
+            ) : (
+              <Building2 size={28} className="text-muted-foreground/40" />
+            )}
+          </div>
+          <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 rounded-xl cursor-pointer transition-opacity">
+            <span className="text-white text-xs font-medium">{uploading ? 'Uploading...' : 'Change'}</span>
+            <Input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploading} className="hidden" />
+          </label>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-lg">{form.name || 'Your Company'}</h3>
+          <p className="text-sm text-muted-foreground">{form.email || 'No email set'}{form.phone ? ` · ${form.phone}` : ''}</p>
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <TabsRoot value={activeTab} onValueChange={setActiveTab}>
+            <div className="px-6 pt-4 border-b overflow-x-auto">
+              <TabsList className="border-b-0">
+                <TabsTrigger value="general" className="gap-2"><Building2 size={15} /> General</TabsTrigger>
+                <TabsTrigger value="address" className="gap-2"><MapPin size={15} /> Address</TabsTrigger>
+                <TabsTrigger value="regional" className="gap-2"><Globe size={15} /> Regional</TabsTrigger>
+                <TabsTrigger value="social" className="gap-2"><Globe size={15} /> Social</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="general" className="px-6 pb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                <div><label className="text-sm font-medium block mb-1.5">Company Name</label><Input value={form.name ?? ''} onChange={e => setForm((p: any) => ({ ...p, name: e.target.value }))} /></div>
+                <div><label className="text-sm font-medium block mb-1.5">Email</label><Input type="email" value={form.email ?? ''} onChange={e => setForm((p: any) => ({ ...p, email: e.target.value }))} /></div>
+                <div><label className="text-sm font-medium block mb-1.5">Phone</label><Input type="tel" value={form.phone ?? ''} onChange={e => setForm((p: any) => ({ ...p, phone: e.target.value }))} /></div>
+                <div><label className="text-sm font-medium block mb-1.5">Website</label><Input type="url" placeholder="https://" value={form.website ?? ''} onChange={e => setForm((p: any) => ({ ...p, website: e.target.value }))} /></div>
+                <div><label className="text-sm font-medium block mb-1.5">Tax ID</label><Input value={form.taxId ?? ''} onChange={e => setForm((p: any) => ({ ...p, taxId: e.target.value }))} /></div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="address" className="px-6 pb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                <div className="md:col-span-2"><label className="text-sm font-medium block mb-1.5">Street</label><Input value={form.addressStreet ?? ''} onChange={e => setForm((p: any) => ({ ...p, addressStreet: e.target.value }))} /></div>
+                <div><label className="text-sm font-medium block mb-1.5">City</label><Input value={form.addressCity ?? ''} onChange={e => setForm((p: any) => ({ ...p, addressCity: e.target.value }))} /></div>
+                <div><label className="text-sm font-medium block mb-1.5">State / Province</label><Input value={form.addressState ?? ''} onChange={e => setForm((p: any) => ({ ...p, addressState: e.target.value }))} /></div>
+                <div><label className="text-sm font-medium block mb-1.5">Country</label>
+                  <Select {...sel('addressCountry')}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="Select country" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none_">--None--</SelectItem>
+                      {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><label className="text-sm font-medium block mb-1.5">Postal Code</label><Input value={form.addressPostalCode ?? ''} onChange={e => setForm((p: any) => ({ ...p, addressPostalCode: e.target.value }))} /></div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="regional" className="px-6 pb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                <div><label className="text-sm font-medium block mb-1.5">Default Currency</label>
+                  <Select {...sel('defaultCurrency')}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="Select currency" /></SelectTrigger>
+                    <SelectContent>
+                      {currencyList.length === 0 && <SelectItem value="_none_">--None--</SelectItem>}
+                      {currencyList.map((c: any) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><label className="text-sm font-medium block mb-1.5">Timezone</label>
+                  <Select {...sel('timezone')}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="Select timezone" /></SelectTrigger>
+                    <SelectContent>
+                      {TIMEZONES.map(tz => <SelectItem key={tz} value={tz}>{tz}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><label className="text-sm font-medium block mb-1.5">Date Format</label>
+                  <Select {...sel('dateFormat')}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="Select format" /></SelectTrigger>
+                    <SelectContent>
+                      {DATE_FORMATS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="social" className="px-6 pb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                {SOCIAL_FIELDS.map(s => (
+                  <div key={s.field}>
+                    <label className="text-sm font-medium block mb-1.5">{s.label}</label>
+                    <Input placeholder={s.placeholder} value={form[s.field] ?? ''} onChange={e => setForm((p: any) => ({ ...p, [s.field]: e.target.value }))} />
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+          </TabsRoot>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
