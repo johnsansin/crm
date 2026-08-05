@@ -6,6 +6,7 @@ import {
   LayoutGrid, Table2, X, Mail, Eye
 } from 'lucide-react'
 import { useToast } from '@/lib/toast'
+import { formatDate, useOrgSettings } from '@/lib/org-format'
 
 const statusColors: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
@@ -15,6 +16,7 @@ const statusColors: Record<string, string> = {
 type ViewMode = 'table' | 'kanban'
 
 export function SuperAdminOrgs() {
+  useOrgSettings()
   const { addToast } = useToast()
   const [companies, setCompanies] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -68,7 +70,7 @@ export function SuperAdminOrgs() {
         </div>
         <div>
           <p className="font-medium text-slate-800 dark:text-white">{r.name}</p>
-          <p className="text-xs text-slate-400">{new Date(r.createdAt).toLocaleDateString()}</p>
+          <p className="text-xs text-slate-400">{formatDate(r.createdAt)}</p>
         </div>
       </div>
     )},
@@ -147,7 +149,7 @@ export function SuperAdminOrgs() {
                   </span>
                 </div>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                  Created {new Date(orgDetail.createdAt).toLocaleDateString()} · {orgDetail.users?.length || 0} users
+                  Created {formatDate(orgDetail.createdAt)} · {orgDetail.users?.length || 0} users
                 </p>
               </div>
             </div>
@@ -289,7 +291,7 @@ export function SuperAdminOrgs() {
                       </div>
                       <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
                         <span className="flex items-center gap-1"><Users size={12} />{org._count?.users || 0}</span>
-                        <span className="flex items-center gap-1"><Calendar size={12} />{new Date(org.createdAt).toLocaleDateString()}</span>
+                        <span className="flex items-center gap-1"><Calendar size={12} />{formatDate(org.createdAt)}</span>
                       </div>
                     </button>
                   ))

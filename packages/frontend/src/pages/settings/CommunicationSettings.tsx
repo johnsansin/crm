@@ -9,15 +9,17 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Megaphone, CalendarDays, Bell, Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
+import { formatDate, formatDateTime, useOrgSettings } from '@/lib/org-format'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
 function fmtDate(v: any) {
   if (!v) return '—'
-  try { return new Date(v).toLocaleString() } catch { return '—' }
+  return formatDateTime(v) || '—'
 }
 
 export function CommunicationSettings() {
+  useOrgSettings()
   const [tab, setTab] = useState('announcements')
   return (
     <div className="space-y-4">
@@ -228,7 +230,7 @@ function HolidaysTab() {
       </div>
       <DataTable
         columns={[
-          { key: 'date', label: 'Date', render: (v) => <span className="whitespace-nowrap">{v ? new Date(v).toLocaleDateString() : '—'}</span> },
+          { key: 'date', label: 'Date', render: (v) => <span className="whitespace-nowrap">{v ? formatDate(v) : '—'}</span> },
           { key: 'title', label: 'Title' },
           { key: 'description', label: 'Description', render: (v) => <span className="text-muted-foreground">{v || '—'}</span> },
         ]}

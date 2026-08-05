@@ -14,6 +14,8 @@ import { quotationsRouter } from './modules/quotations.routes'
 import { salesOrdersRouter } from './modules/salesorders.routes'
 import { invoicesRouter } from './modules/invoices.routes'
 import { calendarRouter } from './modules/calendar.routes'
+import { recordRouter } from './modules/record.routes'
+import { leadRouter } from './modules/lead.routes'
 import { errorHandler } from './middleware/errorHandler'
 import { setupModules, getModuleConfig } from './modules/moduleSetup'
 import { startCron } from './lib/cron'
@@ -52,6 +54,8 @@ app.use('/api/quotations', quotationsRouter)
 app.use('/api/salesorders', salesOrdersRouter)
 app.use('/api/invoices', invoicesRouter)
 app.use('/api/calendar', calendarRouter)
+app.use('/api/records', recordRouter)
+app.use('/api/leads', leadRouter)
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')))
 
 async function seedModules() {

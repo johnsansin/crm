@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Database, Loader2, Download, Upload, FileJson, FileText } from 'lucide-react'
+import { formatDateTime, useOrgSettings } from '@/lib/org-format'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
@@ -25,10 +26,11 @@ function fmtSize(bytes: number) {
 
 function fmtDate(v: any) {
   if (!v) return '—'
-  try { return new Date(v).toLocaleString() } catch { return '—' }
+  return formatDateTime(v) || '—'
 }
 
 export function DataSettings() {
+  useOrgSettings()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const [moduleName, setModuleName] = useState('accounts')

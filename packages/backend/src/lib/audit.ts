@@ -9,7 +9,7 @@ export function getClientIp(req: Request): string | null {
 export async function writeAudit(params: {
   moduleName: string
   recordId?: string | null
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'LOGIN' | 'BACKUP' | 'IMPORT' | 'EXPORT' | 'LOGIN_FAILED'
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'LOGIN' | 'BACKUP' | 'IMPORT' | 'EXPORT' | 'LOGIN_FAILED' | 'ACTIVITY' | 'EMAIL' | 'DOCUMENT' | 'COMMENT' | 'CONVERT' | 'FOLLOW' | 'LINK' | 'UNLINK'
   fieldName?: string | null
   oldValue?: string | null
   newValue?: string | null

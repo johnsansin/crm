@@ -324,4 +324,57 @@ export const api = {
   getSequenceNumbers: () => request<{ data: any[] }>('/settings/sequence-numbers'),
   updateSequenceNumber: (moduleName: string, data: any) =>
     request<any>(`/settings/sequence-numbers/${moduleName}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  // ---- Record detail (vtiger-style) ----
+  record: (module: string, id: string) => ({
+    activities: () => request<{ data: any[] }>(`/records/${module}/${id}/activities`),
+    createActivity: (data: any) =>
+      request<any>(`/records/${module}/${id}/activities`, { method: 'POST', body: JSON.stringify(data) }),
+    emails: () => request<{ data: any[] }>(`/records/${module}/${id}/emails`),
+    createEmail: (data: any) =>
+      request<any>(`/records/${module}/${id}/emails`, { method: 'POST', body: JSON.stringify(data) }),
+    documents: () => request<{ data: any[] }>(`/records/${module}/${id}/documents`),
+    createDocument: (data: any) =>
+      request<any>(`/records/${module}/${id}/documents`, { method: 'POST', body: JSON.stringify(data) }),
+    comments: () => request<{ data: any[] }>(`/records/${module}/${id}/comments`),
+    createComment: (data: any) =>
+      request<any>(`/records/${module}/${id}/comments`, { method: 'POST', body: JSON.stringify(data) }),
+    updates: (limit?: number) =>
+      request<{ data: any[] }>(`/records/${module}/${id}/updates${limit ? `?limit=${limit}` : ''}`),
+    followers: () => request<{ data: any[]; isFollowing: boolean }>(`/records/${module}/${id}/followers`),
+    follow: () => request<any>(`/records/${module}/${id}/follow`, { method: 'POST' }),
+    unfollow: () => request<any>(`/records/${module}/${id}/follow`, { method: 'DELETE' }),
+    related: (relatedModule: string) =>
+      request<{ data: any[] }>(`/records/${module}/${id}/related/${relatedModule}`),
+    linkProducts: (products: { productId: string; qty?: number; listPrice?: number }[]) =>
+      request<any>(`/records/${module}/${id}/products`, { method: 'POST', body: JSON.stringify({ products }) }),
+    updateLinkedProduct: (productId: string, data: { qty?: number; listPrice?: number }) =>
+      request<any>(`/records/${module}/${id}/products/${productId}`, { method: 'PUT', body: JSON.stringify(data) }),
+    unlinkProduct: (productId: string) =>
+      request<any>(`/records/${module}/${id}/products/${productId}`, { method: 'DELETE' }),
+    linkServices: (services: { serviceId: string; qty?: number; listPrice?: number }[]) =>
+      request<any>(`/records/${module}/${id}/services`, { method: 'POST', body: JSON.stringify({ services }) }),
+    updateLinkedService: (serviceId: string, data: { qty?: number; listPrice?: number }) =>
+      request<any>(`/records/${module}/${id}/services/${serviceId}`, { method: 'PUT', body: JSON.stringify(data) }),
+    unlinkService: (serviceId: string) =>
+      request<any>(`/records/${module}/${id}/services/${serviceId}`, { method: 'DELETE' }),
+    linkDocuments: (documentIds: string[]) =>
+      request<any>(`/records/${module}/${id}/documents/link`, { method: 'POST', body: JSON.stringify({ documentIds }) }),
+    unlinkDocument: (documentId: string) =>
+      request<any>(`/records/${module}/${id}/documents/${documentId}`, { method: 'DELETE' }),
+    setCampaign: (campaignId: string | null) =>
+      request<any>(`/records/${module}/${id}/campaign`, { method: 'PUT', body: JSON.stringify({ campaignId }) }),
+  }),
+
+  deleteComment: (id: string) => request<any>(`/records/comments/${id}`, { method: 'DELETE' }),
+  updateRecordActivity: (id: string, data: any) =>
+    request<any>(`/records/activities/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteRecordActivity: (id: string) => request<any>(`/records/activities/${id}`, { method: 'DELETE' }),
+  deleteRecordDocument: (id: string) => request<any>(`/records/documents/${id}`, { method: 'DELETE' }),
+
+  // ---- Lead conversion ----
+  getLeadConversionInfo: (id: string) =>
+    request<any>(`/leads/${id}/conversion-info`),
+  convertLead: (id: string, data: any) =>
+    request<any>(`/leads/${id}/convert`, { method: 'POST', body: JSON.stringify(data) }),
 }

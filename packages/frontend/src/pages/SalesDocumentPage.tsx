@@ -9,6 +9,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ArrowLeft, Save, Loader2, Trash2, Plus, FileDown, Mail, Search, Copy, Building2, Users, ShoppingCart, MessageSquare, FileText, Receipt } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { formatDate, formatDateTime, useOrgSettings } from '@/lib/org-format'
 import { ProductSearchSelect } from '@/components/product-search-select'
 import { ServiceSearchSelect } from '@/components/service-search-select'
 
@@ -65,8 +66,8 @@ const CONFIGS: Record<DocModule, DocConfig> = {
           {v || 'Created'}
         </span>
       )},
-      { key: 'validUntil', label: 'Valid Till', render: (v: any) => <span className="text-muted-foreground">{v ? new Date(v).toLocaleDateString() : '-'}</span> },
-      { key: 'createdAt', label: 'Created', render: (v: any) => <span className="text-muted-foreground">{new Date(v).toLocaleDateString()}</span> },
+      { key: 'validUntil', label: 'Valid Till', render: (v: any) => <span className="text-muted-foreground">{v ? formatDate(v) : '-'}</span> },
+      { key: 'createdAt', label: 'Created', render: (v: any) => <span className="text-muted-foreground">{formatDate(v)}</span> },
     ],
   },
   invoices: {
@@ -101,9 +102,9 @@ const CONFIGS: Record<DocModule, DocConfig> = {
           {v || 'Created'}
         </span>
       )},
-      { key: 'invoiceDate', label: 'Invoice Date', render: (v: any) => <span className="text-muted-foreground">{v ? new Date(v).toLocaleDateString() : '-'}</span> },
+      { key: 'invoiceDate', label: 'Invoice Date', render: (v: any) => <span className="text-muted-foreground">{v ? formatDate(v) : '-'}</span> },
       { key: 'grandTotal', label: 'Amount', render: (v: any) => <span className="font-medium">${Number(v || 0).toFixed(2)}</span> },
-      { key: 'createdAt', label: 'Created', render: (v: any) => <span className="text-muted-foreground">{new Date(v).toLocaleDateString()}</span> },
+      { key: 'createdAt', label: 'Created', render: (v: any) => <span className="text-muted-foreground">{formatDate(v)}</span> },
     ],
   },
 }
@@ -141,6 +142,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToast } = useToast()
+  useOrgSettings()
   const cfg = CONFIGS[module]
   const isNew = !id || id === 'new'
 
@@ -904,9 +906,9 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
               {conName && <p><span className="text-muted-foreground">Contact:</span> {conName}</p>}
               {module === 'salesorders' && quoteNo && <p><span className="text-muted-foreground">Quote:</span> {quoteNo}</p>}
               {module === 'invoices' && soNo && <p><span className="text-muted-foreground">Sales Order:</span> {soNo}</p>}
-              {module === 'invoices' && r.invoiceDate && <p><span className="text-muted-foreground">Invoice Date:</span> {new Date(r.invoiceDate).toLocaleDateString()}</p>}
-              {module === 'invoices' && r.dueDate && <p><span className="text-muted-foreground">Due Date:</span> {new Date(r.dueDate).toLocaleDateString()}</p>}
-              {module === 'salesorders' && r.validUntil && <p><span className="text-muted-foreground">Valid Till:</span> {new Date(r.validUntil).toLocaleDateString()}</p>}
+              {module === 'invoices' && r.invoiceDate && <p><span className="text-muted-foreground">Invoice Date:</span> {formatDate(r.invoiceDate)}</p>}
+              {module === 'invoices' && r.dueDate && <p><span className="text-muted-foreground">Due Date:</span> {formatDate(r.dueDate)}</p>}
+              {module === 'salesorders' && r.validUntil && <p><span className="text-muted-foreground">Valid Till:</span> {formatDate(r.validUntil)}</p>}
               <p><span className="text-muted-foreground">Status:</span> {r[cfg.stageField] || 'N/A'}</p>
               <p><span className="text-muted-foreground">Tax Type:</span> {r.taxType || 'N/A'}</p>
               {module === 'salesorders' && r.recurringFrequency && <p><span className="text-muted-foreground">Recurring:</span> {r.recurringFrequency}</p>}
@@ -931,7 +933,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
                   <div key={inv.id} className="flex items-center justify-between text-sm border rounded-lg px-3 py-2">
                     <div>
                       <p className="font-medium">{inv.invoiceNo || inv.subject}</p>
-                      <p className="text-xs text-muted-foreground">{inv.invoiceStatus || 'Created'} · {new Date(inv.createdAt).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground">{inv.invoiceStatus || 'Created'} · {formatDate(inv.createdAt)}</p>
                     </div>
                     <span className="font-semibold">${Number(inv.grandTotal || 0).toFixed(2)}</span>
                   </div>
@@ -963,7 +965,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
                 <div key={c.id} className="border rounded-lg px-3 py-2">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-semibold">{c.userName || 'Unknown'}</span>
-                    <span className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</span>
+                    <span className="text-xs text-muted-foreground">{formatDateTime(c.createdAt)}</span>
                   </div>
                   <p className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{c.comment}</p>
                 </div>

@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { useTheme } from '@/lib/theme'
 import { LogOut, User, Search, Sun, Moon, Loader2, Menu, Bell, Building2, Megaphone, CheckCheck, X } from 'lucide-react'
 import { api } from '@/lib/api'
+import { setOrgSettings, orgLocale, formatDateTime, useOrgSettings } from '@/lib/org-format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -28,12 +29,31 @@ export function AppLayout() {
   const [dismissedAnnouncements, setDismissedAnnouncements] = useState<string[]>([])
   const searchRef = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
+  useOrgSettings()
 
   const { data: notificationsData } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => api.getNotifications().catch(() => ({ data: [] })),
-    refetchInterval: 60000,
+    refetchInterval: 30000,
   })
+
+  const { data: orgSettingsData } = useQuery({
+    queryKey: ['org-settings'],
+    queryFn: () => api.getOrgSettings().catch(() => ({})),
+  })
+
+  useEffect(() => {
+    if (!orgSettingsData) return
+    setOrgSettings({
+      language: orgSettingsData.language || 'en_us',
+      timezone: orgSettingsData.timezone || 'Asia/Karachi',
+      dateFormat: orgSettingsData.dateFormat || 'mm-dd-yyyy',
+      calendar: orgSettingsData.calendar || {},
+    })
+    const lang = orgSettingsData.language || 'en_us'
+    document.documentElement.lang = orgLocale()
+    document.documentElement.dir = ['ar', 'he', 'fa'].includes(lang) ? 'rtl' : 'ltr'
+  }, [orgSettingsData])
 
   const { data: announcementsData } = useQuery({
     queryKey: ['announcements-active'],
@@ -205,12 +225,12 @@ export function AppLayout() {
                     <div
                       key={n.id}
                       className={`px-3 py-2.5 hover:bg-accent transition-colors cursor-pointer ${n.isRead ? 'opacity-60' : ''}`}
-                      onClick={() => markRead(n.id)}
+                      onClick={() => { markRead(n.id); if (n.link) navigate(n.link) }}
                     >
                       <p className="text-sm font-medium">{n.title}</p>
                       {n.message && <p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p>}
                       <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}
+                        {n.createdAt ? formatDateTime(n.createdAt) : ''}
                       </p>
                     </div>
                   ))}

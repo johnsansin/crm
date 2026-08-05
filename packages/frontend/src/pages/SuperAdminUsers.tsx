@@ -5,10 +5,12 @@ import {
   Users, Mail, Shield, Search, Building2, LayoutGrid, Table2,
   Eye, Calendar, ChevronDown, ChevronUp, Filter
 } from 'lucide-react'
+import { formatDate, useOrgSettings } from '@/lib/org-format'
 
 type ViewMode = 'table' | 'kanban'
 
 export function SuperAdminUsers() {
+  useOrgSettings()
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -87,7 +89,7 @@ export function SuperAdminUsers() {
     )},
     { key: 'lastLogin', label: 'Last Login', render: (v: any) => (
       <span className="text-xs text-slate-500 dark:text-slate-400">
-        {v ? new Date(v).toLocaleDateString() : 'Never'}
+        {v ? formatDate(v) : 'Never'}
       </span>
     )},
   ]
@@ -209,12 +211,12 @@ export function SuperAdminUsers() {
             <div>
               <p className="text-xs text-slate-400 mb-1">Last Login</p>
               <p className="font-medium text-slate-800 dark:text-white">
-                {selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleDateString() : 'Never'}
+                {selectedUser.lastLogin ? formatDate(selectedUser.lastLogin) : 'Never'}
               </p>
             </div>
             <div>
               <p className="text-xs text-slate-400 mb-1">Created</p>
-              <p className="font-medium text-slate-800 dark:text-white">{new Date(selectedUser.createdAt).toLocaleDateString()}</p>
+              <p className="font-medium text-slate-800 dark:text-white">{formatDate(selectedUser.createdAt)}</p>
             </div>
           </div>
         </div>

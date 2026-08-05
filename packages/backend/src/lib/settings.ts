@@ -14,6 +14,8 @@ export const DEFAULT_ORG_SETTINGS: Record<string, any> = {
   leadConfig: { enableLeadConversion: true, defaultLeadStatus: 'New', defaultLeadSource: '', createOnContact: true },
   terms: { quote: '', salesOrder: '', invoice: '' },
   language: 'en_us',
+  timezone: 'Asia/Karachi',
+  dateFormat: 'mm-dd-yyyy',
   inventory: { enableStockTracking: true, autoNumbering: true, productImageRequired: false },
   globalVariables: {},
   calendar: { workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], workingHoursStart: '09:00', workingHoursEnd: '18:00', firstDayOfWeek: 'Sunday' },

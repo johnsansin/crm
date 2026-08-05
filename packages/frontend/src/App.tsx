@@ -21,6 +21,7 @@ import { SettingsPage } from '@/pages/SettingsPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { AdminPage } from '@/pages/AdminPage'
 import { CalendarPage } from '@/pages/CalendarPage'
+import { LeadDetailPage } from '@/pages/LeadDetailPage'
 import { QuotationsPage } from '@/pages/QuotationsPage'
 import { SalesDocumentPage } from '@/pages/SalesDocumentPage'
 import { SuperAdminLayout } from '@/pages/SuperAdminLayout'
@@ -93,6 +94,9 @@ export default function App() {
             <Route path="/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/leads/new" element={<ModuleDetailPage />} />
+            <Route path="/leads/:id" element={<LeadDetailPage />} />
+            <Route path="/leads/:id/edit" element={<ModuleDetailPage />} />
             <Route path="/quotes" element={<QuotationsPage key="list" />} />
             <Route path="/quotes/:id" element={<QuotationsPage key="detail" />} />
             <Route path="/salesorders" element={<SalesDocumentPage key="so-list" module="salesorders" />} />

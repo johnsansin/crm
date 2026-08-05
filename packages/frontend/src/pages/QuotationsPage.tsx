@@ -12,6 +12,7 @@ import { FormField } from '@/components/form-field'
 import { ProductSearchSelect } from '@/components/product-search-select'
 import { ServiceSearchSelect } from '@/components/service-search-select'
 import { cn } from '@/lib/utils'
+import { formatDate, formatDateTime, useOrgSettings } from '@/lib/org-format'
 
 const EMPTY_LINE = { productId: '', serviceId: '', itemName: '', qty: 1, listPrice: 0, unitPrice: 0, discount: 0, discountPercent: 0, tax: 0, taxPercent: 0, netPrice: 0, lineTotal: 0, description: '', kind: 'product' }
 const STAGES = ['--None--', 'Created', 'Draft', 'Reviewed', 'Delivered', 'Accepted', 'Rejected']
@@ -44,6 +45,7 @@ export function QuotationsPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToast } = useToast()
+  useOrgSettings()
   const isNew = !id || id === 'new'
 
   const [mode, setMode] = useState<'list' | 'form' | 'view'>(id === 'new' ? 'form' : id ? 'view' : 'list')
@@ -660,7 +662,7 @@ export function QuotationsPage() {
             <div className="rounded-xl border bg-card p-4 text-sm space-y-1">
               <h4 className="font-semibold mb-2">Details</h4>
               <p><span className="text-muted-foreground">Stage:</span> {r.quoteStage || 'N/A'}</p>
-              <p><span className="text-muted-foreground">Valid Until:</span> {r.validUntil ? new Date(r.validUntil).toLocaleDateString() : 'N/A'}</p>
+              <p><span className="text-muted-foreground">Valid Until:</span> {r.validUntil ? formatDate(r.validUntil) : 'N/A'}</p>
               <p><span className="text-muted-foreground">Carrier:</span> {r.carrier || 'N/A'}</p>
               <p><span className="text-muted-foreground">Tax Type:</span> {r.taxType || 'N/A'}</p>
             </div>
@@ -680,7 +682,7 @@ export function QuotationsPage() {
                   <li key={idx} className="ml-4">
                     <div className="absolute -left-[5px] mt-1.5 w-2 h-2 rounded-full bg-blue-500" />
                     <p className="text-sm font-medium">{h.stage}</p>
-                    <p className="text-xs text-muted-foreground">{h.changedByName || 'Unknown'} · {new Date(h.createdAt).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">{h.changedByName || 'Unknown'} · {formatDateTime(h.createdAt)}</p>
                   </li>
                 ))}
               </ol>
@@ -697,7 +699,7 @@ export function QuotationsPage() {
                   <div key={so.id} className="flex items-center justify-between text-sm border rounded-lg px-3 py-2">
                     <div>
                       <p className="font-medium">{so.salesOrderNo || so.subject}</p>
-                      <p className="text-xs text-muted-foreground">{so.soStatus || 'Created'} · {new Date(so.createdAt).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground">{so.soStatus || 'Created'} · {formatDate(so.createdAt)}</p>
                     </div>
                     <span className="font-semibold">${Number(so.grandTotal || 0).toFixed(2)}</span>
                   </div>
@@ -716,7 +718,7 @@ export function QuotationsPage() {
                   <div key={inv.id} className="flex items-center justify-between text-sm border rounded-lg px-3 py-2">
                     <div>
                       <p className="font-medium">{inv.invoiceNo || inv.subject}</p>
-                      <p className="text-xs text-muted-foreground">{inv.invoiceStatus || 'Created'} · {new Date(inv.createdAt).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground">{inv.invoiceStatus || 'Created'} · {formatDate(inv.createdAt)}</p>
                     </div>
                     <span className="font-semibold">${Number(inv.grandTotal || 0).toFixed(2)}</span>
                   </div>
@@ -748,7 +750,7 @@ export function QuotationsPage() {
                 <div key={c.id} className="border rounded-lg px-3 py-2">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-semibold">{c.userName || 'Unknown'}</span>
-                    <span className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</span>
+                    <span className="text-xs text-muted-foreground">{formatDateTime(c.createdAt)}</span>
                   </div>
                   <p className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{c.comment}</p>
                 </div>
@@ -769,8 +771,8 @@ export function QuotationsPage() {
         {v || 'Draft'}
       </span>
     )},
-    { key: 'validUntil', label: 'Valid Until', render: (v: any) => <span className="text-muted-foreground">{v ? new Date(v).toLocaleDateString() : '-'}</span> },
-    { key: 'createdAt', label: 'Created', render: (v: any) => <span className="text-muted-foreground">{new Date(v).toLocaleDateString()}</span> },
+    { key: 'validUntil', label: 'Valid Until', render: (v: any) => <span className="text-muted-foreground">{v ? formatDate(v) : '-'}</span> },
+    { key: 'createdAt', label: 'Created', render: (v: any) => <span className="text-muted-foreground">{formatDate(v)}</span> },
   ]
 
   const handleSearch = () => { setPage(1); loadList() }

@@ -403,6 +403,40 @@ model Product {
   priceBookProducts PriceBookProduct[]
 }
 
+model LeadProduct {
+  id         String   @id @default(uuid())
+  leadId     String
+  productId  String
+  qty        Decimal? @default(1) @db.Decimal(16,2)
+  listPrice  Decimal? @db.Decimal(16,2)
+  companyId  String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([leadId, productId])
+  @@index([leadId])
+  @@index([productId])
+  @@index([companyId])
+}
+
+model LeadService {
+  id         String   @id @default(uuid())
+  leadId     String
+  serviceId  String
+  qty        Decimal? @default(1) @db.Decimal(16,2)
+  listPrice  Decimal? @db.Decimal(16,2)
+  companyId  String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([leadId, serviceId])
+  @@index([leadId])
+  @@index([serviceId])
+  @@index([companyId])
+}
+
 model Service {
   id              String   @id @default(uuid())
   serviceNo       String?  @unique @db.VarChar(100)
@@ -841,6 +875,8 @@ model Document {
   fileVersion String?  @db.VarChar(50)
   noteContent String?  @db.Text
   folderId    String?  @db.VarChar(100)
+  parentModule String? @db.VarChar(100)
+  parentId    String?
   companyId String?
   isActive Boolean  @default(true)
   assignedTo  String?
@@ -1332,6 +1368,8 @@ model Activity {
   endAt        DateTime?
   dueAt        DateTime?
   reminderAt   DateTime?
+  parentModule String?  @db.VarChar(100)
+  parentId     String?
   companyId    String?
   isActive     Boolean   @default(true)
   assignedTo   String?
@@ -1342,4 +1380,16 @@ model Activity {
   @@index([companyId])
   @@index([startAt])
   @@index([dueAt])
+  @@index([parentModule, parentId])
+}
+
+model Follow {
+  id         String   @id @default(uuid())
+  userId     String
+  moduleName String   @db.VarChar(100)
+  recordId   String
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, moduleName, recordId])
+  @@index([moduleName, recordId])
 }

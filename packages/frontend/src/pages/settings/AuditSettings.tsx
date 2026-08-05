@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ScrollText, History } from 'lucide-react'
+import { formatDateTime, useOrgSettings } from '@/lib/org-format'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
@@ -22,12 +23,11 @@ const ACTION_COLORS: Record<string, string> = {
 
 function fmtDate(v: any) {
   if (!v) return '—'
-  try {
-    return new Date(v).toLocaleString()
-  } catch { return '—' }
+  return formatDateTime(v) || '—'
 }
 
 export function AuditSettings() {
+  useOrgSettings()
   const [tab, setTab] = useState('audit')
   return (
     <div className="space-y-4">

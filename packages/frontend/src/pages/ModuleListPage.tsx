@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { RowActions } from '@/components/ui/row-actions'
 import { getFieldLabel } from '@/lib/field-utils'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
-import { Plus, Search, Trash2, Eye, RefreshCw, Pencil, LayoutGrid, List } from 'lucide-react'
+import { Plus, Search, RefreshCw, LayoutGrid, List } from 'lucide-react'
 
 const kanbanModules = ['potentials', 'tickets', 'projects']
 
@@ -61,6 +62,8 @@ export function ModuleListPage() {
   const { addToast } = useToast()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [sortKey, setSortKey] = useState('')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
 
@@ -68,8 +71,8 @@ export function ModuleListPage() {
   const hasKanban = kanbanModules.includes(mod)
 
   const { data, isLoading } = useQuery({
-    queryKey: [mod, 'list', page, search],
-    queryFn: () => api.list(mod, { page: String(page), limit: '25', search }),
+    queryKey: [mod, 'list', page, search, sortKey, sortOrder],
+    queryFn: () => api.list(mod, { page: String(page), limit: '25', search, ...(sortKey ? { sortBy: sortKey, sortOrder } : {}) }),
     enabled: !!mod && mod !== 'settings' && viewMode === 'list',
   })
 
@@ -98,8 +101,15 @@ export function ModuleListPage() {
   const columns = fields.filter(f => f).map(f => ({
     key: f,
     label: getFieldLabel(f),
+    sortable: true,
     className: monetaryColumns.includes(f) ? 'text-right' : '',
   }))
+
+  const handleSort = (key: string, order: 'asc' | 'desc') => {
+    setSortKey(key)
+    setSortOrder(order)
+    setPage(1)
+  }
 
   return (
     <div className="space-y-4">
@@ -146,24 +156,17 @@ export function ModuleListPage() {
             data={data?.data || []}
             pagination={data?.pagination}
             onPageChange={setPage}
+            onSort={handleSort}
+            sortKey={sortKey || undefined}
+            sortOrder={sortOrder}
             loading={isLoading}
             onRowClick={(record: any) => navigate(`/${mod}/${record.id}`)}
             actions={(record: any) => (
-              <div className="flex items-center justify-end gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/${mod}/${record.id}`)} title="View">
-                  <Eye size={14} />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/${mod}/${record.id}?edit=true`)} title="Edit">
-                  <Pencil size={14} />
-                </Button>
-                <Button
-                  variant="ghost" size="icon" className="h-8 w-8"
-                  onClick={() => setDeleteTarget({ id: record.id, name: record[fields[0]] || record.id })}
-                  title="Delete"
-                >
-                  <Trash2 size={14} className="text-destructive" />
-                </Button>
-              </div>
+              <RowActions
+                onView={() => navigate(`/${mod}/${record.id}`)}
+                onEdit={() => navigate(`/${mod}/${record.id}?edit=true`)}
+                onDelete={() => setDeleteTarget({ id: record.id, name: record[fields[0]] || record.id })}
+              />
             )}
           />
         </>

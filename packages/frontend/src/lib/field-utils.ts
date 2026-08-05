@@ -1,3 +1,5 @@
+import { formatDate, formatMoney } from '@/lib/org-format'
+
 export interface FieldConfig {
   name: string
   type: string
@@ -59,9 +61,9 @@ function labelFromName(name: string): string {
     emailFlag: 'Email Flag', parentModule: 'Parent Module',
     toEmails: 'To', ccEmails: 'CC', bccEmails: 'BCC', fromEmail: 'From', dateSent: 'Date Sent',
     templateName: 'Template Name', folderName: 'Folder Name',
-    projectName: 'Project Name', projectType: 'Project Type', targetBudget: 'Target Budget',
+    projectName: 'Project Name', projectNo: 'Project Number', projectType: 'Project Type', targetBudget: 'Target Budget',
     actualBudget: 'Actual Budget', actualEndDate: 'Actual End Date', projectId: 'Project',
-    projectTaskType: 'Task Type',
+    projectTaskType: 'Task Type', projectTaskNo: 'Task Number', assignedTo: 'Assigned To',
     milestoneDate: 'Milestone Date', milestoneType: 'Milestone Type',
     milestoneNo: 'Milestone No', plannedHours: 'Planned Hours', actualHours: 'Actual Hours', sequence: 'Sequence',
     assetName: 'Asset Name', tagNumber: 'Tag Number', dateSold: 'Date Sold',
@@ -117,7 +119,7 @@ const moduleTabs: Record<string, FieldTab[]> = {
     { label: 'Description', fields: ['description'] },
   ],
   leads: [
-    { label: 'Details', fields: ['firstName', 'lastName', 'company', 'title', 'email', 'secondaryEmail', 'phone', 'mobile', 'fax', 'website', 'leadSource', 'leadStatus', 'industry', 'annualRevenue', 'noOfEmployees', 'rating', 'interest'] },
+    { label: 'Details', fields: ['salutation', 'firstName', 'lastName', 'company', 'assignedTo', 'title', 'email', 'secondaryEmail', 'phone', 'mobile', 'fax', 'website', 'leadSource', 'leadStatus', 'industry', 'annualRevenue', 'noOfEmployees', 'rating', 'interest'] },
     { label: 'Address', fields: ['street', 'city', 'state', 'country', 'postalCode', 'poBox'] },
     { label: 'Description', fields: ['description'] },
   ],
@@ -193,16 +195,17 @@ const moduleTabs: Record<string, FieldTab[]> = {
     { label: 'Content', fields: ['body'] },
   ],
   projects: [
-    { label: 'Details', fields: ['projectName', 'projectType', 'status', 'priority', 'progress', 'startDate', 'endDate', 'actualEndDate', 'url'] },
+    { label: 'Information', fields: ['projectName', 'projectNo', 'projectType', 'status', 'priority', 'progress', 'url', 'assignedTo'] },
+    { label: 'Schedule', fields: ['startDate', 'endDate', 'actualEndDate'] },
     { label: 'Financial', fields: ['targetBudget', 'actualBudget'] },
     { label: 'Description', fields: ['description'] },
   ],
   projecttasks: [
-    { label: 'Details', fields: ['projectId', 'title', 'status', 'priority', 'projectTaskType', 'progress', 'hours', 'startDate', 'endDate'] },
+    { label: 'Information', fields: ['projectId', 'projectTaskNo', 'title', 'status', 'priority', 'projectTaskType', 'progress', 'hours', 'assignedTo', 'startDate', 'endDate'] },
     { label: 'Description', fields: ['description'] },
   ],
   projectmilestones: [
-    { label: 'Details', fields: ['projectId', 'title', 'milestoneNo', 'status', 'progress', 'milestoneDate', 'milestoneType', 'plannedHours', 'actualHours', 'sequence', 'startDate', 'endDate'] },
+    { label: 'Information', fields: ['projectId', 'milestoneNo', 'title', 'status', 'progress', 'milestoneDate', 'milestoneType', 'plannedHours', 'actualHours', 'sequence', 'assignedTo', 'startDate', 'endDate'] },
     { label: 'Description', fields: ['description'] },
   ],
   assets: [
@@ -246,11 +249,11 @@ export function formatFieldValue(value: any, key: string): string {
   if (value == null || value === '') return '-'
   const monetary = ['amount', 'grandTotal', 'subTotal', 'unitPrice', 'costPrice', 'annualRevenue', 'expectedRevenue', 'budget', 'actualCost', 'shipping', 'shippingHandling', 'discount', 'adjustment', 'salesCommission', 'exciseDuty', 'targetBudget', 'actualBudget', 'expectedROI', 'actualROI', 'commissionRate', 'listPrice', 'netPrice', 'total', 'lineTotal', 'commissionPercentage', 'taxAmount']
   if (monetary.includes(key)) {
-    return `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    return formatMoney(value)
   }
   if (typeof value === 'boolean') return value ? 'Yes' : 'No'
   if (key.toLowerCase().includes('date') || key.toLowerCase().includes('Date')) {
-    try { return new Date(value).toLocaleDateString() } catch { return value }
+    return formatDate(value) || '-'
   }
   return String(value)
 }

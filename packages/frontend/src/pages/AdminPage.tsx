@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { Building2, Users, Calendar, ToggleLeft, ToggleRight } from 'lucide-react'
+import { formatDate, useOrgSettings } from '@/lib/org-format'
 
 export function AdminPage() {
+  useOrgSettings()
   const [companies, setCompanies] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState<string | null>(null)
@@ -48,7 +50,7 @@ export function AdminPage() {
                   </div>
                   <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
                     <span className="flex items-center gap-1"><Users size={12} />{c._count?.users || 0} users</span>
-                    <span className="flex items-center gap-1"><Calendar size={12} />{new Date(c.createdAt).toLocaleDateString()}</span>
+                    <span className="flex items-center gap-1"><Calendar size={12} />{formatDate(c.createdAt)}</span>
                   </p>
                 </div>
               </div>

@@ -276,6 +276,18 @@ export function entityRouter(moduleName: string): Router {
     } catch (err) { next(err) }
   })
 
+  router.get('/users', async (req: any, res, next) => {
+    try {
+      if (!req.user!.companyId) return res.json({ data: [] })
+      const users = await prisma.user.findMany({
+        where: { companyId: req.user!.companyId, isActive: true },
+        select: { id: true, firstName: true, lastName: true, email: true, userName: true },
+        orderBy: { firstName: 'asc' },
+      })
+      res.json({ data: users })
+    } catch (err) { next(err) }
+  })
+
   router.get('/all', async (req, res, next) => {
     try {
       if (!(await checkPermission(req, 'view'))) return res.status(403).json({ error: 'Access denied' })
@@ -307,6 +319,21 @@ export function entityRouter(moduleName: string): Router {
       const record = await prismaModel.findFirst({ where, include: buildInclude(moduleName) })
       if (!record) return res.status(404).json({ error: 'Not found' })
       const merged = await mergeCustomValues(moduleName, [record])
+      if (record.assignedTo || record.createdBy) {
+        const uids = [...new Set([record.assignedTo, record.createdBy].filter(Boolean))]
+        const users = await prisma.user.findMany({
+          where: { id: { in: uids } },
+          select: { id: true, firstName: true, lastName: true, email: true },
+        })
+        const umap = new Map(users.map(u => [u.id, u]))
+        const name = (id?: string | null) => {
+          if (!id) return null
+          const u = umap.get(id)
+          return u ? `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email : null
+        }
+        merged[0].ownerName = name(record.assignedTo) || name(record.createdBy)
+        merged[0].createdByName = name(record.createdBy)
+      }
       res.json(merged[0])
     } catch (err) { next(err) }
   })

@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Workflow, Timer, FormInput, Plus, Pencil, Trash2, Loader2, Play, Copy } from 'lucide-react'
+import { formatDateTime, useOrgSettings } from '@/lib/org-format'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
@@ -78,6 +79,7 @@ function ActionEditor({ actions, setActions }: { actions: any[]; setActions: (a:
 }
 
 export function AutomationSettings() {
+  useOrgSettings()
   const [tab, setTab] = useState('workflows')
   return (
     <div className="space-y-4">
@@ -286,7 +288,7 @@ function CronList() {
         columns={[
           { key: 'name', label: 'Name' },
           { key: 'frequency', label: 'Frequency', render: (v) => <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize">{v}</span> },
-          { key: 'nextRun', label: 'Next Run', render: (v) => v ? new Date(v).toLocaleString() : '—' },
+          { key: 'nextRun', label: 'Next Run', render: (v) => v ? formatDateTime(v) : '—' },
           { key: 'isActive', label: 'Active', render: (_, t) => (
             <button onClick={() => toggleMutation.mutate({ id: t.id, isActive: !t.isActive })} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${t.isActive ? 'bg-emerald-500' : 'bg-muted'}`}>
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${t.isActive ? 'translate-x-6' : 'translate-x-1'}`} />

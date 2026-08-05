@@ -11,8 +11,9 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { cn } from '@/lib/utils'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { getFieldTabs, getFieldLabel, formatFieldValue } from '@/lib/field-utils'
+import { useOrgSettings } from '@/lib/org-format'
 import { ProjectSearchSelect } from '@/components/project-search-select'
-import { ArrowLeft, Save, Loader2, Trash2, Pencil } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Trash2, Pencil, ChevronRight, Asterisk } from 'lucide-react'
 
 const labelMap: Record<string, string> = {
   accounts: 'Account', contacts: 'Contact', leads: 'Lead',
@@ -39,7 +40,7 @@ const TAB_ACTIVE_COLORS = [
 
 const SELECT_OPTIONS: Record<string, Record<string, string[]>> = {
   accounts: { industry: ['--None--','Apparel','Banking','Biotechnology','Chemicals','Communications','Construction','Consulting','Education','Electronics','Energy','Engineering','Entertainment','Environmental','Finance','Food & Beverage','Government','Healthcare','Hospitality','Insurance','Machinery','Manufacturing','Media','Not for Profit','Other','Recreation','Retail','Shipping','Technology','Telecommunications','Transportation','Utilities'], accountType: ['--None--','Prospect','Customer','Vendor','Reseller','Partner','Investor','Other'] },
-  leads: { leadStatus: ['--None--','New','Contacted','Working','Qualified','Unqualified','Converted','Junk','Lost'], leadSource: ['--None--','Cold Call','Existing Customer','Self Generated','Employee','Partner','Public Relations','Direct Mail','Conference','Trade Show','Website','Word of Mouth','Email','Campaign','Other'], industry: ['--None--','Apparel','Banking','Biotechnology','Chemicals','Communications','Construction','Consulting','Education','Electronics','Energy','Engineering','Entertainment','Environmental','Finance','Food & Beverage','Government','Healthcare','Hospitality','Insurance','Machinery','Manufacturing','Media','Not for Profit','Other','Recreation','Retail','Shipping','Technology','Telecommunications','Transportation','Utilities'] },
+  leads: { leadStatus: ['--None--','New','Contacted','Working','Qualified','Unqualified','Converted','Junk','Lost'], leadSource: ['--None--','Cold Call','Existing Customer','Self Generated','Employee','Partner','Public Relations','Direct Mail','Conference','Trade Show','Website','Word of Mouth','Email','Campaign','Other'], salutation: ['--None--','Mr.','Ms.','Mrs.','Dr.','Prof.'], industry: ['--None--','Apparel','Banking','Biotechnology','Chemicals','Communications','Construction','Consulting','Education','Electronics','Energy','Engineering','Entertainment','Environmental','Finance','Food & Beverage','Government','Healthcare','Hospitality','Insurance','Machinery','Manufacturing','Media','Not for Profit','Other','Recreation','Retail','Shipping','Technology','Telecommunications','Transportation','Utilities'] },
   potentials: { stage: ['--None--','Prospecting','Qualification','Needs Analysis','Value Proposition','Id. Decision Makers','Perception Analysis','Proposal/Price Quote','Negotiation/Review','Closed Won','Closed Lost'], leadSource: ['--None--','Cold Call','Existing Customer','Self Generated','Employee','Partner','Public Relations','Direct Mail','Conference','Trade Show','Website','Word of Mouth','Email','Campaign','Other'], type: ['--None--','Existing Business','New Business'], forecastCategory: ['--None--','Pipeline','Best Case','Commit','Closed','Omitted'] },
   campaigns: { campaignType: ['--None--','Marketing','Webinar','Email','Newsletter','Product Launch','Partners','Referral Program','Social Media','Television','Print','Other'], status: ['--None--','Planning','Active','Inactive','Completed','Cancelled'] },
   tickets: { status: ['--None--','Open','In Progress','Wait for Response','Closed'], priority: ['--None--','Low','Medium','High','Urgent'], severity: ['--None--','Minor','Major','Critical','Feature'], category: ['--None--','General','Technical','Billing','Sales','Administrative'] },
@@ -128,9 +129,11 @@ const fieldConfigs: Record<string, { name: string; type: string; required?: bool
     { name: 'otherPoBox', type: 'text' },
   ],
   leads: [
+    { name: 'salutation', type: 'select' },
     { name: 'firstName', type: 'text', required: true },
     { name: 'lastName', type: 'text', required: true },
     { name: 'company', type: 'text', required: true },
+    { name: 'assignedTo', type: 'user-select', required: true },
     { name: 'title', type: 'text' },
     { name: 'email', type: 'email' },
     { name: 'secondaryEmail', type: 'email' },
@@ -214,10 +217,12 @@ const fieldConfigs: Record<string, { name: string; type: string; required?: bool
   ],
   projects: [
     { name: 'projectName', type: 'text', required: true },
+    { name: 'projectNo', type: 'text' },
     { name: 'projectType', type: 'select' },
     { name: 'status', type: 'select' },
     { name: 'priority', type: 'select' },
     { name: 'progress', type: 'number' },
+    { name: 'assignedTo', type: 'user-select' },
     { name: 'startDate', type: 'date' },
     { name: 'endDate', type: 'date' },
     { name: 'actualEndDate', type: 'date' },
@@ -457,20 +462,22 @@ const fieldConfigs: Record<string, { name: string; type: string; required?: bool
   ],
   projecttasks: [
     { name: 'projectId', type: 'project-select', required: true },
+    { name: 'projectTaskNo', type: 'text' },
     { name: 'title', type: 'text', required: true },
     { name: 'status', type: 'select' },
     { name: 'priority', type: 'select' },
     { name: 'projectTaskType', type: 'select' },
     { name: 'progress', type: 'number' },
     { name: 'hours', type: 'number' },
+    { name: 'assignedTo', type: 'user-select' },
     { name: 'startDate', type: 'date' },
     { name: 'endDate', type: 'date' },
     { name: 'description', type: 'textarea' },
   ],
   projectmilestones: [
     { name: 'projectId', type: 'project-select', required: true },
-    { name: 'title', type: 'text', required: true },
     { name: 'milestoneNo', type: 'text' },
+    { name: 'title', type: 'text', required: true },
     { name: 'status', type: 'select' },
     { name: 'progress', type: 'number' },
     { name: 'milestoneDate', type: 'date' },
@@ -478,6 +485,7 @@ const fieldConfigs: Record<string, { name: string; type: string; required?: bool
     { name: 'plannedHours', type: 'number' },
     { name: 'actualHours', type: 'number' },
     { name: 'sequence', type: 'number' },
+    { name: 'assignedTo', type: 'user-select' },
     { name: 'startDate', type: 'date' },
     { name: 'endDate', type: 'date' },
     { name: 'description', type: 'textarea' },
@@ -523,20 +531,22 @@ const fieldConfigs: Record<string, { name: string; type: string; required?: bool
 
 function formatDisplayValue(value: any, type: string, name?: string) {
   if (value == null || value === '') return '-'
+  if (type === 'user-select' && name === 'assignedTo') return value
   if (type === 'number') return formatFieldValue(value, name || '')
   if (type === 'date') return formatFieldValue(value, name || '')
   return value
 }
 
 export function ModuleDetailPage() {
+  useOrgSettings()
   const { module, id } = useParams<{ module: string; id: string }>()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { addToast } = useToast()
   const isNew = !id || id === 'new'
-  const isEditMode = isNew || searchParams.get('edit') === 'true'
-  const mod = module || ''
+  const isEditMode = isNew || searchParams.get('edit') === 'true' || window.location.pathname.endsWith('/edit')
+  const mod = module || (window.location.pathname.split('/').filter(Boolean)[0] || '')
 
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -554,6 +564,13 @@ export function ModuleDetailPage() {
     enabled: mod === 'projectmilestones' || mod === 'projecttasks',
   })
   const projects = projectsData?.data || []
+
+  const { data: usersData } = useQuery({
+    queryKey: ['module-users', mod],
+    queryFn: () => api.request<any>(`/${mod}/users`),
+    enabled: mod === 'leads',
+  })
+  const users = usersData?.data || []
 
   const { data: customFieldsData } = useQuery({
     queryKey: ['custom-fields', mod],
@@ -624,7 +641,7 @@ export function ModuleDetailPage() {
       localStorage.removeItem(DRAFT_KEY)
       queryClient.invalidateQueries({ queryKey: [mod] })
       addToast({ title: isNew ? 'Created' : 'Updated', description: `${label} has been saved`, variant: 'success' })
-      navigate(`/${mod}`)
+      navigate(isNew ? `/${mod}` : `/${mod}/${id}`)
     },
     onError: (err: Error) => {
       addToast({ title: 'Error', description: err.message, variant: 'destructive' })
@@ -637,8 +654,7 @@ export function ModuleDetailPage() {
       queryClient.invalidateQueries({ queryKey: [mod] })
       addToast({ title: 'Deleted', description: `${label} has been deleted`, variant: 'success' })
       navigate(`/${mod}`)
-    },
-    onError: (err: Error) => {
+    },    onError: (err: Error) => {
       addToast({ title: 'Error', description: err.message, variant: 'destructive' })
     },
   })
@@ -698,21 +714,28 @@ export function ModuleDetailPage() {
 
   if (!isNew && !isEditMode) {
     return (
-      <div className="space-y-4 w-full md:max-w-3xl">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-4 min-w-0">
-            <Button variant="ghost" size="icon" onClick={() => navigate(`/${mod}`)}>
-              <ArrowLeft size={20} />
-            </Button>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight truncate">{record?.[fields[0]?.name] || label}</h1>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate(`/${mod}/${id}?edit=true`)}>
-              <Pencil size={16} className="mr-2" /> <span className="hidden sm:inline">Edit</span>
-            </Button>
-            <Button variant="destructive" onClick={() => setShowDelete(true)}>
-              <Trash2 size={16} className="mr-2" /> <span className="hidden sm:inline">Delete</span>
-            </Button>
+      <div className="space-y-5 w-full">
+        <div className="rounded-xl border bg-card p-4 sm:p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <Button variant="outline" size="icon" onClick={() => navigate(`/${mod}`)}>
+                <ArrowLeft size={18} />
+              </Button>
+              <div className="min-w-0">
+                <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {label} <ChevronRight size={12} /> Details
+                </p>
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight truncate">{record?.[fields[0]?.name] || label}</h1>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => navigate(`/${mod}/${id}?edit=true`)}>
+                <Pencil size={16} className="mr-2" /> <span className="hidden sm:inline">Edit</span>
+              </Button>
+              <Button variant="destructive" onClick={() => setShowDelete(true)}>
+                <Trash2 size={16} className="mr-2" /> <span className="hidden sm:inline">Delete</span>
+              </Button>
+            </div>
           </div>
         </div>
         <Card>
@@ -729,18 +752,20 @@ export function ModuleDetailPage() {
               </div>
               {tabs.map(tab => (
                 <TabsContent key={tab.label} value={tab.label} className="px-6 pb-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-6">
                     {tab.fieldConfigs.map((field) => {
                       const isLong = field.type === 'textarea'
                       return (
-                        <div key={field.name} className={isLong ? 'md:col-span-2' : ''}>
+                        <div key={field.name} className={isLong ? 'md:col-span-2 xl:col-span-3' : ''}>
                           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             {(field as any).label || getFieldLabel(field.name)}
                           </label>
-                          <p className="text-sm mt-1">
+                          <p className="text-sm mt-1.5 font-medium text-foreground">
                             {field.name === 'projectId'
                               ? (projects.find(p => p.id === record?.projectId)?.projectName || '-')
-                              : formatDisplayValue(field.name.startsWith('cf_') ? record?.customFields?.[field.name] : record?.[field.name], field.type, field.name)}
+                              : field.name === 'assignedTo' && users.length
+                                ? ((() => { const u: any = users.find((x: any) => x.id === record?.assignedTo); return u ? `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || u.userName || '-' : record?.ownerName || '-' })())
+                                : formatDisplayValue(field.name.startsWith('cf_') ? record?.customFields?.[field.name] : record?.[field.name], field.type, field.name)}
                           </p>
                         </div>
                       )
@@ -765,14 +790,27 @@ export function ModuleDetailPage() {
   }
 
   return (
-    <div className="space-y-4 w-full md:max-w-3xl">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/${mod}`)}>
-          <ArrowLeft size={20} />
-        </Button>
-        <h1 className="text-xl md:text-2xl font-bold tracking-tight">
-          {isNew ? `New ${label}` : `Edit ${label}`}
-        </h1>
+    <div className="space-y-5 w-full">
+      <div className="rounded-xl border bg-card p-4 sm:p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button variant="outline" size="icon" onClick={() => navigate(isNew ? `/${mod}` : `/${mod}/${id}`)}>
+              <ArrowLeft size={18} />
+            </Button>
+            <div className="min-w-0">
+              <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label} <ChevronRight size={12} /> {isNew ? 'New Record' : 'Edit Record'}
+              </p>
+              <h1 className="text-xl md:text-2xl font-bold tracking-tight truncate">
+                {isNew ? `Create New ${label}` : `Edit ${label}`}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">Fill in the details below and save to {isNew ? 'create this' : 'update the'} record.</p>
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+            <Asterisk size={13} className="text-destructive" /> Required fields
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -786,13 +824,14 @@ export function ModuleDetailPage() {
               handleChange={handleChange}
               SELECT_OPTIONS={dynamicOptions}
               projects={projects}
+              users={users}
               customFields={customFields}
             />
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-2 mt-4">
-          <Button type="button" variant="outline" onClick={() => { localStorage.removeItem(DRAFT_KEY); navigate(`/${mod}`) }}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => { localStorage.removeItem(DRAFT_KEY); navigate(isNew ? `/${mod}` : `/${mod}/${id}`) }}>Cancel</Button>
           {!isNew && (
             <Button type="button" variant="destructive" onClick={() => setShowDelete(true)}>
               <Trash2 size={16} className="mr-2" /> Delete
@@ -822,8 +861,8 @@ export function ModuleDetailPage() {
   )
 }
 
-function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIONS: options, projects, customFields = [] }: {
-  module: string; fields: any[]; formData: any; errors: any; handleChange: any; SELECT_OPTIONS: any; projects: any[]; customFields?: any[]
+function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIONS: options, projects, users = [], customFields = [] }: {
+  module: string; fields: any[]; formData: any; errors: any; handleChange: any; SELECT_OPTIONS: any; projects: any[]; users?: any[]; customFields?: any[]
 }) {
   const tabs = [
     ...getFieldTabs(module, fields),
@@ -844,13 +883,13 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
       </div>
       {tabs.map(tab => (
         <TabsContent key={tab.label} value={tab.label} className="px-6 pb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-5">
             {tab.fieldConfigs.map((field: any) => {
               const isLong = field.type === 'textarea'
               const selOptions = options[module]?.[field.name]
               return (
-                <div key={field.name} className={isLong ? 'md:col-span-2' : ''}>
-                  <label className="text-sm font-medium block mb-1.5">
+                <div key={field.name} className={isLong ? 'md:col-span-2 xl:col-span-3' : ''}>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1.5">
                     {field.label || getFieldLabel(field.name)}
                     {field.required && <span className="text-destructive ml-1">*</span>}
                   </label>
@@ -886,6 +925,22 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                         {(['--None--', ...(field.options || [])]).map((o: string) => (
                           <SelectItem key={o} value={o === '--None--' ? '_none_' : o}>{o}</SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  ) : field.type === 'user-select' ? (
+                    <Select
+                      value={formData[field.name] || '_none_'}
+                      onValueChange={v => handleChange(field.name, v === '_none_' ? '' : v)}
+                    >
+                      <SelectTrigger className={cn(errors[field.name] ? 'border-destructive' : '', 'h-9')}>
+                        <SelectValue placeholder="--None--" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none_">--None--</SelectItem>
+                        {users.map((u: any) => {
+                          const uname = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.userName || u.email
+                          return <SelectItem key={u.id} value={u.id}>{uname}</SelectItem>
+                        })}
                       </SelectContent>
                     </Select>
                   ) : field.type === 'checkbox' ? (

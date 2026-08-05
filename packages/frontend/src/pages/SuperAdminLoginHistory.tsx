@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { DataTable } from '@/components/ui/data-table'
 import { Search, Monitor, Globe, Smartphone, ExternalLink, Clock } from 'lucide-react'
+import { formatDateTime, useOrgSettings } from '@/lib/org-format'
 
 export function SuperAdminLoginHistory() {
+  useOrgSettings()
   const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -66,7 +68,7 @@ export function SuperAdminLoginHistory() {
     { key: 'createdAt', label: 'Time', render: (v: any) => (
       <div className="flex items-center gap-1.5">
         <Clock size={13} className="text-slate-400 shrink-0" />
-        <span className="text-xs text-slate-500 dark:text-slate-400">{v ? new Date(v).toLocaleString() : '-'}</span>
+        <span className="text-xs text-slate-500 dark:text-slate-400">{v ? formatDateTime(v) : '-'}</span>
       </div>
     )},
   ]
