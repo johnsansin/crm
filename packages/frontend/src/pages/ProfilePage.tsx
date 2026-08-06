@@ -44,9 +44,6 @@ const sectionMeta = {
     { label: 'Default Module', field: 'defaultModule', type: 'text' },
     { label: 'Currency', field: 'currencyCode', type: 'select', options: CURRENCIES },
   ]},
-  security: { label: 'Security', icon: Shield, fields: [
-    { label: 'New Password', field: 'password', type: 'password' },
-  ]},
 }
 
 export function ProfilePage() {
@@ -100,8 +97,11 @@ export function ProfilePage() {
     }
   }
 
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleChangePassword = async () => {
+    if (!pwd.current || !pwd.next) {
+      addToast({ title: 'Error', description: 'Enter your current and new password', variant: 'destructive' })
+      return
+    }
     setPwdBusy(true)
     try {
       await api.changePassword(pwd.current, pwd.next)
@@ -220,6 +220,9 @@ export function ProfilePage() {
                       <sec.icon size={15} /> {sec.label}
                     </TabsTrigger>
                   ))}
+                  <TabsTrigger value="security" className="gap-2">
+                    <Shield size={15} /> Security
+                  </TabsTrigger>
                 </TabsList>
               </div>
               {Object.entries(sectionMeta).map(([key, sec]) => (
@@ -237,9 +240,11 @@ export function ProfilePage() {
                               <SelectValue placeholder={`Select ${f.label.toLowerCase()}`} />
                             </SelectTrigger>
                             <SelectContent>
-                              {(f.options as string[]).map((o: string) => (
-                                <SelectItem key={o} value={o}>{o}</SelectItem>
-                              ))}
+                              {(f.options as any[]).map((o: any) => {
+                                const val = typeof o === 'string' ? o : o.value
+                                const label = typeof o === 'string' ? o : o.label
+                                return <SelectItem key={val} value={val}>{label}</SelectItem>
+                              })}
                             </SelectContent>
                           </Select>
                         ) : (
@@ -254,6 +259,76 @@ export function ProfilePage() {
                   </div>
                 </TabsContent>
               ))}
+              <TabsContent value="security" className="px-6 pb-6">
+                <div className="space-y-5">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <KeyRound size={16} className="text-primary" />
+                      <h3 className="text-sm font-semibold">Change Password</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium block mb-1.5">Current Password</label>
+                        <Input type="password" value={pwd.current} onChange={e => setPwd(p => ({ ...p, current: e.target.value }))} className="rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium block mb-1.5">New Password</label>
+                        <Input type="password" value={pwd.next} onChange={e => setPwd(p => ({ ...p, next: e.target.value }))} className="rounded-lg" />
+                      </div>
+                      <div className="md:col-span-2 flex justify-end">
+                        <Button type="button" onClick={handleChangePassword} disabled={pwdBusy}>
+                          {pwdBusy ? <Loader2 size={16} className="mr-2 animate-spin" /> : <KeyRound size={16} className="mr-2" />}
+                          Update Password
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Smartphone size={18} className="text-primary" />
+                        <h3 className="text-sm font-semibold">Two-Factor Authentication</h3>
+                      </div>
+                      <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${twoFa.enabled ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                        {twoFa.enabled ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </div>
+
+                    {twoFa.setupOpen && (
+                      <div className="space-y-3 p-4 rounded-lg border bg-muted/40">
+                        <p className="text-sm">Scan this URI with your authenticator app (or enter the secret manually):</p>
+                        <code className="block text-xs break-all bg-background border rounded p-2">{twoFa.otpauthUri}</code>
+                        <p className="text-xs text-muted-foreground">Secret: <code className="font-mono">{twoFa.secret}</code></p>
+                        <div className="flex flex-wrap items-end gap-2">
+                          <div className="flex-1 min-w-[200px]">
+                            <label className="text-sm font-medium block mb-1.5">Verification Code</label>
+                            <Input value={twoFa.code} onChange={e => setTwoFa(t => ({ ...t, code: e.target.value }))} placeholder="6-digit code" className="rounded-lg" />
+                          </div>
+                          <Button type="button" onClick={confirmEnable2fa}>Enable 2FA</Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {twoFa.enabled ? (
+                      <div className="flex flex-wrap items-end gap-2">
+                        <div className="flex-1 min-w-[200px]">
+                          <label className="text-sm font-medium block mb-1.5">Password to disable</label>
+                          <Input type="password" value={twoFa.disableCode} onChange={e => setTwoFa(t => ({ ...t, disableCode: e.target.value }))} placeholder="Enter your password" className="rounded-lg" />
+                        </div>
+                        <Button type="button" variant="destructive" onClick={confirmDisable2fa}>
+                          <Unlink size={16} className="mr-2" /> Disable 2FA
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button type="button" variant="outline" onClick={open2faSetup} disabled={twoFa.loading}>
+                        {twoFa.loading ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Smartphone size={16} className="mr-2" />}
+                        Set up 2FA
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
             </TabsRoot>
           </CardContent>
         </Card>
@@ -266,79 +341,6 @@ export function ProfilePage() {
           </Button>
         </div>
       </form>
-
-      <div className="space-y-4">
-        <Card>
-          <CardContent className="p-5 space-y-4">
-            <div className="flex items-center gap-2">
-              <KeyRound size={18} className="text-primary" />
-              <h3 className="text-base font-semibold">Change Password</h3>
-            </div>
-            <form onSubmit={handleChangePassword} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium block mb-1.5">Current Password</label>
-                <Input type="password" value={pwd.current} onChange={e => setPwd(p => ({ ...p, current: e.target.value }))} className="rounded-lg" required />
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-1.5">New Password</label>
-                <Input type="password" value={pwd.next} onChange={e => setPwd(p => ({ ...p, next: e.target.value }))} className="rounded-lg" required />
-              </div>
-              <div className="md:col-span-2 flex justify-end">
-                <Button type="submit" disabled={pwdBusy}>
-                  {pwdBusy ? <Loader2 size={16} className="mr-2 animate-spin" /> : <KeyRound size={16} className="mr-2" />}
-                  Update Password
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-5 space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <Smartphone size={18} className="text-primary" />
-                <h3 className="text-base font-semibold">Two-Factor Authentication</h3>
-              </div>
-              <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${twoFa.enabled ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
-                {twoFa.enabled ? 'Enabled' : 'Disabled'}
-              </span>
-            </div>
-
-            {twoFa.setupOpen && (
-              <div className="space-y-3 p-4 rounded-lg border bg-muted/40">
-                <p className="text-sm">Scan this URI with your authenticator app (or enter the secret manually):</p>
-                <code className="block text-xs break-all bg-background border rounded p-2">{twoFa.otpauthUri}</code>
-                <p className="text-xs text-muted-foreground">Secret: <code className="font-mono">{twoFa.secret}</code></p>
-                <div className="flex flex-wrap items-end gap-2">
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="text-sm font-medium block mb-1.5">Verification Code</label>
-                    <Input value={twoFa.code} onChange={e => setTwoFa(t => ({ ...t, code: e.target.value }))} placeholder="6-digit code" className="rounded-lg" />
-                  </div>
-                  <Button onClick={confirmEnable2fa}>Enable 2FA</Button>
-                </div>
-              </div>
-            )}
-
-            {twoFa.enabled ? (
-              <div className="flex flex-wrap items-end gap-2">
-                <div className="flex-1 min-w-[200px]">
-                  <label className="text-sm font-medium block mb-1.5">Password to disable</label>
-                  <Input type="password" value={twoFa.disableCode} onChange={e => setTwoFa(t => ({ ...t, disableCode: e.target.value }))} placeholder="Enter your password" className="rounded-lg" />
-                </div>
-                <Button variant="destructive" onClick={confirmDisable2fa}>
-                  <Unlink size={16} className="mr-2" /> Disable 2FA
-                </Button>
-              </div>
-            ) : (
-              <Button variant="outline" onClick={open2faSetup} disabled={twoFa.loading}>
-                {twoFa.loading ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Smartphone size={16} className="mr-2" />}
-                Set up 2FA
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 }

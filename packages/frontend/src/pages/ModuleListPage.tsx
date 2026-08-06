@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { RowActions } from '@/components/ui/row-actions'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { getFieldLabel } from '@/lib/field-utils'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
-import { Plus, Search, RefreshCw, LayoutGrid, List } from 'lucide-react'
+import { Plus, Search, RefreshCw, LayoutGrid, List, Download, Upload, Columns3, Loader2 } from 'lucide-react'
 
 const kanbanModules = ['potentials', 'tickets', 'projects']
 
@@ -25,7 +26,9 @@ const labelMap: Record<string, string> = {
   emailtemplates: 'Email Templates', projects: 'Projects',
   projecttasks: 'Project Tasks', projectmilestones: 'Project Milestones',
   assets: 'Assets', servicecontracts: 'Service Contracts',
-  smsnotifier: 'SMS Notifier'
+  smsnotifier: 'SMS Notifier', payments: 'Payments',
+  recurringinvoices: 'Recurring Invoices', calllogs: 'Phone Calls',
+  reports: 'Reports', mailboxes: 'Mailboxes', rssfeeds: 'RSS Feeds',
 }
 
 const displayFields: Record<string, string[]> = {
@@ -53,6 +56,12 @@ const displayFields: Record<string, string[]> = {
   assets: ['assetName', 'serialNo', 'status'],
   servicecontracts: ['contractName', 'contractType', 'status'],
   smsnotifier: ['toNumber', 'message', 'status'],
+  payments: ['amount', 'paymentDate', 'method', 'reference'],
+  recurringinvoices: ['frequency', 'interval', 'nextRun', 'isActive'],
+  calllogs: ['fromNumber', 'toNumber', 'direction', 'callTime', 'status'],
+  reports: ['name', 'moduleName', 'reportType'],
+  mailboxes: ['name', 'host', 'user', 'lastSyncAt'],
+  rssfeeds: ['name', 'category', 'lastFetchedAt'],
 }
 
 export function ModuleListPage() {
@@ -66,6 +75,10 @@ export function ModuleListPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
+  const [hiddenCols, setHiddenCols] = useState<string[]>([])
+  const [importing, setImporting] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const mod = module || ''
   const hasKanban = kanbanModules.includes(mod)
@@ -98,12 +111,14 @@ export function ModuleListPage() {
   const label = labelMap[mod] || mod
 
   const monetaryColumns = ['amount', 'grandTotal', 'subTotal', 'unitPrice', 'costPrice', 'annualRevenue', 'expectedRevenue', 'budget', 'actualCost', 'shipping', 'shippingHandling', 'discount', 'adjustment', 'salesCommission', 'exciseDuty', 'targetBudget', 'actualBudget']
-  const columns = fields.filter(f => f).map(f => ({
-    key: f,
-    label: getFieldLabel(f),
-    sortable: true,
-    className: monetaryColumns.includes(f) ? 'text-right' : '',
-  }))
+  const columns = fields
+    .filter(f => f && !hiddenCols.includes(f))
+    .map(f => ({
+      key: f,
+      label: getFieldLabel(f),
+      sortable: true,
+      className: monetaryColumns.includes(f) ? 'text-right' : '',
+    }))
 
   const handleSort = (key: string, order: 'asc' | 'desc') => {
     setSortKey(key)
@@ -126,6 +141,78 @@ export function ModuleListPage() {
               {viewMode === 'list' ? 'Kanban' : 'List'}
             </Button>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Columns3 size={14} className="mr-1.5" /> Columns
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto w-52">
+              {fields.filter(Boolean).map(f => (
+                <label key={f} className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted">
+                  <input
+                    type="checkbox"
+                    className="h-3.5 w-3.5 rounded border-input"
+                    checked={!hiddenCols.includes(f)}
+                    onChange={() => setHiddenCols(h =>
+                      h.includes(f) ? h.filter(x => x !== f) : [...h, f]
+                    )}
+                  />
+                  <span className="truncate">{getFieldLabel(f)}</span>
+                </label>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={exporting}>
+                {exporting ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={async () => {
+                setExporting(true)
+                const r = await api.exportModule(mod, 'csv').catch(() => ({ ok: false, error: 'Export failed' }))
+                setExporting(false)
+                if (!r.ok) addToast({ title: 'Export failed', description: r.error, variant: 'destructive' })
+              }}>
+                <Download size={14} className="mr-2" /> CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={async () => {
+                setExporting(true)
+                const r = await api.exportModule(mod, 'json').catch(() => ({ ok: false, error: 'Export failed' }))
+                setExporting(false)
+                if (!r.ok) addToast({ title: 'Export failed', description: r.error, variant: 'destructive' })
+              }}>
+                <Download size={14} className="mr-2" /> JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" size="sm" disabled={importing} onClick={() => fileInputRef.current?.click()}>
+            {importing ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Upload size={14} className="mr-1.5" />}
+            Import
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={async e => {
+              const file = e.target.files?.[0]
+              e.target.value = ''
+              if (!file) return
+              setImporting(true)
+              const res = await api.importModule(mod, file).catch(() => null)
+              setImporting(false)
+              if (res?.success) {
+                addToast({ title: 'Import complete', description: `${res.created} created, ${res.failed} failed`, variant: res.failed > 0 ? 'default' : 'success' })
+                queryClient.invalidateQueries({ queryKey: [mod] })
+              } else {
+                addToast({ title: 'Import failed', description: 'Check the CSV and try again', variant: 'destructive' })
+              }
+            }}
+          />
           <Button onClick={() => navigate(`/${mod}/new`)} className="whitespace-nowrap">
             <Plus size={16} className="mr-1 md:mr-2" /> <span className="hidden sm:inline">New {label.slice(0, -1)}</span><span className="sm:hidden">New</span>
           </Button>

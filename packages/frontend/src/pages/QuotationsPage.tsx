@@ -11,6 +11,7 @@ import { ArrowLeft, Save, Loader2, Trash2, Plus, FileText, Mail, FileDown, Print
 import { FormField } from '@/components/form-field'
 import { ProductSearchSelect } from '@/components/product-search-select'
 import { ServiceSearchSelect } from '@/components/service-search-select'
+import { UserRoleSelect } from '@/components/user-role-select'
 import { cn } from '@/lib/utils'
 import { formatDate, formatDateTime, useOrgSettings } from '@/lib/org-format'
 
@@ -74,6 +75,7 @@ export function QuotationsPage() {
   const [products, setProducts] = useState<any[]>([])
   const [services, setServices] = useState<any[]>([])
   const [team, setTeam] = useState<any[]>([])
+  const [roles, setRoles] = useState<any[]>([])
 
   const [related, setRelated] = useState<any>({ stageHistory: [], salesOrders: [], invoices: [], comments: [] })
   const [comment, setComment] = useState('')
@@ -86,7 +88,7 @@ export function QuotationsPage() {
       api.list('potentials').then(r => setPotentials(r.data || [])).catch(() => {}),
       api.list('products').then(r => setProducts(r.data || [])).catch(() => {}),
       api.list('services').then(r => setServices(r.data || [])).catch(() => {}),
-      api.request<any>('/quotations/users').then(r => setTeam(r.data || [])).catch(() => {}),
+      api.request<any>('/quotations/users').then(r => { setTeam(r.data || []); setRoles(r.roles || []) }).catch(() => {}),
     ])
   }, [])
 
@@ -424,15 +426,12 @@ export function QuotationsPage() {
               <FormField {...fieldProps} field="potentialId" type="lookup" />
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Assigned To</label>
-                <Select value={form.assignedTo || ''} onValueChange={(v) => updateForm('assignedTo', v)}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select User" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
-                    {team.map((u: any) => (
-                      <SelectItem key={u.id} value={u.id}>{[u.firstName, u.lastName].filter(Boolean).join(' ') || u.email}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <UserRoleSelect
+                  value={form.assignedTo || ''}
+                  users={team}
+                  roles={roles}
+                  onSelect={(v) => updateForm('assignedTo', v)}
+                />
               </div>
             </div>
           </TabsContent>

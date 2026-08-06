@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { resolveAuditReferences } from '../lib/audit'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
@@ -355,7 +356,11 @@ recordRouter.get('/:module/:id/updates', async (req, res, next) => {
       orderBy: { createdAt: 'desc' },
       take: limit,
     })
-    res.json({ data: await resolveNames(rows) })
+    const resolved = await Promise.all(rows.map(async (r: any) => {
+      const refs = await resolveAuditReferences(r)
+      return { ...r, oldValue: refs.oldValue, newValue: refs.newValue }
+    }))
+    res.json({ data: await resolveNames(resolved) })
   } catch (err) { next(err) }
 })
 

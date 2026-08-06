@@ -8,6 +8,7 @@ import { useTheme } from '@/lib/theme'
 import { LogOut, User, Search, Sun, Moon, Loader2, Menu, Bell, Building2, Megaphone, CheckCheck, X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { setOrgSettings, orgLocale, formatDateTime, useOrgSettings } from '@/lib/org-format'
+import { t } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -136,7 +137,7 @@ export function AppLayout() {
               <span className="font-semibold">{a.title}</span>
               {a.message && <span className="opacity-90 ml-2">{a.message}</span>}
             </div>
-            <button onClick={() => setDismissedAnnouncements(prev => [...prev, a.id])} className="p-1 rounded hover:bg-primary-foreground/20" title="Dismiss">
+            <button onClick={() => setDismissedAnnouncements(prev => [...prev, a.id])} className="p-1 rounded hover:bg-primary-foreground/20" title={t('Dismiss')}>
               <X size={15} />
             </button>
           </div>
@@ -161,7 +162,7 @@ export function AppLayout() {
           <div className="relative flex-1 max-w-md" ref={searchRef}>
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Global search..."
+              placeholder={t('Global search...')}
               value={searchQuery}
               onChange={e => { setSearchQuery(e.target.value); setShowSearch(true) }}
               onFocus={() => setShowSearch(true)}
@@ -171,7 +172,7 @@ export function AppLayout() {
               <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
                 {searching ? (
                   <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
-                    <Loader2 size={14} className="animate-spin mr-2" /> Searching...
+                    <Loader2 size={14} className="animate-spin mr-2" /> {t('Searching...')}
                   </div>
                 ) : (
                   searchResults.map((group: any) => (
@@ -198,7 +199,7 @@ export function AppLayout() {
           <div className="flex items-center gap-1 md:gap-2 shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" title="Notifications" className="relative">
+                <Button variant="ghost" size="icon" title={t('Notifications')} className="relative">
                   <Bell size={16} />
                   {unreadCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
@@ -209,17 +210,17 @@ export function AppLayout() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80">
                 <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-sm font-semibold">Notifications</span>
+                  <span className="text-sm font-semibold">{t('Notifications')}</span>
                   {unreadCount > 0 && (
                     <button onClick={markAllRead} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                      <CheckCheck size={13} /> Mark all read
+                      <CheckCheck size={13} /> {t('Mark all read')}
                     </button>
                   )}
                 </div>
                 <DropdownMenuSeparator />
                 <div className="max-h-80 overflow-y-auto">
                   {notifications.length === 0 && (
-                    <p className="text-sm text-muted-foreground px-3 py-6 text-center">No notifications</p>
+                    <p className="text-sm text-muted-foreground px-3 py-6 text-center">{t('No notifications')}</p>
                   )}
                   {notifications.map((n: any) => (
                     <div
@@ -237,7 +238,7 @@ export function AppLayout() {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="ghost" size="icon" onClick={toggleTheme} title="Toggle theme">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} title={t('Toggle theme')}>
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </Button>
             <DropdownMenu>
@@ -254,12 +255,12 @@ export function AppLayout() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <User size={14} className="mr-2" />
-                  My Profile
+                  {t('My Profile')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive">
                   <LogOut size={14} className="mr-2" />
-                  Logout
+                  {t('Logout')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

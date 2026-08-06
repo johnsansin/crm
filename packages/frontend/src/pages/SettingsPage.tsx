@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap } from 'lucide-react'
 import { useTheme } from '@/lib/theme'
 import { useAuthStore } from '@/lib/auth'
 import { TIMEZONES, DATE_FORMATS, COUNTRIES, SOCIAL_FIELDS } from '@/lib/constants'
@@ -24,6 +24,7 @@ import { AutomationSettings } from '@/pages/settings/AutomationSettings'
 import { CommunicationSettings } from '@/pages/settings/CommunicationSettings'
 import { DataSettings } from '@/pages/settings/DataSettings'
 import { TermsSettings } from '@/pages/settings/TermsSettings'
+import { IntegrationSettings } from '@/pages/settings/IntegrationSettings'
 
 const TINTS: Record<string, string> = {
   users: 'from-sky-500 to-blue-600',
@@ -41,6 +42,7 @@ const TINTS: Record<string, string> = {
   automation: 'from-purple-500 to-violet-700',
   data: 'from-teal-500 to-emerald-700',
   announcements: 'from-pink-500 to-rose-600',
+  integrations: 'from-cyan-500 to-teal-600',
 }
 
 const CATEGORIES = [
@@ -64,6 +66,11 @@ const CATEGORIES = [
     blurb: 'Keep your team informed',
     keys: ['announcements'],
   },
+  {
+    label: 'Integrations',
+    blurb: 'REST API, portal, Google sync, layouts and dependencies',
+    keys: ['integrations'],
+  },
 ]
 
 const settingSections = [
@@ -82,6 +89,7 @@ const settingSections = [
   { key: 'audit', label: 'Audit Trail', icon: ScrollText, desc: 'Audit trail and per-org login history' },
   { key: 'data', label: 'Data Management', icon: Database, desc: 'Backup, export, and CSV import' },
   { key: 'announcements', label: 'Announcements', icon: Megaphone, desc: 'Announcements, notifications, and holidays' },
+  { key: 'integrations', label: 'Integrations', icon: PlugZap, desc: 'REST API keys, customer portal, Google sync, picklist dependencies, layout editor, payment reminders' },
 ]
 
 const sectionMap = Object.fromEntries(settingSections.map(s => [s.key, s]))
@@ -135,6 +143,7 @@ export function SettingsPage() {
         {activeSection === 'announcements' && <CommunicationSettings />}
         {activeSection === 'data' && isSuperAdmin && <DataSettings />}
         {activeSection === 'terms' && <TermsSettings />}
+        {activeSection === 'integrations' && <IntegrationSettings />}
       </div>
     )
   }

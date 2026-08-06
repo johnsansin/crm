@@ -7,15 +7,18 @@ import {
   Package, Wrench, Truck, BookOpen, FileText, ShoppingCart, ClipboardList,
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, Menu, X,
-  ChevronDown, LogOut, Shield, CalendarDays
+  ChevronDown, LogOut, Shield, CalendarDays, CreditCard, Repeat, Phone,
+  BarChart3, Inbox, Rss, Trash2, LineChart, Zap
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { t } from '@/lib/i18n'
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard, Building2, Users, UserPlus, TrendingUp, Megaphone,
   Package, Wrench, Truck, BookOpen, FileText, ShoppingCart, ClipboardList,
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
-  CheckSquare, Flag, File, Mail, MessageSquare, Settings, CalendarDays
+  CheckSquare, Flag, File, Mail, MessageSquare, Settings, CalendarDays,
+  CreditCard, Repeat, Phone, BarChart3, Inbox, Rss, Trash2, LineChart, Zap
 }
 
 const GROUP_ORDER = ['Marketing', 'Sales', 'Inventory', 'Support', 'Projects', 'Tools']
@@ -160,8 +163,10 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
         </div>
 
         <div className="flex-1 overflow-y-auto py-2 px-2 space-y-1 scrollbar-thin">
-          <NavItem module="" label="Dashboard" icon="LayoutDashboard" collapsed={collapsed} />
-          <NavItem module="calendar" label="Calendar" icon="CalendarDays" collapsed={collapsed} />
+          <NavItem module="" label={t('Dashboard')} icon="LayoutDashboard" collapsed={collapsed} />
+          <NavItem module="calendar" label={t('Calendar')} icon="CalendarDays" collapsed={collapsed} />
+          <NavItem module="forecast" label={t('Forecasting')} icon="LineChart" collapsed={collapsed} />
+          <NavItem module="trash" label={t('Recycle Bin')} icon="Trash2" collapsed={collapsed} />
 
           {menuGroups.map((group) => {
             const isExpanded = collapsed ? false : expandedGroup === group.label
@@ -171,7 +176,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
                   onClick={() => setExpandedGroup(isExpanded ? '' : group.label)}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-hover transition-colors"
                 >
-                  <span className={cn(collapsed && 'md:hidden')}>{group.label}</span>
+                  <span className={cn(collapsed && 'md:hidden')}>{t(group.label)}</span>
                   <ChevronDown
                     size={14}
                     className={cn(
@@ -187,7 +192,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
                       <NavItem
                         key={item.module}
                         module={item.module}
-                        label={item.label}
+                        label={t(item.label)}
                         icon={item.icon}
                         collapsed={collapsed}
                       />
@@ -200,10 +205,10 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
 
           <div className="pt-2 mt-2 border-t border-sidebar-hover space-y-0.5">
             {user?.isAdmin && (
-              <NavItem module="settings" label="Settings" icon="Settings" collapsed={collapsed} />
+              <NavItem module="settings" label={t('Settings')} icon="Settings" collapsed={collapsed} />
             )}
             {user?.isSuperAdmin && (
-              <NavItem module="superadmin" label="Super Admin" icon="Shield" collapsed={collapsed} />
+              <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" collapsed={collapsed} />
             )}
           </div>
         </div>
@@ -234,7 +239,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
               className="w-full flex items-center gap-3 px-2 py-1.5 mt-1 rounded-md text-xs text-sidebar-foreground/50 hover:text-destructive hover:bg-sidebar-hover transition-colors"
             >
               <LogOut size={14} />
-              <span>Sign out</span>
+              <span>{t('Sign out')}</span>
             </button>
           </div>
         </div>

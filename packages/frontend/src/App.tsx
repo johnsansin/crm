@@ -21,6 +21,11 @@ import { SettingsPage } from '@/pages/SettingsPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { AdminPage } from '@/pages/AdminPage'
 import { CalendarPage } from '@/pages/CalendarPage'
+import { ForecastPage } from '@/pages/ForecastPage'
+import { ReportsPage } from '@/pages/ReportsPage'
+import { MailboxesPage } from '@/pages/MailboxesPage'
+import { RssPage } from '@/pages/RssPage'
+import { RecycleBinPage } from '@/pages/RecycleBinPage'
 import { LeadDetailPage } from '@/pages/LeadDetailPage'
 import { QuotationsPage } from '@/pages/QuotationsPage'
 import { SalesDocumentPage } from '@/pages/SalesDocumentPage'
@@ -42,6 +47,14 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const { token, user } = useAuthStore()
   if (!token) return <Navigate to="/login" replace />
   if (!user?.isAdmin && !user?.isSuperAdmin) return <Navigate to="/dashboard" replace />
+  return <>{children}</>
+}
+
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const { token, user, loading } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  if (loading) return <>{children}</>
+  if (!user?.isSuperAdmin) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 
@@ -78,7 +91,7 @@ export default function App() {
 
           {/* CRM routes inside sidebar layout */}
           {/* Super Admin routes */}
-          <Route element={<ProtectedRoute><SuperAdminLayout /></ProtectedRoute>}>
+          <Route element={<ProtectedRoute><SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute></ProtectedRoute>}>
             <Route path="/superadmin" element={<SuperAdminDashboard />} />
             <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
             <Route path="/superadmin/organizations" element={<SuperAdminOrgs />} />
@@ -92,8 +105,13 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
-            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin" element={<SuperAdminRoute><AdminPage /></SuperAdminRoute>} />
             <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/forecast" element={<ForecastPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/mailboxes" element={<MailboxesPage />} />
+            <Route path="/rssfeeds" element={<RssPage />} />
+            <Route path="/trash" element={<RecycleBinPage />} />
             <Route path="/leads/new" element={<ModuleDetailPage />} />
             <Route path="/leads/:id" element={<LeadDetailPage />} />
             <Route path="/leads/:id/edit" element={<ModuleDetailPage />} />

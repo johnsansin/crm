@@ -60,6 +60,10 @@ export function orgLocale(): string {
   return l.replace('_', '-')
 }
 
+export function orgLanguage(): string {
+  return settings.language || 'en_us'
+}
+
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 export const DAY_INDEX: Record<string, number> = {
   Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6,

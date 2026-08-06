@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { ArrowLeft, Save, Loader2, Trash2, Plus, FileDown, Mail, Search, Copy, Building2, Users, ShoppingCart, MessageSquare, FileText, Receipt } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Trash2, Plus, FileDown, Mail, Search, Copy, Building2, Users, ShoppingCart, MessageSquare, FileText, Receipt, CreditCard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDate, formatDateTime, useOrgSettings } from '@/lib/org-format'
 import { ProductSearchSelect } from '@/components/product-search-select'
 import { ServiceSearchSelect } from '@/components/service-search-select'
+import { UserRoleSelect } from '@/components/user-role-select'
 
 type DocModule = 'salesorders' | 'invoices'
 
@@ -164,12 +165,19 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
   const [products, setProducts] = useState<any[]>([])
   const [services, setServices] = useState<any[]>([])
   const [team, setTeam] = useState<any[]>([])
+  const [roles, setRoles] = useState<any[]>([])
   const [quotes, setQuotes] = useState<any[]>([])
   const [salesOrders, setSalesOrders] = useState<any[]>([])
 
   const [related, setRelated] = useState<any>({ invoices: [], comments: [] })
   const [comment, setComment] = useState('')
   const [addingComment, setAddingComment] = useState(false)
+
+  const [payments, setPayments] = useState<any[]>([])
+  const [paymentTotal, setPaymentTotal] = useState(0)
+  const [balanceInfo, setBalanceInfo] = useState<any>(null)
+  const [payForm, setPayForm] = useState({ amount: '', paymentDate: '', method: 'Cash', reference: '', notes: '' })
+  const [recordingPayment, setRecordingPayment] = useState(false)
 
   const [defaultTerms, setDefaultTerms] = useState('')
 
@@ -188,7 +196,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
       api.list('potentials').then(r => setPotentials(r.data || [])).catch(() => {}),
       api.list('products').then(r => setProducts(r.data || [])).catch(() => {}),
       api.list('services').then(r => setServices(r.data || [])).catch(() => {}),
-      api.request<any>(`/${module}/users`).then(r => setTeam(r.data || [])).catch(() => {}),
+      api.request<any>(`/${module}/users`).then(r => { setTeam(r.data || []); setRoles(r.roles || []) }).catch(() => {}),
       api.list('quotes', { limit: '200' }).then(r => setQuotes(r.data || [])).catch(() => {}),
       api.list('salesorders', { limit: '200' }).then(r => setSalesOrders(r.data || [])).catch(() => {}),
     ])
@@ -260,8 +268,37 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
       })))
       setRelated({ invoices: r.invoices || [], comments: r.comments || [] })
       setMode('view')
+      if (module === 'invoices') {
+        api.getInvoicePayments(recordId).then(res => { setPayments(res.data || []); setPaymentTotal(res.total || 0) }).catch(() => {})
+        api.getInvoiceBalance(recordId).then(res => setBalanceInfo(res)).catch(() => {})
+      }
     } catch { addToast({ title: 'Error', description: 'Failed to load record', variant: 'destructive' }) }
     setLoading(false)
+  }
+
+  async function handleRecordPayment() {
+    const amount = Number(payForm.amount)
+    if (!amount || amount <= 0) return
+    setRecordingPayment(true)
+    try {
+      const res = await api.addInvoicePayment(id!, {
+        amount,
+        paymentDate: payForm.paymentDate || undefined,
+        method: payForm.method || 'Other',
+        reference: payForm.reference || undefined,
+        notes: payForm.notes || undefined,
+      })
+      addToast({ title: 'Payment recorded', description: `Invoice status: ${res.invoiceStatus}`, variant: 'success' })
+      setPayForm({ amount: '', paymentDate: '', method: 'Cash', reference: '', notes: '' })
+      const [p, b] = await Promise.all([api.getInvoicePayments(id!), api.getInvoiceBalance(id!)])
+      setPayments(p.data || [])
+      setPaymentTotal(p.total || 0)
+      setBalanceInfo(b)
+      setForm((prev: any) => ({ ...prev, invoiceStatus: res.invoiceStatus, paidAmount: res.totalPaid }))
+    } catch (e: any) {
+      addToast({ title: 'Error', description: e.message || 'Failed to record payment', variant: 'destructive' })
+    }
+    setRecordingPayment(false)
   }
 
   useEffect(() => {
@@ -583,15 +620,12 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
               {cfg.detailFields.map(f => <Fragment key={f.name}>{renderField(f)}</Fragment>)}
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Assigned To</label>
-                <Select value={form.assignedTo || ''} onValueChange={(v) => updateForm('assignedTo', v)}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select User" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
-                    {team.map((u: any) => (
-                      <SelectItem key={u.id} value={u.id}>{[u.firstName, u.lastName].filter(Boolean).join(' ') || u.email}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <UserRoleSelect
+                  value={form.assignedTo || ''}
+                  users={team}
+                  roles={roles}
+                  onSelect={(v) => updateForm('assignedTo', v)}
+                />
               </div>
             </div>
 
@@ -914,7 +948,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
               {module === 'salesorders' && r.recurringFrequency && <p><span className="text-muted-foreground">Recurring:</span> {r.recurringFrequency}</p>}
               {r.customerNo && <p><span className="text-muted-foreground">Customer No:</span> {r.customerNo}</p>}
               {r.purchaseOrderNo && <p><span className="text-muted-foreground">PO No:</span> {r.purchaseOrderNo}</p>}
-              <p><span className="text-muted-foreground">Assigned To:</span> {team.find(u => u.id === r.assignedTo) ? [team.find((u: any) => u.id === r.assignedTo)?.firstName, team.find((u: any) => u.id === r.assignedTo)?.lastName].filter(Boolean).join(' ') : 'N/A'}</p>
+              <p><span className="text-muted-foreground">Assigned To:</span> {(() => { const u = team.find((x: any) => x.id === r.assignedTo); if (u) return [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || u.userName; const rl = roles.find((x: any) => x.id === r.assignedTo); if (rl) return rl.name; return r.assignedTo ? (r.ownerName || 'N/A') : 'N/A' })()}</p>
             </div>
             {r.notes && <div className="rounded-xl border bg-card p-4 text-sm"><h4 className="font-semibold mb-1">Notes</h4><p className="text-muted-foreground">{r.notes}</p></div>}
             {r.terms && <div className="rounded-xl border bg-card p-4 text-sm"><h4 className="font-semibold mb-1">Terms</h4><p className="text-muted-foreground">{r.terms}</p></div>}
@@ -922,10 +956,60 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
           </div>
         </div>
 
+        {module === 'invoices' && (
+          <div className="rounded-xl border bg-card p-4 space-y-4">
+            <h3 className="font-semibold flex items-center gap-2"><CreditCard size={16} />Payments</h3>
+            <div className="flex flex-wrap items-center gap-6 text-sm">
+              <div><span className="text-muted-foreground">Total:</span> <span className="font-semibold">${Number(r.grandTotal || 0).toFixed(2)}</span></div>
+              <div><span className="text-muted-foreground">Paid:</span> <span className="font-semibold text-emerald-600">${paymentTotal.toFixed(2)}</span></div>
+              <div><span className="text-muted-foreground">Balance:</span> <span className={`font-semibold ${(balanceInfo?.balance ?? 0) > 0.005 ? 'text-amber-600' : 'text-emerald-600'}`}>${(balanceInfo?.balance ?? 0).toFixed(2)}</span></div>
+            </div>
+            {payments.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-muted-foreground text-xs">
+                      <th className="p-2 text-left">Date</th>
+                      <th className="p-2 text-left">Method</th>
+                      <th className="p-2 text-left">Reference</th>
+                      <th className="p-2 text-right">Amount</th>
+                      <th className="p-2 text-left">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.map((p: any) => (
+                      <tr key={p.id} className="border-b">
+                        <td className="p-2">{p.paymentDate ? formatDate(p.paymentDate) : '—'}</td>
+                        <td className="p-2">{p.method}</td>
+                        <td className="p-2 text-muted-foreground">{p.reference || '—'}</td>
+                        <td className="p-2 text-right font-medium">{Number(p.amount).toFixed(2)}</td>
+                        <td className="p-2 text-muted-foreground">{p.notes || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="border-t pt-3">
+              <p className="text-sm font-medium mb-2">Record Payment</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                <Input type="number" min={0} step="0.01" placeholder="Amount" value={payForm.amount} onChange={e => setPayForm(f => ({ ...f, amount: e.target.value }))} className="h-9" />
+                <Input type="date" value={payForm.paymentDate} onChange={e => setPayForm(f => ({ ...f, paymentDate: e.target.value }))} className="h-9" />
+                <select value={payForm.method} onChange={e => setPayForm(f => ({ ...f, method: e.target.value }))} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+                  {['Cash', 'Check', 'Credit Card', 'Bank Transfer', 'PayPal', 'Other'].map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <Input placeholder="Reference" value={payForm.reference} onChange={e => setPayForm(f => ({ ...f, reference: e.target.value }))} className="h-9" />
+                <Button size="sm" onClick={handleRecordPayment} disabled={recordingPayment || !payForm.amount || Number(payForm.amount) <= 0}>
+                  {recordingPayment ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : 'Record'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {module === 'salesorders' && (
           <div className="rounded-xl border bg-card p-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2"><ShoppingCart size={16} />Related Invoices</h3>
-            {related.invoices.length === 0 ? (
+            <h3 className="font-semibold mb-3 flex items-center gap-2"><ShoppingCart size={16} />Related Invoices</h3>            {related.invoices.length === 0 ? (
               <p className="text-sm text-muted-foreground">No invoices from this sales order.</p>
             ) : (
               <div className="space-y-2">

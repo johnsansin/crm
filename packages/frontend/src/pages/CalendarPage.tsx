@@ -7,20 +7,22 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Card, CardContent } from '@/components/ui/card'
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, CalendarPlus, Pencil, Trash2, Loader2, Clock, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   useOrgSettings, formatDate, formatTime, monthNames, weekDayNames,
   orderedWeekDayNames, firstDayOffset, isWorkingDay, workingHourRange, weekdayShort,
 } from '@/lib/org-format'
+import { t } from '@/lib/i18n'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
-const TYPE_COLORS: Record<string, string> = {
-  Task: 'bg-blue-500',
-  Call: 'bg-emerald-500',
-  Meeting: 'bg-purple-500',
-  Other: 'bg-slate-500',
+const TYPE_STYLE: Record<string, { dot: string; chip: string }> = {
+  Task: { dot: 'bg-sky-500', chip: 'bg-sky-50 text-sky-700 border-sky-400 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500' },
+  Call: { dot: 'bg-emerald-500', chip: 'bg-emerald-50 text-emerald-700 border-emerald-400 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500' },
+  Meeting: { dot: 'bg-violet-500', chip: 'bg-violet-50 text-violet-700 border-violet-400 dark:bg-violet-500/10 dark:text-violet-300 dark:border-violet-500' },
+  Other: { dot: 'bg-slate-500', chip: 'bg-slate-100 text-slate-600 border-slate-400 dark:bg-slate-500/10 dark:text-slate-300 dark:border-slate-500' },
 }
 
 const TASK_STATUS = ['Planned', 'In Progress', 'Completed', 'Deferred']
@@ -176,34 +178,60 @@ export function CalendarPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
-          <p className="text-muted-foreground">Events and tasks for your organization</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="outline" onClick={() => setAnchor(new Date())}>Today</Button>
-          <Button size="sm" variant="outline" onClick={() => navigate(-1)}><ChevronLeft size={15} /></Button>
-          <Button size="sm" variant="outline" onClick={() => navigate(1)}><ChevronRight size={15} /></Button>
-          <span className="text-sm font-semibold w-40 text-center hidden md:block">{formatAnchor(view, anchor)}</span>
-          <div className="flex rounded-md border">
-            {(['month', 'week', 'day', 'list', 'year'] as View[]).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn('px-3 py-1.5 text-xs font-medium capitalize', view === v ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent')}>
-                {v}
-              </button>
-            ))}
+      <Card>
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+                <CalendarDays size={20} strokeWidth={1.75} />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-lg font-semibold tracking-tight text-slate-800 sm:text-xl dark:text-slate-100">{t('Calendar')}</h1>
+                <p className="truncate text-sm text-muted-foreground">{formatAnchor(view, anchor)}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setAnchor(new Date())}>{t('Today')}</Button>
+              <Button size="sm" variant="outline" onClick={() => navigate(-1)}><ChevronLeft size={15} /></Button>
+              <Button size="sm" variant="outline" onClick={() => navigate(1)}><ChevronRight size={15} /></Button>
+              <div className="flex items-center rounded-lg border bg-muted/40 p-0.5">
+                {(['month', 'week', 'day', 'list', 'year'] as View[]).map(v => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={cn(
+                      'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors sm:px-3',
+                      view === v ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {t(v)}
+                  </button>
+                ))}
+              </div>
+              <Button size="sm" onClick={() => openCreate('Meeting')}>
+                <CalendarPlus size={15} className="mr-1.5" /> <span className="hidden sm:inline">{t('Add Event')}</span><span className="sm:hidden">{t('Event')}</span>
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => openCreate('Task')}>
+                <Plus size={15} className="mr-1.5" /> <span className="hidden sm:inline">{t('Add Task')}</span><span className="sm:hidden">{t('Task')}</span>
+              </Button>
+            </div>
           </div>
-          <Button size="sm" onClick={() => openCreate('Meeting')}><CalendarPlus size={15} className="mr-1.5" /> Add Event</Button>
-          <Button size="sm" variant="outline" onClick={() => openCreate('Task')}><Plus size={15} className="mr-1.5" /> Add Task</Button>
+        </CardContent>
+      </Card>
+
+      <div className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b bg-muted/30 px-4 py-2 text-[11px] font-medium text-muted-foreground">
+          <span className="text-xs font-semibold uppercase tracking-wide">{t('Legend')}</span>
+          {Object.entries(TYPE_STYLE).map(([tname, s]) => (
+            <span key={tname} className="flex items-center gap-1.5">
+              <span className={cn('h-2 w-2 rounded-full', s.dot)} />{t(tname)}
+            </span>
+          ))}
         </div>
-      </div>
 
-      <div className="text-sm font-semibold md:hidden">{formatAnchor(view, anchor)}</div>
-
-      <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            <Loader2 size={16} className="animate-spin mr-2" /> Loading...
+            <Loader2 size={16} className="mr-2 animate-spin" /> {t('Loading...')}
           </div>
         ) : view === 'month' ? (
           <MonthView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} />
@@ -250,19 +278,24 @@ function formatAnchor(view: View, anchor: Date) {
 }
 
 function ActivityChip({ a, onClick }: { a: any; onClick: () => void }) {
-  const color = TYPE_COLORS[a.activityType] || TYPE_COLORS.Other
+  const style = TYPE_STYLE[a.activityType] || TYPE_STYLE.Other
   const done = a.activityType === 'Task' && a.status === 'Completed'
+  const t = a.startAt ? timeLabel(new Date(a.startAt)) : a.dueAt ? timeLabel(new Date(a.dueAt)) : ''
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onClick() }}
       draggable
       onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData('text/plain', a.id) }}
       onDragEnd={(e) => e.stopPropagation()}
-      className={cn('w-full text-left text-xs px-1.5 py-0.5 rounded text-white truncate cursor-grab active:cursor-grabbing', color, done && 'opacity-50 line-through')}
+      className={cn(
+        'flex w-full items-center gap-1 truncate rounded border-l-2 px-1.5 py-0.5 text-left text-[11px] font-medium transition-opacity hover:brightness-95 cursor-grab active:cursor-grabbing',
+        style.chip,
+        done && 'opacity-50 line-through'
+      )}
       title={a.subject}
     >
-      {a.startAt ? timeLabel(new Date(a.startAt)) + ' ' : a.dueAt ? timeLabel(new Date(a.dueAt)) + ' ' : ''}
-      {a.subject}
+      {t && <span className="shrink-0 font-semibold tabular-nums opacity-80">{t}</span>}
+      <span className="truncate">{a.subject}</span>
     </button>
   )
 }
@@ -271,7 +304,7 @@ function DayDropTarget({ date, children, onMove }: { date: Date; children: React
   const [over, setOver] = useState(false)
   return (
     <div
-      className={cn(over && 'ring-2 ring-primary/60 bg-primary/5')}
+      className={cn('rounded-b-lg', over && 'ring-2 ring-indigo-400 bg-indigo-50/40 dark:bg-indigo-500/10')}
       onDragOver={(e) => { if (onMove) { e.preventDefault(); setOver(true) } }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { if (!onMove) return; e.preventDefault(); setOver(false); const id = e.dataTransfer.getData('text/plain'); if (id) onMove(id, date) }}
@@ -294,39 +327,49 @@ function MonthView({ activities, anchor, onCreate, onEdit, onMove }: { activitie
   const weekDays = orderedWeekDayNames()
 
   return (
-    <div>
-      <div className="grid grid-cols-7 border-b">
-        {weekDays.map((d, i) => (
-          <div key={i} className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase">{d}</div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7">
-        {days.map((day, i) => {
-          const dayActs = activities.filter(a => sameDay(activityDay(a), day)).sort((a, b) => activityDay(a).getTime() - activityDay(b).getTime())
-          const inMonth = day.getMonth() === anchor.getMonth()
-          const isToday = sameDay(day, today)
-          const working = isWorkingDay(day)
-          return (
-            <DayDropTarget key={i} date={day} onMove={onMove}>
-              <button
-                onClick={() => onCreate('Meeting', day)}
-                className={cn(
-                  'min-h-24 md:min-h-28 w-full text-left align-top p-1.5 border-b border-r last:border-r-0 hover:bg-accent/40 transition-colors flex flex-col gap-1',
-                  !inMonth && 'bg-muted/30',
-                  !working && 'bg-muted/10'
-                )}
-              >
-                <span className={cn('text-xs font-medium inline-flex items-center justify-center h-6 w-6 rounded-full', isToday ? 'bg-primary text-primary-foreground' : '', !working && 'opacity-50')}>
-                  {day.getDate()}
-                </span>
-                <div className="flex flex-col gap-0.5 overflow-hidden">
-                  {dayActs.slice(0, 3).map(a => <ActivityChip key={a.id} a={a} onClick={() => onEdit(a)} />)}
-                  {dayActs.length > 3 && <span className="text-[10px] text-muted-foreground px-1">+{dayActs.length - 3} more</span>}
-                </div>
-              </button>
-            </DayDropTarget>
-          )
-        })}
+    <div className="overflow-x-auto">
+      <div className="min-w-[560px]">
+        <div className="grid grid-cols-7 gap-1 px-3 pt-3 md:gap-1.5">
+          {weekDays.map((d, i) => (
+            <div key={i} className="px-1 py-1 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1 p-3 md:gap-1.5">
+          {days.map((day, i) => {
+            const dayActs = activities.filter(a => sameDay(activityDay(a), day)).sort((a, b) => activityDay(a).getTime() - activityDay(b).getTime())
+            const inMonth = day.getMonth() === anchor.getMonth()
+            const isToday = sameDay(day, today)
+            const working = isWorkingDay(day)
+            const hasActs = dayActs.length > 0
+            return (
+              <DayDropTarget key={i} date={day} onMove={onMove}>
+                <button
+                  onClick={() => onCreate('Meeting', day)}
+                  className={cn(
+                    'flex min-h-16 w-full flex-col gap-1 rounded-lg border p-1 text-left align-top transition-colors hover:bg-accent/40 md:min-h-28 md:p-1.5',
+                    !inMonth && 'border-transparent bg-muted/10 opacity-70',
+                    !working && !inMonth && 'bg-muted/5',
+                    inMonth && hasActs && 'border-sky-200 bg-sky-50/60 dark:border-sky-800/60 dark:bg-sky-500/10',
+                    inMonth && !hasActs && 'bg-card',
+                    !working && inMonth && 'bg-muted/5',
+                    isToday && 'border-indigo-300 bg-indigo-50/70 dark:border-indigo-700 dark:bg-indigo-500/10'
+                  )}
+                >
+                  <span className={cn(
+                    'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                    isToday ? 'bg-indigo-600 text-white' : hasActs ? 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300' : !working ? 'opacity-60' : 'text-slate-700 dark:text-slate-200'
+                  )}>
+                    {day.getDate()}
+                  </span>
+                  <div className="flex flex-col gap-1 overflow-hidden">
+                    {dayActs.slice(0, 3).map(a => <ActivityChip key={a.id} a={a} onClick={() => onEdit(a)} />)}
+                    {dayActs.length > 3 && <span className="px-1 text-[10px] font-medium text-sky-600 dark:text-sky-400">+{dayActs.length - 3} more</span>}
+                  </div>
+                </button>
+              </DayDropTarget>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
@@ -344,29 +387,31 @@ function WeekView({ activities, anchor, onCreate, onEdit, onMove }: { activities
   const shortNames = weekDayNames('short')
 
   return (
-    <div className="grid grid-cols-7">
-      {days.map((day, i) => {
-        const dayActs = activities.filter(a => sameDay(activityDay(a), day)).sort((a, b) => activityDay(a).getTime() - activityDay(b).getTime())
-        const isToday = sameDay(day, today)
-        const working = isWorkingDay(day)
-        return (
-          <div key={i} className={cn('min-h-40 border-r last:border-r-0 border-b', !working && 'bg-muted/10')}>
-            <button
-              onClick={() => onCreate('Meeting', day)}
-              className={cn('w-full text-center py-2 border-b hover:bg-accent/40', isToday ? 'bg-primary/10' : '')}
-            >
-              <div className={cn('text-xs text-muted-foreground uppercase', !working && 'opacity-50')}>{shortNames[day.getDay()]}</div>
-              <div className={cn('text-sm font-bold inline-flex items-center justify-center h-7 w-7 rounded-full', isToday ? 'bg-primary text-primary-foreground' : '', !working && 'opacity-50')}>{day.getDate()}</div>
-            </button>
-            <DayDropTarget date={day} onMove={onMove}>
-              <div className="flex flex-col gap-1 p-1">
-                {dayActs.map(a => <ActivityChip key={a.id} a={a} onClick={() => onEdit(a)} />)}
-                {dayActs.length === 0 && <span className="text-xs text-muted-foreground/60 p-1.5">No activities</span>}
-              </div>
-            </DayDropTarget>
-          </div>
-        )
-      })}
+    <div className="overflow-x-auto">
+      <div className="grid min-w-[640px] grid-cols-7 gap-1 p-3 md:gap-1.5">
+        {days.map((day, i) => {
+          const dayActs = activities.filter(a => sameDay(activityDay(a), day)).sort((a, b) => activityDay(a).getTime() - activityDay(b).getTime())
+          const isToday = sameDay(day, today)
+          const working = isWorkingDay(day)
+          return (
+            <div key={i} className={cn('flex flex-col rounded-lg border', !working && 'bg-muted/5', isToday && 'border-indigo-300 bg-indigo-50/40 dark:border-indigo-700 dark:bg-indigo-500/5')}>
+              <button
+                onClick={() => onCreate('Meeting', day)}
+                className={cn('w-full rounded-t-lg border-b px-2 py-1.5 text-center transition-colors hover:bg-accent/40', isToday ? 'bg-indigo-50 dark:bg-indigo-500/10' : '')}
+              >
+                <div className={cn('text-[11px] font-medium uppercase tracking-wide text-muted-foreground', !working && 'opacity-50')}>{shortNames[day.getDay()]}</div>
+                <div className={cn('mx-auto mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold', isToday ? 'bg-indigo-600 text-white' : dayActs.length ? 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300' : 'text-slate-700 dark:text-slate-200', !working && 'opacity-50')}>{day.getDate()}</div>
+              </button>
+              <DayDropTarget date={day} onMove={onMove}>
+                <div className="flex min-h-32 flex-col gap-1 p-1.5">
+                  {dayActs.map(a => <ActivityChip key={a.id} a={a} onClick={() => onEdit(a)} />)}
+                  {dayActs.length === 0 && <span className="px-1.5 py-1 text-[11px] text-muted-foreground/60">{t('No activities')}</span>}
+                </div>
+              </DayDropTarget>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -397,12 +442,12 @@ function DayView({ activities, anchor, onCreate, onEdit }: { activities: any[]; 
     return (
       <div className={cn('flex gap-2 border-b last:border-b-0', !working && 'bg-muted/10')}>
         <div className={cn('w-14 shrink-0 py-2 text-right pr-2 text-xs text-muted-foreground', working ? 'font-medium' : 'opacity-50')}>{label}</div>
-        <div className="flex-1 py-1 space-y-1 min-h-9">
+        <div className="flex-1 space-y-1 py-1 min-h-9">
           {acts.map(a => (
-            <button key={a.id} onClick={() => onEdit(a)} className="w-full text-left flex items-start gap-2 p-1.5 rounded hover:bg-accent/40">
-              <span className={cn('mt-1 h-2.5 w-2.5 rounded-full shrink-0', TYPE_COLORS[a.activityType] || TYPE_COLORS.Other)} />
+            <button key={a.id} onClick={() => onEdit(a)} className="flex w-full items-start gap-2 rounded-lg p-1.5 text-left transition-colors hover:bg-accent/40">
+              <span className={cn('mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full', (TYPE_STYLE[a.activityType] || TYPE_STYLE.Other).dot)} />
               <span className="min-w-0">
-                <span className="text-sm font-medium block truncate">{a.subject}</span>
+                <span className="block truncate text-sm font-medium">{a.subject}</span>
                 <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                   {a.startAt && <span className="flex items-center gap-1"><Clock size={11} />{timeLabel(new Date(a.startAt))}{a.endAt ? ` - ${timeLabel(new Date(a.endAt))}` : ''}</span>}
                   {a.dueAt && <span className="flex items-center gap-1"><Clock size={11} />Due {timeLabel(new Date(a.dueAt))}</span>}
@@ -418,14 +463,16 @@ function DayView({ activities, anchor, onCreate, onEdit }: { activities: any[]; 
   }
 
   return (
-    <div className="p-2">
-      <button onClick={() => onCreate('Meeting', anchor)} className="w-full text-left px-2 py-2 text-xs text-muted-foreground rounded hover:bg-accent/40">
-        + Add on {weekDayNames('long')[anchor.getDay()]}, {formatDate(anchor)}
-      </button>
-      {dayActs.length === 0 && <p className="px-2 py-4 text-center text-sm text-muted-foreground">No activities for this day.</p>}
-      <div className="mt-1 border rounded-md">
-        {hours.map(h => <HourBlock key={h} h={h} working />)}
-        {nonWorking.map(h => <HourBlock key={h} h={h} working={false} />)}
+    <div className="overflow-x-auto">
+      <div className="min-w-[560px] p-2">
+        <button onClick={() => onCreate('Meeting', anchor)} className="w-full rounded-lg px-2 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-accent/40">
+          + {t('Add on')} {weekDayNames('long')[anchor.getDay()]}, {formatDate(anchor)}
+        </button>
+        {dayActs.length === 0 && <p className="px-2 py-4 text-center text-sm text-muted-foreground">{t('No activities for this day.')}</p>}
+        <div className="mt-1 rounded-lg border">
+          {hours.map(h => <HourBlock key={h} h={h} working />)}
+          {nonWorking.map(h => <HourBlock key={h} h={h} working={false} />)}
+        </div>
       </div>
     </div>
   )
@@ -437,30 +484,41 @@ function ListView({ activities, anchor, onEdit }: { activities: any[]; anchor: D
   const tasks = sorted.filter(a => a.activityType === 'Task')
 
   const Section = ({ title, items }: { title: string; items: any[] }) => (
-    <div className="border-b last:border-0">
-      <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/40">{title} ({items.length})</div>
+    <div>
+      <div className="flex items-center justify-between bg-muted/30 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <span>{t(title)}</span>
+        <span className="rounded-full bg-background px-2 py-0.5 text-[10px]">{items.length}</span>
+      </div>
       {items.length === 0 ? (
-        <p className="px-4 py-4 text-sm text-muted-foreground text-center">No {title.toLowerCase()} this month.</p>
-      ) : items.map(a => (
-        <button key={a.id} onClick={() => onEdit(a)} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-accent/40 transition-colors border-t first:border-t-0">
-          <span className={cn('h-2.5 w-2.5 rounded-full shrink-0', TYPE_COLORS[a.activityType] || TYPE_COLORS.Other)} />
-          <span className="w-28 shrink-0 text-xs text-muted-foreground">
-            {formatDate(activityDay(a))}
-            {a.startAt ? ' · ' + timeLabel(new Date(a.startAt)) : a.dueAt ? ' · ' + timeLabel(new Date(a.dueAt)) : ''}
-          </span>
-          <span className="font-medium truncate flex-1 text-left">{a.subject}</span>
-          <span className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-            {a.location && <span className="flex items-center gap-1"><MapPin size={11} />{a.location}</span>}
-            {a.status && <span className={cn('px-1.5 py-0.5 rounded text-[11px]', a.activityType === 'Task' && a.status === 'Completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-muted text-muted-foreground')}>{a.status}</span>}
-          </span>
-        </button>
-      ))}
+        <p className="px-4 py-4 text-center text-sm text-muted-foreground">{t(`No ${title.toLowerCase()} this month.`)}</p>
+      ) : (
+        <div className="divide-y">
+          {items.map(a => (
+            <button key={a.id} onClick={() => onEdit(a)} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-accent/40">
+              <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', (TYPE_STYLE[a.activityType] || TYPE_STYLE.Other).dot)} />
+              <span className="w-28 shrink-0 text-xs text-muted-foreground">
+                {formatDate(activityDay(a))}
+                {a.startAt ? ' · ' + timeLabel(new Date(a.startAt)) : a.dueAt ? ' · ' + timeLabel(new Date(a.dueAt)) : ''}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-left font-medium">{a.subject}</span>
+              <span className="hidden items-center gap-1 text-xs text-muted-foreground shrink-0 sm:flex">
+                {a.location && <span className="flex items-center gap-1"><MapPin size={11} />{a.location}</span>}
+                {a.status && (
+                  <span className={cn('rounded px-1.5 py-0.5 text-[11px]', a.activityType === 'Task' && a.status === 'Completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-muted text-muted-foreground')}>
+                    {a.status}
+                  </span>
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 
   return (
     <div>
-      <div className="px-4 py-2.5 text-sm font-medium text-muted-foreground border-b bg-muted/20">
+      <div className="border-b bg-muted/20 px-4 py-2.5 text-sm font-medium text-muted-foreground">
         {monthNames()[anchor.getMonth()]} {anchor.getFullYear()} — drag rows between day cells in Month/Week view to reschedule
       </div>
       <Section title="Events" items={events} />
@@ -477,7 +535,7 @@ function YearView({ activities, anchor, onSelect }: { activities: any[]; anchor:
     return { m, count, events, tasks }
   })
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-4">
+    <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-4">
       {months.map(({ m, count, events, tasks }) => {
         const d = new Date(anchor.getFullYear(), m, 1)
         const isCurrent = m === new Date().getMonth() && anchor.getFullYear() === new Date().getFullYear()
@@ -485,11 +543,17 @@ function YearView({ activities, anchor, onSelect }: { activities: any[]; anchor:
           <button
             key={m}
             onClick={() => onSelect(d)}
-            className={cn('rounded-lg border p-4 text-left hover:shadow-md transition-shadow hover:border-primary/40', isCurrent && 'border-primary/50 bg-primary/5')}
+            className={cn(
+              'group rounded-xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:hover:border-indigo-700',
+              isCurrent && 'border-indigo-400 bg-indigo-50/60 dark:bg-indigo-500/10'
+            )}
           >
-            <p className="text-sm font-semibold capitalize">{monthNames()[m]}</p>
-            <p className="text-2xl font-bold mt-1">{count}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{events} events · {tasks} tasks</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold capitalize text-slate-700 dark:text-slate-200">{monthNames()[m]}</p>
+              <span className={cn('h-2 w-2 rounded-full', isCurrent ? 'bg-indigo-500' : 'bg-muted')} />
+            </div>
+            <p className="mt-2 text-2xl font-bold tabular-nums text-indigo-600 dark:text-indigo-400">{count}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{events} events · {tasks} tasks</p>
           </button>
         )
       })}
@@ -535,24 +599,24 @@ function ActivityDialog({ open, onOpenChange, editing, preset, onDelete }: {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendar'] })
       queryClient.invalidateQueries({ queryKey: ['activities-upcoming'] })
-      addToast({ title: 'Activity created', variant: 'success' })
+      addToast({ title: t('Activity created'), variant: 'success' })
       onOpenChange(false)
     },
-    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => addToast({ title: t('Error'), description: e.message, variant: 'destructive' }),
   })
   const updateMutation = useMutation({
     mutationFn: (d: any) => api.updateCalendarActivity(editingId, d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendar'] })
       queryClient.invalidateQueries({ queryKey: ['activities-upcoming'] })
-      addToast({ title: 'Activity updated', variant: 'success' })
+      addToast({ title: t('Activity updated'), variant: 'success' })
       onOpenChange(false)
     },
-    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => addToast({ title: t('Error'), description: e.message, variant: 'destructive' }),
   })
 
   const submit = () => {
-    if (!form.subject) { addToast({ title: 'Error', description: 'Subject is required', variant: 'destructive' }); return }
+    if (!form.subject) { addToast({ title: t('Error'), description: t('Subject is required'), variant: 'destructive' }); return }
     const payload: any = {
       subject: form.subject,
       activityType: form.activityType,
@@ -575,78 +639,78 @@ function ActivityDialog({ open, onOpenChange, editing, preset, onDelete }: {
       <DialogContent>
         <DialogHeader><DialogTitle>{editingId ? (isTask ? 'Edit Task' : 'Edit Event') : (isTask ? 'Add Task' : 'Add Event')}</DialogTitle></DialogHeader>
         <form onSubmit={e => { e.preventDefault(); submit() }} className="space-y-3">
-          <Input placeholder="Subject" value={form.subject} onChange={e => setForm((f: any) => ({ ...f, subject: e.target.value }))} required />
+          <Input placeholder={t('Subject')} value={form.subject} onChange={e => setForm((f: any) => ({ ...f, subject: e.target.value }))} required />
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-sm font-medium block mb-1.5">Type</label>
+              <label className="text-sm font-medium block mb-1.5">{t('Type')}</label>
               <Select value={form.activityType} onValueChange={(v) => setForm((f: any) => ({ ...f, activityType: v, status: 'Planned' }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {['Task', 'Call', 'Meeting', 'Other'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {['Task', 'Call', 'Meeting', 'Other'].map(tn => <SelectItem key={tn} value={tn}>{t(tn)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1.5">Status</label>
+              <label className="text-sm font-medium block mb-1.5">{t('Status')}</label>
               <Select value={form.status} onValueChange={(v) => setForm((f: any) => ({ ...f, status: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(isTask ? TASK_STATUS : EVENT_STATUS).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {(isTask ? TASK_STATUS : EVENT_STATUS).map(s => <SelectItem key={s} value={s}>{t(s)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-sm font-medium block mb-1.5">Priority</label>
+              <label className="text-sm font-medium block mb-1.5">{t('Priority')}</label>
               <Select value={form.priority} onValueChange={(v) => setForm((f: any) => ({ ...f, priority: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {PRIORITIES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  {PRIORITIES.map(p => <SelectItem key={p} value={p}>{t(p)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             {isTask ? (
               <div>
-                <label className="text-sm font-medium block mb-1.5">Due</label>
+                <label className="text-sm font-medium block mb-1.5">{t('Due')}</label>
                 <Input type="datetime-local" value={form.dueAt} onChange={e => setForm((f: any) => ({ ...f, dueAt: e.target.value }))} />
               </div>
             ) : (
               <div>
-                <label className="text-sm font-medium block mb-1.5">Location</label>
-                <Input placeholder="e.g. Meeting room" value={form.location} onChange={e => setForm((f: any) => ({ ...f, location: e.target.value }))} />
+                <label className="text-sm font-medium block mb-1.5">{t('Location')}</label>
+                <Input placeholder={t('Location')} value={form.location} onChange={e => setForm((f: any) => ({ ...f, location: e.target.value }))} />
               </div>
             )}
           </div>
           {!isTask && (
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-sm font-medium block mb-1.5">Start</label>
+                <label className="text-sm font-medium block mb-1.5">{t('Start')}</label>
                 <Input type="datetime-local" value={form.startAt} onChange={e => setForm((f: any) => ({ ...f, startAt: e.target.value }))} />
               </div>
               <div>
-                <label className="text-sm font-medium block mb-1.5">End</label>
+                <label className="text-sm font-medium block mb-1.5">{t('End')}</label>
                 <Input type="datetime-local" value={form.endAt} onChange={e => setForm((f: any) => ({ ...f, endAt: e.target.value }))} />
               </div>
             </div>
           )}
           <div>
-            <label className="text-sm font-medium block mb-1.5">Description</label>
-            <textarea placeholder="Description" className={`${inputCls} h-20`} value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} />
+            <label className="text-sm font-medium block mb-1.5">{t('Description')}</label>
+            <textarea placeholder={t('Description')} className={`${inputCls} h-20`} value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} />
           </div>
           <div className="flex items-center justify-between gap-2">
             <div>
               {editingId && (
                 <Button type="button" variant="ghost" size="sm" className="text-destructive" onClick={() => onDelete(editingId)}>
-                  <Trash2 size={14} className="mr-1.5" /> Delete
+                  <Trash2 size={14} className="mr-1.5" /> {t('Delete')}
                 </Button>
               )}
             </div>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('Cancel')}</Button>
               <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                 {(createMutation.isPending || updateMutation.isPending) && <Loader2 size={14} className="mr-1.5 animate-spin" />}
-                {editingId ? 'Update' : 'Create'}
+                {editingId ? t('Update') : t('Create')}
               </Button>
             </div>
           </div>

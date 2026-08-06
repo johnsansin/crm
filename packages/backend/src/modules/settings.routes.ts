@@ -7,6 +7,7 @@ import multer from 'multer'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, requireAdmin } from '../middleware/auth'
 import { getOrgSetting, setOrgSetting, getAllOrgSettings, validatePassword, nextSequenceNumber } from '../lib/settings'
+import { resolveAuditReferences } from '../lib/audit'
 import { sendMail, testSmtpConnection, getSmtpConfig } from '../lib/mailer'
 import { generateSecret, verifyTotp, otpauthUri } from '../lib/otp'
 import { writeAudit, getClientIp } from '../lib/audit'
@@ -204,7 +205,7 @@ settingsRouter.get('/modules', requireAdmin, async (req, res, next) => {
 function getModuleConfigCache() {
   // @ts-ignore - imported lazily to avoid circular dep at module load time
   const configs: Record<string, any> = {}
-  for (const mod of ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'currencies', 'taxinfo', 'roles', 'usergroups', 'rolepermissions']) {
+  for (const mod of ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'currencies', 'taxinfo', 'roles', 'usergroups', 'rolepermissions']) {
     const c = getModuleConfig(mod)
     if (c) configs[mod] = c
   }
@@ -580,7 +581,8 @@ settingsRouter.get('/audit', requireAdmin, async (req, res, next) => {
       if (log.userId) {
         actor = await prisma.user.findUnique({ where: { id: log.userId }, select: { firstName: true, lastName: true, email: true } }).catch(() => null)
       }
-      return { ...log, actor }
+      const resolved = await resolveAuditReferences(log)
+      return { ...log, actor, oldValue: resolved.oldValue, newValue: resolved.newValue }
     }))
     res.json({ data: enriched, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } })
   } catch (err) { next(err) }
@@ -732,7 +734,6 @@ settingsRouter.post('/import/:module', requireAdmin, upload.single('file'), asyn
   } catch (err) { next(err) }
 })
 
-// ---- SMTP test / send ----
 settingsRouter.post('/smtp/test', requireAdmin, async (req, res, next) => {
   try {
     const cfg = req.body

@@ -48,6 +48,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: () => {
+    const token = get().token
+    if (token) api.logout(token).catch(() => {})
     localStorage.removeItem('token')
     set({ token: null, user: null })
   },

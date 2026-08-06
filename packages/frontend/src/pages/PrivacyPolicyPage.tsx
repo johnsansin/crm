@@ -32,13 +32,13 @@ export function PrivacyPolicyPage() {
       </p>
       <h2 className="text-base font-semibold text-slate-900 dark:text-white pt-2">5. Your Rights</h2>
       <p>
-        You may access, correct, or delete your personal information at any time. Contact us at suhailrao@gmail.com for any
+        You may access, correct, or delete your personal information at any time. Contact us at sajjad@bizforce-crm.online for any
         privacy-related requests.
       </p>
       <h2 className="text-base font-semibold text-slate-900 dark:text-white pt-2">6. Contact Us</h2>
       <p>
-        If you have questions about this Privacy Policy, contact us at suhailrao@gmail.com or write to LG_80, Street 1, DRGCC,
-        Phase 6, DHA, Lahore, Pakistan.
+        If you have questions about this Privacy Policy, contact us at sajjad@bizforce-crm.online or write to 125-F1, Johar Town,
+        Lahore - Pakistan.
       </p>
     </LegalPage>
   )

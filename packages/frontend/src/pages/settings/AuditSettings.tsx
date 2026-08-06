@@ -26,6 +26,48 @@ function fmtDate(v: any) {
   return formatDateTime(v) || '—'
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const NAME_FIELDS = ['name', 'title', 'subject', 'leadName', 'contactName', 'potentialName', 'projectName', 'activityName', 'eventName', 'taskName', 'accountName', 'productName', 'priceBookName', 'serviceName', 'assetName', 'contractName', 'templateName', 'vendorName', 'taxName', 'itemName', 'folderName', 'fileName', 'emailSubject']
+
+function cleanValue(s: any): boolean {
+  if (s == null) return false
+  const str = String(s).trim()
+  if (!str) return false
+  if (str === 'null' || str === 'undefined' || str === '[]' || str === '{}') return false
+  if (UUID_RE.test(str) || str.length === 8) return false
+  return true
+}
+
+function summarize(v: any): string {
+  if (v == null || v === '') return ''
+  const s = String(v)
+  if (s === '[object Object]' || s === 'null' || s === 'undefined') return ''
+  if (s.startsWith('{') || s.startsWith('[')) {
+    try {
+      const obj = JSON.parse(s)
+      if (Array.isArray(obj)) {
+        return obj.map(x => summarize(x)).filter(Boolean).join(', ').slice(0, 200)
+      }
+      if (obj && typeof obj === 'object') {
+        for (const f of NAME_FIELDS) {
+          const val = obj[f]
+          if (typeof val === 'string' && val.trim()) return val.trim().slice(0, 200)
+        }
+        const vals = Object.entries(obj)
+          .filter(([k]) => !/id$/i.test(k) && !['createdAt', 'updatedAt', 'createdBy', 'isActive'].includes(k))
+          .map(([k, val]) => { const t = summarize(val); return t ? `${k}: ${t}` : '' })
+          .filter(Boolean)
+        if (vals.length) return vals.join(' · ').slice(0, 200)
+        const objId = obj.id
+        if (typeof objId === 'string' && objId) return `#${objId.slice(0, 8)}`
+        return ''
+      }
+    } catch {}
+  }
+  if (UUID_RE.test(s.trim())) return `#${s.trim().slice(0, 8)}`
+  return cleanValue(s) ? s.slice(0, 200) : ''
+}
+
 export function AuditSettings() {
   useOrgSettings()
   const [tab, setTab] = useState('audit')
@@ -82,11 +124,16 @@ function AuditTrail() {
               { key: 'moduleName', label: 'Module', render: (v: any) => <span className="inline-flex rounded-md border bg-muted/50 px-2 py-0.5 text-xs font-mono">{v}</span> },
               { key: 'action', label: 'Action', render: (v: any) => <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ACTION_COLORS[v] || 'bg-muted text-muted-foreground'}`}>{v}</span> },
               { key: 'fieldName', label: 'Field', render: (v: any) => <span className="text-sm">{v || '—'}</span> },
-              { key: 'details', label: 'Details', render: (_: any, log: any) => (
-                <span className="text-xs text-muted-foreground max-w-xs block truncate">
-                  {log.oldValue ? `From: ${log.oldValue} ` : ''}{log.newValue ? `To: ${log.newValue}` : ''}
-                </span>
-              )},
+              { key: 'details', label: 'Details', render: (_: any, log: any) => {
+                const from = summarize(log.oldValue)
+                const to = summarize(log.newValue)
+                const text = [from && `From: ${from}`, to && `To: ${to}`].filter(Boolean).join(' ') || '—'
+                return (
+                  <span className="text-xs text-muted-foreground max-w-xs block truncate" title={text}>
+                    {text}
+                  </span>
+                )
+              } },
             ]}
             data={data?.data || []}
             pagination={data?.pagination}
@@ -120,14 +167,16 @@ function LoginHistory() {
               { key: 'createdAt', label: 'When', render: (v: any) => <span className="text-xs whitespace-nowrap">{fmtDate(v)}</span> },
               { key: 'user', label: 'User', render: (_: any, l: any) => l.user ? `${l.user.firstName} ${l.user.lastName}` : '—' },
               { key: 'email', label: 'Email' },
-              { key: 'success', label: 'Status', render: (v: any) => (
-                <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${v ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${v ? 'bg-emerald-500' : 'bg-rose-500'}`} />{v ? 'Success' : 'Failed'}
+              { key: 'status', label: 'Status', render: (v: any) => (
+                <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${v === 'Failed' ? 'bg-rose-500/10 text-rose-600' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${v === 'Failed' ? 'bg-rose-500' : 'bg-emerald-500'}`} />{v === 'Failed' ? 'Failed' : 'Success'}
                 </span>
               )},
-              { key: 'ip', label: 'IP', render: (_: any, l: any) => <span className="text-muted-foreground">{l.ipAddress || l.publicIp || '—'}</span> },
+              { key: 'ip', label: 'IP', render: (_: any, l: any) => <span className="text-muted-foreground whitespace-nowrap">{l.ipAddress || '—'}</span> },
+              { key: 'publicIp', label: 'Public IP', render: (_: any, l: any) => <span className="text-muted-foreground whitespace-nowrap">{l.publicIp || '—'}</span> },
+              { key: 'userAgent', label: 'Device', render: (v: any) => <span className="block max-w-[220px] truncate text-muted-foreground" title={v}>{v ? v.slice(0, 60) : '—'}</span> },
             ]}
-            data={(data?.data || []).map((l: any) => ({ ...l, ip: l.ipAddress || l.publicIp }))}
+            data={data?.data || []}
             pagination={data?.pagination}
             onPageChange={setPage}
             loading={isLoading}

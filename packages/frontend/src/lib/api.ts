@@ -53,6 +53,13 @@ export const api = {
 
   getMe: () => request<any>('/auth/me'),
 
+  logout: (token: string) =>
+    request<any>('/auth/logout', {
+      method: 'POST',
+      body: JSON.stringify({}),
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
   getCompany: () => request<any>('/company'),
 
   updateCompany: (data: any) =>
@@ -156,6 +163,10 @@ export const api = {
   updateOrgSettings: (settings: any) =>
     request<any>('/settings', { method: 'PUT', body: JSON.stringify({ settings }) }),
 
+  getGlobalSettings: () => request<any>('/admin/settings'),
+  updateGlobalSettings: (settings: any) =>
+    request<any>('/admin/settings', { method: 'PUT', body: JSON.stringify({ settings }) }),
+
   getPicklists: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : ''
     return request<{ data: any[] }>(`/settings/picklists${qs}`)
@@ -257,6 +268,10 @@ export const api = {
   updateCalendarActivity: (id: string, data: any) =>
     request<any>(`/calendar/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCalendarActivity: (id: string) => request<any>(`/calendar/${id}`, { method: 'DELETE' }),
+
+  getDashboardConfig: () => request<{ config: any }>('/auth/me/dashboard'),
+  updateDashboardConfig: (config: any) =>
+    request<any>('/auth/me/dashboard', { method: 'PUT', body: JSON.stringify({ config }) }),
 
   getAudit: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : ''
@@ -377,4 +392,105 @@ export const api = {
     request<any>(`/leads/${id}/conversion-info`),
   convertLead: (id: string, data: any) =>
     request<any>(`/leads/${id}/convert`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // ---- Forecast (vtiger forecasting) ----
+  getForecast: (range?: string) =>
+    request<{ data: any }>(`/forecast/opportunities${range ? `?range=${range}` : ''}`),
+  recalculateForecast: () =>
+    request<any>('/forecast/recalculate', { method: 'POST', body: JSON.stringify({}) }),
+
+  // ---- Duplicate & Merge ----
+  getDuplicates: (module: string, id: string) =>
+    request<{ data: any[] }>(`/${module}/${id}/duplicates`),
+  mergeRecords: (module: string, id: string, targetId: string, keepFields?: string[]) =>
+    request<any>(`/${module}/${id}/merge`, { method: 'POST', body: JSON.stringify({ targetId, keepFields: keepFields || [] }) }),
+
+  // ---- Recycle bin ----
+  getTrashModules: () => request<{ data: any[] }>('/trash'),
+  getTrashRecords: (moduleName: string) => request<{ data: any[]; label: string }>(`/trash/${moduleName}`),
+  restoreTrash: (moduleName: string, id: string) =>
+    request<any>('/trash/restore', { method: 'POST', body: JSON.stringify({ moduleName, id }) }),
+  purgeTrash: (moduleName: string, id: string) =>
+    request<any>(`/trash/${moduleName}/${id}`, { method: 'DELETE' }),
+
+  // ---- Recurring invoices ----
+  generateRecurringInvoice: (id: string) =>
+    request<any>(`/recurringinvoices/${id}/generate`, { method: 'POST', body: JSON.stringify({}) }),
+  getUpcomingRecurring: () => request<{ data: any[] }>('/recurringinvoices/upcoming'),
+
+  // ---- Invoice payments ----
+  getInvoicePayments: (invoiceId: string) => request<{ data: any[]; total: number }>(`/invoices/${invoiceId}/payments`),
+  addInvoicePayment: (invoiceId: string, data: any) =>
+    request<any>(`/invoices/${invoiceId}/payments`, { method: 'POST', body: JSON.stringify(data) }),
+  getInvoiceBalance: (invoiceId: string) => request<any>(`/invoices/${invoiceId}/balance`),
+
+  // ---- Mailboxes / Email-to-ticket ----
+  getMailboxRule: (mailboxId: string) => request<{ data: any }>(`/mailboxes/${mailboxId}/rule`),
+  saveMailboxRule: (mailboxId: string, data: any) =>
+    request<any>(`/mailboxes/${mailboxId}/rule`, { method: 'PUT', body: JSON.stringify(data) }),
+  syncMailbox: (mailboxId: string) =>
+    request<any>(`/mailboxes/${mailboxId}/sync`, { method: 'POST', body: JSON.stringify({}) }),
+
+  // ---- RSS ----
+  getRssEntries: (feedId: string) => request<{ data: any[]; unread: number }>(`/rssfeeds/${feedId}/entries`),
+  fetchRssFeed: (feedId: string) =>
+    request<any>(`/rssfeeds/${feedId}/fetch`, { method: 'POST', body: JSON.stringify({}) }),
+  markRssRead: (entryId: string, isRead?: boolean) =>
+    request<any>(`/rssentries/${entryId}/read`, { method: 'POST', body: JSON.stringify({ isRead: isRead !== false }) }),
+
+  // ---- Google sync ----
+  getGoogleAccounts: () => request<{ data: any[] }>('/google/accounts'),
+  getGoogleAuthUrl: () => request<{ data: any }>('/google/auth-url'),
+  connectGoogle: (data: any) => request<any>('/google/token', { method: 'POST', body: JSON.stringify(data) }),
+  syncGoogle: (accountId: string, mode?: string) =>
+    request<any>('/google/sync', { method: 'POST', body: JSON.stringify({ accountId, mode }) }),
+  disconnectGoogle: (id: string) => request<any>(`/google/accounts/${id}`, { method: 'DELETE' }),
+
+  // ---- Layout editor ----
+  getModuleLayout: (moduleName: string) => request<{ data: any[] }>(`/layout/${moduleName}`),
+  saveModuleLayout: (moduleName: string, tabName: string, data: any) =>
+    request<any>(`/layout/${moduleName}/${encodeURIComponent(tabName)}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  // ---- Picklist dependencies ----
+  getPicklistDependencies: (moduleName?: string) => {
+    const qs = moduleName ? `?moduleName=${encodeURIComponent(moduleName)}` : ''
+    return request<{ data: any[] }>(`/picklist-dependencies${qs}`)
+  },
+  createPicklistDependency: (data: any) =>
+    request<any>('/picklist-dependencies', { method: 'POST', body: JSON.stringify(data) }),
+  deletePicklistDependency: (id: string) =>
+    request<any>(`/picklist-dependencies/${id}`, { method: 'DELETE' }),
+  resolvePicklistDependency: (data: any) =>
+    request<{ data: any[] }>('/picklist-dependencies/resolve', { method: 'POST', body: JSON.stringify(data) }),
+
+  // ---- Email templates ----
+  previewEmailTemplate: (id: string, variables?: any) =>
+    request<any>(`/emailtemplates/${id}/preview`, { method: 'POST', body: JSON.stringify({ variables: variables || {} }) }),
+  sendEmailTemplate: (id: string, data: any) =>
+    request<any>(`/emailtemplates/${id}/send`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // ---- Product price ----
+  computeProductPrice: (id: string, data: any) =>
+    request<any>(`/products/${id}/compute-price`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // ---- Call logs / PBX ----
+  clickToCall: (data: any) =>
+    request<any>('/calllogs/click-to-call', { method: 'POST', body: JSON.stringify(data) }),
+
+  // ---- REST WebService API ----
+  restLogin: (username: string, password: string) =>
+    request<any>('/rest/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  restDescribe: (module: string, sessionName: string) =>
+    request<any>(`/rest/describe?module=${encodeURIComponent(module)}&sessionName=${encodeURIComponent(sessionName)}`),
+
+  // ---- API keys ----
+  getApiKeys: () => request<{ data: any[] }>('/apikeys'),
+  createApiKey: (data: any) => request<any>('/apikeys', { method: 'POST', body: JSON.stringify(data) }),
+  deleteApiKey: (id: string) => request<any>(`/apikeys/${id}`, { method: 'DELETE' }),
+
+  // ---- Portal ----
+  registerPortal: (contactId: string, accessCode?: string) =>
+    request<any>('/portal/register', { method: 'POST', body: JSON.stringify({ contactId, accessCode }) }),
+  unregisterPortal: (contactId: string) =>
+    request<any>('/portal/unregister', { method: 'POST', body: JSON.stringify({ contactId }) }),
 }

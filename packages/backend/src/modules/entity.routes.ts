@@ -3,7 +3,7 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { getModuleConfig } from './moduleSetup'
 import { runWorkflows } from '../lib/settings'
-import { writeAudit, writeAuditFields } from '../lib/audit'
+import { writeAudit, writeAuditFields, auditSummary } from '../lib/audit'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
 
 const moduleActiveCache = new Map<string, { active: boolean; at: number }>()
@@ -26,6 +26,8 @@ async function getSharingAccess(companyId: string | undefined, moduleName: strin
 async function sharedUserIds(companyId: string | undefined, moduleName: string, selfId: string): Promise<Set<string>> {
   const ids = new Set<string>([selfId])
   if (!companyId) return ids
+  const me = await prisma.user.findUnique({ where: { id: selfId }, select: { roleId: true } }).catch(() => null)
+  if (me?.roleId) ids.add(me.roleId)
   const rule = await getSharingAccess(companyId, moduleName)
   if (!rule) return ids
   const roleIds: string[] = (rule.roleIds as any[]) || []
@@ -48,6 +50,12 @@ async function canMutateRecord(req: any, record: any, moduleName: string): Promi
 }
 
 const CUSTOM_FIELD_PREFIX = 'cf_'
+
+const NO_ASSIGNED_TO = new Set([
+  'recurringInvoice', 'payment', 'mailbox', 'rssFeed', 'rssEntry', 'report',
+  'apiKey', 'moduleLayout', 'picklistDependency', 'emailToTicketRule',
+  'portalUser', 'googleAccount',
+])
 
 const modelMap: Record<string, string> = {
   accounts: 'account',
@@ -74,6 +82,13 @@ const modelMap: Record<string, string> = {
   assets: 'asset',
   servicecontracts: 'serviceContract',
   smsnotifier: 'smsNotifier',
+  payments: 'payment',
+  recurringinvoices: 'recurringInvoice',
+  calllogs: 'callLog',
+  reports: 'report',
+  mailboxes: 'mailbox',
+  rssfeeds: 'rssFeed',
+  rssentries: 'rssEntry',
   currencies: 'currency',
   taxinfo: 'taxInfo',
   roles: 'role'
@@ -91,6 +106,8 @@ const scopedModels = new Set([
   'ticket', 'faq', 'document', 'email', 'emailTemplate',
   'project', 'projectTask', 'projectMilestone',
   'asset', 'serviceContract', 'smsNotifier', 'role',
+  'payment', 'recurringInvoice', 'callLog', 'report',
+  'mailbox', 'rssFeed', 'rssEntry',
   'userGroup', 'userGroupMember'
 ])
 
@@ -100,7 +117,9 @@ const permissionModules = new Set([
   'quotes', 'salesorders', 'purchaseorders', 'invoices',
   'tickets', 'faq', 'documents', 'emails', 'emailtemplates',
   'projects', 'projecttasks', 'projectmilestones',
-  'assets', 'servicecontracts', 'smsnotifier'
+  'assets', 'servicecontracts', 'smsnotifier',
+  'payments', 'recurringinvoices', 'calllogs', 'reports',
+  'mailboxes', 'rssfeeds'
 ])
 
 const settingsModules = new Set([
@@ -110,7 +129,8 @@ const settingsModules = new Set([
 const booleanFields = new Set([
   'emailOptOut', 'notifyOwner', 'doNotCall', 'portal', 'discontinued',
   'active', 'isDefault', 'isActive', 'isPublic', 'isAdmin',
-  'enableRecurring', 'pending'
+  'enableRecurring', 'pending', 'isRead', 'shared',
+  'syncCalendar', 'syncContacts', 'createContactIfMissing'
 ])
 
 const decimalFields = new Set([
@@ -126,6 +146,7 @@ const decimalFields = new Set([
   'weight', 'packSize', 'employees', 'noOfEmployees',
   'hours', 'days', 'totalUnits', 'usedUnits',
   'plannedHours', 'actualHours', 'sequence',
+  'amount', 'markupPercent', 'paidAmount',
 ])
 
 function fixBooleans(data: any) {
@@ -259,7 +280,13 @@ export function entityRouter(moduleName: string): Router {
         }))
       }
       if (filter) {
-        try { Object.assign(where, JSON.parse(filter as string)) } catch { /* ignore invalid filter */ }
+        try {
+          const parsed = JSON.parse(filter as string)
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            delete parsed.companyId
+            Object.assign(where, parsed)
+          }
+        } catch { /* ignore invalid filter */ }
       }
       await applyReadScope(req, where)
 
@@ -278,13 +305,21 @@ export function entityRouter(moduleName: string): Router {
 
   router.get('/users', async (req: any, res, next) => {
     try {
-      if (!req.user!.companyId) return res.json({ data: [] })
+      if (!req.user!.companyId) return res.json({ data: [], roles: [] })
       const users = await prisma.user.findMany({
         where: { companyId: req.user!.companyId, isActive: true },
-        select: { id: true, firstName: true, lastName: true, email: true, userName: true },
+        select: {
+          id: true, firstName: true, lastName: true, email: true, userName: true,
+          roleId: true, role: { select: { id: true, name: true } },
+        },
         orderBy: { firstName: 'asc' },
       })
-      res.json({ data: users })
+      const roles = await prisma.role.findMany({
+        where: { companyId: req.user!.companyId, isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })
+      res.json({ data: users, roles })
     } catch (err) { next(err) }
   })
 
@@ -301,7 +336,13 @@ export function entityRouter(moduleName: string): Router {
         }))
       }
       if (filter) {
-        try { Object.assign(where, JSON.parse(filter as string)) } catch { /* ignore invalid filter */ }
+        try {
+          const parsed = JSON.parse(filter as string)
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            delete parsed.companyId
+            Object.assign(where, parsed)
+          }
+        } catch { /* ignore invalid filter */ }
       }
       let orderBy: any = { createdAt: 'desc' }
       if (sortBy) orderBy = { [sortBy as string]: sortOrder === 'asc' ? 'asc' : 'desc' }
@@ -326,10 +367,16 @@ export function entityRouter(moduleName: string): Router {
           select: { id: true, firstName: true, lastName: true, email: true },
         })
         const umap = new Map(users.map(u => [u.id, u]))
+        const roles = await prisma.role.findMany({
+          where: { id: { in: uids } },
+          select: { id: true, name: true },
+        })
+        const rmap = new Map(roles.map(r => [r.id, r.name]))
         const name = (id?: string | null) => {
           if (!id) return null
           const u = umap.get(id)
-          return u ? `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email : null
+          if (u) return `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email
+          return rmap.get(id) || null
         }
         merged[0].ownerName = name(record.assignedTo) || name(record.createdBy)
         merged[0].createdByName = name(record.createdBy)
@@ -352,7 +399,7 @@ export function entityRouter(moduleName: string): Router {
       }
       if (modelName !== 'role' && modelName !== 'currency' && modelName !== 'taxInfo') {
         data.createdBy = req.user!.userId
-        data.assignedTo = req.body.assignedTo || req.user!.userId
+        if (!NO_ASSIGNED_TO.has(modelName)) data.assignedTo = req.body.assignedTo || req.user!.userId
       }
       fixBooleans(data)
       fixDecimals(data)
@@ -361,7 +408,7 @@ export function entityRouter(moduleName: string): Router {
       }
       const record = await prismaModel.create({ data })
       if (custom) await saveCustomData(moduleName, record.id, custom)
-      await writeAudit({ moduleName, recordId: record.id, action: 'CREATE', newValue: JSON.stringify({ id: record.id, ...data }), userId: req.user!.userId, req })
+      await writeAudit({ moduleName, recordId: record.id, action: 'CREATE', newValue: auditSummary(record), userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onCreate', record, req })
 
       if (moduleName === 'emails' && record.toEmails && record.subject) {
@@ -390,6 +437,7 @@ export function entityRouter(moduleName: string): Router {
       if (!(await canMutateRecord(req, before, moduleName))) return res.status(403).json({ error: 'Access denied by sharing rules' })
       const body: any = { ...req.body }
       const { data, custom } = splitCustomData(body)
+      delete data.companyId
       for (const k of Object.keys(data)) {
         if (typeof data[k] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data[k])) {
           data[k] = new Date(data[k] + 'T12:00:00').toISOString()
@@ -419,7 +467,7 @@ export function entityRouter(moduleName: string): Router {
       if (!before) return res.status(404).json({ error: 'Not found' })
       if (!(await canMutateRecord(req, before, moduleName))) return res.status(403).json({ error: 'Access denied by sharing rules' })
       await prismaModel.update({ where, data: { isActive: false } })
-      await writeAudit({ moduleName, recordId: before.id, action: 'DELETE', oldValue: JSON.stringify({ id: before.id }), userId: req.user!.userId, req })
+      await writeAudit({ moduleName, recordId: before.id, action: 'DELETE', oldValue: auditSummary(before), userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onDelete', record: before, req })
       res.json({ success: true })
     } catch (err) { next(err) }
@@ -442,6 +490,109 @@ export function entityRouter(moduleName: string): Router {
       if (isScoped) addScope(where, req.user!.companyId)
       const record = await prismaModel.update({ where, data: { isActive: true } })
       res.json(record)
+    } catch (err) { next(err) }
+  })
+
+  // ---- Merge & Duplicate Handling (vtiger) ----
+  const identityFields: Record<string, string[]> = {
+    accounts: ['accountName', 'email', 'phone', 'website'],
+    contacts: ['email', 'phone'],
+    leads: ['email', 'phone', 'company'],
+    potentials: ['potentialName'],
+    campaigns: ['campaignName'],
+    products: ['productName', 'productNo'],
+    services: ['serviceName', 'serviceNo'],
+    vendors: ['vendorName', 'email'],
+    tickets: ['title'],
+    faq: ['title'],
+    projects: ['projectName', 'projectNo'],
+    assets: ['assetName', 'serialNo'],
+    servicecontracts: ['contractName', 'contractNo'],
+  }
+
+  // Related/child records that should follow a merge (reassigned to the surviving record)
+  const mergeChildren: { model: string; field: string; moduleName: string }[] = [
+    { model: 'comment', field: 'parentId', moduleName: '' },
+    { model: 'activity', field: 'parentId', moduleName: '' },
+    { model: 'email', field: 'parentId', moduleName: '' },
+    { model: 'document', field: 'parentId', moduleName: '' },
+    { model: 'follow', field: 'recordId', moduleName: '' },
+    { model: 'customFieldValue', field: 'recordId', moduleName },
+    { model: 'quoteLineItem', field: 'quoteId', moduleName: 'quotes' },
+    { model: 'salesOrderLineItem', field: 'salesOrderId', moduleName: 'salesorders' },
+    { model: 'purchaseOrderLineItem', field: 'purchaseOrderId', moduleName: 'purchaseorders' },
+    { model: 'invoiceLineItem', field: 'invoiceId', moduleName: 'invoices' },
+  ]
+
+  router.get('/:id/duplicates', async (req, res, next) => {
+    try {
+      if (!(await checkPermission(req, 'view'))) return res.status(403).json({ error: 'Access denied' })
+      let where: any = { id: req.params.id }
+      if (isScoped) addScope(where, req.user!.companyId)
+      const record = await prismaModel.findFirst({ where })
+      if (!record) return res.status(404).json({ error: 'Not found' })
+      const fields = identityFields[moduleName] || []
+      const ors: any[] = []
+      for (const f of fields) {
+        const val = record[f]
+        if (val != null && String(val).trim() !== '') {
+          ors.push({ [f]: { equals: String(val), mode: 'insensitive' } })
+        }
+      }
+      if (ors.length === 0) return res.json({ data: [] })
+      const dupWhere: any = { isActive: true, id: { not: record.id } }
+      if (isScoped) addScope(dupWhere, req.user!.companyId)
+      dupWhere.OR = ors
+      const data = await prismaModel.findMany({ where: dupWhere, take: 20 })
+      const merged = await mergeCustomValues(moduleName, data)
+      res.json({ data: merged })
+    } catch (err) { next(err) }
+  })
+
+  router.post('/:id/merge', async (req, res, next) => {
+    try {
+      if (!(await checkPermission(req, 'edit'))) return res.status(403).json({ error: 'Access denied' })
+      const { targetId, keepFields } = req.body
+      if (!targetId) return res.status(400).json({ error: 'targetId is required' })
+      let scope: any = {}
+      if (isScoped) scope.companyId = req.user!.companyId
+      const source = await prismaModel.findFirst({ where: { id: req.params.id, ...scope } })
+      const target = await prismaModel.findFirst({ where: { id: targetId, ...scope } })
+      if (!source || !target) return res.status(404).json({ error: 'Record not found' })
+
+      // 1. Merge fields: prefer target values, fill empties from source
+      const mergedData: any = {}
+      const keep = new Set<string>(keepFields || [])
+      for (const k of Object.keys(source)) {
+        if (['id', 'createdAt', 'updatedAt', 'companyId', 'isActive'].includes(k)) continue
+        const sourceVal = source[k]
+        const targetVal = target[k]
+        const isBlank = targetVal == null || targetVal === '' || (typeof targetVal === 'number' && isNaN(targetVal))
+        const keepFromSource = keep.has(k)
+        if (keepFromSource || (isBlank && sourceVal != null && sourceVal !== '')) {
+          mergedData[k] = sourceVal
+        }
+      }
+      await prismaModel.update({ where: { id: target.id }, data: mergedData })
+
+      // 2. Reassign polymorphic children
+      for (const child of mergeChildren) {
+        try {
+          const childModel = (prisma as any)[child.model]
+          if (!childModel) continue
+          const childScope: any = { [child.field]: source.id }
+          if (child.moduleName) childScope.moduleName = child.moduleName
+          await childModel.updateMany({
+            where: childScope,
+            data: { [child.field]: target.id },
+          })
+        } catch { /* model may not exist */ }
+      }
+
+      // 3. Hard-delete source, audit both
+      await prismaModel.update({ where: { id: source.id }, data: { isActive: false } })
+      await writeAudit({ moduleName, recordId: target.id, action: 'MERGE', newValue: `Merged ${moduleName} ${source.id} into ${target.id}`, userId: req.user!.userId, req })
+      res.json({ success: true, targetId: target.id })
     } catch (err) { next(err) }
   })
 

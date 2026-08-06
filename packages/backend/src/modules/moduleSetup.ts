@@ -250,6 +250,66 @@ const modules: Record<string, ModuleConfig> = {
     listFields: ['toNumber', 'message', 'status', 'createdAt'],
     relatedModules: []
   },
+  payments: {
+    modelName: 'payment',
+    label: 'Payments',
+    parent: 'Sales',
+    icon: 'CreditCard',
+    sequence: 95,
+    searchFields: ['reference', 'invoiceId'],
+    listFields: ['amount', 'paymentDate', 'method', 'reference'],
+    relatedModules: ['invoices']
+  },
+  recurringinvoices: {
+    modelName: 'recurringInvoice',
+    label: 'Recurring Invoices',
+    parent: 'Sales',
+    icon: 'Repeat',
+    sequence: 96,
+    searchFields: ['invoiceId', 'frequency'],
+    listFields: ['frequency', 'interval', 'nextRun', 'isActive'],
+    relatedModules: ['invoices']
+  },
+  calllogs: {
+    modelName: 'callLog',
+    label: 'Phone Calls',
+    parent: 'Support',
+    icon: 'Phone',
+    sequence: 165,
+    searchFields: ['fromNumber', 'toNumber', 'notes'],
+    listFields: ['fromNumber', 'toNumber', 'direction', 'callTime', 'status', 'duration'],
+    relatedModules: []
+  },
+  reports: {
+    modelName: 'report',
+    label: 'Reports',
+    parent: 'Tools',
+    icon: 'BarChart3',
+    sequence: 155,
+    searchFields: ['name'],
+    listFields: ['name', 'moduleName', 'reportType'],
+    relatedModules: []
+  },
+  mailboxes: {
+    modelName: 'mailbox',
+    label: 'Mailboxes',
+    parent: 'Tools',
+    icon: 'Inbox',
+    sequence: 156,
+    searchFields: ['name', 'user'],
+    listFields: ['name', 'host', 'lastSyncAt'],
+    relatedModules: []
+  },
+  rssfeeds: {
+    modelName: 'rssFeed',
+    label: 'RSS Feeds',
+    parent: 'Tools',
+    icon: 'Rss',
+    sequence: 158,
+    searchFields: ['name', 'url'],
+    listFields: ['name', 'category', 'lastFetchedAt'],
+    relatedModules: []
+  },
   currencies: {
     modelName: 'currency',
     label: 'Currencies',

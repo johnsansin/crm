@@ -40,6 +40,7 @@ model User {
   startOfWeek    String?  @db.VarChar(10)
   defaultModule  String?  @db.VarChar(100)
   currencyCode   String?  @db.VarChar(3)
+  dashboardConfig Json?
   roleId        String?
   companyId     String?
   createdAt     DateTime @default(now())
@@ -234,6 +235,7 @@ model Contact {
   supportStartDate DateTime?
   supportEndDate   DateTime?
   isConvertedFromLead Boolean @default(false)
+  googleContactId String? @db.VarChar(300)
   assignedTo    String?
   companyId String?
   isActive Boolean  @default(true)
@@ -384,6 +386,11 @@ model Product {
   supportStartDate DateTime?
   supportEndDate  DateTime?
   discontinued    Boolean  @default(false)
+  vat             Boolean  @default(false)
+  isService       Boolean  @default(false)
+  isSales         Boolean  @default(false)
+  pricingFormula  String?  @db.VarChar(50)
+  markupPercent   Decimal? @db.Decimal(5,2)
   serialNo        String?  @db.VarChar(100)
   mfrPartNo       String?  @db.VarChar(100)
   vendorPartNo    String?  @db.VarChar(100)
@@ -764,6 +771,7 @@ model Invoice {
   salesCommission Decimal  @default(0) @db.Decimal(16,2)
   exciseDuty      Decimal  @default(0) @db.Decimal(16,2)
   invoiceStatus   String?  @db.VarChar(100)
+  paidAmount      Decimal  @default(0) @db.Decimal(16,2)
   terms           String?  @db.Text
   notes           String?  @db.Text
   description     String?  @db.Text
@@ -895,6 +903,9 @@ model Email {
   ccEmails    String?  @db.Text
   bccEmails   String?  @db.Text
   emailFlag   String?  @db.VarChar(50)
+  mailboxId   String?  @db.VarChar(100)
+  isRead      Boolean  @default(false)
+  messageId   String?  @db.VarChar(300)
   parentId    String?
   parentModule String? @db.VarChar(100)
   attachments Json?    @default("[]")
@@ -1185,6 +1196,7 @@ model LoginLog {
   ipAddress String?  @db.VarChar(45)
   publicIp  String?  @db.VarChar(45)
   userAgent String?  @db.Text
+  status    String?  @default("Success") @db.VarChar(20)
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1210,6 +1222,14 @@ model OrgSetting {
   updatedAt DateTime @updatedAt
 
   @@unique([companyId, key])
+}
+
+model GlobalSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique @db.VarChar(100)
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model CustomField {
@@ -1370,6 +1390,9 @@ model Activity {
   reminderAt   DateTime?
   parentModule String?  @db.VarChar(100)
   parentId     String?
+  recurrence   Json?
+  shared       Boolean  @default(false)
+  googleEventId String? @db.VarChar(300)
   companyId    String?
   isActive     Boolean   @default(true)
   assignedTo   String?
@@ -1392,4 +1415,222 @@ model Follow {
 
   @@unique([userId, moduleName, recordId])
   @@index([moduleName, recordId])
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  amount      Decimal  @default(0) @db.Decimal(16,2)
+  paymentDate DateTime @default(now())
+  method      String?  @db.VarChar(50)
+  reference   String?  @db.VarChar(200)
+  notes       String?  @db.Text
+  companyId   String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([invoiceId])
+  @@index([companyId])
+}
+
+model RecurringInvoice {
+  id         String   @id @default(uuid())
+  invoiceId  String
+  frequency  String   @default("monthly") @db.VarChar(20)
+  interval   Int      @default(1)
+  dayOfMonth Int?
+  startDate  DateTime?
+  endDate    DateTime?
+  nextRun    DateTime?
+  lastRun    DateTime?
+  isActive   Boolean  @default(true)
+  companyId  String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([nextRun])
+}
+
+model PortalUser {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  companyId     String?
+  accessCode    String?
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model Mailbox {
+  id         String   @id @default(uuid())
+  name       String   @db.VarChar(200)
+  host       String   @db.VarChar(200)
+  port       Int      @default(993)
+  secure     Boolean  @default(true)
+  user       String   @db.VarChar(200)
+  pass       String?  @db.VarChar(500)
+  folder     String?  @db.VarChar(200)
+  lastSyncAt DateTime?
+  isActive   Boolean  @default(true)
+  companyId  String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model EmailToTicketRule {
+  id          String   @id @default(uuid())
+  mailboxId   String
+  defaultStatus   String? @default("Open") @db.VarChar(100)
+  defaultPriority String? @default("Normal") @db.VarChar(100)
+  defaultAssignedTo String?
+  createContactIfMissing Boolean @default(false)
+  isActive    Boolean  @default(true)
+  companyId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([mailboxId])
+}
+
+model CallLog {
+  id             String   @id @default(uuid())
+  direction      String?  @default("inbound") @db.VarChar(20)
+  fromNumber     String?  @db.VarChar(50)
+  toNumber       String?  @db.VarChar(50)
+  callTime       DateTime?
+  duration       Int?
+  status         String?  @db.VarChar(50)
+  notes          String?  @db.Text
+  relatedToModule String? @db.VarChar(100)
+  relatedToId    String?
+  companyId      String?
+  isActive       Boolean  @default(true)
+  assignedTo     String?
+  createdBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model GoogleAccount {
+  id             String   @id @default(uuid())
+  email          String?  @db.VarChar(200)
+  accessToken    String?  @db.Text
+  refreshToken   String?  @db.Text
+  scopes         Json     @default("[]")
+  lastSyncedAt   DateTime?
+  syncCalendar   Boolean  @default(true)
+  syncContacts   Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  companyId      String?
+  createdBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model Report {
+  id           String   @id @default(uuid())
+  name         String   @db.VarChar(200)
+  moduleName   String   @db.VarChar(100)
+  reportType   String   @default("tabular") @db.VarChar(50)
+  columns      Json     @default("[]")
+  grouping     Json     @default("{}")
+  filters      Json     @default("[]")
+  sort         Json     @default("[]")
+  isActive     Boolean  @default(true)
+  companyId    String?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model RssFeed {
+  id         String   @id @default(uuid())
+  name       String   @db.VarChar(200)
+  url        String   @db.VarChar(500)
+  category   String?  @db.VarChar(100)
+  lastFetchedAt DateTime?
+  isActive   Boolean  @default(true)
+  companyId  String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model RssEntry {
+  id          String   @id @default(uuid())
+  feedId      String
+  title       String   @db.VarChar(500)
+  link        String?  @db.VarChar(1000)
+  description String?  @db.Text
+  author      String?  @db.VarChar(200)
+  pubDate     DateTime?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([feedId, link])
+  @@index([feedId])
+}
+
+model ModuleLayout {
+  id              String   @id @default(uuid())
+  moduleName      String   @db.VarChar(100)
+  tabName         String   @db.VarChar(100)
+  fieldOrder      Json     @default("[]")
+  fieldVisibility Json     @default("{}")
+  isActive        Boolean  @default(true)
+  companyId       String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([companyId, moduleName, tabName])
+}
+
+model PicklistDependency {
+  id          String   @id @default(uuid())
+  moduleName  String   @db.VarChar(100)
+  parentField String   @db.VarChar(100)
+  childField  String   @db.VarChar(100)
+  mappings    Json     @default("[]")
+  isActive    Boolean  @default(true)
+  companyId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, moduleName, parentField, childField])
+}
+
+model ApiKey {
+  id         String   @id @default(uuid())
+  name       String   @db.VarChar(200)
+  keyPrefix  String   @db.VarChar(20)
+  keyHash    String   @db.VarChar(100)
+  scopes     Json     @default("[]")
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  isActive   Boolean  @default(true)
+  companyId  String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([companyId])
 }

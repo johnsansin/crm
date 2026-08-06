@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { getAllGlobalSettings, setGlobalSetting } from '../lib/settings'
 
 export const adminRouter = Router()
 
@@ -14,6 +15,23 @@ function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 adminRouter.use(requireSuperAdmin)
+
+adminRouter.get('/settings', async (_req, res, next) => {
+  try {
+    res.json(await getAllGlobalSettings())
+  } catch (err) { next(err) }
+})
+
+adminRouter.put('/settings', async (req, res, next) => {
+  try {
+    const body = req.body
+    const keys = body && body.settings ? body.settings : body
+    for (const key of Object.keys(keys || {})) {
+      await setGlobalSetting(key, keys[key])
+    }
+    res.json(await getAllGlobalSettings())
+  } catch (err) { next(err) }
+})
 
 adminRouter.get('/companies', async (_req, res, next) => {
   try {

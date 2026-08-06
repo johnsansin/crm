@@ -132,7 +132,7 @@ const moduleTabs: Record<string, FieldTab[]> = {
     { label: 'Description', fields: ['description'] },
   ],
   products: [
-    { label: 'Details', fields: ['productName', 'productNo', 'productCategory', 'manufacturer', 'usageUnit', 'weight', 'packSize', 'website', 'serialNo', 'mfrPartNo', 'vendorPartNo', 'productSheet', 'glAccount', 'taxClass', 'vendorId', 'salesStartDate', 'salesEndDate', 'startDate', 'expiryDate', 'supportStartDate', 'supportEndDate'] },
+    { label: 'Details', fields: ['productName', 'productNo', 'image', 'isActive', 'vat', 'isService', 'isSales', 'productCategory', 'manufacturer', 'usageUnit', 'weight', 'packSize', 'website', 'serialNo', 'mfrPartNo', 'vendorPartNo', 'productSheet', 'glAccount', 'taxClass', 'assignedTo', 'vendorId'] },
     { label: 'Pricing', fields: ['unitPrice', 'costPrice', 'commissionRate', 'commissionMethod', 'qtyInStock', 'qtyOnOrder', 'qtyInDemand', 'reorderLevel'] },
     { label: 'Description', fields: ['description'] },
   ],
@@ -253,6 +253,9 @@ export function formatFieldValue(value: any, key: string): string {
   }
   if (typeof value === 'boolean') return value ? 'Yes' : 'No'
   if (key.toLowerCase().includes('date') || key.toLowerCase().includes('Date')) {
+    return formatDate(value) || '-'
+  }
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
     return formatDate(value) || '-'
   }
   return String(value)

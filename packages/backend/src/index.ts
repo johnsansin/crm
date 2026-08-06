@@ -16,6 +16,7 @@ import { invoicesRouter } from './modules/invoices.routes'
 import { calendarRouter } from './modules/calendar.routes'
 import { recordRouter } from './modules/record.routes'
 import { leadRouter } from './modules/lead.routes'
+import { extrasRouter } from './modules/extras.routes'
 import { errorHandler } from './middleware/errorHandler'
 import { setupModules, getModuleConfig } from './modules/moduleSetup'
 import { startCron } from './lib/cron'
@@ -43,6 +44,7 @@ app.post('/api/contact', (req, res) => {
 })
 
 app.use('/api/auth', authRouter)
+app.use('/api', extrasRouter)
 app.use('/api/users', userRouter)
 app.use('/api/company', companyRouter)
 app.use('/api', rbacRouter)

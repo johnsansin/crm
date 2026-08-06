@@ -235,6 +235,66 @@ invoicesRouter.post('/:id/comments', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+invoicesRouter.get('/:id/payments', async (req, res, next) => {
+  try {
+    const inv = await prisma.invoice.findFirst({
+      where: { id: req.params.id, companyId: req.user!.companyId },
+    })
+    if (!inv) return res.status(404).json({ error: 'Not found' })
+    const data = await prisma.payment.findMany({
+      where: { invoiceId: req.params.id },
+      orderBy: { paymentDate: 'desc' },
+    })
+    const total = data.reduce((s, p) => s + Number(p.amount || 0), 0)
+    res.json({ data, total: Number(total.toFixed(2)) })
+  } catch (err) { next(err) }
+})
+
+invoicesRouter.post('/:id/payments', async (req, res, next) => {
+  try {
+    const inv = await prisma.invoice.findFirst({
+      where: { id: req.params.id, companyId: req.user!.companyId },
+    })
+    if (!inv) return res.status(404).json({ error: 'Not found' })
+    const { amount, paymentDate, method, reference, notes } = req.body
+    if (amount == null || Number(amount) <= 0) return res.status(400).json({ error: 'Valid amount is required' })
+    const payment = await prisma.payment.create({
+      data: {
+        invoiceId: req.params.id,
+        amount: Number(amount),
+        paymentDate: paymentDate ? new Date(paymentDate + 'T12:00:00') : new Date(),
+        method: method || 'Other',
+        reference: reference || null,
+        notes: notes || null,
+        companyId: req.user!.companyId,
+        createdBy: req.user!.userId,
+      },
+    })
+    const payments = await prisma.payment.findMany({ where: { invoiceId: req.params.id } })
+    const totalPaid = payments.reduce((s, p) => s + Number(p.amount || 0), 0)
+    let invoiceStatus = inv.invoiceStatus
+    if (totalPaid >= Number(inv.grandTotal || 0) - 0.005) {
+      invoiceStatus = 'Paid'
+    } else if (totalPaid > 0) {
+      invoiceStatus = 'Partially Paid'
+    }
+    await prisma.invoice.update({ where: { id: req.params.id }, data: { invoiceStatus, paidAmount: Number(totalPaid.toFixed(2)) } })
+    res.status(201).json({ data: payment, totalPaid: Number(totalPaid.toFixed(2)), invoiceStatus })
+  } catch (err) { next(err) }
+})
+
+invoicesRouter.get('/:id/balance', async (req, res, next) => {
+  try {
+    const inv = await prisma.invoice.findFirst({
+      where: { id: req.params.id, companyId: req.user!.companyId },
+    })
+    if (!inv) return res.status(404).json({ error: 'Not found' })
+    const payments = await prisma.payment.findMany({ where: { invoiceId: req.params.id } })
+    const totalPaid = payments.reduce((s, p) => s + Number(p.amount || 0), 0)
+    res.json({ grandTotal: Number(inv.grandTotal || 0), totalPaid: Number(totalPaid.toFixed(2)), balance: Number((Number(inv.grandTotal || 0) - totalPaid).toFixed(2)) })
+  } catch (err) { next(err) }
+})
+
 invoicesRouter.get('/:id/pdf', async (req, res, next) => {
   try {
     const inv = await prisma.invoice.findFirst({

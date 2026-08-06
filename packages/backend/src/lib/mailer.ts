@@ -30,6 +30,10 @@ export async function getSmtpConfig(companyId?: string | null): Promise<SmtpConf
       return { ...DEFAULT_SMTP, ...(row.value as any) }
     }
   }
+  const global = await prisma.globalSetting.findUnique({ where: { key: 'smtp' } }).catch(() => null)
+  if (global?.value && (global.value as any)?.host) {
+    return { ...DEFAULT_SMTP, ...(global.value as any) }
+  }
   return DEFAULT_SMTP
 }
 

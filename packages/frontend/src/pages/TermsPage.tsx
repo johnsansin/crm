@@ -40,7 +40,7 @@ export function TermsPage() {
         consequential damages arising from your use of the Service.
       </p>
       <h2 className="text-base font-semibold text-slate-900 dark:text-white pt-2">7. Contact Us</h2>
-      <p>Questions about these Terms? Contact us at suhailrao@gmail.com.</p>
+      <p>Questions about these Terms? Contact us at sajjad@bizforce-crm.online.</p>
     </LegalPage>
   )
 }

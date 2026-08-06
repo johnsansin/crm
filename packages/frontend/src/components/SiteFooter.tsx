@@ -45,9 +45,9 @@ export function SiteFooter() {
               All-in-One CRM for growing businesses. Manage contacts, track sales, automate workflows, and grow — all from one powerful platform.
             </p>
             <div className="mt-5 space-y-2 text-sm text-slate-600 dark:text-slate-400">
-              <p className="flex items-center gap-2"><Mail size={14} className="text-blue-600 dark:text-blue-400 shrink-0" /> suhailrao@gmail.com</p>
-              <p className="flex items-center gap-2"><Phone size={14} className="text-blue-600 dark:text-blue-400 shrink-0" /> +92-321-4477664</p>
-              <p className="flex items-center gap-2"><MapPin size={14} className="text-blue-600 dark:text-blue-400 shrink-0" /> LG_80, Street 1, DRGCC, Phase 6, DHA, Lahore</p>
+              <p className="flex items-center gap-2"><Mail size={14} className="text-blue-600 dark:text-blue-400 shrink-0" /> sajjad@bizforce-crm.online</p>
+              <p className="flex items-center gap-2"><Phone size={14} className="text-blue-600 dark:text-blue-400 shrink-0" /> +92-345-4452741</p>
+              <p className="flex items-center gap-2"><MapPin size={14} className="text-blue-600 dark:text-blue-400 shrink-0" /> 125-F1, Johar Town, Lahore - Pakistan</p>
             </div>
           </div>
 

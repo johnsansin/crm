@@ -38,9 +38,9 @@ export function ContactUsPage() {
   }
 
   const infoItems = [
-    { icon: Mail, label: 'Email', value: 'suhailrao@gmail.com' },
-    { icon: Phone, label: 'Phone', value: '+92-321-4477664' },
-    { icon: MapPin, label: 'Address', value: 'LG_80, Street 1, DRGCC, Phase 6, DHA\nLahore, Punjab, 54810\nPakistan' },
+    { icon: Mail, label: 'Email', value: 'sajjad@bizforce-crm.online' },
+    { icon: Phone, label: 'Phone', value: '+92-345-4452741' },
+    { icon: MapPin, label: 'Address', value: '125-F1, Johar Town\nLahore - Pakistan' },
   ]
 
   return (

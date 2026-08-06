@@ -36,7 +36,7 @@ rbacRouter.get('/roles/:id/permissions', requireAdmin, async (req, res, next) =>
     const role = await prisma.role.findFirst({ where: { id: req.params.id, companyId } })
     if (!role) return res.status(404).json({ error: 'Role not found' })
 
-    const moduleNames = ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier']
+    const moduleNames = ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds']
 
     const permissions = await prisma.rolePermission.findMany({ where: { roleId: role.id } })
     const permMap = new Map(permissions.map(p => [p.moduleName, p]))

@@ -24,6 +24,7 @@ async function recordLogin(req: any, user: any) {
       userName: user.userName,
       ipAddress: ipAddress || null,
       userAgent: userAgent || null,
+      status: 'Success',
     }
   })
   fetch('https://api.ipify.org?format=json')
@@ -43,12 +44,12 @@ async function issueToken(user: any) {
   return { token, isSuperAdmin }
 }
 
-async function verifyCredentials(user: any, password: string) {
+async function verifyCredentials(user: any, password: string, req?: any) {
   const lock = canLogin(user)
   if (!lock.allowed) return { ok: false, error: lock.reason }
   const valid = await bcrypt.compare(password, user.password)
   if (!valid) {
-    if (user.companyId) await recordLoginFailure(user.id, user.companyId)
+    if (user.companyId) await recordLoginFailure(user.id, user.companyId, req)
     return { ok: false, error: 'Invalid credentials' }
   }
   return { ok: true }
@@ -71,7 +72,7 @@ authRouter.post('/login', async (req, res, next) => {
         return res.status(403).json({ error: 'Organization is deactivated. Contact your super admin.' })
       }
     }
-    const result = await verifyCredentials(user, password)
+    const result = await verifyCredentials(user, password, req)
     if (!result.ok) return res.status(401).json({ error: result.error })
 
     // 2FA: issue a one-time session challenge
@@ -139,7 +140,7 @@ authRouter.post('/register', async (req, res, next) => {
       data: { name: companyName || `${firstName}'s Organization` }
     })
 
-    const modules = ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier']
+    const modules = ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds']
 
     const ceo = await prisma.role.create({ data: { name: 'CEO', description: 'Full access to all modules', companyId: company.id } })
     await prisma.role.create({ data: { name: 'Manager', description: 'Manager level access', parentId: ceo.id, companyId: company.id } })
@@ -177,6 +178,10 @@ authRouter.post('/register', async (req, res, next) => {
       include: { company: true }
     })
 
+    await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date() } })
+    await recordLogin(req, user)
+    await writeAudit({ moduleName: 'auth', action: 'LOGIN', newValue: user.email, userId: user.id, req })
+
     const token = jwt.sign(
       { userId: user.id, email: user.email, isAdmin: user.isAdmin, companyId: user.companyId, roleId: user.roleId },
       JWT_SECRET,
@@ -184,6 +189,19 @@ authRouter.post('/register', async (req, res, next) => {
     )
     const { password: _, ...userData } = user
     res.status(201).json({ token, user: { ...userData, isSuperAdmin: false } })
+  } catch (err) { next(err) }
+})
+
+authRouter.post('/logout', authMiddleware, async (req, res, next) => {
+  try {
+    await writeAudit({
+      moduleName: 'auth',
+      action: 'LOGOUT',
+      newValue: req.user!.email || '',
+      userId: req.user!.userId,
+      req,
+    })
+    res.json({ success: true })
   } catch (err) { next(err) }
 })
 
@@ -261,5 +279,26 @@ authRouter.put('/me', authMiddleware, async (req, res, next) => {
     })
     const { password: _, ...userData } = user
     res.json(userData)
+  } catch (err) { next(err) }
+})
+
+authRouter.get('/me/dashboard', authMiddleware, async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      select: { dashboardConfig: true }
+    })
+    res.json({ config: user?.dashboardConfig || null })
+  } catch (err) { next(err) }
+})
+
+authRouter.put('/me/dashboard', authMiddleware, async (req, res, next) => {
+  try {
+    const { config } = req.body
+    await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { dashboardConfig: config == null ? null : config }
+    })
+    res.json({ success: true })
   } catch (err) { next(err) }
 })

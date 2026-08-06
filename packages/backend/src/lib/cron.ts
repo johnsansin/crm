@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import { runScheduledTaskActions } from './settings'
+import { runRecurringInvoices, fetchAllRssFeeds, syncAllMailboxes, sendPaymentReminders } from './automation'
 
 function nextRunFor(frequency: string): Date {
   const d = new Date(Date.now() + 60 * 1000)
@@ -40,6 +41,12 @@ export async function runDueTasks(): Promise<void> {
   } finally {
     running = false
   }
+
+  // Feature automation passes
+  runRecurringInvoices().catch(() => {})
+  fetchAllRssFeeds().catch(() => {})
+  syncAllMailboxes().catch(() => {})
+  sendPaymentReminders().catch(() => {})
 }
 
 export function startCron(): NodeJS.Timeout {

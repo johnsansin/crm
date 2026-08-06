@@ -8,12 +8,16 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { getFieldTabs, getFieldLabel, formatFieldValue } from '@/lib/field-utils'
 import { useOrgSettings } from '@/lib/org-format'
 import { ProjectSearchSelect } from '@/components/project-search-select'
-import { ArrowLeft, Save, Loader2, Trash2, Pencil, ChevronRight, Asterisk } from 'lucide-react'
+import { UserRoleSelect, userDisplayName } from '@/components/user-role-select'
+import { SearchSelect } from '@/components/search-select'
+import { VendorSearchSelect } from '@/components/vendor-search-select'
+import { ArrowLeft, Save, Loader2, Trash2, Pencil, ChevronRight, Asterisk, ImagePlus, Plus } from 'lucide-react'
 
 const labelMap: Record<string, string> = {
   accounts: 'Account', contacts: 'Contact', leads: 'Lead',
@@ -54,7 +58,7 @@ const SELECT_OPTIONS: Record<string, Record<string, string[]>> = {
   assets: { status: ['--None--','In Service','Out of Service','Disposed'] },
   servicecontracts: { contractType: ['--None--','Support','Service','Maintenance','SLA'], status: ['--None--','In Planning','In Progress','Active','On Hold','Completed','Cancelled'], priority: ['--None--','Low','Medium','High','Urgent'], trackingUnit: ['--None--','Hours','Days','Months','Years','Support Incidents'] },
   faq: { status: ['--None--','Draft','Published','Archived'], category: ['--None--','General','Technical','Billing','Sales','Support'] },
-  products: { productCategory: ['--None--','Hardware','Software','Services','Consulting','Training','Other'], usageUnit: ['--None--','Each','Hour','Day','Month','Year','Box','Dozen','Kg','Lb','Set'], commissionMethod: ['--None--','Fixed','Percentage'] },
+  products: { productCategory: ['--None--','Hardware','Software','Services','Consulting','Training','Other'], manufacturer: ['--None--','ACME Corp','Alpha Manufacturing','Beta Industries','Delta Tech','ElectroWorks','Global Parts','Mega Machines','Omega Systems','Precision Tools','Vertex Inc.'], glAccount: ['--None--','2204 - Inventory','2204 - Inventory Assets','4100 - Sales','5100 - Cost of Goods Sold','6100 - Product Purchases'], taxClass: ['--None--','Taxable','Exempt','Zero Rated','Reduced Rate'], usageUnit: ['--None--','Each','Hour','Day','Month','Year','Box','Dozen','Kg','Lb','Set'], commissionMethod: ['--None--','Fixed','Percentage'] },
   services: { serviceCategory: ['--None--','Consulting','Training','Support','Maintenance','Installation','Other'], usageUnit: ['--None--','Each','Hour','Day','Month','Year','Box','Dozen','Kg','Lb','Set'], commissionMethod: ['--None--','Fixed','Percentage'] },
   vendors: { category: ['--None--','Software','Hardware','Services','Consulting','Training','Other'] },
   documents: { fileType: ['--None--','PDF','Document','Spreadsheet','Presentation','Image','Video','Audio','Archive','Other'], fileStatus: ['--None--','Active','Archived','Deleted'] },
@@ -184,35 +188,36 @@ const fieldConfigs: Record<string, { name: string; type: string; required?: bool
     { name: 'versionId', type: 'text' },
   ],
   products: [
-    { name: 'productName', type: 'text', required: true },
     { name: 'productNo', type: 'text' },
-    { name: 'productCategory', type: 'select' },
-    { name: 'manufacturer', type: 'text' },
-    { name: 'unitPrice', type: 'number' },
-    { name: 'costPrice', type: 'number' },
-    { name: 'commissionRate', type: 'number' },
-    { name: 'commissionMethod', type: 'select' },
-    { name: 'qtyInStock', type: 'number' },
-    { name: 'qtyOnOrder', type: 'number' },
-    { name: 'qtyInDemand', type: 'number' },
-    { name: 'reorderLevel', type: 'number' },
-    { name: 'usageUnit', type: 'select' },
-    { name: 'weight', type: 'number' },
-    { name: 'packSize', type: 'number' },
-    { name: 'salesStartDate', type: 'date' },
-    { name: 'salesEndDate', type: 'date' },
-    { name: 'startDate', type: 'date' },
-    { name: 'expiryDate', type: 'date' },
-    { name: 'supportStartDate', type: 'date' },
-    { name: 'supportEndDate', type: 'date' },
-    { name: 'website', type: 'text' },
+    { name: 'productName', type: 'text', required: true },
+    { name: 'image', type: 'image' },
+    { name: 'productCategory', type: 'search-select' },
+    { name: 'manufacturer', type: 'search-select' },
+    { name: 'glAccount', type: 'search-select' },
+    { name: 'usageUnit', type: 'search-select' },
+    { name: 'taxClass', type: 'search-select' },
+    { name: 'isActive', type: 'checkbox' },
+    { name: 'vat', type: 'checkbox' },
+    { name: 'isService', type: 'checkbox' },
+    { name: 'isSales', type: 'checkbox' },
     { name: 'serialNo', type: 'text' },
     { name: 'mfrPartNo', type: 'text' },
     { name: 'vendorPartNo', type: 'text' },
     { name: 'productSheet', type: 'text' },
-    { name: 'glAccount', type: 'text' },
-    { name: 'taxClass', type: 'text' },
-    { name: 'vendorId', type: 'text' },
+    { name: 'qtyPerUnit', type: 'text' },
+    { name: 'website', type: 'text' },
+    { name: 'unitPrice', type: 'number' },
+    { name: 'costPrice', type: 'number' },
+    { name: 'commissionRate', type: 'number' },
+    { name: 'commissionMethod', type: 'search-select' },
+    { name: 'qtyInStock', type: 'number' },
+    { name: 'reorderLevel', type: 'number' },
+    { name: 'qtyOnOrder', type: 'number' },
+    { name: 'qtyInDemand', type: 'number' },
+    { name: 'weight', type: 'number' },
+    { name: 'packSize', type: 'number' },
+    { name: 'vendorId', type: 'vendor-select' },
+    { name: 'assignedTo', type: 'user-select' },
     { name: 'description', type: 'textarea' },
   ],
   projects: [
@@ -408,7 +413,7 @@ const fieldConfigs: Record<string, { name: string; type: string; required?: bool
     { name: 'exciseDuty', type: 'number' },
     { name: 'poStatus', type: 'select' },
     { name: 'taxType', type: 'select' },
-    { name: 'vendorId', type: 'text' },
+    { name: 'vendorId', type: 'vendor-select' },
     { name: 'contactId', type: 'text' },
     { name: 'terms', type: 'textarea' },
     { name: 'description', type: 'textarea' },
@@ -532,9 +537,8 @@ const fieldConfigs: Record<string, { name: string; type: string; required?: bool
 function formatDisplayValue(value: any, type: string, name?: string) {
   if (value == null || value === '') return '-'
   if (type === 'user-select' && name === 'assignedTo') return value
-  if (type === 'number') return formatFieldValue(value, name || '')
-  if (type === 'date') return formatFieldValue(value, name || '')
-  return value
+  if (type === 'checkbox') return value ? 'Yes' : 'No'
+  return formatFieldValue(value, name || '')
 }
 
 export function ModuleDetailPage() {
@@ -565,12 +569,52 @@ export function ModuleDetailPage() {
   })
   const projects = projectsData?.data || []
 
+  const { data: relatedTasks } = useQuery({
+    queryKey: ['projects', id, 'tasks'],
+    queryFn: () => api.listAll('projecttasks', { filter: JSON.stringify({ projectId: id }) }),
+    enabled: mod === 'projects' && !isNew,
+  })
+  const { data: relatedMilestones } = useQuery({
+    queryKey: ['projects', id, 'milestones'],
+    queryFn: () => api.listAll('projectmilestones', { filter: JSON.stringify({ projectId: id }) }),
+    enabled: mod === 'projects' && !isNew,
+  })
+  const relatedTaskList = relatedTasks?.data || []
+  const relatedMilestoneList = relatedMilestones?.data || []
+
+  const needsUsers = (fieldConfigs[mod] || []).some((f: any) => f.type === 'user-select')
   const { data: usersData } = useQuery({
     queryKey: ['module-users', mod],
     queryFn: () => api.request<any>(`/${mod}/users`),
-    enabled: mod === 'leads',
+    enabled: needsUsers,
   })
   const users = usersData?.data || []
+  const roles = usersData?.roles || []
+
+  const needsVendors = mod === 'products' || mod === 'purchaseorders'
+  const { data: vendorsData } = useQuery({
+    queryKey: ['module-vendors', mod],
+    queryFn: () => api.listAll('vendors'),
+    enabled: needsVendors,
+  })
+  const vendors = vendorsData?.data || []
+
+  const [vendorModalOpen, setVendorModalOpen] = useState(false)
+  const [vendorForm, setVendorForm] = useState<Record<string, string>>({})
+  const [savingVendor, setSavingVendor] = useState(false)
+  const addVendorMutation = useMutation({
+    mutationFn: (data: any) => api.create('vendors', data),
+    onSuccess: (created: any) => {
+      queryClient.invalidateQueries({ queryKey: ['vendors'] })
+      addToast({ title: 'Vendor created', variant: 'success' })
+      handleChange('vendorId', created.id || '')
+      setVendorModalOpen(false)
+      setVendorForm({})
+    },
+    onError: (err: Error) => addToast({ title: 'Error', description: err.message, variant: 'destructive' }),
+  })
+
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   const { data: customFieldsData } = useQuery({
     queryKey: ['custom-fields', mod],
@@ -622,7 +666,9 @@ export function ModuleDetailPage() {
       if (saved) {
         try { setFormData(JSON.parse(saved)); return } catch {}
       }
-      setFormData({})
+      const preseed: Record<string, any> = {}
+      if (searchParams.get('projectId')) preseed.projectId = searchParams.get('projectId')
+      setFormData(preseed)
     } else if (record) {
       setFormData(formatRecordForForm(record))
     }
@@ -675,6 +721,8 @@ export function ModuleDetailPage() {
       const val = formData[field.name]
       if (field.type === 'date' && val) {
         payload[field.name] = new Date(val + 'T12:00:00').toISOString()
+      } else if (field.type === 'checkbox') {
+        payload[field.name] = !!val
       } else if ((field.type === 'number') && (val === '' || val == null)) {
         payload[field.name] = null
       } else {
@@ -723,7 +771,10 @@ export function ModuleDetailPage() {
               </Button>
               <div className="min-w-0">
                 <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {label} <ChevronRight size={12} /> Details
+                  <button type="button" onClick={() => navigate(`/${mod}`)} className="transition-colors hover:text-foreground">
+                    {label}
+                  </button>{' '}
+                  <ChevronRight size={12} /> Details
                 </p>
                 <h1 className="text-xl md:text-2xl font-bold tracking-tight truncate">{record?.[fields[0]?.name] || label}</h1>
               </div>
@@ -760,13 +811,28 @@ export function ModuleDetailPage() {
                           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             {(field as any).label || getFieldLabel(field.name)}
                           </label>
+                          {field.name === 'image' && record?.image ? (
+                            <img src={record.image} alt={record.productName || 'Product'} className="mt-1.5 h-20 w-20 rounded-lg border object-cover" />
+                          ) : (
                           <p className="text-sm mt-1.5 font-medium text-foreground">
                             {field.name === 'projectId'
                               ? (projects.find(p => p.id === record?.projectId)?.projectName || '-')
-                              : field.name === 'assignedTo' && users.length
-                                ? ((() => { const u: any = users.find((x: any) => x.id === record?.assignedTo); return u ? `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || u.userName || '-' : record?.ownerName || '-' })())
-                                : formatDisplayValue(field.name.startsWith('cf_') ? record?.customFields?.[field.name] : record?.[field.name], field.type, field.name)}
+                              : field.name === 'assignedTo'
+                                ? ((() => {
+                                    const assignedId = record?.assignedTo
+                                    if (assignedId) {
+                                      const u: any = users.find((x: any) => x.id === assignedId)
+                                      if (u) return userDisplayName(u)
+                                      const r: any = roles.find((x: any) => x.id === assignedId)
+                                      if (r) return r.name
+                                    }
+                                    return record?.ownerName || '-'
+                                  })())
+                                : field.name === 'vendorId'
+                                  ? (vendors.find((v: any) => v.id === record?.vendorId)?.vendorName || record?.vendorName || formatDisplayValue(record?.vendorId, field.type, field.name))
+                                  : formatDisplayValue(field.name.startsWith('cf_') ? record?.customFields?.[field.name] : record?.[field.name], field.type, field.name)}
                           </p>
+                          )}
                         </div>
                       )
                     })}
@@ -776,6 +842,70 @@ export function ModuleDetailPage() {
             </TabsRoot>
           </CardContent>
         </Card>
+        {mod === 'projects' && !isNew && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold">Related Tasks</h3>
+                  <button type="button" onClick={() => navigate(`/projecttasks/new?projectId=${id}`)} className="text-xs font-medium text-primary hover:underline">
+                    + Add Task
+                  </button>
+                </div>
+                {relatedTaskList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No tasks yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {relatedTaskList.map((t: any) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => navigate(`/projecttasks/${t.id}`)}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2 text-left text-sm transition-colors hover:bg-accent/40"
+                      >
+                        <span className="truncate font-medium">{t.title}</span>
+                        <span className="flex shrink-0 items-center gap-2">
+                          {t.status && <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{t.status}</span>}
+                          {t.progress != null && <span className="text-xs text-muted-foreground">{t.progress}%</span>}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold">Related Milestones</h3>
+                  <button type="button" onClick={() => navigate(`/projectmilestones/new?projectId=${id}`)} className="text-xs font-medium text-primary hover:underline">
+                    + Add Milestone
+                  </button>
+                </div>
+                {relatedMilestoneList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No milestones yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {relatedMilestoneList.map((m: any) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => navigate(`/projectmilestones/${m.id}`)}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2 text-left text-sm transition-colors hover:bg-accent/40"
+                      >
+                        <span className="truncate font-medium">{m.title}</span>
+                        <span className="flex shrink-0 items-center gap-2">
+                          {m.status && <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{m.status}</span>}
+                          {m.progress != null && <span className="text-xs text-muted-foreground">{m.progress}%</span>}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
         <ConfirmDialog
           open={showDelete}
           onOpenChange={setShowDelete}
@@ -799,7 +929,10 @@ export function ModuleDetailPage() {
             </Button>
             <div className="min-w-0">
               <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {label} <ChevronRight size={12} /> {isNew ? 'New Record' : 'Edit Record'}
+                <button type="button" onClick={() => navigate(`/${mod}`)} className="transition-colors hover:text-foreground">
+                  {label}
+                </button>{' '}
+                <ChevronRight size={12} /> {isNew ? 'New Record' : 'Edit Record'}
               </p>
               <h1 className="text-xl md:text-2xl font-bold tracking-tight truncate">
                 {isNew ? `Create New ${label}` : `Edit ${label}`}
@@ -825,6 +958,22 @@ export function ModuleDetailPage() {
               SELECT_OPTIONS={dynamicOptions}
               projects={projects}
               users={users}
+              roles={roles}
+              vendors={vendors}
+              uploadingImage={uploadingImage}
+              onUploadImage={async (file: File) => {
+                setUploadingImage(true)
+                try {
+                  const res = await api.uploadFile(file)
+                  handleChange('image', res.path)
+                } catch (e: any) {
+                  addToast({ title: 'Upload failed', description: e.message, variant: 'destructive' })
+                } finally {
+                  setUploadingImage(false)
+                }
+              }}
+              onAddVendor={() => setVendorModalOpen(true)}
+              onOpenVendorFullForm={() => navigate('/vendors/new')}
               customFields={customFields}
             />
           </CardContent>
@@ -848,6 +997,50 @@ export function ModuleDetailPage() {
         </div>
       </form>
 
+      <Dialog open={vendorModalOpen} onOpenChange={setVendorModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Vendor</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Vendor Name *</label>
+              <Input value={vendorForm.vendorName || ''} onChange={e => setVendorForm(f => ({ ...f, vendorName: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Email</label>
+              <Input type="email" value={vendorForm.email || ''} onChange={e => setVendorForm(f => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Phone</label>
+              <Input value={vendorForm.phone || ''} onChange={e => setVendorForm(f => ({ ...f, phone: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Website</label>
+              <Input value={vendorForm.website || ''} onChange={e => setVendorForm(f => ({ ...f, website: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Category</label>
+              <Input value={vendorForm.category || ''} onChange={e => setVendorForm(f => ({ ...f, category: e.target.value }))} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button type="button" variant="outline" onClick={() => setVendorModalOpen(false)}>Cancel</Button>
+            <Button
+              type="button"
+              disabled={!vendorForm.vendorName || savingVendor}
+              onClick={() => {
+                setSavingVendor(true)
+                addVendorMutation.mutate(vendorForm, { onSettled: () => setSavingVendor(false) })
+              }}
+            >
+              {savingVendor ? <Loader2 size={15} className="mr-2 animate-spin" /> : <Plus size={15} className="mr-2" />}
+              Create Vendor
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <ConfirmDialog
         open={showDelete}
         onOpenChange={setShowDelete}
@@ -861,8 +1054,8 @@ export function ModuleDetailPage() {
   )
 }
 
-function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIONS: options, projects, users = [], customFields = [] }: {
-  module: string; fields: any[]; formData: any; errors: any; handleChange: any; SELECT_OPTIONS: any; projects: any[]; users?: any[]; customFields?: any[]
+function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIONS: options, projects, users = [], roles = [], vendors = [], uploadingImage = false, onUploadImage, onAddVendor, onOpenVendorFullForm, customFields = [] }: {
+  module: string; fields: any[]; formData: any; errors: any; handleChange: any; SELECT_OPTIONS: any; projects: any[]; users?: any[]; roles?: any[]; vendors?: any[]; uploadingImage?: boolean; onUploadImage?: (file: File) => void; onAddVendor?: () => void; onOpenVendorFullForm?: () => void; customFields?: any[]
 }) {
   const tabs = [
     ...getFieldTabs(module, fields),
@@ -928,21 +1121,62 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                       </SelectContent>
                     </Select>
                   ) : field.type === 'user-select' ? (
-                    <Select
-                      value={formData[field.name] || '_none_'}
-                      onValueChange={v => handleChange(field.name, v === '_none_' ? '' : v)}
-                    >
-                      <SelectTrigger className={cn(errors[field.name] ? 'border-destructive' : '', 'h-9')}>
-                        <SelectValue placeholder="--None--" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="_none_">--None--</SelectItem>
-                        {users.map((u: any) => {
-                          const uname = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.userName || u.email
-                          return <SelectItem key={u.id} value={u.id}>{uname}</SelectItem>
-                        })}
-                      </SelectContent>
-                    </Select>
+                    <UserRoleSelect
+                      value={formData[field.name] || ''}
+                      users={users}
+                      roles={roles}
+                      onSelect={v => handleChange(field.name, v)}
+                    />
+                  ) : field.type === 'vendor-select' ? (
+                    <VendorSearchSelect
+                      value={formData[field.name] || ''}
+                      vendors={vendors}
+                      onSelect={v => handleChange(field.name, v)}
+                      onAddNew={onAddVendor || (() => {})}
+                      onOpenFullForm={onOpenVendorFullForm || (() => {})}
+                    />
+                  ) : field.type === 'search-select' && selOptions ? (
+                    <SearchSelect
+                      value={formData[field.name] || ''}
+                      options={selOptions}
+                      onSelect={v => handleChange(field.name, v === '--None--' ? '' : v)}
+                    />
+                  ) : field.type === 'image' ? (
+                    <div className="flex items-center gap-3">
+                      {formData[field.name] ? (
+                        <img
+                          src={formData[field.name]}
+                          alt="Product"
+                          className="h-16 w-16 rounded-lg border object-cover"
+                        />
+                      ) : (
+                        <div className="grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-dashed bg-muted/30 text-muted-foreground">
+                          <ImagePlus size={18} />
+                        </div>
+                      )}
+                      <label className="relative cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          disabled={uploadingImage}
+                          onChange={async e => {
+                            const file = e.target.files?.[0]
+                            if (file && onUploadImage) await onUploadImage(file)
+                            e.target.value = ''
+                          }}
+                        />
+                        <span className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-sm shadow-sm transition-colors hover:bg-muted">
+                          {uploadingImage ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} />}
+                          {formData[field.name] ? 'Change image' : 'Upload image'}
+                        </span>
+                      </label>
+                      {formData[field.name] && (
+                        <Button type="button" size="sm" variant="ghost" onClick={() => handleChange(field.name, '')} className="h-9 px-2 text-xs">
+                          Remove
+                        </Button>
+                      )}
+                    </div>
                   ) : field.type === 'checkbox' ? (
                     <div className="flex items-center gap-2 pt-2">
                       <input

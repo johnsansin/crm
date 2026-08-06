@@ -55,6 +55,34 @@ export async function getAllOrgSettings(companyId: string | null | undefined): P
   return result
 }
 
+// ---- Global settings (used by superadmin, not tied to a company) ----
+export async function getGlobalSetting(key: string, fallback?: any): Promise<any> {
+  const def = key in DEFAULT_ORG_SETTINGS ? DEFAULT_ORG_SETTINGS[key] : undefined
+  const row = await prisma.globalSetting.findUnique({ where: { key } }).catch(() => null)
+  if (!row) return fallback !== undefined ? fallback : def
+  return row.value
+}
+
+export async function setGlobalSetting(key: string, value: any): Promise<void> {
+  await prisma.globalSetting.upsert({
+    where: { key },
+    update: { value },
+    create: { key, value },
+  })
+}
+
+export async function getAllGlobalSettings(): Promise<Record<string, any>> {
+  const result: Record<string, any> = {}
+  for (const key of Object.keys(DEFAULT_ORG_SETTINGS)) {
+    result[key] = await getGlobalSetting(key)
+  }
+  const rows = await prisma.globalSetting.findMany().catch(() => [])
+  for (const row of rows) {
+    if (!(row.key in DEFAULT_ORG_SETTINGS)) result[row.key] = row.value
+  }
+  return result
+}
+
 export interface PasswordPolicy {
   minLength: number
   requireUpper: boolean
@@ -84,7 +112,7 @@ export function canLogin(user: { failedLoginAttempts?: number; lockedUntil?: Dat
   return { allowed: true }
 }
 
-export async function recordLoginFailure(userId: string, companyId: string | null | undefined): Promise<void> {
+export async function recordLoginFailure(userId: string, companyId: string | null | undefined, req?: any): Promise<void> {
   const sec = (await getOrgSetting(companyId, 'loginSecurity')) as { maxAttempts?: number; lockMinutes?: number }
   const maxAttempts = sec?.maxAttempts || 5
   const lockMinutes = sec?.lockMinutes || 15
@@ -97,6 +125,19 @@ export async function recordLoginFailure(userId: string, companyId: string | nul
     data.failedLoginAttempts = 0
   }
   await prisma.user.update({ where: { id: userId }, data })
+  try {
+    const rawIp = req?.headers?.['x-forwarded-for']?.toString().split(',')[0]?.trim() || req?.socket?.remoteAddress || req?.ip
+    await prisma.loginLog.create({
+      data: {
+        userId,
+        email: user.email,
+        userName: user.userName,
+        ipAddress: rawIp?.replace(/^::ffff:/, '') || null,
+        userAgent: req?.headers?.['user-agent'] || null,
+        status: 'Failed',
+      }
+    })
+  } catch {}
 }
 
 export async function resetLoginFailures(userId: string): Promise<void> {

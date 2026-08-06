@@ -5,3 +5,5 @@ dist/
 .DS_Store
 .spc.cache.php
 data/pg/
+uploads/
+*.tsbuildinfo
