@@ -5,6 +5,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/lib/theme'
+import { usePresence } from '@/hooks/usePresence'
+import { UserAvatar } from '@/components/UserAvatar'
 import { LogOut, User, Search, Sun, Moon, Loader2, Menu, Bell, Building2, Megaphone, CheckCheck, X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { setOrgSettings, orgLocale, formatDateTime, useOrgSettings } from '@/lib/org-format'
@@ -31,6 +33,8 @@ export function AppLayout() {
   const searchRef = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
   useOrgSettings()
+  const { onlineUsers, onlineCount } = usePresence()
+  const meOnline = onlineUsers.some((u: any) => u.id === user?.id && u.online)
 
   const { data: notificationsData } = useQuery({
     queryKey: ['notifications'],
@@ -243,15 +247,53 @@ export function AppLayout() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <User size={16} />
-                  <span className="hidden sm:inline">{user?.firstName} {user?.lastName}</span>
+                <Button variant="ghost" size="sm" className="gap-2 px-1.5">
+                  <div className="relative">
+                    <UserAvatar user={user} size={28} />
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background ${
+                        meOnline ? 'bg-green-500' : 'bg-muted-foreground/60'
+                      }`}
+                    />
+                  </div>
+                  <span className="hidden sm:inline max-w-[130px] truncate">{user?.firstName} {user?.lastName}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem className="text-xs text-muted-foreground" disabled>
-                  {user?.email}
-                </DropdownMenuItem>
+              <DropdownMenuContent align="end" className="w-64">
+                <div className="flex items-center gap-3 px-3 py-2.5">
+                  <UserAvatar user={user} size={40} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold truncate">{user?.firstName} {user?.lastName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  </div>
+                  <span className={`text-xs font-medium ${meOnline ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                    {meOnline ? t('Online') : t('Offline')}
+                  </span>
+                </div>
+                <DropdownMenuSeparator />
+                <div className="px-3 py-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-semibold">{t('Team online')}</span>
+                    <span className="text-xs text-muted-foreground">{onlineCount}/{onlineUsers.length}</span>
+                  </div>
+                  <div className="max-h-56 overflow-y-auto space-y-1">
+                    {onlineUsers.map((u: any) => (
+                      <div key={u.id} className="flex items-center gap-2 py-1">
+                        <div className="relative">
+                          <UserAvatar user={u} size={26} />
+                          <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-popover ${u.online ? 'bg-green-500' : 'bg-muted-foreground/60'}`} />
+                        </div>
+                        <span className="text-sm flex-1 truncate">{u.firstName} {u.lastName}</span>
+                        <span className={`text-xs ${u.online ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                          {u.online ? t('Online') : t('Offline')}
+                        </span>
+                      </div>
+                    ))}
+                    {onlineUsers.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-2">{t('No users')}</p>
+                    )}
+                  </div>
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <User size={14} className="mr-2" />

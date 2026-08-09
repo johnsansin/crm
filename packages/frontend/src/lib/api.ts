@@ -530,6 +530,10 @@ export const api = {
   createApiKey: (data: any) => request<any>('/apikeys', { method: 'POST', body: JSON.stringify(data) }),
   deleteApiKey: (id: string) => request<any>(`/apikeys/${id}`, { method: 'DELETE' }),
 
+  // ---- Presence ----
+  heartbeat: () => request<{ ok: boolean }>('/presence/heartbeat', { method: 'POST' }),
+  getPresenceUsers: () => request<{ data: any[] }>('/presence'),
+
   // ---- Portal ----
   registerPortal: (contactId: string, accessCode?: string) =>
     request<any>('/portal/register', { method: 'POST', body: JSON.stringify({ contactId, accessCode }) }),

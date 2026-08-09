@@ -2,6 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/lib/auth'
 import { api } from '@/lib/api'
+import { UserAvatar } from '@/components/UserAvatar'
 import {
   LayoutDashboard, Building2, Users, UserPlus, TrendingUp, Megaphone,
   Package, Wrench, Truck, BookOpen, FileText, ShoppingCart, ClipboardList,
@@ -126,10 +127,6 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
     if (activeGroup) setExpandedGroup(activeGroup)
   }, [activeGroup])
 
-  const initials = user
-    ? ((user.firstName?.[0] || '') + (user.lastName?.[0] || '')).toUpperCase() || user.email?.[0]?.toUpperCase() || '?'
-    : '?'
-
   return (
     <>
       <div
@@ -149,8 +146,17 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
         )}
       >
         <div className="flex items-center justify-between h-14 px-4 border-b border-sidebar-hover shrink-0">
-          <span className={cn('font-bold text-lg text-white tracking-tight', collapsed && 'md:hidden')}>BizForce</span>
-          <span className={cn('font-bold text-lg text-white tracking-tight hidden', collapsed && 'md:block')}>BF</span>
+          <div className="flex items-center gap-2 min-w-0">
+            {user?.company?.logo ? (
+              <img src={user.company.logo} alt={user.company.name} className={cn('h-7 w-7 rounded object-cover shrink-0', collapsed && 'md:hidden')} />
+            ) : (
+              <Building2 size={18} className={cn('text-primary shrink-0', collapsed && 'md:hidden')} />
+            )}
+            <span className={cn('font-bold text-white tracking-tight truncate', collapsed && 'md:hidden')}>
+              {user?.company?.name || 'BizForce'}
+            </span>
+            <span className={cn('font-bold text-white tracking-tight hidden', collapsed && 'md:block')}>BF</span>
+          </div>
           <button
             onClick={() => {
               if (window.innerWidth < 768) { onMobileClose() } else { onToggle() }
@@ -225,9 +231,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
               )
             }
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary text-xs font-bold shrink-0">
-              {initials}
-            </div>
+            <UserAvatar user={user} size={32} />
             <div className={cn('flex-1 min-w-0', collapsed && 'md:hidden')}>
               <p className="text-sm font-medium truncate">{user?.firstName} {user?.lastName}</p>
               <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>

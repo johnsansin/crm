@@ -8,50 +8,51 @@ datasource db {
 }
 
 model User {
-  id                  String    @id @default(uuid())
-  userName            String    @unique @db.VarChar(100)
-  email               String    @unique @db.VarChar(100)
-  firstName           String    @db.VarChar(100)
-  lastName            String    @db.VarChar(100)
-  password            String    @db.VarChar(255)
-  phone               String?   @db.VarChar(30)
-  mobile              String?   @db.VarChar(30)
-  title               String?   @db.VarChar(100)
-  department          String?   @db.VarChar(100)
-  addressStreet       String?   @db.VarChar(200)
-  addressCity         String?   @db.VarChar(100)
-  addressState        String?   @db.VarChar(100)
-  addressCountry      String?   @db.VarChar(100)
-  addressPostalCode   String?   @db.VarChar(30)
-  timezone            String    @default("Asia/Karachi") @db.VarChar(100)
-  language            String    @default("en_us") @db.VarChar(10)
-  avatar              String?   @db.VarChar(500)
+  id            String   @id @default(uuid())
+  userName      String   @unique @db.VarChar(100)
+  email         String   @unique @db.VarChar(100)
+  firstName     String   @db.VarChar(100)
+  lastName      String   @db.VarChar(100)
+  password      String   @db.VarChar(255)
+  phone         String?  @db.VarChar(30)
+  mobile        String?  @db.VarChar(30)
+  title         String?  @db.VarChar(100)
+  department    String?  @db.VarChar(100)
+  addressStreet String?  @db.VarChar(200)
+  addressCity   String?  @db.VarChar(100)
+  addressState  String?  @db.VarChar(100)
+  addressCountry String? @db.VarChar(100)
+  addressPostalCode String? @db.VarChar(30)
+  timezone      String   @default("Asia/Karachi") @db.VarChar(100)
+  language      String   @default("en_us") @db.VarChar(10)
+  avatar        String?  @db.VarChar(500)
   isActive            Boolean   @default(true)
   isAdmin             Boolean   @default(false)
   lastLogin           DateTime?
-  resetToken          String?   @unique @db.VarChar(255)
-  resetTokenExpires   DateTime?
-  twoFactorSecret     String?   @db.VarChar(500)
-  twoFactorEnabled    Boolean   @default(false)
-  failedLoginAttempts Int       @default(0)
-  lockedUntil         DateTime?
-  dateFormat          String?   @db.VarChar(20)
-  hourFormat          String?   @db.VarChar(10)
-  startOfWeek         String?   @db.VarChar(10)
-  defaultModule       String?   @db.VarChar(100)
-  currencyCode        String?   @db.VarChar(3)
-  dashboardConfig     Json?
-  roleId              String?
-  companyId           String?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  lastActiveAt        DateTime?
+  resetToken    String?  @unique @db.VarChar(255)
+  resetTokenExpires DateTime?
+  twoFactorSecret String?  @db.VarChar(500)
+  twoFactorEnabled Boolean @default(false)
+  failedLoginAttempts Int  @default(0)
+  lockedUntil     DateTime?
+  dateFormat     String?  @db.VarChar(20)
+  hourFormat     String?  @db.VarChar(10)
+  startOfWeek    String?  @db.VarChar(10)
+  defaultModule  String?  @db.VarChar(100)
+  currencyCode   String?  @db.VarChar(3)
+  dashboardConfig Json?
+  roleId        String?
+  companyId     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  role                         Role?                   @relation(fields: [roleId], references: [id])
-  company                      Company?                @relation(fields: [companyId], references: [id])
-  profile                      UserProfile?
-  groups                       UserGroupMember[]
-  loginLogs                    LoginLog[]
-  notifications                Notification[]
+  role          Role?          @relation(fields: [roleId], references: [id])
+  company       Company?       @relation(fields: [companyId], references: [id])
+  profile       UserProfile?
+  groups        UserGroupMember[]
+  loginLogs     LoginLog[]
+  notifications Notification[]
   potentialStageHistoryChanged PotentialStageHistory[] @relation("PotentialStageHistoryChangedBy")
 }
 
@@ -66,8 +67,8 @@ model Role {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  parent      Role?            @relation("RoleHierarchy", fields: [parentId], references: [id])
-  children    Role[]           @relation("RoleHierarchy")
+  parent      Role?    @relation("RoleHierarchy", fields: [parentId], references: [id])
+  children    Role[]   @relation("RoleHierarchy")
   users       User[]
   permissions RolePermission[]
 
@@ -75,17 +76,17 @@ model Role {
 }
 
 model RolePermission {
-  id         String   @id @default(uuid())
-  roleId     String
-  moduleName String   @db.VarChar(100)
-  view       Boolean  @default(true)
-  create     Boolean  @default(false)
-  edit       Boolean  @default(false)
-  delete     Boolean  @default(false)
-  import     Boolean  @default(false)
-  export     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(uuid())
+  roleId    String
+  moduleName String  @db.VarChar(100)
+  view      Boolean  @default(true)
+  create    Boolean  @default(false)
+  edit      Boolean  @default(false)
+  delete    Boolean  @default(false)
+  import    Boolean  @default(false)
+  export    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
@@ -146,7 +147,7 @@ model Currency {
   name      String   @db.VarChar(100)
   code      String   @db.VarChar(3)
   symbol    String   @db.VarChar(10)
-  rate      Decimal  @default(1) @db.Decimal(10, 5)
+  rate      Decimal  @default(1) @db.Decimal(10,5)
   isDefault Boolean  @default(false)
   isActive  Boolean  @default(true)
   companyId String?
@@ -176,178 +177,178 @@ model CustomView {
 }
 
 model Account {
-  id                 String   @id @default(uuid())
-  accountNo          String?  @unique @db.VarChar(100)
-  accountName        String   @db.VarChar(200)
-  parentId           String?  @db.VarChar(100)
-  website            String?  @db.VarChar(200)
-  phone              String?  @db.VarChar(30)
-  otherPhone         String?  @db.VarChar(30)
-  fax                String?  @db.VarChar(30)
-  email              String?  @db.VarChar(100)
-  email2             String?  @db.VarChar(100)
-  emailOptOut        Boolean  @default(false)
-  notifyOwner        Boolean  @default(false)
-  employees          Int?
-  annualRevenue      Decimal? @db.Decimal(16, 2)
-  industry           String?  @db.VarChar(100)
-  accountType        String?  @db.VarChar(100)
-  ownership          String?  @db.VarChar(100)
-  rating             String?  @db.VarChar(10)
-  sicCode            String?  @db.VarChar(30)
-  tickerSymbol       String?  @db.VarChar(30)
-  billingStreet      String?  @db.VarChar(200)
-  billingCity        String?  @db.VarChar(100)
-  billingState       String?  @db.VarChar(100)
-  billingCountry     String?  @db.VarChar(100)
-  billingPostalCode  String?  @db.VarChar(30)
-  billingPoBox       String?  @db.VarChar(50)
-  shippingStreet     String?  @db.VarChar(200)
-  shippingCity       String?  @db.VarChar(100)
-  shippingState      String?  @db.VarChar(100)
-  shippingCountry    String?  @db.VarChar(100)
-  shippingPostalCode String?  @db.VarChar(30)
-  shippingPoBox      String?  @db.VarChar(50)
-  description        String?  @db.Text
-  companyId          String?
-  isActive           Boolean  @default(true)
-  createdBy          String?
-  assignedTo         String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id              String   @id @default(uuid())
+  accountNo       String?  @unique @db.VarChar(100)
+  accountName     String   @db.VarChar(200)
+  parentId        String?  @db.VarChar(100)
+  website         String?  @db.VarChar(200)
+  phone           String?  @db.VarChar(30)
+  otherPhone      String?  @db.VarChar(30)
+  fax             String?  @db.VarChar(30)
+  email           String?  @db.VarChar(100)
+  email2          String?  @db.VarChar(100)
+  emailOptOut     Boolean  @default(false)
+  notifyOwner     Boolean  @default(false)
+  employees       Int?
+  annualRevenue   Decimal? @db.Decimal(16,2)
+  industry        String?  @db.VarChar(100)
+  accountType     String?  @db.VarChar(100)
+  ownership       String?  @db.VarChar(100)
+  rating          String?  @db.VarChar(10)
+  sicCode         String?  @db.VarChar(30)
+  tickerSymbol    String?  @db.VarChar(30)
+  billingStreet   String?  @db.VarChar(200)
+  billingCity     String?  @db.VarChar(100)
+  billingState    String?  @db.VarChar(100)
+  billingCountry  String?  @db.VarChar(100)
+  billingPostalCode String? @db.VarChar(30)
+  billingPoBox    String?  @db.VarChar(50)
+  shippingStreet  String?  @db.VarChar(200)
+  shippingCity    String?  @db.VarChar(100)
+  shippingState   String?  @db.VarChar(100)
+  shippingCountry String?  @db.VarChar(100)
+  shippingPostalCode String? @db.VarChar(30)
+  shippingPoBox   String?  @db.VarChar(50)
+  description     String?  @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
+  createdBy       String?
+  assignedTo      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Contact {
-  id                  String    @id @default(uuid())
-  contactNo           String?   @unique @db.VarChar(100)
-  salutation          String?   @db.VarChar(50)
-  firstName           String    @db.VarChar(100)
-  lastName            String    @db.VarChar(100)
-  title               String?   @db.VarChar(100)
-  department          String?   @db.VarChar(100)
-  email               String?   @db.VarChar(100)
-  secondaryEmail      String?   @db.VarChar(100)
-  phone               String?   @db.VarChar(30)
-  mobile              String?   @db.VarChar(30)
-  homePhone           String?   @db.VarChar(30)
-  otherPhone          String?   @db.VarChar(30)
-  fax                 String?   @db.VarChar(30)
-  assistant           String?   @db.VarChar(100)
-  assistantPhone      String?   @db.VarChar(30)
-  dob                 DateTime?
-  reportsTo           String?
-  leadSource          String?   @db.VarChar(100)
-  doNotCall           Boolean   @default(false)
-  emailOptOut         Boolean   @default(false)
-  portal              Boolean   @default(false)
-  supportStartDate    DateTime?
-  supportEndDate      DateTime?
-  isConvertedFromLead Boolean   @default(false)
-  googleContactId     String?   @db.VarChar(300)
-  assignedTo          String?
-  companyId           String?
-  isActive            Boolean   @default(true)
-  description         String?   @db.Text
-  mailingStreet       String?   @db.VarChar(200)
-  mailingCity         String?   @db.VarChar(100)
-  mailingState        String?   @db.VarChar(100)
-  mailingCountry      String?   @db.VarChar(100)
-  mailingPostalCode   String?   @db.VarChar(30)
-  mailingPoBox        String?   @db.VarChar(50)
-  otherStreet         String?   @db.VarChar(200)
-  otherCity           String?   @db.VarChar(100)
-  otherState          String?   @db.VarChar(100)
-  otherCountry        String?   @db.VarChar(100)
-  otherPostalCode     String?   @db.VarChar(30)
-  otherPoBox          String?   @db.VarChar(50)
-  accountId           String?
-  createdBy           String?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  id            String   @id @default(uuid())
+  contactNo     String?  @unique @db.VarChar(100)
+  salutation    String?  @db.VarChar(50)
+  firstName     String   @db.VarChar(100)
+  lastName      String   @db.VarChar(100)
+  title         String?  @db.VarChar(100)
+  department    String?  @db.VarChar(100)
+  email         String?  @db.VarChar(100)
+  secondaryEmail String? @db.VarChar(100)
+  phone         String?  @db.VarChar(30)
+  mobile        String?  @db.VarChar(30)
+  homePhone     String?  @db.VarChar(30)
+  otherPhone    String?  @db.VarChar(30)
+  fax           String?  @db.VarChar(30)
+  assistant     String?  @db.VarChar(100)
+  assistantPhone String? @db.VarChar(30)
+  dob           DateTime?
+  reportsTo     String?
+  leadSource    String?  @db.VarChar(100)
+  doNotCall     Boolean  @default(false)
+  emailOptOut   Boolean  @default(false)
+  portal        Boolean  @default(false)
+  supportStartDate DateTime?
+  supportEndDate   DateTime?
+  isConvertedFromLead Boolean @default(false)
+  googleContactId String? @db.VarChar(300)
+  assignedTo    String?
+  companyId String?
+  isActive Boolean  @default(true)
+  description   String?  @db.Text
+  mailingStreet  String? @db.VarChar(200)
+  mailingCity    String? @db.VarChar(100)
+  mailingState   String? @db.VarChar(100)
+  mailingCountry String? @db.VarChar(100)
+  mailingPostalCode String? @db.VarChar(30)
+  mailingPoBox   String? @db.VarChar(50)
+  otherStreet    String? @db.VarChar(200)
+  otherCity      String? @db.VarChar(100)
+  otherState     String? @db.VarChar(100)
+  otherCountry   String? @db.VarChar(100)
+  otherPostalCode String? @db.VarChar(30)
+  otherPoBox     String? @db.VarChar(50)
+  accountId      String?
+  createdBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Lead {
-  id                   String   @id @default(uuid())
-  leadNo               String?  @unique @db.VarChar(100)
-  salutation           String?  @db.VarChar(50)
-  firstName            String   @db.VarChar(100)
-  lastName             String   @db.VarChar(100)
-  title                String?  @db.VarChar(100)
-  company              String   @db.VarChar(200)
-  email                String?  @db.VarChar(100)
-  secondaryEmail       String?  @db.VarChar(100)
-  phone                String?  @db.VarChar(30)
-  mobile               String?  @db.VarChar(30)
-  fax                  String?  @db.VarChar(30)
-  website              String?  @db.VarChar(200)
-  leadSource           String?  @db.VarChar(100)
-  leadStatus           String?  @db.VarChar(100)
-  industry             String?  @db.VarChar(100)
-  annualRevenue        Decimal? @db.Decimal(16, 2)
-  noOfEmployees        Int?
-  rating               String?  @db.VarChar(10)
-  emailOptOut          Boolean  @default(false)
-  interest             String?  @db.VarChar(200)
-  isConverted          Boolean  @default(false)
-  convertedAccountId   String?
-  convertedContactId   String?
+  id            String   @id @default(uuid())
+  leadNo        String?  @unique @db.VarChar(100)
+  salutation    String?  @db.VarChar(50)
+  firstName     String   @db.VarChar(100)
+  lastName      String   @db.VarChar(100)
+  title         String?  @db.VarChar(100)
+  company       String   @db.VarChar(200)
+  email         String?  @db.VarChar(100)
+  secondaryEmail String? @db.VarChar(100)
+  phone         String?  @db.VarChar(30)
+  mobile        String?  @db.VarChar(30)
+  fax           String?  @db.VarChar(30)
+  website       String?  @db.VarChar(200)
+  leadSource    String?  @db.VarChar(100)
+  leadStatus    String?  @db.VarChar(100)
+  industry      String?  @db.VarChar(100)
+  annualRevenue Decimal? @db.Decimal(16,2)
+  noOfEmployees Int?
+  rating        String?  @db.VarChar(10)
+  emailOptOut   Boolean  @default(false)
+  interest      String?  @db.VarChar(200)
+  isConverted   Boolean  @default(false)
+  convertedAccountId String?
+  convertedContactId String?
   convertedPotentialId String?
-  description          String?  @db.Text
-  companyId            String?
-  isActive             Boolean  @default(true)
-  assignedTo           String?
-  street               String?  @db.VarChar(200)
-  city                 String?  @db.VarChar(100)
-  state                String?  @db.VarChar(100)
-  country              String?  @db.VarChar(100)
-  postalCode           String?  @db.VarChar(30)
-  poBox                String?  @db.VarChar(50)
-  createdBy            String?
-  campaignId           String?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  description   String?  @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
+  assignedTo    String?
+  street        String?  @db.VarChar(200)
+  city          String?  @db.VarChar(100)
+  state         String?  @db.VarChar(100)
+  country       String?  @db.VarChar(100)
+  postalCode    String?  @db.VarChar(30)
+  poBox         String?  @db.VarChar(50)
+  createdBy     String?
+  campaignId    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Potential {
-  id               String    @id @default(uuid())
-  potentialNo      String?   @unique @db.VarChar(100)
-  potentialName    String    @db.VarChar(200)
-  amount           Decimal?  @db.Decimal(16, 2)
-  closingDate      DateTime?
-  type             String?   @db.VarChar(100)
-  stage            String?   @db.VarChar(100)
-  probability      Int?
-  leadSource       String?   @db.VarChar(100)
-  forecastAmount   Decimal?  @db.Decimal(16, 2)
-  forecastCategory String?   @db.VarChar(100)
-  outcomeAnalysis  String?   @db.VarChar(500)
-  nextStep         String?   @db.VarChar(500)
-  description      String?   @db.Text
-  companyId        String?
-  isActive         Boolean   @default(true)
-  assignedTo       String?
-  campaignId       String?
-  accountId        String?
-  contactId        String?
-  productId        String?
-  createdBy        String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id             String   @id @default(uuid())
+  potentialNo    String?  @unique @db.VarChar(100)
+  potentialName  String   @db.VarChar(200)
+  amount         Decimal? @db.Decimal(16,2)
+  closingDate    DateTime?
+  type           String?  @db.VarChar(100)
+  stage          String?  @db.VarChar(100)
+  probability    Int?
+  leadSource     String?  @db.VarChar(100)
+  forecastAmount Decimal? @db.Decimal(16,2)
+  forecastCategory String? @db.VarChar(100)
+  outcomeAnalysis String? @db.VarChar(500)
+  nextStep       String?  @db.VarChar(500)
+  description    String?  @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
+  assignedTo     String?
+  campaignId     String?
+  accountId      String?
+  contactId      String?
+  productId      String?
+  createdBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   products     PotentialProduct[]
   stageHistory PotentialStageHistory[]
 }
 
 model PotentialProduct {
-  id          String   @id @default(uuid())
+  id         String   @id @default(uuid())
   potentialId String
-  productId   String
-  qty         Decimal? @default(1) @db.Decimal(16, 2)
-  listPrice   Decimal? @db.Decimal(16, 2)
-  companyId   String?
-  createdBy   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  productId  String
+  qty        Decimal? @default(1) @db.Decimal(16,2)
+  listPrice  Decimal? @db.Decimal(16,2)
+  companyId  String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   potential Potential @relation(fields: [potentialId], references: [id])
   product   Product   @relation(fields: [productId], references: [id])
@@ -366,107 +367,107 @@ model PotentialStageHistory {
   companyId   String?
   createdAt   DateTime @default(now())
 
-  changedByUser User?     @relation("PotentialStageHistoryChangedBy", fields: [changedBy], references: [id])
-  Potential     Potential @relation(fields: [potentialId], references: [id])
+  changedByUser User? @relation("PotentialStageHistoryChangedBy", fields: [changedBy], references: [id])
+  potential     Potential @relation(fields: [potentialId], references: [id])
 
   @@index([potentialId])
   @@index([companyId])
 }
 
 model Campaign {
-  id                    String    @id @default(uuid())
-  campaignNo            String?   @unique @db.VarChar(100)
-  campaignName          String    @db.VarChar(200)
-  campaignType          String?   @db.VarChar(100)
-  status                String?   @db.VarChar(100)
-  startDate             DateTime?
-  endDate               DateTime?
-  closingDate           DateTime?
-  expectedRevenue       Decimal?  @db.Decimal(16, 2)
-  budget                Decimal?  @db.Decimal(16, 2)
-  actualCost            Decimal?  @db.Decimal(16, 2)
-  expectedResponse      Int?
-  targetSize            Int?
-  sponsor               String?   @db.VarChar(200)
-  targetAudience        String?   @db.VarChar(500)
-  expectedROI           Decimal?  @db.Decimal(10, 2)
-  actualROI             Decimal?  @db.Decimal(10, 2)
+  id          String   @id @default(uuid())
+  campaignNo  String?  @unique @db.VarChar(100)
+  campaignName String  @db.VarChar(200)
+  campaignType String? @db.VarChar(100)
+  status      String?  @db.VarChar(100)
+  startDate   DateTime?
+  endDate     DateTime?
+  closingDate DateTime?
+  expectedRevenue Decimal? @db.Decimal(16,2)
+  budget      Decimal? @db.Decimal(16,2)
+  actualCost  Decimal? @db.Decimal(16,2)
+  expectedResponse Int?
+  targetSize  Int?
+  sponsor     String?  @db.VarChar(200)
+  targetAudience String? @db.VarChar(500)
+  expectedROI Decimal? @db.Decimal(10,2)
+  actualROI   Decimal? @db.Decimal(10,2)
   expectedResponseCount Int?
-  expectedSalesCount    Int?
-  actualResponseCount   Int?
-  actualSalesCount      Int?
-  description           String?   @db.Text
-  companyId             String?
-  isActive              Boolean   @default(true)
-  assignedTo            String?
-  createdBy             String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  expectedSalesCount Int?
+  actualResponseCount Int?
+  actualSalesCount Int?
+  description String?  @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
+  assignedTo  String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Product {
-  id                   String    @id @default(uuid())
-  productNo            String?   @unique @db.VarChar(100)
-  productName          String    @db.VarChar(200)
-  productCategory      String?   @db.VarChar(100)
-  productType          String?   @default("") @db.VarChar(100)
-  manufacturer         String?   @db.VarChar(100)
-  website              String?   @db.VarChar(200)
-  unitPrice            Decimal?  @db.Decimal(16, 2)
-  costPrice            Decimal?  @db.Decimal(16, 2)
-  commissionRate       Decimal?  @db.Decimal(5, 2)
-  commissionPercentage Decimal?  @db.Decimal(5, 2)
-  commissionMethod     String?   @db.VarChar(50)
-  weight               Decimal?  @db.Decimal(10, 2)
-  packSize             Int?
-  qtyInStock           Decimal?  @default(0) @db.Decimal(12, 2)
-  qtyOnOrder           Decimal?  @default(0) @db.Decimal(12, 2)
-  qtyInDemand          Decimal?  @default(0) @db.Decimal(12, 2)
-  reorderLevel         Int?
-  qtyPerUnit           String?   @db.VarChar(50)
-  usageUnit            String?   @db.VarChar(50)
-  salesStartDate       DateTime?
-  salesEndDate         DateTime?
-  startDate            DateTime?
-  expiryDate           DateTime?
-  supportStartDate     DateTime?
-  supportEndDate       DateTime?
-  discontinued         Boolean   @default(false)
-  vat                  Boolean   @default(false)
-  isService            Boolean   @default(false)
-  isSales              Boolean   @default(false)
-  pricingFormula       String?   @db.VarChar(50)
-  markupPercent        Decimal?  @db.Decimal(5, 2)
-  serialNo             String?   @db.VarChar(100)
-  mfrPartNo            String?   @db.VarChar(100)
-  vendorPartNo         String?   @db.VarChar(100)
-  productSheet         String?   @db.VarChar(500)
-  glAccount            String?   @db.VarChar(100)
-  taxClass             String?   @db.VarChar(100)
-  description          String?   @db.Text
-  companyId            String?
-  isActive             Boolean   @default(true)
-  image                String?   @db.VarChar(500)
-  vendorId             String?
-  assignedTo           String?
-  createdBy            String?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id              String   @id @default(uuid())
+  productNo       String?  @unique @db.VarChar(100)
+  productName     String   @db.VarChar(200)
+  productCategory String?  @db.VarChar(100)
+  productType     String?  @default("") @db.VarChar(100)
+  manufacturer    String?  @db.VarChar(100)
+  website         String?  @db.VarChar(200)
+  unitPrice       Decimal? @db.Decimal(16,2)
+  costPrice       Decimal? @db.Decimal(16,2)
+  commissionRate  Decimal? @db.Decimal(5,2)
+  commissionPercentage Decimal? @db.Decimal(5,2)
+  commissionMethod String? @db.VarChar(50)
+  weight          Decimal? @db.Decimal(10,2)
+  packSize        Int?
+  qtyInStock      Decimal? @default(0) @db.Decimal(12,2)
+  qtyOnOrder      Decimal? @default(0) @db.Decimal(12,2)
+  qtyInDemand     Decimal? @default(0) @db.Decimal(12,2)
+  reorderLevel    Int?
+  qtyPerUnit      String?  @db.VarChar(50)
+  usageUnit       String?  @db.VarChar(50)
+  salesStartDate  DateTime?
+  salesEndDate    DateTime?
+  startDate       DateTime?
+  expiryDate      DateTime?
+  supportStartDate DateTime?
+  supportEndDate  DateTime?
+  discontinued    Boolean  @default(false)
+  vat             Boolean  @default(false)
+  isService       Boolean  @default(false)
+  isSales         Boolean  @default(false)
+  pricingFormula  String?  @db.VarChar(50)
+  markupPercent   Decimal? @db.Decimal(5,2)
+  serialNo        String?  @db.VarChar(100)
+  mfrPartNo       String?  @db.VarChar(100)
+  vendorPartNo    String?  @db.VarChar(100)
+  productSheet    String?  @db.VarChar(500)
+  glAccount       String?  @db.VarChar(100)
+  taxClass        String?  @db.VarChar(100)
+  description     String?  @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
+  image           String?  @db.VarChar(500)
+  vendorId        String?
+  assignedTo      String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   priceBookProducts PriceBookProduct[]
   potentialProducts PotentialProduct[]
 }
 
 model LeadProduct {
-  id        String   @id @default(uuid())
-  leadId    String
-  productId String
-  qty       Decimal? @default(1) @db.Decimal(16, 2)
-  listPrice Decimal? @db.Decimal(16, 2)
-  companyId String?
-  createdBy String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  leadId     String
+  productId  String
+  qty        Decimal? @default(1) @db.Decimal(16,2)
+  listPrice  Decimal? @db.Decimal(16,2)
+  companyId  String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([leadId, productId])
   @@index([leadId])
@@ -475,15 +476,15 @@ model LeadProduct {
 }
 
 model LeadService {
-  id        String   @id @default(uuid())
-  leadId    String
-  serviceId String
-  qty       Decimal? @default(1) @db.Decimal(16, 2)
-  listPrice Decimal? @db.Decimal(16, 2)
-  companyId String?
-  createdBy String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  leadId     String
+  serviceId  String
+  qty        Decimal? @default(1) @db.Decimal(16,2)
+  listPrice  Decimal? @db.Decimal(16,2)
+  companyId  String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([leadId, serviceId])
   @@index([leadId])
@@ -492,132 +493,132 @@ model LeadService {
 }
 
 model Service {
-  id               String   @id @default(uuid())
-  serviceNo        String?  @unique @db.VarChar(100)
-  serviceName      String   @db.VarChar(200)
-  serviceCategory  String?  @db.VarChar(100)
-  unitPrice        Decimal? @db.Decimal(16, 2)
-  costPrice        Decimal? @db.Decimal(16, 2)
-  commissionRate   Decimal? @db.Decimal(5, 2)
-  commissionMethod String?  @db.VarChar(50)
-  qtyPerUnit       String?  @db.VarChar(50)
-  usageUnit        String?  @db.VarChar(50)
-  taxClass         String?  @db.VarChar(100)
-  reorderLevel     Int?
-  qtyInStock       Decimal? @default(0) @db.Decimal(12, 2)
-  qtyInDemand      Decimal? @default(0) @db.Decimal(12, 2)
-  website          String?  @db.VarChar(200)
-  serialNo         String?  @db.VarChar(100)
-  glAccount        String?  @db.VarChar(100)
-  discontinued     Boolean  @default(false)
-  image            String?  @db.VarChar(500)
-  description      String?  @db.Text
-  vendorId         String?
-  companyId        String?
-  isActive         Boolean  @default(true)
-  assignedTo       String?
-  createdBy        String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String   @id @default(uuid())
+  serviceNo       String?  @unique @db.VarChar(100)
+  serviceName     String   @db.VarChar(200)
+  serviceCategory String?  @db.VarChar(100)
+  unitPrice       Decimal? @db.Decimal(16,2)
+  costPrice       Decimal? @db.Decimal(16,2)
+  commissionRate  Decimal? @db.Decimal(5,2)
+  commissionMethod String? @db.VarChar(50)
+  qtyPerUnit      String?  @db.VarChar(50)
+  usageUnit       String?  @db.VarChar(50)
+  taxClass        String?  @db.VarChar(100)
+  reorderLevel    Int?
+  qtyInStock      Decimal? @default(0) @db.Decimal(12,2)
+  qtyInDemand     Decimal? @default(0) @db.Decimal(12,2)
+  website         String?  @db.VarChar(200)
+  serialNo        String?  @db.VarChar(100)
+  glAccount       String?  @db.VarChar(100)
+  discontinued    Boolean  @default(false)
+  image           String?  @db.VarChar(500)
+  description     String?  @db.Text
+  vendorId        String?
+  companyId String?
+  isActive Boolean  @default(true)
+  assignedTo      String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Vendor {
-  id          String   @id @default(uuid())
-  vendorNo    String?  @unique @db.VarChar(100)
-  vendorName  String   @db.VarChar(200)
-  email       String?  @db.VarChar(100)
-  phone       String?  @db.VarChar(30)
-  mobile      String?  @db.VarChar(30)
-  website     String?  @db.VarChar(200)
-  category    String?  @db.VarChar(100)
-  glAccount   String?  @db.VarChar(100)
-  street      String?  @db.VarChar(200)
-  city        String?  @db.VarChar(100)
-  state       String?  @db.VarChar(100)
-  country     String?  @db.VarChar(100)
-  postalCode  String?  @db.VarChar(30)
-  description String?  @db.Text
-  companyId   String?
-  isActive    Boolean  @default(true)
-  assignedTo  String?
-  createdBy   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(uuid())
+  vendorNo   String?  @unique @db.VarChar(100)
+  vendorName String   @db.VarChar(200)
+  email      String?  @db.VarChar(100)
+  phone      String?  @db.VarChar(30)
+  mobile     String?  @db.VarChar(30)
+  website    String?  @db.VarChar(200)
+  category   String?  @db.VarChar(100)
+  glAccount  String?  @db.VarChar(100)
+  street     String?  @db.VarChar(200)
+  city       String?  @db.VarChar(100)
+  state      String?  @db.VarChar(100)
+  country    String?  @db.VarChar(100)
+  postalCode String?  @db.VarChar(30)
+  description String? @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
+  assignedTo String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model PriceBook {
-  id            String   @id @default(uuid())
-  priceBookNo   String?  @unique @db.VarChar(100)
-  priceBookName String   @db.VarChar(200)
-  active        Boolean  @default(true)
-  companyId     String?
-  isActive      Boolean  @default(true)
-  description   String?  @db.Text
-  assignedTo    String?
-  createdBy     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(uuid())
+  priceBookNo  String?  @unique @db.VarChar(100)
+  priceBookName String  @db.VarChar(200)
+  active       Boolean  @default(true)
+  companyId String?
+  isActive Boolean  @default(true)
+  description  String?  @db.Text
+  assignedTo   String?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   products PriceBookProduct[]
 }
 
 model PriceBookProduct {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   priceBookId String
   priceBook   PriceBook @relation(fields: [priceBookId], references: [id])
   productId   String
   product     Product   @relation(fields: [productId], references: [id])
-  listPrice   Decimal   @db.Decimal(16, 2)
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  listPrice   Decimal  @db.Decimal(16,2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@unique([priceBookId, productId])
 }
 
 model Quote {
-  id                 String    @id @default(uuid())
-  quoteNo            String?   @unique @db.VarChar(100)
-  subject            String    @db.VarChar(200)
-  validUntil         DateTime?
-  total              Decimal   @default(0) @db.Decimal(16, 2)
-  subTotal           Decimal   @default(0) @db.Decimal(16, 2)
-  discount           Decimal   @default(0) @db.Decimal(16, 2)
-  discountPercent    Decimal   @default(0) @db.Decimal(5, 2)
-  adjustment         Decimal   @default(0) @db.Decimal(16, 2)
-  shipping           Decimal   @default(0) @db.Decimal(16, 2)
-  shippingHandling   Decimal   @default(0) @db.Decimal(16, 2)
-  taxAmount          Decimal   @default(0) @db.Decimal(16, 2)
-  taxType            String?   @db.VarChar(50)
-  grandTotal         Decimal   @default(0) @db.Decimal(16, 2)
-  carrier            String?   @db.VarChar(100)
-  inventoryManager   String?   @db.VarChar(100)
-  quoteStage         String?   @db.VarChar(100)
-  terms              String?   @db.Text
-  description        String?   @db.Text
-  companyId          String?
-  isActive           Boolean   @default(true)
-  accountId          String?
-  contactId          String?
-  potentialId        String?
-  billingStreet      String?   @db.VarChar(200)
-  billingCity        String?   @db.VarChar(100)
-  billingState       String?   @db.VarChar(100)
-  billingCountry     String?   @db.VarChar(100)
-  billingPostalCode  String?   @db.VarChar(30)
-  billingPoBox       String?   @db.VarChar(50)
-  shippingStreet     String?   @db.VarChar(200)
-  shippingCity       String?   @db.VarChar(100)
-  shippingState      String?   @db.VarChar(100)
-  shippingCountry    String?   @db.VarChar(100)
-  shippingPostalCode String?   @db.VarChar(30)
-  shippingPoBox      String?   @db.VarChar(50)
-  assignedTo         String?
-  createdBy          String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id              String   @id @default(uuid())
+  quoteNo         String?  @unique @db.VarChar(100)
+  subject         String   @db.VarChar(200)
+  validUntil      DateTime?
+  total           Decimal  @default(0) @db.Decimal(16,2)
+  subTotal        Decimal  @default(0) @db.Decimal(16,2)
+  discount        Decimal  @default(0) @db.Decimal(16,2)
+  discountPercent Decimal  @default(0) @db.Decimal(5,2)
+  adjustment      Decimal  @default(0) @db.Decimal(16,2)
+  shipping        Decimal  @default(0) @db.Decimal(16,2)
+  shippingHandling Decimal @default(0) @db.Decimal(16,2)
+  taxAmount       Decimal  @default(0) @db.Decimal(16,2)
+  taxType         String?  @db.VarChar(50)
+  grandTotal      Decimal  @default(0) @db.Decimal(16,2)
+  carrier         String?  @db.VarChar(100)
+  inventoryManager String? @db.VarChar(100)
+  quoteStage      String?  @db.VarChar(100)
+  terms           String?  @db.Text
+  description     String?  @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
+  accountId       String?
+  contactId       String?
+  potentialId     String?
+  billingStreet   String?  @db.VarChar(200)
+  billingCity     String?  @db.VarChar(100)
+  billingState    String?  @db.VarChar(100)
+  billingCountry  String?  @db.VarChar(100)
+  billingPostalCode String? @db.VarChar(30)
+  billingPoBox    String?  @db.VarChar(50)
+  shippingStreet  String?  @db.VarChar(200)
+  shippingCity    String?  @db.VarChar(100)
+  shippingState   String?  @db.VarChar(100)
+  shippingCountry String?  @db.VarChar(100)
+  shippingPostalCode String? @db.VarChar(30)
+  shippingPoBox   String?  @db.VarChar(50)
+  assignedTo      String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  lineItems    QuoteLineItem[]
+  lineItems QuoteLineItem[]
   stageHistory QuoteStageHistory[]
 }
 
@@ -628,15 +629,15 @@ model QuoteLineItem {
   productId       String?
   serviceId       String?
   itemName        String   @db.VarChar(500)
-  qty             Decimal  @default(1) @db.Decimal(12, 2)
-  listPrice       Decimal  @default(0) @db.Decimal(16, 2)
-  unitPrice       Decimal  @default(0) @db.Decimal(16, 2)
-  discount        Decimal  @default(0) @db.Decimal(16, 2)
-  discountPercent Decimal  @default(0) @db.Decimal(5, 2)
-  tax             Decimal  @default(0) @db.Decimal(16, 2)
-  taxPercent      Decimal  @default(0) @db.Decimal(5, 2)
-  netPrice        Decimal  @default(0) @db.Decimal(16, 2)
-  lineTotal       Decimal  @default(0) @db.Decimal(16, 2)
+  qty             Decimal  @default(1) @db.Decimal(12,2)
+  listPrice       Decimal  @default(0) @db.Decimal(16,2)
+  unitPrice       Decimal  @default(0) @db.Decimal(16,2)
+  discount        Decimal  @default(0) @db.Decimal(16,2)
+  discountPercent Decimal  @default(0) @db.Decimal(5,2)
+  tax             Decimal  @default(0) @db.Decimal(16,2)
+  taxPercent      Decimal  @default(0) @db.Decimal(5,2)
+  netPrice        Decimal  @default(0) @db.Decimal(16,2)
+  lineTotal       Decimal  @default(0) @db.Decimal(16,2)
   sequence        Int      @default(0)
   description     String?  @db.Text
   createdAt       DateTime @default(now())
@@ -653,200 +654,200 @@ model QuoteStageHistory {
 }
 
 model SalesOrder {
-  id                 String    @id @default(uuid())
-  salesOrderNo       String?   @unique @db.VarChar(100)
-  subject            String    @db.VarChar(200)
-  validUntil         DateTime?
-  total              Decimal   @default(0) @db.Decimal(16, 2)
-  subTotal           Decimal   @default(0) @db.Decimal(16, 2)
-  discount           Decimal   @default(0) @db.Decimal(16, 2)
-  discountPercent    Decimal   @default(0) @db.Decimal(5, 2)
-  adjustment         Decimal   @default(0) @db.Decimal(16, 2)
-  shipping           Decimal   @default(0) @db.Decimal(16, 2)
-  shippingHandling   Decimal   @default(0) @db.Decimal(16, 2)
-  taxAmount          Decimal   @default(0) @db.Decimal(16, 2)
-  taxType            String?   @db.VarChar(50)
-  grandTotal         Decimal   @default(0) @db.Decimal(16, 2)
-  carrier            String?   @db.VarChar(100)
-  soStatus           String?   @db.VarChar(100)
-  customerNo         String?   @db.VarChar(100)
-  purchaseOrderNo    String?   @db.VarChar(100)
-  salesCommission    Decimal   @default(0) @db.Decimal(16, 2)
-  exciseDuty         Decimal   @default(0) @db.Decimal(16, 2)
-  pending            Boolean   @default(false)
-  enableRecurring    Boolean   @default(false)
-  recurringFrequency String?   @db.VarChar(50)
-  startPeriod        DateTime?
-  endPeriod          DateTime?
-  terms              String?   @db.Text
-  description        String?   @db.Text
-  companyId          String?
-  isActive           Boolean   @default(true)
-  accountId          String?
-  contactId          String?
-  potentialId        String?
-  quoteId            String?
-  vendorId           String?
-  billingStreet      String?   @db.VarChar(200)
-  billingCity        String?   @db.VarChar(100)
-  billingState       String?   @db.VarChar(100)
-  billingCountry     String?   @db.VarChar(100)
-  billingPostalCode  String?   @db.VarChar(30)
-  billingPoBox       String?   @db.VarChar(50)
-  shippingStreet     String?   @db.VarChar(200)
-  shippingCity       String?   @db.VarChar(100)
-  shippingState      String?   @db.VarChar(100)
-  shippingCountry    String?   @db.VarChar(100)
-  shippingPostalCode String?   @db.VarChar(30)
-  shippingPoBox      String?   @db.VarChar(50)
-  assignedTo         String?
-  createdBy          String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id              String   @id @default(uuid())
+  salesOrderNo    String?  @unique @db.VarChar(100)
+  subject         String   @db.VarChar(200)
+  validUntil      DateTime?
+  total           Decimal  @default(0) @db.Decimal(16,2)
+  subTotal        Decimal  @default(0) @db.Decimal(16,2)
+  discount        Decimal  @default(0) @db.Decimal(16,2)
+  discountPercent Decimal  @default(0) @db.Decimal(5,2)
+  adjustment      Decimal  @default(0) @db.Decimal(16,2)
+  shipping        Decimal  @default(0) @db.Decimal(16,2)
+  shippingHandling Decimal @default(0) @db.Decimal(16,2)
+  taxAmount       Decimal  @default(0) @db.Decimal(16,2)
+  taxType         String?  @db.VarChar(50)
+  grandTotal      Decimal  @default(0) @db.Decimal(16,2)
+  carrier         String?  @db.VarChar(100)
+  soStatus        String?  @db.VarChar(100)
+  customerNo      String?  @db.VarChar(100)
+  purchaseOrderNo String?  @db.VarChar(100)
+  salesCommission Decimal  @default(0) @db.Decimal(16,2)
+  exciseDuty      Decimal  @default(0) @db.Decimal(16,2)
+  pending         Boolean  @default(false)
+  enableRecurring Boolean  @default(false)
+  recurringFrequency String? @db.VarChar(50)
+  startPeriod     DateTime?
+  endPeriod       DateTime?
+  terms           String?  @db.Text
+  description     String?  @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
+  accountId       String?
+  contactId       String?
+  potentialId     String?
+  quoteId         String?
+  vendorId        String?
+  billingStreet   String?  @db.VarChar(200)
+  billingCity     String?  @db.VarChar(100)
+  billingState    String?  @db.VarChar(100)
+  billingCountry  String?  @db.VarChar(100)
+  billingPostalCode String? @db.VarChar(30)
+  billingPoBox    String?  @db.VarChar(50)
+  shippingStreet  String?  @db.VarChar(200)
+  shippingCity    String?  @db.VarChar(100)
+  shippingState   String?  @db.VarChar(100)
+  shippingCountry String?  @db.VarChar(100)
+  shippingPostalCode String? @db.VarChar(30)
+  shippingPoBox   String?  @db.VarChar(50)
+  assignedTo      String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  invoices  Invoice[]
+  invoices Invoice[]
   lineItems SalesOrderLineItem[]
 }
 
 model SalesOrderLineItem {
-  id              String     @id @default(uuid())
-  salesOrderId    String
-  salesOrder      SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
-  productId       String?
-  serviceId       String?
-  itemName        String     @db.VarChar(500)
-  qty             Decimal    @default(1) @db.Decimal(12, 2)
-  listPrice       Decimal    @default(0) @db.Decimal(16, 2)
-  unitPrice       Decimal    @default(0) @db.Decimal(16, 2)
-  discount        Decimal    @default(0) @db.Decimal(16, 2)
-  discountPercent Decimal    @default(0) @db.Decimal(5, 2)
-  tax             Decimal    @default(0) @db.Decimal(16, 2)
-  taxPercent      Decimal    @default(0) @db.Decimal(5, 2)
-  netPrice        Decimal    @default(0) @db.Decimal(16, 2)
-  lineTotal       Decimal    @default(0) @db.Decimal(16, 2)
-  sequence        Int        @default(0)
-  description     String?    @db.Text
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id            String   @id @default(uuid())
+  salesOrderId  String
+  salesOrder    SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  productId     String?
+  serviceId     String?
+  itemName      String   @db.VarChar(500)
+  qty           Decimal  @default(1) @db.Decimal(12,2)
+  listPrice     Decimal  @default(0) @db.Decimal(16,2)
+  unitPrice     Decimal  @default(0) @db.Decimal(16,2)
+  discount      Decimal  @default(0) @db.Decimal(16,2)
+  discountPercent Decimal @default(0) @db.Decimal(5,2)
+  tax           Decimal  @default(0) @db.Decimal(16,2)
+  taxPercent    Decimal  @default(0) @db.Decimal(5,2)
+  netPrice      Decimal  @default(0) @db.Decimal(16,2)
+  lineTotal     Decimal  @default(0) @db.Decimal(16,2)
+  sequence      Int      @default(0)
+  description   String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model PurchaseOrder {
-  id                 String    @id @default(uuid())
-  purchaseOrderNo    String?   @unique @db.VarChar(100)
-  subject            String    @db.VarChar(200)
-  validUntil         DateTime?
-  total              Decimal   @default(0) @db.Decimal(16, 2)
-  subTotal           Decimal   @default(0) @db.Decimal(16, 2)
-  discount           Decimal   @default(0) @db.Decimal(16, 2)
-  discountPercent    Decimal   @default(0) @db.Decimal(5, 2)
-  adjustment         Decimal   @default(0) @db.Decimal(16, 2)
-  shipping           Decimal   @default(0) @db.Decimal(16, 2)
-  shippingHandling   Decimal   @default(0) @db.Decimal(16, 2)
-  taxAmount          Decimal   @default(0) @db.Decimal(16, 2)
-  taxType            String?   @db.VarChar(50)
-  grandTotal         Decimal   @default(0) @db.Decimal(16, 2)
-  carrier            String?   @db.VarChar(100)
-  salesCommission    Decimal   @default(0) @db.Decimal(16, 2)
-  exciseDuty         Decimal   @default(0) @db.Decimal(16, 2)
-  poStatus           String?   @db.VarChar(100)
-  terms              String?   @db.Text
-  description        String?   @db.Text
-  companyId          String?
-  isActive           Boolean   @default(true)
-  vendorId           String?
-  contactId          String?
-  billingStreet      String?   @db.VarChar(200)
-  billingCity        String?   @db.VarChar(100)
-  billingState       String?   @db.VarChar(100)
-  billingCountry     String?   @db.VarChar(100)
-  billingPostalCode  String?   @db.VarChar(30)
-  billingPoBox       String?   @db.VarChar(50)
-  shippingStreet     String?   @db.VarChar(200)
-  shippingCity       String?   @db.VarChar(100)
-  shippingState      String?   @db.VarChar(100)
-  shippingCountry    String?   @db.VarChar(100)
-  shippingPostalCode String?   @db.VarChar(30)
-  shippingPoBox      String?   @db.VarChar(50)
-  assignedTo         String?
-  createdBy          String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id              String   @id @default(uuid())
+  purchaseOrderNo String?  @unique @db.VarChar(100)
+  subject         String   @db.VarChar(200)
+  validUntil      DateTime?
+  total           Decimal  @default(0) @db.Decimal(16,2)
+  subTotal        Decimal  @default(0) @db.Decimal(16,2)
+  discount        Decimal  @default(0) @db.Decimal(16,2)
+  discountPercent Decimal  @default(0) @db.Decimal(5,2)
+  adjustment      Decimal  @default(0) @db.Decimal(16,2)
+  shipping        Decimal  @default(0) @db.Decimal(16,2)
+  shippingHandling Decimal @default(0) @db.Decimal(16,2)
+  taxAmount       Decimal  @default(0) @db.Decimal(16,2)
+  taxType         String?  @db.VarChar(50)
+  grandTotal      Decimal  @default(0) @db.Decimal(16,2)
+  carrier         String?  @db.VarChar(100)
+  salesCommission Decimal  @default(0) @db.Decimal(16,2)
+  exciseDuty      Decimal  @default(0) @db.Decimal(16,2)
+  poStatus        String?  @db.VarChar(100)
+  terms           String?  @db.Text
+  description     String?  @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
+  vendorId        String?
+  contactId       String?
+  billingStreet   String?  @db.VarChar(200)
+  billingCity     String?  @db.VarChar(100)
+  billingState    String?  @db.VarChar(100)
+  billingCountry  String?  @db.VarChar(100)
+  billingPostalCode String? @db.VarChar(30)
+  billingPoBox    String?  @db.VarChar(50)
+  shippingStreet  String?  @db.VarChar(200)
+  shippingCity    String?  @db.VarChar(100)
+  shippingState   String?  @db.VarChar(100)
+  shippingCountry String?  @db.VarChar(100)
+  shippingPostalCode String? @db.VarChar(30)
+  shippingPoBox   String?  @db.VarChar(50)
+  assignedTo      String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   lineItems PurchaseOrderLineItem[]
 }
 
 model PurchaseOrderLineItem {
-  id              String        @id @default(uuid())
+  id             String   @id @default(uuid())
   purchaseOrderId String
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  productId       String?
-  serviceId       String?
-  itemName        String        @db.VarChar(500)
-  qty             Decimal       @default(1) @db.Decimal(12, 2)
-  listPrice       Decimal       @default(0) @db.Decimal(16, 2)
-  unitPrice       Decimal       @default(0) @db.Decimal(16, 2)
-  discount        Decimal       @default(0) @db.Decimal(16, 2)
-  discountPercent Decimal       @default(0) @db.Decimal(5, 2)
-  tax             Decimal       @default(0) @db.Decimal(16, 2)
-  taxPercent      Decimal       @default(0) @db.Decimal(5, 2)
-  netPrice        Decimal       @default(0) @db.Decimal(16, 2)
-  lineTotal       Decimal       @default(0) @db.Decimal(16, 2)
-  sequence        Int           @default(0)
-  description     String?       @db.Text
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  purchaseOrder  PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productId      String?
+  serviceId      String?
+  itemName       String   @db.VarChar(500)
+  qty            Decimal  @default(1) @db.Decimal(12,2)
+  listPrice      Decimal  @default(0) @db.Decimal(16,2)
+  unitPrice      Decimal  @default(0) @db.Decimal(16,2)
+  discount       Decimal  @default(0) @db.Decimal(16,2)
+  discountPercent Decimal @default(0) @db.Decimal(5,2)
+  tax            Decimal  @default(0) @db.Decimal(16,2)
+  taxPercent     Decimal  @default(0) @db.Decimal(5,2)
+  netPrice       Decimal  @default(0) @db.Decimal(16,2)
+  lineTotal      Decimal  @default(0) @db.Decimal(16,2)
+  sequence       Int      @default(0)
+  description    String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Invoice {
-  id                 String    @id @default(uuid())
-  invoiceNo          String?   @unique @db.VarChar(100)
-  subject            String    @db.VarChar(200)
-  invoiceDate        DateTime?
-  dueDate            DateTime?
-  total              Decimal   @default(0) @db.Decimal(16, 2)
-  subTotal           Decimal   @default(0) @db.Decimal(16, 2)
-  discount           Decimal   @default(0) @db.Decimal(16, 2)
-  discountPercent    Decimal   @default(0) @db.Decimal(5, 2)
-  adjustment         Decimal   @default(0) @db.Decimal(16, 2)
-  shipping           Decimal   @default(0) @db.Decimal(16, 2)
-  shippingHandling   Decimal   @default(0) @db.Decimal(16, 2)
-  taxAmount          Decimal   @default(0) @db.Decimal(16, 2)
-  taxType            String?   @db.VarChar(50)
-  grandTotal         Decimal   @default(0) @db.Decimal(16, 2)
-  customerNo         String?   @db.VarChar(100)
-  purchaseOrderNo    String?   @db.VarChar(100)
-  salesCommission    Decimal   @default(0) @db.Decimal(16, 2)
-  exciseDuty         Decimal   @default(0) @db.Decimal(16, 2)
-  invoiceStatus      String?   @db.VarChar(100)
-  paidAmount         Decimal   @default(0) @db.Decimal(16, 2)
-  terms              String?   @db.Text
-  notes              String?   @db.Text
-  description        String?   @db.Text
-  companyId          String?
-  isActive           Boolean   @default(true)
-  accountId          String?
-  contactId          String?
-  salesOrderId       String?
-  quoteId            String?
-  billingStreet      String?   @db.VarChar(200)
-  billingCity        String?   @db.VarChar(100)
-  billingState       String?   @db.VarChar(100)
-  billingCountry     String?   @db.VarChar(100)
-  billingPostalCode  String?   @db.VarChar(30)
-  billingPoBox       String?   @db.VarChar(50)
-  shippingStreet     String?   @db.VarChar(200)
-  shippingCity       String?   @db.VarChar(100)
-  shippingState      String?   @db.VarChar(100)
-  shippingCountry    String?   @db.VarChar(100)
-  shippingPostalCode String?   @db.VarChar(30)
-  shippingPoBox      String?   @db.VarChar(50)
-  assignedTo         String?
-  createdBy          String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id              String   @id @default(uuid())
+  invoiceNo       String?  @unique @db.VarChar(100)
+  subject         String   @db.VarChar(200)
+  invoiceDate     DateTime?
+  dueDate         DateTime?
+  total           Decimal  @default(0) @db.Decimal(16,2)
+  subTotal        Decimal  @default(0) @db.Decimal(16,2)
+  discount        Decimal  @default(0) @db.Decimal(16,2)
+  discountPercent Decimal  @default(0) @db.Decimal(5,2)
+  adjustment      Decimal  @default(0) @db.Decimal(16,2)
+  shipping        Decimal  @default(0) @db.Decimal(16,2)
+  shippingHandling Decimal @default(0) @db.Decimal(16,2)
+  taxAmount       Decimal  @default(0) @db.Decimal(16,2)
+  taxType         String?  @db.VarChar(50)
+  grandTotal      Decimal  @default(0) @db.Decimal(16,2)
+  customerNo      String?  @db.VarChar(100)
+  purchaseOrderNo String?  @db.VarChar(100)
+  salesCommission Decimal  @default(0) @db.Decimal(16,2)
+  exciseDuty      Decimal  @default(0) @db.Decimal(16,2)
+  invoiceStatus   String?  @db.VarChar(100)
+  paidAmount      Decimal  @default(0) @db.Decimal(16,2)
+  terms           String?  @db.Text
+  notes           String?  @db.Text
+  description     String?  @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
+  accountId       String?
+  contactId       String?
+  salesOrderId    String?
+  quoteId         String?
+  billingStreet   String?  @db.VarChar(200)
+  billingCity     String?  @db.VarChar(100)
+  billingState    String?  @db.VarChar(100)
+  billingCountry  String?  @db.VarChar(100)
+  billingPostalCode String? @db.VarChar(30)
+  billingPoBox    String?  @db.VarChar(50)
+  shippingStreet  String?  @db.VarChar(200)
+  shippingCity    String?  @db.VarChar(100)
+  shippingState   String?  @db.VarChar(100)
+  shippingCountry String?  @db.VarChar(100)
+  shippingPostalCode String? @db.VarChar(30)
+  shippingPoBox   String?  @db.VarChar(50)
+  assignedTo      String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  lineItems  InvoiceLineItem[]
-  salesOrder SalesOrder?       @relation(fields: [salesOrderId], references: [id])
+  lineItems InvoiceLineItem[]
+  salesOrder SalesOrder? @relation(fields: [salesOrderId], references: [id])
 }
 
 model InvoiceLineItem {
@@ -856,15 +857,15 @@ model InvoiceLineItem {
   productId       String?
   serviceId       String?
   itemName        String   @db.VarChar(500)
-  qty             Decimal  @default(1) @db.Decimal(12, 2)
-  listPrice       Decimal  @default(0) @db.Decimal(16, 2)
-  unitPrice       Decimal  @default(0) @db.Decimal(16, 2)
-  discount        Decimal  @default(0) @db.Decimal(16, 2)
-  discountPercent Decimal  @default(0) @db.Decimal(5, 2)
-  tax             Decimal  @default(0) @db.Decimal(16, 2)
-  taxPercent      Decimal  @default(0) @db.Decimal(5, 2)
-  netPrice        Decimal  @default(0) @db.Decimal(16, 2)
-  lineTotal       Decimal  @default(0) @db.Decimal(16, 2)
+  qty             Decimal  @default(1) @db.Decimal(12,2)
+  listPrice       Decimal  @default(0) @db.Decimal(16,2)
+  unitPrice       Decimal  @default(0) @db.Decimal(16,2)
+  discount        Decimal  @default(0) @db.Decimal(16,2)
+  discountPercent Decimal  @default(0) @db.Decimal(5,2)
+  tax             Decimal  @default(0) @db.Decimal(16,2)
+  taxPercent      Decimal  @default(0) @db.Decimal(5,2)
+  netPrice        Decimal  @default(0) @db.Decimal(16,2)
+  lineTotal       Decimal  @default(0) @db.Decimal(16,2)
   sequence        Int      @default(0)
   description     String?  @db.Text
   createdAt       DateTime @default(now())
@@ -882,12 +883,12 @@ model Ticket {
   priority          String?  @db.VarChar(100)
   severity          String?  @db.VarChar(100)
   category          String?  @db.VarChar(100)
-  hours             Decimal? @db.Decimal(10, 2)
+  hours             Decimal? @db.Decimal(10,2)
   days              Int?
   fromMail          String?  @db.VarChar(200)
   versionId         String?  @db.VarChar(100)
-  companyId         String?
-  isActive          Boolean  @default(true)
+  companyId String?
+  isActive Boolean  @default(true)
   contactId         String?
   accountId         String?
   productId         String?
@@ -908,60 +909,60 @@ model Faq {
   answer      String?  @db.Text
   category    String?  @db.VarChar(100)
   status      String?  @default("Published") @db.VarChar(100)
-  companyId   String?
-  isActive    Boolean  @default(true)
-  assignedTo  String?
+  companyId String?
+  isActive Boolean  @default(true)
+  assignedTo String?
   createdBy   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Document {
-  id                String   @id @default(uuid())
-  documentNo        String?  @unique @db.VarChar(100)
-  title             String   @db.VarChar(200)
-  fileName          String?  @db.VarChar(500)
-  fileType          String?  @db.VarChar(100)
-  fileSize          Int?
-  filePath          String?  @db.VarChar(1000)
-  fileLocationType  String?  @db.VarChar(50)
-  fileDownloadCount Int?     @default(0)
-  fileStatus        String?  @db.VarChar(50)
-  fileVersion       String?  @db.VarChar(50)
-  noteContent       String?  @db.Text
-  folderId          String?  @db.VarChar(100)
-  parentModule      String?  @db.VarChar(100)
-  parentId          String?
-  companyId         String?
-  isActive          Boolean  @default(true)
-  assignedTo        String?
-  createdBy         String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id          String   @id @default(uuid())
+  documentNo  String?  @unique @db.VarChar(100)
+  title       String   @db.VarChar(200)
+  fileName    String?  @db.VarChar(500)
+  fileType    String?  @db.VarChar(100)
+  fileSize    Int?
+  filePath    String?  @db.VarChar(1000)
+  fileLocationType String? @db.VarChar(50)
+  fileDownloadCount Int? @default(0)
+  fileStatus  String?  @db.VarChar(50)
+  fileVersion String?  @db.VarChar(50)
+  noteContent String?  @db.Text
+  folderId    String?  @db.VarChar(100)
+  parentModule String? @db.VarChar(100)
+  parentId    String?
+  companyId String?
+  isActive Boolean  @default(true)
+  assignedTo  String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Email {
-  id           String    @id @default(uuid())
-  dateSent     DateTime?
-  subject      String?   @db.VarChar(500)
-  body         String?   @db.Text
-  fromEmail    String?   @db.VarChar(200)
-  toEmails     String?   @db.Text
-  ccEmails     String?   @db.Text
-  bccEmails    String?   @db.Text
-  emailFlag    String?   @db.VarChar(50)
-  mailboxId    String?   @db.VarChar(100)
-  isRead       Boolean   @default(false)
-  messageId    String?   @db.VarChar(300)
-  parentId     String?
-  parentModule String?   @db.VarChar(100)
-  attachments  Json?     @default("[]")
-  companyId    String?
-  isActive     Boolean   @default(true)
-  assignedTo   String?
-  createdBy    String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id          String   @id @default(uuid())
+  dateSent    DateTime?
+  subject     String?  @db.VarChar(500)
+  body        String?  @db.Text
+  fromEmail   String?  @db.VarChar(200)
+  toEmails    String?  @db.Text
+  ccEmails    String?  @db.Text
+  bccEmails   String?  @db.Text
+  emailFlag   String?  @db.VarChar(50)
+  mailboxId   String?  @db.VarChar(100)
+  isRead      Boolean  @default(false)
+  messageId   String?  @db.VarChar(300)
+  parentId    String?
+  parentModule String? @db.VarChar(100)
+  attachments Json?    @default("[]")
+  companyId String?
+  isActive Boolean  @default(true)
+  assignedTo  String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model EmailTemplate {
@@ -972,143 +973,143 @@ model EmailTemplate {
   body         String   @db.Text
   module       String?  @db.VarChar(100)
   folderName   String?  @db.VarChar(100)
-  companyId    String?
-  isActive     Boolean  @default(true)
-  assignedTo   String?
+  companyId String?
+  isActive Boolean  @default(true)
+  assignedTo String?
   createdBy    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
 
 model Project {
-  id            String    @id @default(uuid())
-  projectNo     String?   @unique @db.VarChar(100)
-  projectName   String    @db.VarChar(200)
-  projectType   String?   @db.VarChar(100)
-  description   String?   @db.Text
-  status        String?   @db.VarChar(100)
-  priority      String?   @db.VarChar(100)
-  progress      Int?      @default(0)
+  id            String   @id @default(uuid())
+  projectNo     String?  @unique @db.VarChar(100)
+  projectName   String   @db.VarChar(200)
+  projectType   String?  @db.VarChar(100)
+  description   String?  @db.Text
+  status        String?  @db.VarChar(100)
+  priority      String?  @db.VarChar(100)
+  progress      Int?     @default(0)
   startDate     DateTime?
   endDate       DateTime?
   actualEndDate DateTime?
-  targetBudget  Decimal?  @db.Decimal(16, 2)
-  actualBudget  Decimal?  @db.Decimal(16, 2)
-  url           String?   @db.VarChar(500)
-  companyId     String?
-  isActive      Boolean   @default(true)
+  targetBudget  Decimal? @db.Decimal(16,2)
+  actualBudget  Decimal? @db.Decimal(16,2)
+  url           String?  @db.VarChar(500)
+  companyId String?
+  isActive Boolean  @default(true)
   contactId     String?
   accountId     String?
   assignedTo    String?
   createdBy     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   tasks      ProjectTask[]
   milestones ProjectMilestone[]
 }
 
 model ProjectTask {
-  id              String    @id @default(uuid())
-  projectTaskNo   String?   @unique @db.VarChar(100)
-  title           String    @db.VarChar(500)
-  description     String?   @db.Text
-  status          String?   @db.VarChar(100)
-  priority        String?   @db.VarChar(100)
-  projectTaskType String?   @db.VarChar(100)
-  progress        Int?      @default(0)
-  startDate       DateTime?
-  endDate         DateTime?
-  hours           Decimal?  @db.Decimal(10, 2)
-  companyId       String?
-  isActive        Boolean   @default(true)
-  projectId       String
-  project         Project   @relation(fields: [projectId], references: [id])
-  assignedTo      String?
-  createdBy       String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String   @id @default(uuid())
+  projectTaskNo String?  @unique @db.VarChar(100)
+  title         String   @db.VarChar(500)
+  description   String?  @db.Text
+  status        String?  @db.VarChar(100)
+  priority      String?  @db.VarChar(100)
+  projectTaskType String? @db.VarChar(100)
+  progress      Int?     @default(0)
+  startDate     DateTime?
+  endDate       DateTime?
+  hours         Decimal? @db.Decimal(10,2)
+  companyId String?
+  isActive Boolean  @default(true)
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id])
+  assignedTo    String?
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model ProjectMilestone {
-  id            String    @id @default(uuid())
-  milestoneNo   String?   @unique @db.VarChar(100)
-  title         String    @db.VarChar(500)
-  description   String?   @db.Text
-  status        String?   @db.VarChar(100)
-  progress      Int?      @default(0)
+  id          String   @id @default(uuid())
+  milestoneNo String?  @unique @db.VarChar(100)
+  title       String   @db.VarChar(500)
+  description String?  @db.Text
+  status      String?  @db.VarChar(100)
+  progress    Int?     @default(0)
   milestoneDate DateTime?
-  milestoneType String?   @db.VarChar(100)
-  plannedHours  Decimal?  @db.Decimal(10, 2)
-  actualHours   Decimal?  @db.Decimal(10, 2)
+  milestoneType String? @db.VarChar(100)
+  plannedHours  Decimal? @db.Decimal(10,2)
+  actualHours   Decimal? @db.Decimal(10,2)
   sequence      Int?
-  startDate     DateTime?
-  endDate       DateTime?
-  companyId     String?
-  isActive      Boolean   @default(true)
-  projectId     String
-  project       Project   @relation(fields: [projectId], references: [id])
-  assignedTo    String?
-  createdBy     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  startDate   DateTime?
+  endDate     DateTime?
+  companyId String?
+  isActive Boolean  @default(true)
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  assignedTo  String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Asset {
-  id                     String    @id @default(uuid())
-  assetNo                String?   @unique @db.VarChar(100)
-  assetName              String    @db.VarChar(200)
-  serialNo               String?   @db.VarChar(100)
-  tagNumber              String?   @db.VarChar(100)
-  datesInService         DateTime?
-  dateOutOfService       DateTime?
-  dateSold               DateTime?
-  status                 String?   @db.VarChar(100)
-  shippingMethod         String?   @db.VarChar(100)
-  shippingTrackingNumber String?   @db.VarChar(200)
-  description            String?   @db.Text
-  companyId              String?
-  isActive               Boolean   @default(true)
-  accountId              String?
-  contactId              String?
-  productId              String?
-  invoiceId              String?
-  serviceContractId      String?
-  assignedTo             String?
-  createdBy              String?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  id                String   @id @default(uuid())
+  assetNo           String?  @unique @db.VarChar(100)
+  assetName         String   @db.VarChar(200)
+  serialNo          String?  @db.VarChar(100)
+  tagNumber         String?  @db.VarChar(100)
+  datesInService    DateTime?
+  dateOutOfService  DateTime?
+  dateSold          DateTime?
+  status            String?  @db.VarChar(100)
+  shippingMethod    String?  @db.VarChar(100)
+  shippingTrackingNumber String? @db.VarChar(200)
+  description       String?  @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
+  accountId         String?
+  contactId         String?
+  productId         String?
+  invoiceId         String?
+  serviceContractId String?
+  assignedTo        String?
+  createdBy         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   serviceContract ServiceContract? @relation(fields: [serviceContractId], references: [id])
 }
 
 model ServiceContract {
-  id            String    @id @default(uuid())
-  contractNo    String?   @unique @db.VarChar(100)
-  contractName  String    @db.VarChar(200)
-  contractType  String?   @db.VarChar(100)
-  status        String?   @db.VarChar(100)
-  priority      String?   @db.VarChar(100)
+  id            String   @id @default(uuid())
+  contractNo    String?  @unique @db.VarChar(100)
+  contractName  String   @db.VarChar(200)
+  contractType  String?  @db.VarChar(100)
+  status        String?  @db.VarChar(100)
+  priority      String?  @db.VarChar(100)
   startDate     DateTime?
   endDate       DateTime?
   renewalDate   DateTime?
-  trackingUnit  String?   @db.VarChar(50)
-  totalUnits    Decimal?  @db.Decimal(12, 2)
-  usedUnits     Decimal?  @default(0) @db.Decimal(12, 2)
-  unitPrice     Decimal?  @db.Decimal(16, 2)
-  costPrice     Decimal?  @db.Decimal(16, 2)
-  currency      String?   @db.VarChar(3)
+  trackingUnit  String?  @db.VarChar(50)
+  totalUnits    Decimal? @db.Decimal(12,2)
+  usedUnits     Decimal? @default(0) @db.Decimal(12,2)
+  unitPrice     Decimal? @db.Decimal(16,2)
+  costPrice     Decimal? @db.Decimal(16,2)
+  currency      String?  @db.VarChar(3)
   relatedTo     String?
-  relatedModule String?   @db.VarChar(100)
-  description   String?   @db.Text
-  companyId     String?
-  isActive      Boolean   @default(true)
+  relatedModule String?  @db.VarChar(100)
+  description   String?  @db.Text
+  companyId String?
+  isActive Boolean  @default(true)
   accountId     String?
   contactId     String?
   assignedTo    String?
   createdBy     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   tickets Ticket[]
   assets  Asset[]
@@ -1120,8 +1121,8 @@ model SmsNotifier {
   toNumber   String?  @db.VarChar(30)
   message    String?  @db.Text
   status     String?  @db.VarChar(50)
-  companyId  String?
-  isActive   Boolean  @default(true)
+  companyId String?
+  isActive Boolean  @default(true)
   assignedTo String?
   createdBy  String?
   createdAt  DateTime @default(now())
@@ -1209,7 +1210,7 @@ model CurrencyInfo {
   currencyId     String
   relatedId      String
   relatedModule  String   @db.VarChar(100)
-  conversionRate Decimal  @default(1) @db.Decimal(10, 5)
+  conversionRate Decimal  @default(1) @db.Decimal(10,5)
   createdAt      DateTime @default(now())
 
   @@unique([currencyId, relatedId, relatedModule])
@@ -1218,7 +1219,7 @@ model CurrencyInfo {
 model TaxInfo {
   id        String   @id @default(uuid())
   taxName   String   @db.VarChar(100)
-  taxRate   Decimal  @db.Decimal(5, 2)
+  taxRate   Decimal  @db.Decimal(5,2)
   isDefault Boolean  @default(false)
   isActive  Boolean  @default(true)
   companyId String?
@@ -1229,29 +1230,29 @@ model TaxInfo {
 }
 
 model Company {
-  id                String   @id @default(uuid())
-  name              String   @default("BizForce CRM") @db.VarChar(200)
-  email             String?  @db.VarChar(100)
-  phone             String?  @db.VarChar(30)
-  website           String?  @db.VarChar(200)
-  addressStreet     String?  @db.VarChar(200)
-  addressCity       String?  @db.VarChar(100)
-  addressState      String?  @db.VarChar(100)
-  addressCountry    String?  @db.VarChar(100)
-  addressPostalCode String?  @db.VarChar(30)
-  taxId             String?  @db.VarChar(100)
-  logo              String?  @db.VarChar(500)
-  defaultCurrency   String?  @default("USD") @db.VarChar(3)
-  timezone          String   @default("Asia/Karachi") @db.VarChar(100)
-  dateFormat        String   @default("mm-dd-yyyy") @db.VarChar(20)
-  facebook          String?  @db.VarChar(500)
-  twitter           String?  @db.VarChar(500)
-  linkedin          String?  @db.VarChar(500)
-  instagram         String?  @db.VarChar(500)
-  youtube           String?  @db.VarChar(500)
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String   @default("BizForce CRM") @db.VarChar(200)
+  email           String?  @db.VarChar(100)
+  phone           String?  @db.VarChar(30)
+  website         String?  @db.VarChar(200)
+  addressStreet   String?  @db.VarChar(200)
+  addressCity     String?  @db.VarChar(100)
+  addressState    String?  @db.VarChar(100)
+  addressCountry  String?  @db.VarChar(100)
+  addressPostalCode String? @db.VarChar(30)
+  taxId           String?  @db.VarChar(100)
+  logo            String?  @db.VarChar(500)
+  defaultCurrency String?  @default("USD") @db.VarChar(3)
+  timezone        String   @default("Asia/Karachi") @db.VarChar(100)
+  dateFormat      String   @default("mm-dd-yyyy") @db.VarChar(20)
+  facebook        String?  @db.VarChar(500)
+  twitter         String?  @db.VarChar(500)
+  linkedin        String?  @db.VarChar(500)
+  instagram       String?  @db.VarChar(500)
+  youtube         String?  @db.VarChar(500)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   users User[]
 }
@@ -1389,17 +1390,17 @@ model Workflow {
 }
 
 model ScheduledTask {
-  id         String    @id @default(uuid())
-  name       String    @db.VarChar(200)
-  moduleName String?   @db.VarChar(100)
-  frequency  String    @db.VarChar(50)
-  actions    Json      @default("[]")
-  isActive   Boolean   @default(true)
+  id         String   @id @default(uuid())
+  name       String   @db.VarChar(200)
+  moduleName String?  @db.VarChar(100)
+  frequency  String   @db.VarChar(50)
+  actions    Json     @default("[]")
+  isActive   Boolean  @default(true)
   lastRun    DateTime?
   nextRun    DateTime?
   companyId  String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Webform {
@@ -1434,16 +1435,16 @@ model Notification {
 }
 
 model Announcement {
-  id        String    @id @default(uuid())
-  title     String    @db.VarChar(200)
-  message   String?   @db.Text
+  id        String   @id @default(uuid())
+  title     String   @db.VarChar(200)
+  message   String?  @db.Text
   startsAt  DateTime?
   expiresAt DateTime?
-  isActive  Boolean   @default(true)
+  isActive  Boolean  @default(true)
   companyId String?
   createdBy String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Holiday {
@@ -1456,28 +1457,28 @@ model Holiday {
 }
 
 model Activity {
-  id            String    @id @default(uuid())
-  subject       String    @db.VarChar(255)
-  description   String?   @db.Text
-  activityType  String    @default("Task") @db.VarChar(50)
-  status        String?   @db.VarChar(100)
-  priority      String?   @db.VarChar(50)
-  location      String?   @db.VarChar(255)
-  startAt       DateTime?
-  endAt         DateTime?
-  dueAt         DateTime?
-  reminderAt    DateTime?
-  parentModule  String?   @db.VarChar(100)
-  parentId      String?
-  recurrence    Json?
-  shared        Boolean   @default(false)
-  googleEventId String?   @db.VarChar(300)
-  companyId     String?
-  isActive      Boolean   @default(true)
-  assignedTo    String?
-  createdBy     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String    @id @default(uuid())
+  subject      String    @db.VarChar(255)
+  description  String?   @db.Text
+  activityType String    @default("Task") @db.VarChar(50)
+  status       String?   @db.VarChar(100)
+  priority     String?   @db.VarChar(50)
+  location     String?   @db.VarChar(255)
+  startAt      DateTime?
+  endAt        DateTime?
+  dueAt        DateTime?
+  reminderAt   DateTime?
+  parentModule String?  @db.VarChar(100)
+  parentId     String?
+  recurrence   Json?
+  shared       Boolean  @default(false)
+  googleEventId String? @db.VarChar(300)
+  companyId    String?
+  isActive     Boolean   @default(true)
+  assignedTo   String?
+  createdBy    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([companyId])
   @@index([startAt])
@@ -1501,7 +1502,7 @@ model Follow {
 model Payment {
   id          String   @id @default(uuid())
   invoiceId   String
-  amount      Decimal  @default(0) @db.Decimal(16, 2)
+  amount      Decimal  @default(0) @db.Decimal(16,2)
   paymentDate DateTime @default(now())
   method      String?  @db.VarChar(50)
   reference   String?  @db.VarChar(200)
@@ -1516,121 +1517,48 @@ model Payment {
 }
 
 model RecurringInvoice {
-  id         String    @id @default(uuid())
+  id         String   @id @default(uuid())
   invoiceId  String
-  frequency  String    @default("monthly") @db.VarChar(20)
-  interval   Int       @default(1)
+  frequency  String   @default("monthly") @db.VarChar(20)
+  interval   Int      @default(1)
   dayOfMonth Int?
   startDate  DateTime?
   endDate    DateTime?
   nextRun    DateTime?
   lastRun    DateTime?
-  isActive   Boolean   @default(true)
+  isActive   Boolean  @default(true)
   companyId  String?
   createdBy  String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([companyId])
   @@index([nextRun])
 }
 
 model PortalUser {
-  id          String    @id @default(uuid())
-  userId      String    @unique
-  companyId   String?
-  accessCode  String?
-  isActive    Boolean   @default(true)
-  lastLoginAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  companyId     String?
+  accessCode    String?
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([companyId])
 }
 
 model Mailbox {
-  id         String    @id @default(uuid())
-  name       String    @db.VarChar(200)
-  host       String    @db.VarChar(200)
-  port       Int       @default(993)
-  secure     Boolean   @default(true)
-  user       String    @db.VarChar(200)
-  pass       String?   @db.VarChar(500)
-  folder     String?   @db.VarChar(200)
-  lastSyncAt DateTime?
-  isActive   Boolean   @default(true)
-  companyId  String?
-  createdBy  String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  @@index([companyId])
-}
-
-model EmailToTicketRule {
-  id                     String   @id @default(uuid())
-  mailboxId              String
-  defaultStatus          String?  @default("Open") @db.VarChar(100)
-  defaultPriority        String?  @default("Normal") @db.VarChar(100)
-  defaultAssignedTo      String?
-  createContactIfMissing Boolean  @default(false)
-  isActive               Boolean  @default(true)
-  companyId              String?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-
-  @@index([companyId])
-  @@index([mailboxId])
-}
-
-model CallLog {
-  id              String    @id @default(uuid())
-  direction       String?   @default("inbound") @db.VarChar(20)
-  fromNumber      String?   @db.VarChar(50)
-  toNumber        String?   @db.VarChar(50)
-  callTime        DateTime?
-  duration        Int?
-  status          String?   @db.VarChar(50)
-  notes           String?   @db.Text
-  relatedToModule String?   @db.VarChar(100)
-  relatedToId     String?
-  companyId       String?
-  isActive        Boolean   @default(true)
-  assignedTo      String?
-  createdBy       String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  @@index([companyId])
-}
-
-model GoogleAccount {
-  id           String    @id @default(uuid())
-  email        String?   @db.VarChar(200)
-  accessToken  String?   @db.Text
-  refreshToken String?   @db.Text
-  scopes       Json      @default("[]")
-  lastSyncedAt DateTime?
-  syncCalendar Boolean   @default(true)
-  syncContacts Boolean   @default(false)
-  isActive     Boolean   @default(true)
-  companyId    String?
-  createdBy    String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  @@index([companyId])
-}
-
-model Report {
   id         String   @id @default(uuid())
   name       String   @db.VarChar(200)
-  moduleName String   @db.VarChar(100)
-  reportType String   @default("tabular") @db.VarChar(50)
-  columns    Json     @default("[]")
-  grouping   Json     @default("{}")
-  filters    Json     @default("[]")
-  sort       Json     @default("[]")
+  host       String   @db.VarChar(200)
+  port       Int      @default(993)
+  secure     Boolean  @default(true)
+  user       String   @db.VarChar(200)
+  pass       String?  @db.VarChar(500)
+  folder     String?  @db.VarChar(200)
+  lastSyncAt DateTime?
   isActive   Boolean  @default(true)
   companyId  String?
   createdBy  String?
@@ -1640,31 +1568,104 @@ model Report {
   @@index([companyId])
 }
 
+model EmailToTicketRule {
+  id          String   @id @default(uuid())
+  mailboxId   String
+  defaultStatus   String? @default("Open") @db.VarChar(100)
+  defaultPriority String? @default("Normal") @db.VarChar(100)
+  defaultAssignedTo String?
+  createContactIfMissing Boolean @default(false)
+  isActive    Boolean  @default(true)
+  companyId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([mailboxId])
+}
+
+model CallLog {
+  id             String   @id @default(uuid())
+  direction      String?  @default("inbound") @db.VarChar(20)
+  fromNumber     String?  @db.VarChar(50)
+  toNumber       String?  @db.VarChar(50)
+  callTime       DateTime?
+  duration       Int?
+  status         String?  @db.VarChar(50)
+  notes          String?  @db.Text
+  relatedToModule String? @db.VarChar(100)
+  relatedToId    String?
+  companyId      String?
+  isActive       Boolean  @default(true)
+  assignedTo     String?
+  createdBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model GoogleAccount {
+  id             String   @id @default(uuid())
+  email          String?  @db.VarChar(200)
+  accessToken    String?  @db.Text
+  refreshToken   String?  @db.Text
+  scopes         Json     @default("[]")
+  lastSyncedAt   DateTime?
+  syncCalendar   Boolean  @default(true)
+  syncContacts   Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  companyId      String?
+  createdBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model Report {
+  id           String   @id @default(uuid())
+  name         String   @db.VarChar(200)
+  moduleName   String   @db.VarChar(100)
+  reportType   String   @default("tabular") @db.VarChar(50)
+  columns      Json     @default("[]")
+  grouping     Json     @default("{}")
+  filters      Json     @default("[]")
+  sort         Json     @default("[]")
+  isActive     Boolean  @default(true)
+  companyId    String?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([companyId])
+}
+
 model RssFeed {
-  id            String    @id @default(uuid())
-  name          String    @db.VarChar(200)
-  url           String    @db.VarChar(500)
-  category      String?   @db.VarChar(100)
+  id         String   @id @default(uuid())
+  name       String   @db.VarChar(200)
+  url        String   @db.VarChar(500)
+  category   String?  @db.VarChar(100)
   lastFetchedAt DateTime?
-  isActive      Boolean   @default(true)
-  companyId     String?
-  createdBy     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  isActive   Boolean  @default(true)
+  companyId  String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([companyId])
 }
 
 model RssEntry {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   feedId      String
-  title       String    @db.VarChar(500)
-  link        String?   @db.VarChar(1000)
-  description String?   @db.Text
-  author      String?   @db.VarChar(200)
+  title       String   @db.VarChar(500)
+  link        String?  @db.VarChar(1000)
+  description String?  @db.Text
+  author      String?  @db.VarChar(200)
   pubDate     DateTime?
-  isRead      Boolean   @default(false)
-  createdAt   DateTime  @default(now())
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
 
   @@unique([feedId, link])
   @@index([feedId])
@@ -1700,18 +1701,18 @@ model PicklistDependency {
 }
 
 model ApiKey {
-  id         String    @id @default(uuid())
-  name       String    @db.VarChar(200)
-  keyPrefix  String    @db.VarChar(20)
-  keyHash    String    @db.VarChar(100)
-  scopes     Json      @default("[]")
+  id         String   @id @default(uuid())
+  name       String   @db.VarChar(200)
+  keyPrefix  String   @db.VarChar(20)
+  keyHash    String   @db.VarChar(100)
+  scopes     Json     @default("[]")
   expiresAt  DateTime?
   lastUsedAt DateTime?
-  isActive   Boolean   @default(true)
+  isActive   Boolean  @default(true)
   companyId  String?
   createdBy  String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([companyId])
 }

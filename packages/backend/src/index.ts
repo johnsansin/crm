@@ -17,6 +17,7 @@ import { calendarRouter } from './modules/calendar.routes'
 import { recordRouter } from './modules/record.routes'
 import { leadRouter } from './modules/lead.routes'
 import { extrasRouter } from './modules/extras.routes'
+import { presenceRouter } from './modules/presence.routes'
 import { errorHandler } from './middleware/errorHandler'
 import { setupModules, getModuleConfig } from './modules/moduleSetup'
 import { startCron } from './lib/cron'
@@ -58,6 +59,7 @@ app.use('/api/invoices', invoicesRouter)
 app.use('/api/calendar', calendarRouter)
 app.use('/api/records', recordRouter)
 app.use('/api/leads', leadRouter)
+app.use('/api/presence', presenceRouter)
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')))
 
 async function seedModules() {

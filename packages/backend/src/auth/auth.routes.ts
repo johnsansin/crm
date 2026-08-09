@@ -87,7 +87,7 @@ authRouter.post('/login', async (req, res, next) => {
     }
 
     await resetLoginFailures(user.id)
-    await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date() } })
+    await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date(), lastActiveAt: new Date() } })
     await recordLogin(req, user)
     await writeAudit({ moduleName: 'auth', action: 'LOGIN', newValue: user.email, userId: user.id, req })
 
@@ -117,7 +117,7 @@ authRouter.post('/login/2fa', async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid or expired verification code' })
     }
     await resetLoginFailures(user.id)
-    await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date() } })
+    await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date(), lastActiveAt: new Date() } })
     await recordLogin(req, user)
     await writeAudit({ moduleName: 'auth', action: 'LOGIN', newValue: user.email, userId: user.id, req })
 
@@ -179,7 +179,7 @@ authRouter.post('/register', async (req, res, next) => {
       include: { company: true }
     })
 
-    await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date() } })
+    await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date(), lastActiveAt: new Date() } })
     await recordLogin(req, user)
     await writeAudit({ moduleName: 'auth', action: 'LOGIN', newValue: user.email, userId: user.id, req })
 
@@ -202,6 +202,7 @@ authRouter.post('/logout', authMiddleware, async (req, res, next) => {
       userId: req.user!.userId,
       req,
     })
+    await prisma.user.update({ where: { id: req.user!.userId }, data: { lastActiveAt: null } })
     res.json({ success: true })
   } catch (err) { next(err) }
 })
