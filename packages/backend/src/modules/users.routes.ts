@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware, requireAdmin } from '../middleware/auth'
 import bcrypt from 'bcryptjs'
 import { validatePassword } from '../lib/settings'
+import { ONLINE_WINDOW_MS } from './presence.routes'
 
 export const userRouter = Router()
 
@@ -14,11 +15,17 @@ userRouter.get('/', async (req, res, next) => {
     if (!req.user!.companyId) return res.status(400).json({ error: 'No company' })
     const users = await prisma.user.findMany({
       where: { companyId: req.user!.companyId, isActive: true },
-      select: { id: true, userName: true, email: true, firstName: true, lastName: true, isAdmin: true, isActive: true, roleId: true, createdAt: true, updatedAt: true }
+      select: { id: true, userName: true, email: true, firstName: true, lastName: true, isAdmin: true, isActive: true, roleId: true, avatar: true, lastActiveAt: true, createdAt: true, updatedAt: true, groups: { select: { group: { select: { name: true } } } } }
     })
     const roles = await prisma.role.findMany({ where: { companyId: req.user!.companyId } })
     const roleMap = new Map(roles.map(r => [r.id, r.name]))
-    const result = users.map(u => ({ ...u, roleName: u.roleId ? roleMap.get(u.roleId) || null : null }))
+    const now = Date.now()
+    const result = users.map(u => ({
+      ...u,
+      roleName: u.roleId ? roleMap.get(u.roleId) || null : null,
+      groups: u.groups.map(g => g.group.name),
+      online: !!u.lastActiveAt && now - new Date(u.lastActiveAt).getTime() < ONLINE_WINDOW_MS,
+    }))
     res.json({ data: result })
   } catch (err) { next(err) }
 })

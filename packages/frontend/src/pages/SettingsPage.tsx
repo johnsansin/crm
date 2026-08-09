@@ -410,18 +410,24 @@ function UsersSettings() {
         <CardContent className="p-0">
           <DataTable
             columns={[
-              { key: 'name', label: 'Name', render: (_: any, u: any) => (
+              { key: 'name', label: 'Name', sortable: true, render: (_: any, u: any) => (
                 <div className="flex items-center gap-2.5">
-                  <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
-                    {((u.firstName?.[0] || '') + (u.lastName?.[0] || '')).toUpperCase() || '?'}
-                  </span>
+                  {u.avatar ? (
+                    <img src={u.avatar} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                      {((u.firstName?.[0] || '') + (u.lastName?.[0] || '')).toUpperCase() || '?'}
+                    </span>
+                  )}
                   <span className="font-medium">{u.firstName} {u.lastName}</span>
                 </div>
               ) },
-              { key: 'email', label: 'Email' },
-              { key: 'roleName', label: 'Role', render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 text-xs font-medium">{v}</span> : '—' },
-              { key: 'isAdmin', label: 'Admin', render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium">Yes</span> : <span className="text-muted-foreground text-xs">No</span> },
-              { key: 'status', label: 'Status', render: (_: any, u: any) => u.isActive === false ? <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">Inactive</span> : <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs">Active</span> },
+              { key: 'email', label: 'Email', sortable: true },
+              { key: 'roleName', label: 'Role', sortable: true, render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 text-xs font-medium">{v}</span> : '—' },
+              { key: 'groups', label: 'Group', sortable: true, render: (v: any) => v && v.length ? <span className="inline-flex items-center rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 px-2 py-0.5 text-xs font-medium">{v.join(', ')}</span> : '—' },
+              { key: 'online', label: 'Online', sortable: true, render: (v: any) => v ? <span className="inline-flex items-center gap-1.5 text-xs"><span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />Online</span> : <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600 inline-block" />Offline</span> },
+              { key: 'isAdmin', label: 'Admin', sortable: true, render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium">Yes</span> : <span className="text-muted-foreground text-xs">No</span> },
+              { key: 'status', label: 'Status', sortable: true, render: (_: any, u: any) => u.isActive === false ? <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">Inactive</span> : <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs">Active</span> },
             ]}
             data={(usersData?.data || []).map((u: any) => ({ ...u, name: `${u.firstName} ${u.lastName}` }))}
             loading={!usersData}
