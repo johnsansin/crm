@@ -106,9 +106,9 @@ const scopedModels = new Set([
   'ticket', 'faq', 'document', 'email', 'emailTemplate',
   'project', 'projectTask', 'projectMilestone',
   'asset', 'serviceContract', 'smsNotifier', 'role',
-  'payment', 'recurringInvoice', 'callLog', 'report',
-  'mailbox', 'rssFeed', 'rssEntry',
-  'userGroup', 'userGroupMember'
+  'userGroup', 'userGroupMember',
+  'currency', 'taxInfo', 'tag', 'customView',
+  'potentialProduct', 'potentialStageHistory'
 ])
 
 const permissionModules = new Set([
@@ -233,8 +233,31 @@ async function checkPermission(req: any, action: string): Promise<boolean> {
   }
 }
 
-function buildInclude(_moduleName: string): Record<string, any> {
+function buildInclude(moduleName: string): Record<string, any> {
+  if (moduleName === 'potentials') {
+    return {
+      products: { include: { product: { select: { id: true, productName: true, productNo: true, unitPrice: true } } } },
+      stageHistory: { include: { changedByUser: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: 'asc' } },
+    }
+  }
   return {}
+}
+
+async function replacePotentialProducts(potentialId: string, products: any[], companyId?: string | null) {
+  const items = Array.isArray(products) ? products : []
+  await prisma.potentialProduct.deleteMany({ where: { potentialId } }).catch(() => {})
+  for (const p of items) {
+    if (!p?.productId) continue
+    await prisma.potentialProduct.create({
+      data: {
+        potentialId,
+        productId: p.productId,
+        qty: p.qty ?? 1,
+        listPrice: p.listPrice ?? null,
+        companyId: companyId ?? null,
+      },
+    }).catch(() => {})
+  }
 }
 
 export function entityRouter(moduleName: string): Router {
@@ -403,11 +426,21 @@ export function entityRouter(moduleName: string): Router {
       }
       fixBooleans(data)
       fixDecimals(data)
+      delete data.products
+      delete data.stageHistory
       if (modelName === 'currency' && data.isDefault) {
-        await prisma.currency.updateMany({ where: { isDefault: true }, data: { isDefault: false } })
+        await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
       }
       const record = await prismaModel.create({ data })
       if (custom) await saveCustomData(moduleName, record.id, custom)
+      if (modelName === 'potential' && Array.isArray(req.body.products)) {
+        await replacePotentialProducts(record.id, req.body.products, req.user!.companyId)
+      }
+      if (modelName === 'potential' && record.stage) {
+        await prisma.potentialStageHistory.create({
+          data: { potentialId: record.id, stage: record.stage, changedBy: req.user!.userId, companyId: req.user!.companyId },
+        }).catch(() => {})
+      }
       await writeAudit({ moduleName, recordId: record.id, action: 'CREATE', newValue: auditSummary(record), userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onCreate', record, req })
 
@@ -446,11 +479,23 @@ export function entityRouter(moduleName: string): Router {
       }
       fixBooleans(data)
       fixDecimals(data)
+      delete data.products
+      delete data.stageHistory
       if (modelName === 'currency' && data.isDefault) {
-        await prisma.currency.updateMany({ where: { isDefault: true }, data: { isDefault: false } })
+        await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
       }
       const record = await prismaModel.update({ where, data })
       if (custom) await saveCustomData(moduleName, record.id, custom)
+      if (modelName === 'potential') {
+        if (Array.isArray(req.body.products)) {
+          await replacePotentialProducts(record.id, req.body.products, req.user!.companyId)
+        }
+        if (data.stage && data.stage !== before.stage) {
+          await prisma.potentialStageHistory.create({
+            data: { potentialId: record.id, stage: data.stage, changedBy: req.user!.userId, companyId: req.user!.companyId },
+          }).catch(() => {})
+        }
+      }
       await writeAuditFields({ moduleName, recordId: record.id, before, after: { ...before, ...data }, userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onUpdate', record, prevRecord: before, req })
       const merged = await mergeCustomValues(moduleName, [record])

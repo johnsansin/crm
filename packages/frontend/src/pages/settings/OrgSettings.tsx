@@ -6,10 +6,72 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Save, Loader2, KeyRound, ShieldCheck, GitBranch, Globe, Package, ArrowDownUp } from 'lucide-react'
+import { Save, Loader2, KeyRound, ShieldCheck, GitBranch, Globe, Package, ArrowDownUp, Link2 } from 'lucide-react'
 import { TIMEZONES, DATE_FORMATS, LANGUAGES } from '@/lib/constants'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+
+const LEAD_SOURCES = [
+  { key: 'salutation', label: 'Salutation' },
+  { key: 'firstName', label: 'First Name' },
+  { key: 'lastName', label: 'Last Name' },
+  { key: 'company', label: 'Company' },
+  { key: 'title', label: 'Title' },
+  { key: 'email', label: 'Email' },
+  { key: 'secondaryEmail', label: 'Secondary Email' },
+  { key: 'phone', label: 'Phone' },
+  { key: 'mobile', label: 'Mobile' },
+  { key: 'fax', label: 'Fax' },
+  { key: 'website', label: 'Website' },
+  { key: 'industry', label: 'Industry' },
+  { key: 'annualRevenue', label: 'Annual Revenue' },
+  { key: 'noOfEmployees', label: 'No of Employees' },
+  { key: 'rating', label: 'Rating' },
+  { key: 'leadStatus', label: 'Lead Status' },
+  { key: 'leadSource', label: 'Lead Source' },
+  { key: 'street', label: 'Street' },
+  { key: 'city', label: 'City' },
+  { key: 'state', label: 'State' },
+  { key: 'country', label: 'Country' },
+  { key: 'postalCode', label: 'Postal Code' },
+  { key: 'poBox', label: 'PO Box' },
+  { key: 'description', label: 'Description' },
+]
+
+const MAPPING_GROUPS = [
+  {
+    module: 'account',
+    label: 'Account Fields',
+    fields: [
+      ['accountName', 'Account Name'], ['website', 'Website'], ['phone', 'Phone'], ['fax', 'Fax'], ['email', 'Email'],
+      ['industry', 'Industry'], ['annualRevenue', 'Annual Revenue'], ['rating', 'Rating'], ['employees', 'Employees'],
+      ['billingStreet', 'Billing Street'], ['billingCity', 'Billing City'], ['billingState', 'Billing State'],
+      ['billingCountry', 'Billing Country'], ['billingPostalCode', 'Billing Postal Code'], ['billingPoBox', 'Billing PO Box'],
+      ['shippingStreet', 'Shipping Street'], ['shippingCity', 'Shipping City'], ['shippingState', 'Shipping State'],
+      ['shippingCountry', 'Shipping Country'], ['shippingPostalCode', 'Shipping Postal Code'], ['shippingPoBox', 'Shipping PO Box'],
+      ['description', 'Description'],
+    ],
+  },
+  {
+    module: 'contact',
+    label: 'Contact Fields',
+    fields: [
+      ['firstName', 'First Name'], ['lastName', 'Last Name'], ['title', 'Title'], ['email', 'Email'],
+      ['secondaryEmail', 'Secondary Email'], ['phone', 'Phone'], ['mobile', 'Mobile'], ['fax', 'Fax'],
+      ['leadSource', 'Lead Source'], ['mailingStreet', 'Mailing Street'], ['mailingCity', 'Mailing City'],
+      ['mailingState', 'Mailing State'], ['mailingCountry', 'Mailing Country'], ['mailingPostalCode', 'Mailing Postal Code'],
+      ['mailingPoBox', 'Mailing PO Box'], ['description', 'Description'],
+    ],
+  },
+  {
+    module: 'potential',
+    label: 'Potential Fields',
+    fields: [
+      ['potentialName', 'Potential Name'], ['amount', 'Amount'], ['closingDate', 'Closing Date'], ['stage', 'Stage'],
+      ['probability', 'Probability'], ['nextStep', 'Next Step'], ['leadSource', 'Lead Source'], ['description', 'Description'],
+    ],
+  },
+]
 
 export function OrgSettings() {
   const { addToast } = useToast()
@@ -107,6 +169,42 @@ export function OrgSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 <Field label="Default Lead Status"><Input value={form.leadConfig?.defaultLeadStatus ?? ''} onChange={e => set('leadConfig', 'defaultLeadStatus', e.target.value)} /></Field>
                 <Field label="Default Lead Source"><Input value={form.leadConfig?.defaultLeadSource ?? ''} onChange={e => set('leadConfig', 'defaultLeadSource', e.target.value)} /></Field>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 text-sm font-semibold mb-3"><Link2 size={15} /> Field Mapping (Lead → Account / Contact / Potential)</div>
+                <p className="text-xs text-muted-foreground mb-4">Choose which lead field populates each field when a lead is converted. Leave "(default)" to use the built-in mapping.</p>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {MAPPING_GROUPS.map(group => (
+                    <Card key={group.module}>
+                      <CardHeader><CardTitle className="text-sm">{group.label}</CardTitle></CardHeader>
+                      <CardContent className="space-y-2 max-h-[400px] overflow-y-auto">
+                        {group.fields.map(([target, label]) => {
+                          const current = form.leadConversionMapping?.[group.module]?.[target] || ''
+                          return (
+                            <div key={target} className="flex items-center gap-2">
+                              <span className="text-xs w-32 truncate shrink-0">{label}</span>
+                              <select
+                                className={`${inputCls} h-8 text-xs`}
+                                value={current}
+                                onChange={e => setForm((f: any) => ({
+                                  ...f,
+                                  leadConversionMapping: {
+                                    ...(f.leadConversionMapping || {}),
+                                    [group.module]: { ...((f.leadConversionMapping || {})[group.module] || {}), [target]: e.target.value },
+                                  },
+                                }))}
+                              >
+                                <option value="">(default)</option>
+                                {LEAD_SOURCES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                              </select>
+                            </div>
+                          )
+                        })}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             </TabsContent>
 

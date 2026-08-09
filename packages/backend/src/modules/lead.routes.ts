@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { writeAudit } from '../lib/audit'
-import { nextSequenceNumber } from '../lib/settings'
+import { nextSequenceNumber, getOrgSetting } from '../lib/settings'
 
 export const leadRouter = Router()
 
@@ -55,10 +55,21 @@ leadRouter.post('/:id/convert', async (req, res, next) => {
     const assignedTo = req.body.assignedTo || lead.assignedTo || req.user!.userId
     const companyId = req.user!.companyId || null
 
+    // Org-level field mapping (SaaS: each organisation defines its own mapping)
+    const mapping = (await getOrgSetting(companyId, 'leadConversionMapping').catch(() => ({}))) || {}
+    const applyMap = (module: string, base: any): any => {
+      const map = mapping[module] || {}
+      const out = { ...base }
+      for (const [target, src] of Object.entries(map)) {
+        if (src && typeof src === 'string' && (lead as any)[src] != null) out[target] = (lead as any)[src]
+      }
+      return out
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const account = await tx.account.create({
-        data: {
-          accountNo: await nextSequenceNumber('Account'),
+        data: applyMap('account', {
+          accountNo: await nextSequenceNumber('Account', companyId),
           accountName,
           website: lead.website,
           phone: lead.phone,
@@ -84,12 +95,12 @@ leadRouter.post('/:id/convert', async (req, res, next) => {
           companyId,
           createdBy: req.user!.userId,
           assignedTo,
-        },
+        }),
       })
 
       const contact = await tx.contact.create({
-        data: {
-          contactNo: await nextSequenceNumber('Contact'),
+        data: applyMap('contact', {
+          contactNo: await nextSequenceNumber('Contact', companyId),
           salutation: lead.salutation,
           firstName: lead.firstName,
           lastName: lead.lastName,
@@ -112,12 +123,12 @@ leadRouter.post('/:id/convert', async (req, res, next) => {
           companyId,
           createdBy: req.user!.userId,
           assignedTo,
-        },
+        }),
       })
 
       const potential = await tx.potential.create({
-        data: {
-          potentialNo: await nextSequenceNumber('Potential'),
+        data: applyMap('potential', {
+          potentialNo: await nextSequenceNumber('Potential', companyId),
           potentialName: pi.potentialName || lead.company,
           amount: pi.amount != null ? pi.amount : lead.annualRevenue,
           closingDate: pi.closingDate ? new Date(pi.closingDate) : null,
@@ -131,7 +142,7 @@ leadRouter.post('/:id/convert', async (req, res, next) => {
           companyId,
           createdBy: req.user!.userId,
           assignedTo,
-        },
+        }),
       })
 
       const converted = await tx.lead.update({

@@ -12,6 +12,7 @@ export const DEFAULT_ORG_SETTINGS: Record<string, any> = {
   passwordPolicy: { minLength: 6, requireUpper: false, requireLower: false, requireNumber: false, requireSymbol: false, expiryDays: 0, preventReuse: 0 },
   loginSecurity: { maxAttempts: 5, lockMinutes: 15, twoFactorRequired: false },
   leadConfig: { enableLeadConversion: true, defaultLeadStatus: 'New', defaultLeadSource: '', createOnContact: true },
+  leadConversionMapping: { account: {}, contact: {}, potential: {} },
   terms: { quote: '', salesOrder: '', invoice: '' },
   language: 'en_us',
   timezone: 'Asia/Karachi',
@@ -135,6 +136,7 @@ export async function recordLoginFailure(userId: string, companyId: string | nul
         ipAddress: rawIp?.replace(/^::ffff:/, '') || null,
         userAgent: req?.headers?.['user-agent'] || null,
         status: 'Failed',
+        companyId: user.companyId,
       }
     })
   } catch {}
@@ -145,14 +147,24 @@ export async function resetLoginFailures(userId: string): Promise<void> {
 }
 
 // ---- Sequence numbers (used by module auto-numbering) ----
-export async function nextSequenceNumber(moduleName: string): Promise<string> {
-  const row = await prisma.sequenceNumber.upsert({
-    where: { moduleName },
-    update: { currentNo: { increment: 1 } },
-    create: { moduleName, currentNo: 1 },
+export async function nextSequenceNumber(moduleName: string, companyId?: string | null): Promise<string> {
+  const key = companyId ?? null
+  const fmt = (row: any) => `${row.prefix}${row.currentNo.toString().padStart(row.digitWidth, '0')}${row.suffix}`
+  let row = await prisma.sequenceNumber.findFirst({ where: { moduleName, companyId: key } })
+  if (!row) {
+    try {
+      row = await prisma.sequenceNumber.create({ data: { moduleName, companyId: key, currentNo: 1 } })
+      return fmt(row)
+    } catch {
+      row = await prisma.sequenceNumber.findFirst({ where: { moduleName, companyId: key } })
+    }
+  }
+  if (!row) throw new Error('Could not create sequence for ' + moduleName)
+  const updated = await prisma.sequenceNumber.update({
+    where: { id: row.id },
+    data: { currentNo: { increment: 1 } },
   })
-  const num = row.currentNo.toString().padStart(row.digitWidth, '0')
-  return `${row.prefix}${num}${row.suffix}`
+  return fmt(updated)
 }
 
 export function evaluateConditions(conditions: any, record: any): boolean {
@@ -242,7 +254,7 @@ async function executeWorkflowAction(action: any, ctx: { companyId: string; modu
       const title = (action.title || 'Workflow notification').replace(/\{([a-zA-Z0-9_]+)\}/g, (_: string, f: string) => ctx.record?.[f] ?? '')
       const message = (action.message || '').replace(/\{([a-zA-Z0-9_]+)\}/g, (_: string, f: string) => ctx.record?.[f] ?? '')
       for (const u of targets) {
-        await prisma.notification.create({ data: { userId: u.id, title, message } }).catch(() => {})
+        await prisma.notification.create({ data: { userId: u.id, title, message, companyId: ctx.companyId } }).catch(() => {})
       }
       break
     }
@@ -274,7 +286,7 @@ export async function runScheduledTaskActions(task: { id: string; moduleName?: s
       case 'createNotifications': {
         const users = await prisma.user.findMany({ where: { companyId: task.companyId || undefined, isActive: true } })
         for (const u of users) {
-          await prisma.notification.create({ data: { userId: u.id, title: action.title || 'Scheduled task', message: action.message || '' } }).catch(() => {})
+          await prisma.notification.create({ data: { userId: u.id, title: action.title || 'Scheduled task', message: action.message || '', companyId: task.companyId || undefined } }).catch(() => {})
         }
         break
       }

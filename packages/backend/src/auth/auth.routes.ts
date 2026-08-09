@@ -25,6 +25,7 @@ async function recordLogin(req: any, user: any) {
       ipAddress: ipAddress || null,
       userAgent: userAgent || null,
       status: 'Success',
+      companyId: user.companyId,
     }
   })
   fetch('https://api.ipify.org?format=json')

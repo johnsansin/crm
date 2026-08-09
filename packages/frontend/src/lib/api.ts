@@ -340,6 +340,48 @@ export const api = {
   updateSequenceNumber: (moduleName: string, data: any) =>
     request<any>(`/settings/sequence-numbers/${moduleName}`, { method: 'PUT', body: JSON.stringify(data) }),
 
+  // ---- Tags (company-scoped) ----
+  getTags: () => request<{ data: any[] }>('/settings/tags'),
+  createTag: (data: any) =>
+    request<any>('/settings/tags', { method: 'POST', body: JSON.stringify(data) }),
+  updateTag: (id: string, name: string) =>
+    request<any>(`/settings/tags/${id}`, { method: 'PUT', body: JSON.stringify({ name }) }),
+  deleteTag: (id: string) => request<any>(`/settings/tags/${id}`, { method: 'DELETE' }),
+
+  // ---- Custom views ----
+  getCustomViews: (moduleName: string) => request<{ data: any[] }>(`/settings/customviews/${moduleName}`),
+  createCustomView: (moduleName: string, data: any) =>
+    request<any>(`/settings/customviews/${moduleName}`, { method: 'POST', body: JSON.stringify(data) }),
+  updateCustomView: (id: string, data: any) =>
+    request<any>(`/settings/customviews/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCustomView: (id: string) =>
+    request<any>(`/settings/customviews/${id}`, { method: 'DELETE' }),
+
+  // ---- Report export (printable HTML) ----
+  exportReport: async (report: any, rows: any[]): Promise<{ ok: boolean; error?: string }> => {
+    const token = localStorage.getItem('token')
+    try {
+      const res = await fetch(`${API_BASE}/reports/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ ...report, rows }),
+      })
+      if (!res.ok) {
+        let msg = `Export failed (${res.status})`
+        try { const b = await res.json(); msg = b.error || msg } catch {}
+        throw new Error(msg)
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const w = window.open()
+      if (w) { w.document.open(); w.document.write('Loading report…'); w.location.href = url }
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+      return { ok: true }
+    } catch (e: any) {
+      return { ok: false, error: e.message || 'Export failed' }
+    }
+  },
+
   // ---- Record detail (vtiger-style) ----
   record: (module: string, id: string) => ({
     activities: () => request<{ data: any[] }>(`/records/${module}/${id}/activities`),

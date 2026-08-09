@@ -244,11 +244,16 @@ settingsRouter.put('/sharing-rules/:moduleName', requireAdmin, async (req, res, 
   try {
     const { moduleName } = req.params
     const { accessType, roleIds } = req.body
-    const rule = await prisma.sharingRule.upsert({
-      where: { companyId_moduleName: { companyId: req.user!.companyId || '', moduleName } },
-      update: { accessType: accessType || 'PublicReadWriteDelete', roleIds: roleIds || [] },
-      create: { companyId: req.user!.companyId, moduleName, accessType: accessType || 'PublicReadWriteDelete', roleIds: roleIds || [] },
-    })
+    const companyId = req.user!.companyId
+    let rule = await prisma.sharingRule.findFirst({ where: { companyId, moduleName } })
+    if (rule) {
+      rule = await prisma.sharingRule.update({ where: { id: rule.id }, data: { accessType: accessType || 'PublicReadWriteDelete', roleIds: roleIds || [] } })
+    } else {
+      rule = await prisma.sharingRule.create({ data: { companyId, moduleName, accessType: accessType || 'PublicReadWriteDelete', roleIds: roleIds || [] } }).catch(async () => {
+        const existing = await prisma.sharingRule.findFirst({ where: { companyId, moduleName } })
+        return existing ? prisma.sharingRule.update({ where: { id: existing.id }, data: { accessType: accessType || 'PublicReadWriteDelete', roleIds: roleIds || [] } }) : null
+      })
+    }
     res.json(rule)
   } catch (err) { next(err) }
 })
@@ -806,7 +811,10 @@ settingsRouter.post('/password/change', userOnly(async (req, res, next) => {
 // ---- Sequence numbers (auto numbering preview) ----
 settingsRouter.get('/sequence-numbers', requireAdmin, async (req, res, next) => {
   try {
-    const data = await prisma.sequenceNumber.findMany({ orderBy: { moduleName: 'asc' } })
+    const data = await prisma.sequenceNumber.findMany({
+      where: req.user!.isSuperAdmin ? {} : { companyId: req.user!.companyId },
+      orderBy: { moduleName: 'asc' },
+    })
     res.json({ data })
   } catch (err) { next(err) }
 })
@@ -815,12 +823,122 @@ settingsRouter.put('/sequence-numbers/:moduleName', requireAdmin, async (req, re
   try {
     const { moduleName } = req.params
     const { prefix, suffix, digitWidth, currentNo } = req.body
-    const row = await prisma.sequenceNumber.upsert({
-      where: { moduleName },
-      update: { prefix, suffix, digitWidth, currentNo },
-      create: { moduleName, prefix: prefix || '', suffix: suffix || '', digitWidth: digitWidth || 4, currentNo: currentNo || 1 },
-    })
+    const companyId = req.user!.isSuperAdmin ? (req.body.companyId ?? null) : req.user!.companyId
+    let row = await prisma.sequenceNumber.findFirst({ where: { moduleName, companyId } })
+    if (!row) {
+      row = await prisma.sequenceNumber.create({
+        data: { moduleName, companyId, prefix: prefix || '', suffix: suffix || '', digitWidth: digitWidth || 4, currentNo: currentNo || 1 },
+      }).catch(async () => {
+        const existing = await prisma.sequenceNumber.findFirst({ where: { moduleName, companyId } })
+        if (existing) {
+          return prisma.sequenceNumber.update({ where: { id: existing.id }, data: { prefix, suffix, digitWidth, currentNo } })
+        }
+        return null
+      })
+    } else {
+      row = await prisma.sequenceNumber.update({ where: { id: row.id }, data: { prefix, suffix, digitWidth, currentNo } })
+    }
     res.json(row)
+  } catch (err) { next(err) }
+})
+
+// ---- Tags (company-scoped) ----
+settingsRouter.get('/tags', async (req, res, next) => {
+  try {
+    const where: any = req.user!.isSuperAdmin ? {} : { companyId: req.user!.companyId }
+    const data = await prisma.tag.findMany({ where, orderBy: { createdAt: 'desc' }, take: 500 })
+    res.json({ data })
+  } catch (err) { next(err) }
+})
+
+settingsRouter.post('/tags', async (req, res, next) => {
+  try {
+    const { name, module, recordId } = req.body
+    if (!name) return res.status(400).json({ error: 'name is required' })
+    const tag = await prisma.tag.create({
+      data: { name, module: module || null, recordId: recordId || null, userId: req.user!.userId, companyId: req.user!.isSuperAdmin ? null : req.user!.companyId },
+    })
+    await writeAudit({ moduleName: 'tags', recordId: tag.id, action: 'CREATE', newValue: name, userId: req.user!.userId, req })
+    res.status(201).json(tag)
+  } catch (err) { next(err) }
+})
+
+settingsRouter.put('/tags/:id', async (req, res, next) => {
+  try {
+    const { name } = req.body
+    if (!name) return res.status(400).json({ error: 'name is required' })
+    const where: any = { id: req.params.id }
+    if (!req.user!.isSuperAdmin) where.companyId = req.user!.companyId
+    const tag = await prisma.tag.updateMany({ where, data: { name } })
+    if (tag.count === 0) return res.status(404).json({ error: 'Tag not found' })
+    await writeAudit({ moduleName: 'tags', recordId: req.params.id, action: 'UPDATE', newValue: name, userId: req.user!.userId, req })
+    res.json({ success: true })
+  } catch (err) { next(err) }
+})
+
+settingsRouter.delete('/tags/:id', async (req, res, next) => {
+  try {
+    const where: any = { id: req.params.id }
+    if (!req.user!.isSuperAdmin) where.companyId = req.user!.companyId
+    await prisma.tag.deleteMany({ where })
+    await writeAudit({ moduleName: 'tags', recordId: req.params.id, action: 'DELETE', userId: req.user!.userId, req })
+    res.json({ success: true })
+  } catch (err) { next(err) }
+})
+
+// ---- Custom views (company-scoped) ----
+settingsRouter.get('/customviews/:moduleName', async (req, res, next) => {
+  try {
+    const module = await prisma.module.findUnique({ where: { name: req.params.moduleName } })
+    if (!module) return res.json({ data: [] })
+    const where: any = { moduleId: module.id }
+    if (!req.user!.isSuperAdmin) where.companyId = req.user!.companyId
+    const data = await prisma.customView.findMany({ where, orderBy: { createdAt: 'asc' } })
+    res.json({ data })
+  } catch (err) { next(err) }
+})
+
+settingsRouter.post('/customviews', async (req, res, next) => {
+  try {
+    const { moduleName, name, columns, conditions, orderBy, isPublic, isDefault } = req.body
+    const module = await prisma.module.findUnique({ where: { name: moduleName } })
+    if (!module) return res.status(404).json({ error: 'Module not found' })
+    const view = await prisma.customView.create({
+      data: {
+        moduleId: module.id,
+        name,
+        columns: columns || [],
+        conditions: conditions || [],
+        orderBy: orderBy || null,
+        isPublic: !!isPublic,
+        isDefault: !!isDefault,
+        userId: req.user!.isSuperAdmin ? null : req.user!.userId,
+        companyId: req.user!.isSuperAdmin ? null : req.user!.companyId,
+      },
+    })
+    res.status(201).json(view)
+  } catch (err) { next(err) }
+})
+
+settingsRouter.put('/customviews/:id', async (req, res, next) => {
+  try {
+    const where: any = { id: req.params.id }
+    if (!req.user!.isSuperAdmin) where.companyId = req.user!.companyId
+    const { name, columns, conditions, orderBy, isPublic, isDefault } = req.body
+    const view = await prisma.customView.update({
+      where,
+      data: { name, columns: columns || [], conditions: conditions || [], orderBy: orderBy || null, isPublic: !!isPublic, isDefault: !!isDefault },
+    })
+    res.json(view)
+  } catch (err) { next(err) }
+})
+
+settingsRouter.delete('/customviews/:id', async (req, res, next) => {
+  try {
+    const where: any = { id: req.params.id }
+    if (!req.user!.isSuperAdmin) where.companyId = req.user!.companyId
+    await prisma.customView.deleteMany({ where })
+    res.json({ success: true })
   } catch (err) { next(err) }
 })
 

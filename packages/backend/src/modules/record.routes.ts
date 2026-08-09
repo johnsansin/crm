@@ -77,7 +77,7 @@ async function notifyActivityAssignment(opts: {
   const html = `<p>${message}</p><p><a href="${link}">Open record</a></p>`
 
   for (const u of users) {
-    await prisma.notification.create({ data: { userId: u.id, title, message, link } }).catch(() => {})
+    await prisma.notification.create({ data: { userId: u.id, title, message, link, companyId } }).catch(() => {})
   }
   const to = users.map(u => u.email).filter(Boolean)
   if (to.length) {
@@ -310,7 +310,7 @@ recordRouter.get('/:module/:id/comments', async (req, res, next) => {
   try {
     if (!(await checkPermission(req, req.params.module, 'view'))) return res.status(403).json({ error: 'Access denied' })
     const rows = await prisma.comment.findMany({
-      where: { moduleName: req.params.module, recordId: req.params.id },
+      where: { moduleName: req.params.module, recordId: req.params.id, companyId: req.user!.companyId },
       orderBy: { createdAt: 'desc' },
     })
     res.json({ data: await resolveNames(rows) })
@@ -327,6 +327,7 @@ recordRouter.post('/:module/:id/comments', async (req, res, next) => {
       data: {
         moduleName: req.params.module, recordId: req.params.id,
         comment, userId: req.user!.userId, isPrivate: !!req.body.isPrivate,
+        companyId: req.user!.companyId,
       },
     })
     await writeAudit({ moduleName: req.params.module, recordId: req.params.id, action: 'COMMENT', newValue: comment.slice(0, 120), userId: req.user!.userId, req })
@@ -383,11 +384,14 @@ recordRouter.get('/:module/:id/followers', async (req, res, next) => {
 recordRouter.post('/:module/:id/follow', async (req, res, next) => {
   try {
     if (!(await assertParent(req, res, req.params.module, req.params.id))) return
-    await prisma.follow.upsert({
-      where: { userId_moduleName_recordId: { userId: req.user!.userId, moduleName: req.params.module, recordId: req.params.id } },
-      create: { userId: req.user!.userId, moduleName: req.params.module, recordId: req.params.id },
-      update: {},
+    const exists = await prisma.follow.findFirst({
+      where: { userId: req.user!.userId, moduleName: req.params.module, recordId: req.params.id, companyId: req.user!.companyId ?? null },
     })
+    if (!exists) {
+      await prisma.follow.create({
+        data: { userId: req.user!.userId, moduleName: req.params.module, recordId: req.params.id, companyId: req.user!.companyId ?? null },
+      }).catch(() => {})
+    }
     res.json({ success: true })
   } catch (err) { next(err) }
 })

@@ -8,7 +8,7 @@ import { DataTable } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { Plus, Pencil, Trash2, Loader2, BarChart3, Play } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2, BarChart3, Play, Printer, Table2, ChartPie } from 'lucide-react'
 import { getFieldLabel, formatFieldValue } from '@/lib/field-utils'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
@@ -134,6 +134,7 @@ function ReportForm({ initial, onSave, saving, onCancel }: { initial: any; onSav
     name: initial?.name || '',
     moduleName: initial?.moduleName || 'accounts',
     reportType: initial?.reportType || 'tabular',
+    chartType: initial?.chartType || 'bar',
     columns: initial?.columns || [],
     grouping: initial?.grouping || {},
     filters: initial?.filters || [],
@@ -188,9 +189,22 @@ function ReportForm({ initial, onSave, saving, onCancel }: { initial: any; onSav
             <SelectContent>
               <SelectItem value="tabular">Tabular</SelectItem>
               <SelectItem value="summary">Summary (grouped)</SelectItem>
+              <SelectItem value="chart">Chart</SelectItem>
             </SelectContent>
           </Select>
         </div>
+        {form.reportType === 'chart' && (
+          <div>
+            <label className="text-sm font-medium block mb-1.5">Chart Type</label>
+            <Select value={form.chartType || 'bar'} onValueChange={(v) => setForm((f: any) => ({ ...f, chartType: v }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bar">Bar</SelectItem>
+                <SelectItem value="pie">Pie</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       <div>
@@ -299,7 +313,48 @@ function ReportRunner({ report }: { report: any }) {
 
   const totals = (key: string) => NUMERIC_FIELDS.includes(key) ? rows.reduce((s, r) => s + Number(r[key] || 0), 0) : null
 
+  const [busy, setBusy] = useState(false)
+  const { addToast } = useToast()
+
+  const exportPdf = () => {
+    setBusy(true)
+    api.exportReport(report, rows)
+      .then((res: any) => {
+        if (!res.ok) addToast({ title: 'Export failed', description: res.error, variant: 'destructive' })
+      })
+      .finally(() => setBusy(false))
+  }
+
   if (isLoading) return <div className="flex justify-center py-10"><Loader2 className="animate-spin text-muted-foreground" /></div>
+
+  const exportBtn = (
+    <Button variant="outline" size="sm" onClick={exportPdf} disabled={busy}>
+      {busy ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Printer size={14} className="mr-1.5" />}
+      Print / PDF
+    </Button>
+  )
+
+  if (report.reportType === 'chart') {
+    const groupField = report.grouping?.field || columns.find((c: string) => !NUMERIC_FIELDS.includes(c)) || columns[0]
+    const numericField = columns.find((c: string) => NUMERIC_FIELDS.includes(c))
+    const groups: Record<string, number> = {}
+    for (const r of rows) {
+      const key = String(r[groupField] ?? '(blank)')
+      const v = numericField ? Number(r[numericField] || 0) : 1
+      groups[key] = (groups[key] || 0) + v
+    }
+    const entries = Object.entries(groups)
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-end">{exportBtn}</div>
+        {entries.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">No matching records.</p>
+        ) : (
+          report.chartType === 'pie' ? <PieChart data={entries} label={getFieldLabel(groupField)} /> : <BarChart data={entries} label={getFieldLabel(groupField)} valueLabel={numericField ? getFieldLabel(numericField) : 'Count'} />
+        )}
+      </div>
+    )
+  }
 
   if (report.reportType === 'summary' && report.grouping?.field) {
     const groups: Record<string, any[]> = {}
@@ -310,7 +365,9 @@ function ReportRunner({ report }: { report: any }) {
     }
     const groupField = report.grouping.field
     return (
-      <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+      <div className="space-y-3">
+        <div className="flex items-center justify-end">{exportBtn}</div>
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
         {Object.entries(groups).map(([key, items]) => (
           <div key={key} className="rounded-lg border">
             <div className="flex items-center justify-between px-3 py-2 bg-muted/50 rounded-t-lg">
@@ -331,26 +388,127 @@ function ReportRunner({ report }: { report: any }) {
           </div>
         ))}
         {rows.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">No matching records.</p>}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="max-h-[60vh] overflow-auto">
-      <DataTable
-        columns={columns.map((c: string) => ({ key: c, label: getFieldLabel(c), render: (v: any) => <span>{formatFieldValue(v, c)}</span> }))}
-        data={rows}
-        loading={false}
-        emptyMessage="No matching records."
-        pageSize={20}
-      />
-      <div className="flex gap-4 justify-end pt-2 text-sm font-medium">
-        <span>Total records: {rows.length}</span>
-        {columns.map((c: string) => {
-          const total = totals(c)
-          return total != null ? <span key={c}>{getFieldLabel(c)} total: {formatFieldValue(total, c)}</span> : null
-        })}
+    <div className="space-y-3">
+      <div className="flex items-center justify-end">{exportBtn}</div>
+      <div className="max-h-[60vh] overflow-auto">
+        <DataTable
+          columns={columns.map((c: string) => ({ key: c, label: getFieldLabel(c), render: (v: any) => <span>{formatFieldValue(v, c)}</span> }))}
+          data={rows}
+          loading={false}
+          emptyMessage="No matching records."
+          pageSize={20}
+        />
+        <div className="flex gap-4 justify-end pt-2 text-sm font-medium">
+          <span>Total records: {rows.length}</span>
+          {columns.map((c: string) => {
+            const total = totals(c)
+            return total != null ? <span key={c}>{getFieldLabel(c)} total: {formatFieldValue(total, c)}</span> : null
+          })}
+        </div>
       </div>
+    </div>
+  )
+}
+
+function BarChart({ data, label, valueLabel }: { data: [string, number][]; label: string; valueLabel: string }) {
+  const max = Math.max(...data.map(([, v]) => v), 1)
+  const width = 560
+  const height = 260
+  const padL = 54
+  const padB = 48
+  const padT = 16
+  const chartW = width - padL - 12
+  const chartH = height - padB - padT
+  const barW = Math.min(64, (chartW / data.length) * 0.55)
+  const fmt = (v: number) => v >= 1e6 ? `${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(1)}K` : String(Math.round(v))
+  const steps = 5
+  return (
+    <div className="rounded-lg border p-4">
+      <div className="flex flex-wrap items-baseline gap-2 mb-3">
+        <span className="text-sm font-semibold flex items-center gap-1.5"><BarChart3 size={14} className="text-primary" /> {valueLabel} by {label}</span>
+        <span className="text-xs text-muted-foreground ml-auto">{data.length} groups</span>
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full max-h-[300px]">
+        {Array.from({ length: steps + 1 }).map((_, i) => {
+          const y = padT + (chartH / steps) * i
+          const val = max * (1 - i / steps)
+          return (
+            <g key={i}>
+              <line x1={padL} y1={y} x2={width - 12} y2={y} stroke="currentColor" strokeOpacity="0.08" />
+              <text x={padL - 8} y={y + 4} textAnchor="end" fontSize="10" fill="currentColor" fillOpacity="0.5">{fmt(val)}</text>
+            </g>
+          )
+        })}
+        {data.map(([key, v], i) => {
+          const x = padL + (chartW / data.length) * i + (chartW / data.length - barW) / 2
+          const h = Math.max((v / max) * chartH, 2)
+          const y = padT + chartH - h
+          const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7', '#ec4899', '#84cc16']
+          return (
+            <g key={key}>
+              <rect x={x} y={y} width={barW} height={h} rx={4} fill={colors[i % colors.length]} />
+              <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize="10" fontWeight="600" fill="currentColor">{fmt(v)}</text>
+              <text x={x + barW / 2} y={height - padB + 16} textAnchor="middle" fontSize="9" fill="currentColor" fillOpacity="0.65" style={{ transform: data.length > 6 ? `translateX(0)` : undefined }}>{data.length > 6 ? String(key).slice(0, 8) + (String(key).length > 8 ? '…' : '') : String(key).slice(0, 16)}</text>
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
+const PIE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7', '#ec4899', '#84cc16', '#f97316', '#14b8a6']
+
+function PieChart({ data, label }: { data: [string, number][]; label: string }) {
+  const total = data.reduce((s, [, v]) => s + v, 0)
+  const cx = 90
+  const cy = 90
+  const r = 70
+  let angle = -Math.PI / 2
+  const segments = data.map(([key, v], i) => {
+    const a1 = angle
+    const a2 = angle + (v / total) * Math.PI * 2
+    angle = a2
+    const large = a2 - a1 > Math.PI ? 1 : 0
+    const x1 = cx + r * Math.cos(a1)
+    const y1 = cy + r * Math.sin(a1)
+    const x2 = cx + r * Math.cos(a2)
+    const y2 = cy + r * Math.sin(a2)
+    const path = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`
+    return { key, v, path, color: PIE_COLORS[i % PIE_COLORS.length] }
+  })
+  return (
+    <div className="rounded-lg border p-4">
+      <div className="flex items-baseline gap-2 mb-3">
+        <span className="text-sm font-semibold flex items-center gap-1.5"><ChartPie size={14} className="text-primary" /> {label} distribution</span>
+      </div>
+      {total === 0 ? (
+        <p className="text-sm text-muted-foreground py-6 text-center">No numeric data to chart.</p>
+      ) : (
+        <div className="flex flex-wrap items-center gap-6">
+          <svg viewBox="0 0 180 180" className="w-44 h-44 shrink-0">
+            {segments.map(s => <path key={s.key} d={s.path} fill={s.color} />)}
+            <circle cx={cx} cy={cy} r={r * 0.55} fill="var(--background, #fff)" />
+            <text x={cx} y={cy - 4} textAnchor="middle" fontSize="13" fontWeight="700" fill="currentColor">{total.toLocaleString()}</text>
+            <text x={cx} y={cy + 14} textAnchor="middle" fontSize="9" fill="currentColor" fillOpacity="0.6">TOTAL</text>
+          </svg>
+          <div className="space-y-1.5 min-w-[220px] max-h-[260px] overflow-y-auto flex-1">
+            {segments.map(s => (
+              <div key={s.key} className="flex items-center gap-2 text-sm">
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: s.color }} />
+                <span className="truncate flex-1">{s.key}</span>
+                <span className="text-muted-foreground font-mono">{((s.v / total) * 100).toFixed(1)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

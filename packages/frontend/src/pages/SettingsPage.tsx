@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap } from 'lucide-react'
+import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard } from 'lucide-react'
 import { useTheme } from '@/lib/theme'
 import { useAuthStore } from '@/lib/auth'
 import { TIMEZONES, DATE_FORMATS, COUNTRIES, SOCIAL_FIELDS } from '@/lib/constants'
@@ -25,6 +25,8 @@ import { CommunicationSettings } from '@/pages/settings/CommunicationSettings'
 import { DataSettings } from '@/pages/settings/DataSettings'
 import { TermsSettings } from '@/pages/settings/TermsSettings'
 import { IntegrationSettings } from '@/pages/settings/IntegrationSettings'
+import { TagsSettings } from '@/pages/settings/TagsSettings'
+import { MenuSettings } from '@/pages/settings/MenuSettings'
 
 const TINTS: Record<string, string> = {
   users: 'from-sky-500 to-blue-600',
@@ -43,6 +45,8 @@ const TINTS: Record<string, string> = {
   data: 'from-teal-500 to-emerald-700',
   announcements: 'from-pink-500 to-rose-600',
   integrations: 'from-cyan-500 to-teal-600',
+  tags: 'from-amber-400 to-orange-600',
+  menu: 'from-violet-500 to-indigo-700',
 }
 
 const CATEGORIES = [
@@ -59,7 +63,7 @@ const CATEGORIES = [
   {
     label: 'Data & Automation',
     blurb: 'Fields, email, audit, workflows and data tools',
-    keys: ['picklists', 'email', 'automation', 'audit', 'data'],
+    keys: ['picklists', 'email', 'automation', 'audit', 'data', 'tags'],
   },
   {
     label: 'Communication',
@@ -68,8 +72,8 @@ const CATEGORIES = [
   },
   {
     label: 'Integrations',
-    blurb: 'REST API, portal, Google sync, layouts and dependencies',
-    keys: ['integrations'],
+    blurb: 'REST API, portal, Google sync, layouts, menu and dependencies',
+    keys: ['integrations', 'menu'],
   },
 ]
 
@@ -90,6 +94,8 @@ const settingSections = [
   { key: 'data', label: 'Data Management', icon: Database, desc: 'Backup, export, and CSV import' },
   { key: 'announcements', label: 'Announcements', icon: Megaphone, desc: 'Announcements, notifications, and holidays' },
   { key: 'integrations', label: 'Integrations', icon: PlugZap, desc: 'REST API keys, customer portal, Google sync, picklist dependencies, layout editor, payment reminders' },
+  { key: 'tags', label: 'Tags', icon: Tag, desc: 'Manage organisation-wide tags for records' },
+  { key: 'menu', label: 'Menu Editor', icon: LayoutDashboard, desc: 'Reorder modules, group under parents, and hide modules in the sidebar' },
 ]
 
 const sectionMap = Object.fromEntries(settingSections.map(s => [s.key, s]))
@@ -144,6 +150,8 @@ export function SettingsPage() {
         {activeSection === 'data' && isSuperAdmin && <DataSettings />}
         {activeSection === 'terms' && <TermsSettings />}
         {activeSection === 'integrations' && <IntegrationSettings />}
+        {activeSection === 'tags' && <TagsSettings />}
+        {activeSection === 'menu' && <MenuSettings />}
       </div>
     )
   }

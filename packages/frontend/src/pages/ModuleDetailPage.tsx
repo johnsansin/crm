@@ -17,7 +17,7 @@ import { ProjectSearchSelect } from '@/components/project-search-select'
 import { UserRoleSelect, userDisplayName } from '@/components/user-role-select'
 import { SearchSelect } from '@/components/search-select'
 import { VendorSearchSelect } from '@/components/vendor-search-select'
-import { ArrowLeft, Save, Loader2, Trash2, Pencil, ChevronRight, Asterisk, ImagePlus, Plus } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Trash2, Pencil, ChevronRight, Asterisk, ImagePlus, Plus, Package, History } from 'lucide-react'
 
 const labelMap: Record<string, string> = {
   accounts: 'Account', contacts: 'Contact', leads: 'Lead',
@@ -842,6 +842,7 @@ export function ModuleDetailPage() {
             </TabsRoot>
           </CardContent>
         </Card>
+        {mod === 'potentials' && !isNew && <PotentialExtras potentialId={id!} />}
         {mod === 'projects' && !isNew && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
@@ -1245,5 +1246,168 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
         </TabsContent>
       ))}
     </TabsRoot>
+  )
+}
+
+function PotentialExtras({ potentialId }: { potentialId: string }) {
+  const queryClient = useQueryClient()
+  const { addToast } = useToast()
+
+  const { data: rec, isLoading } = useQuery({
+    queryKey: ['potentials', potentialId],
+    queryFn: () => api.get('potentials', potentialId!),
+  })
+
+  const { data: productsData } = useQuery({
+    queryKey: ['products-all'],
+    queryFn: () => api.listAll('products', { limit: '500' }),
+  })
+  const allProducts = productsData?.data || []
+
+  const initialItems = (rec?.products || []).map((pp: any) => ({
+    productId: pp.productId,
+    productName: pp.product?.productName || pp.productId,
+    qty: Number(pp.qty || 1),
+    listPrice: pp.listPrice != null ? Number(pp.listPrice) : (pp.product?.unitPrice != null ? Number(pp.product.unitPrice) : 0),
+  }))
+
+  const [items, setItems] = useState<any[]>([])
+  const [dirty, setDirty] = useState(false)
+  const [editing, setEditing] = useState(false)
+
+  useEffect(() => {
+    if (rec) {
+      setItems(initialItems)
+      setDirty(false)
+    }
+  }, [rec])
+
+  const saveMutation = useMutation({
+    mutationFn: () => api.update('potentials', potentialId, {
+      products: items.map(i => ({ productId: i.productId, qty: i.qty, listPrice: i.listPrice })),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['potentials', potentialId] })
+      setDirty(false)
+      setEditing(false)
+      addToast({ title: 'Products updated', variant: 'success' })
+    },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>
+
+  const lineTotal = (i: any) => Number(i.qty || 0) * Number(i.listPrice || 0)
+  const grandTotal = items.reduce((s, i) => s + lineTotal(i), 0)
+  const stageHistory = rec?.stageHistory || []
+
+  const addRow = () => {
+    const first = allProducts.find((p: any) => !items.some(i => i.productId === p.id))
+    setItems([...items, { productId: first?.id || '', productName: first?.productName || '', qty: 1, listPrice: first ? Number(first.unitPrice || 0) : 0 }])
+    setDirty(true)
+    setEditing(true)
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <Card>
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold flex items-center gap-1.5"><Package size={15} className="text-primary" /> Products &amp; Pricing</h3>
+            {!editing ? (
+              <Button variant="outline" size="sm" onClick={() => setEditing(true)}><Pencil size={13} className="mr-1.5" /> Edit</Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setItems(initialItems); setDirty(false); setEditing(false) }}>Cancel</Button>
+                <Button size="sm" onClick={() => saveMutation.mutate()} disabled={!dirty || saveMutation.isPending}>
+                  {saveMutation.isPending && <Loader2 size={13} className="mr-1.5 animate-spin" />}
+                  Save
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {items.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No products linked yet.</p>
+          ) : (
+            <div className="space-y-2">
+              <div className="grid grid-cols-12 gap-2 px-2 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                <span className="col-span-5">Product</span>
+                <span className="col-span-2">Qty</span>
+                <span className="col-span-2">List Price</span>
+                <span className="col-span-2 text-right">Total</span>
+                <span className="col-span-1" />
+              </div>
+              {items.map((i, idx) => (
+                <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                  {editing ? (
+                    <>
+                      <select
+                        className="col-span-5 h-9 rounded-md border border-input bg-background px-2 text-sm"
+                        value={i.productId}
+                        onChange={e => {
+                          const p = allProducts.find((x: any) => x.id === e.target.value)
+                          setItems(items.map((x, k) => k === idx ? { ...x, productId: e.target.value, productName: p?.productName || '', listPrice: p ? Number(p.unitPrice || 0) : x.listPrice } : x))
+                          setDirty(true)
+                        }}
+                      >
+                        <option value="">Select product…</option>
+                        {allProducts.map((p: any) => <option key={p.id} value={p.id}>{p.productName}</option>)}
+                      </select>
+                      <Input type="number" min={1} className="col-span-2 h-9" value={i.qty} onChange={e => { setItems(items.map((x, k) => k === idx ? { ...x, qty: Number(e.target.value) || 0 } : x)); setDirty(true) }} />
+                      <Input type="number" className="col-span-2 h-9" value={i.listPrice} onChange={e => { setItems(items.map((x, k) => k === idx ? { ...x, listPrice: Number(e.target.value) || 0 } : x)); setDirty(true) }} />
+                    </>
+                  ) : (
+                    <>
+                      <span className="col-span-5 text-sm truncate">{i.productName}</span>
+                      <span className="col-span-2 text-sm">{i.qty}</span>
+                      <span className="col-span-2 text-sm">{(i.listPrice ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    </>
+                  )}
+                  <span className="col-span-2 text-right text-sm font-medium">{lineTotal(i).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  {editing && (
+                    <button type="button" className="col-span-1 text-muted-foreground hover:text-destructive" onClick={() => { setItems(items.filter((_, k) => k !== idx)); setDirty(true) }}>
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <div className="flex items-center justify-between border-t pt-2 px-2">
+                <span className="text-sm font-semibold">Grand Total</span>
+                <span className="text-sm font-semibold">{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          )}
+          {editing && (
+            <Button variant="outline" size="sm" className="mt-3" onClick={addRow}><Plus size={13} className="mr-1.5" /> Add Product</Button>
+          )}
+          {!editing && items.length === 0 && (
+            <Button variant="outline" size="sm" className="mt-3" onClick={addRow}><Plus size={13} className="mr-1.5" /> Link Product</Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-5">
+          <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-4"><History size={15} className="text-primary" /> Sales Stage History</h3>
+          {stageHistory.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No stage changes recorded yet.</p>
+          ) : (
+            <ol className="relative border-l-2 border-muted ml-2 space-y-4">
+              {stageHistory.map((h: any, idx: number) => (
+                <li key={h.id} className="ml-4">
+                  <span className={`absolute -left-[7px] mt-1 h-3 w-3 rounded-full border-2 border-background ${idx === stageHistory.length - 1 ? 'bg-emerald-500' : 'bg-primary'}`} />
+                  <p className="text-sm font-medium">{h.stage}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(h.createdAt).toLocaleString()}
+                    {h.changedByUser ? ` · by ${h.changedByUser.firstName} ${h.changedByUser.lastName}` : ''}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

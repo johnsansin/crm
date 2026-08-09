@@ -90,9 +90,11 @@ export async function writeAudit(params: {
   oldValue?: string | null
   newValue?: string | null
   userId?: string | null
+  companyId?: string | null
   req?: Request
 }) {
   try {
+    const companyId = params.companyId ?? (params.req as any)?.user?.companyId ?? null
     await prisma.auditLog.create({
       data: {
         moduleName: params.moduleName,
@@ -102,6 +104,7 @@ export async function writeAudit(params: {
         oldValue: params.oldValue || null,
         newValue: params.newValue || null,
         userId: params.userId || null,
+        companyId,
         ipAddress: params.req ? getClientIp(params.req) : null,
       },
     })
