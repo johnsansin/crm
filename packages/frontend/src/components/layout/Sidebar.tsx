@@ -21,15 +21,6 @@ const iconMap: Record<string, React.ElementType> = {
   LineChart, Trash2
 }
 
-const groupIcons: Record<string, string> = {
-  Marketing: 'Megaphone',
-  Sales: 'TrendingUp',
-  Inventory: 'Package',
-  Support: 'LifeBuoy',
-  Projects: 'FolderKanban',
-  Tools: 'Wrench',
-}
-
 const GROUP_ORDER = ['Marketing', 'Sales', 'Inventory', 'Support', 'Projects', 'Tools']
 
 const fallbackGroups = [
@@ -126,11 +117,6 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
 
   const menuGroups = buildGroups(menuModules)
 
-  const allItems = [...mainItems, ...menuGroups.flatMap(g => g.items)]
-  const flatItems = collapsed
-    ? allItems
-    : allItems
-
   return (
     <>
       <div
@@ -144,52 +130,47 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
         className={cn(
           'fixed left-0 top-0 z-50 h-screen bg-sidebar text-sidebar-foreground transition-all duration-300 flex flex-col',
           'w-64',
-          collapsed && 'md:w-[60px]',
+          collapsed && 'md:w-[56px]',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
           'md:translate-x-0 md:z-40'
         )}
       >
         <div className={cn(
-          'relative shrink-0 overflow-hidden bg-gradient-to-br from-indigo-600 via-primary to-fuchsia-600',
-          'flex items-center gap-3 h-16 px-4',
+          'shrink-0 flex items-center gap-2.5 h-14 px-3.5 border-b border-sidebar-hover/70',
           collapsed && 'md:px-0 md:justify-center'
         )}>
-          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.35),_transparent_60%)]" />
-          <div className="relative flex items-center gap-3">
-            <span className="flex items-center justify-center h-9 w-9 rounded-xl bg-white/15 backdrop-blur border border-white/20 shadow-lg shrink-0">
-              <Zap size={18} className="text-white" fill="currentColor" />
-            </span>
-            <div className={cn('leading-tight', collapsed && 'md:hidden')}>
-              <p className="font-bold text-white tracking-tight">BizForce</p>
-              <p className="text-[10px] text-white/70 uppercase tracking-widest">CRM Suite</p>
-            </div>
-          </div>
+          <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 text-primary shrink-0">
+            <Zap size={16} />
+          </span>
+          <span className={cn('font-bold text-[15px] text-white tracking-tight', collapsed && 'md:hidden')}>
+            BizForce
+          </span>
           <button
             onClick={() => {
               if (window.innerWidth < 768) { onMobileClose() } else { onToggle() }
             }}
             className={cn(
-              'relative ml-auto p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/15 transition-colors',
+              'ml-auto p-1.5 rounded-md text-sidebar-foreground/60 hover:text-white hover:bg-sidebar-hover transition-colors',
               collapsed && 'md:hidden'
             )}
           >
-            {collapsed ? <Menu size={18} /> : <X size={18} />}
+            <X size={17} />
           </button>
           <button
             onClick={onToggle}
             className={cn(
-              'relative hidden md:flex ml-auto p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/15 transition-colors',
+              'hidden md:flex ml-auto p-1.5 rounded-md text-sidebar-foreground/60 hover:text-white hover:bg-sidebar-hover transition-colors',
               !collapsed && 'md:hidden'
             )}
           >
-            <Menu size={18} />
+            <Menu size={17} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2.5 scrollbar-thin scrollbar-thumb-sidebar-hover scrollbar-track-transparent">
           {collapsed ? (
             <div className="flex flex-col items-center space-y-1">
-              {flatItems.map(item => (
+              {[...mainItems, ...menuGroups.flatMap(g => g.items)].map(item => (
                 <NavItem key={item.module || 'dashboard'} module={item.module} label={t(item.label)} icon={item.icon} collapsed />
               ))}
               {user?.isAdmin && <NavItem module="settings" label={t('Settings')} icon="Settings" collapsed />}
@@ -204,34 +185,20 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
                 ))}
               </div>
 
-              <SectionLabel>{t('Workspace')}</SectionLabel>
-              <div className="space-y-2.5">
-                {menuGroups.map(group => {
-                  const GroupIcon = iconMap[groupIcons[group.label]] || iconMap[group.items[0]?.icon] || FolderKanban
-                  return (
-                    <div key={group.label} className="rounded-xl border border-sidebar-hover bg-white/[0.03] overflow-hidden shadow-sm">
-                      <div className="flex items-center gap-2 px-2.5 h-10 border-b border-sidebar-hover bg-sidebar-hover/40">
-                        <span className="flex items-center justify-center h-6 w-6 rounded-md bg-primary/15 text-primary">
-                          <GroupIcon size={14} />
-                        </span>
-                        <span className="flex-1 text-[13px] font-semibold text-white truncate">{t(group.label)}</span>
-                        <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-sidebar-hover text-sidebar-foreground/60">
-                          {group.items.length}
-                        </span>
-                      </div>
-                      <div className="p-1.5 space-y-0.5">
-                        {group.items.map(item => (
-                          <NavItem key={item.module} module={item.module} label={t(item.label)} icon={item.icon} />
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              {menuGroups.map(group => (
+                <div key={group.label}>
+                  <SectionLabel hairline>{t(group.label)}</SectionLabel>
+                  <div className="space-y-0.5">
+                    {group.items.map(item => (
+                      <NavItem key={item.module} module={item.module} label={t(item.label)} icon={item.icon} />
+                    ))}
+                  </div>
+                </div>
+              ))}
 
               {(user?.isAdmin || user?.isSuperAdmin) && (
                 <>
-                  <SectionLabel>{t('System')}</SectionLabel>
+                  <SectionLabel hairline>{t('System')}</SectionLabel>
                   <div className="space-y-0.5">
                     {user?.isAdmin && <NavItem module="settings" label={t('Settings')} icon="Settings" />}
                     {user?.isSuperAdmin && <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" />}
@@ -242,24 +209,24 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
           )}
         </div>
 
-        <div className={cn('shrink-0 border-t border-sidebar-hover bg-gradient-to-t from-sidebar to-transparent p-2.5', collapsed && 'md:p-2')}>
+        <div className={cn('shrink-0 border-t border-sidebar-hover/70 p-2.5', collapsed && 'md:p-2')}>
           <NavLink
             to="/profile"
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-xl px-2 py-2 transition-colors',
+                'flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors',
                 isActive ? 'bg-sidebar-active text-white' : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-white',
                 collapsed && 'md:justify-center md:px-0'
               )
             }
           >
-            <UserAvatar user={user} size={34} />
+            <UserAvatar user={user} size={30} />
             <div className={cn('flex-1 min-w-0', collapsed && 'md:hidden')}>
-              <p className="text-sm font-medium truncate">{user?.firstName} {user?.lastName}</p>
-              <p className="text-[11px] text-sidebar-foreground/50 truncate">{user?.email}</p>
+              <p className="text-[13px] font-medium truncate">{user?.firstName} {user?.lastName}</p>
+              <p className="text-[10px] text-sidebar-foreground/50 truncate">{user?.email}</p>
             </div>
             <LogOut
-              size={15}
+              size={14}
               className={cn('shrink-0 text-sidebar-foreground/40 hover:text-destructive', collapsed && 'md:hidden')}
               onClick={(e: any) => { e.preventDefault(); e.stopPropagation(); logout() }}
             />
@@ -270,9 +237,12 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
   )
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ hairline, children }: { hairline?: boolean; children: React.ReactNode }) {
   return (
-    <div className="px-2.5 pb-1.5 pt-4 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35">
+    <div className={cn(
+      'px-2.5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35',
+      hairline && 'mt-3 border-t border-sidebar-hover/60'
+    )}>
       {children}
     </div>
   )
@@ -288,27 +258,17 @@ function NavItem({ module, label, icon, collapsed }: { module: string; label: st
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
-          'group relative flex items-center gap-2.5 rounded-lg px-2.5 h-9 text-[13px] font-medium transition-all duration-150',
-          'hover:bg-sidebar-hover hover:text-white',
+          'flex items-center gap-2.5 rounded-md px-2.5 h-8 text-[13px] transition-colors',
           isActive
-            ? 'text-white bg-gradient-to-r from-primary/25 via-primary/10 to-transparent shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
-            : 'text-sidebar-foreground',
-          collapsed && 'md:justify-center md:px-0 md:w-9 md:mx-auto'
+            ? 'bg-sidebar-active text-white'
+            : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-white',
+          collapsed && 'md:justify-center md:px-0 md:h-9 md:w-9 md:mx-auto'
         )
       }
     >
       {({ isActive }) => (
         <>
-          <span className={cn(
-            'absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary transition-all duration-200',
-            isActive ? 'opacity-100 shadow-[0_0_8px_rgba(139,92,246,0.8)]' : 'opacity-0'
-          )} />
-          <span className={cn(
-            'flex items-center justify-center h-7 w-7 rounded-lg transition-colors shrink-0',
-            isActive ? 'bg-white/10 text-white' : 'text-sidebar-foreground/80 group-hover:text-white'
-          )}>
-            <Icon size={16} />
-          </span>
+          <Icon size={16} className={cn('shrink-0', isActive ? 'text-primary' : 'text-sidebar-foreground/70')} />
           <span className={cn('truncate', collapsed && 'md:hidden')}>{label}</span>
         </>
       )}
