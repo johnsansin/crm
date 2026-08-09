@@ -7,9 +7,9 @@ import {
   LayoutDashboard, Building2, Users, UserPlus, TrendingUp, Megaphone,
   Package, Wrench, Truck, BookOpen, FileText, ShoppingCart, ClipboardList,
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
-  CheckSquare, Flag, File, Mail, MessageSquare, Settings, Menu, X,
+  CheckSquare, Flag, File, Mail, MessageSquare, Settings, X,
   ChevronDown, LogOut, Shield, CalendarDays, CreditCard, Repeat, Phone,
-  BarChart3, Inbox, Rss, Trash2, LineChart, Zap
+  BarChart3, Inbox, Rss, Trash2, LineChart, Zap, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { t } from '@/lib/i18n'
@@ -131,7 +131,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
     <>
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-black/50 transition-opacity md:hidden',
+          'fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity md:hidden',
           mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
         onClick={onMobileClose}
@@ -139,50 +139,64 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
       <aside
         className={cn(
           'fixed left-0 top-0 z-50 h-screen bg-sidebar text-sidebar-foreground transition-all duration-300 flex flex-col',
-          'w-64',
+          'w-64 shadow-2xl shadow-black/20',
           collapsed && 'md:w-16',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
           'md:translate-x-0 md:z-40'
         )}
       >
-        <div className="flex items-center justify-between h-14 px-4 border-b border-sidebar-hover shrink-0">
-          <span className={cn('font-bold text-lg text-white tracking-tight', collapsed && 'md:hidden')}>BizForce</span>
-          <span className={cn('font-bold text-lg text-white tracking-tight hidden', collapsed && 'md:block')}>BF</span>
+        <div className="flex items-center justify-between h-16 px-4 shrink-0 border-b border-sidebar-hover bg-gradient-to-br from-sidebar-hover/60 via-transparent to-sidebar-active/10">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-indigo-500 text-white shadow-lg shadow-primary/30 shrink-0">
+              <Zap size={17} fill="currentColor" />
+            </div>
+            <div className={cn('min-w-0', collapsed && 'md:hidden')}>
+              <p className="font-bold text-base text-white leading-none tracking-tight truncate">BizForce</p>
+              <p className="text-[10px] text-sidebar-foreground/50 mt-1 uppercase tracking-[0.2em]">CRM Suite</p>
+            </div>
+          </div>
           <button
             onClick={() => {
               if (window.innerWidth < 768) { onMobileClose() } else { onToggle() }
             }}
-            className="p-1 rounded hover:bg-sidebar-hover text-sidebar-foreground"
+            title={collapsed ? t('Expand sidebar') : t('Collapse sidebar')}
+            className="p-1.5 rounded-lg text-sidebar-foreground/60 hover:text-white hover:bg-sidebar-hover transition-colors"
           >
-            <X size={20} className="md:hidden" />
-            {collapsed ? <Menu size={20} className="hidden md:block" /> : <X size={20} className="hidden md:block" />}
+            <X size={18} className="md:hidden" />
+            {collapsed ? <PanelLeftOpen size={18} className="hidden md:block" /> : <PanelLeftClose size={18} className="hidden md:block" />}
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-2 px-2 space-y-1 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5 scrollbar-thin [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-sidebar-hover [&::-webkit-scrollbar-thumb]:rounded-full">
+          <SectionLabel label={t('Main')} collapsed={collapsed} />
           <NavItem module="" label={t('Dashboard')} icon="LayoutDashboard" collapsed={collapsed} />
           <NavItem module="calendar" label={t('Calendar')} icon="CalendarDays" collapsed={collapsed} />
           <NavItem module="forecast" label={t('Forecasting')} icon="LineChart" collapsed={collapsed} />
           <NavItem module="trash" label={t('Recycle Bin')} icon="Trash2" collapsed={collapsed} />
 
+          <SectionLabel label={t('Workspace')} collapsed={collapsed} />
+
           {menuGroups.map((group) => {
+            const groupActive = activeGroup === group.label
             const isExpanded = collapsed ? false : expandedGroup === group.label
             return (
               <div key={group.label}>
-                <button
-                  onClick={() => setExpandedGroup(isExpanded ? '' : group.label)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-hover transition-colors"
-                >
-                  <span className={cn(collapsed && 'md:hidden')}>{t(group.label)}</span>
-                  <ChevronDown
-                    size={14}
+                {collapsed ? (
+                  <div className="hidden md:block my-2.5 mx-auto h-px w-8 bg-sidebar-hover" />
+                ) : (
+                  <button
+                    onClick={() => setExpandedGroup(isExpanded ? '' : group.label)}
                     className={cn(
-                      'transition-transform',
-                      collapsed && 'md:hidden',
-                      isExpanded && 'rotate-180'
+                      'w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider transition-colors',
+                      groupActive ? 'text-white' : 'text-sidebar-foreground/50 hover:text-white hover:bg-sidebar-hover'
                     )}
-                  />
-                </button>
+                  >
+                    <span className={cn('w-1.5 h-1.5 rounded-full transition-colors', groupActive ? 'bg-primary' : 'bg-sidebar-foreground/30')} />
+                    <span className="truncate">{t(group.label)}</span>
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-sidebar-hover text-sidebar-foreground/50">{group.items.length}</span>
+                    <ChevronDown size={13} className={cn('transition-transform duration-200', isExpanded && 'rotate-180')} />
+                  </button>
+                )}
                 {(isExpanded || collapsed) && (
                   <div className="space-y-0.5 mt-0.5">
                     {group.items.map((item) => (
@@ -201,6 +215,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
           })}
 
           <div className="pt-2 mt-2 border-t border-sidebar-hover space-y-0.5">
+            <SectionLabel label={t('System')} collapsed={collapsed} />
             {user?.isAdmin && (
               <NavItem module="settings" label={t('Settings')} icon="Settings" collapsed={collapsed} />
             )}
@@ -215,23 +230,24 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
             to="/profile"
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-lg transition-colors',
-                isActive ? 'bg-sidebar-active text-white' : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-white',
-                collapsed && 'md:justify-center md:p-2',
-                'p-2'
+                'flex items-center gap-3 rounded-xl border p-2.5 transition-colors',
+                isActive
+                  ? 'border-sidebar-active/50 bg-sidebar-active/15'
+                  : 'border-sidebar-hover bg-sidebar-hover/40 hover:border-sidebar-active/40 hover:bg-sidebar-hover',
+                collapsed && 'md:justify-center md:p-2'
               )
             }
           >
-            <UserAvatar user={user} size={32} />
+            <UserAvatar user={user} size={36} />
             <div className={cn('flex-1 min-w-0', collapsed && 'md:hidden')}>
-              <p className="text-sm font-medium truncate">{user?.firstName} {user?.lastName}</p>
-              <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
+              <p className="text-sm font-semibold text-white truncate">{user?.firstName} {user?.lastName}</p>
+              <p className="text-[11px] text-sidebar-foreground/50 truncate">{user?.email}</p>
             </div>
           </NavLink>
           <div className={cn(collapsed && 'md:hidden')}>
             <button
               onClick={logout}
-              className="w-full flex items-center gap-3 px-2 py-1.5 mt-1 rounded-md text-xs text-sidebar-foreground/50 hover:text-destructive hover:bg-sidebar-hover transition-colors"
+              className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg border border-sidebar-hover py-1.5 text-xs text-sidebar-foreground/60 hover:text-destructive hover:border-destructive/40 hover:bg-destructive/10 transition-colors"
             >
               <LogOut size={14} />
               <span>{t('Sign out')}</span>
@@ -243,6 +259,15 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
   )
 }
 
+function SectionLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
+  return (
+    <div className={cn('flex items-center gap-2 pt-4 pb-1.5 px-2', collapsed && 'md:hidden')}>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/40">{label}</span>
+      <span className="flex-1 h-px bg-sidebar-hover" />
+    </div>
+  )
+}
+
 function NavItem({ module, label, icon, collapsed }: { module: string; label: string; icon: string; collapsed: boolean }) {
   const Icon = iconMap[icon] || FileText
   const href = module === '' ? '/dashboard' : `/${module}`
@@ -250,18 +275,33 @@ function NavItem({ module, label, icon, collapsed }: { module: string; label: st
     <NavLink
       to={href}
       end
+      title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
-          isActive
-            ? 'bg-sidebar-active text-white'
-            : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-white',
-          collapsed && 'md:justify-center md:px-2'
+          'relative group flex items-center gap-3 rounded-lg text-sm transition-colors py-1.5',
+          collapsed ? 'md:justify-center md:mx-auto md:w-12' : 'px-2',
+          isActive ? 'text-white' : 'text-sidebar-foreground hover:text-white'
         )
       }
     >
-      <Icon size={20} />
-      <span className={cn('truncate', collapsed && 'md:hidden')}>{label}</span>
+      {({ isActive }) => (
+        <>
+          {isActive && !collapsed && (
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-full bg-primary shadow-[0_0_8px_0_hsl(var(--sidebar-active))]" />
+          )}
+          <span
+            className={cn(
+              'flex items-center justify-center h-8 w-8 rounded-md shrink-0 transition-all',
+              isActive
+                ? 'bg-gradient-to-br from-primary to-indigo-500 text-white shadow-md shadow-primary/30'
+                : 'bg-sidebar-hover text-sidebar-foreground group-hover:bg-sidebar-active/20 group-hover:text-white'
+            )}
+          >
+            <Icon size={16} />
+          </span>
+          <span className={cn('truncate font-medium', collapsed && 'md:hidden')}>{label}</span>
+        </>
+      )}
     </NavLink>
   )
 }
