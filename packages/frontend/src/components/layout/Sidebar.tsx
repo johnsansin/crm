@@ -8,7 +8,7 @@ import {
   Package, Wrench, Truck, BookOpen, FileText, ShoppingCart, ClipboardList,
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, Menu, X,
-  ChevronDown, LogOut, Shield, CalendarDays, LineChart, Trash2, Zap
+  LogOut, Shield, CalendarDays, LineChart, Trash2, Zap
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { t } from '@/lib/i18n'
@@ -19,6 +19,15 @@ const iconMap: Record<string, React.ElementType> = {
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, CalendarDays,
   LineChart, Trash2
+}
+
+const groupIcons: Record<string, string> = {
+  Marketing: 'Megaphone',
+  Sales: 'TrendingUp',
+  Inventory: 'Package',
+  Support: 'LifeBuoy',
+  Projects: 'FolderKanban',
+  Tools: 'Wrench',
 }
 
 const GROUP_ORDER = ['Marketing', 'Sales', 'Inventory', 'Support', 'Projects', 'Tools']
@@ -80,13 +89,6 @@ const fallbackGroups = [
   }
 ]
 
-const moduleToGroup: Record<string, string> = {}
-for (const group of fallbackGroups) {
-  for (const item of group.items) {
-    moduleToGroup[item.module] = group.label
-  }
-}
-
 function buildGroups(modules: any[] | null) {
   if (!modules || modules.length === 0) return fallbackGroups
   const byGroup: Record<string, any[]> = {}
@@ -103,9 +105,14 @@ function buildGroups(modules: any[] | null) {
     .filter(g => g.items.length > 0)
 }
 
+const mainItems = [
+  { module: '', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { module: 'calendar', label: 'Calendar', icon: 'CalendarDays' },
+  { module: 'forecast', label: 'Forecasting', icon: 'LineChart' },
+  { module: 'trash', label: 'Recycle Bin', icon: 'Trash2' },
+]
+
 export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { collapsed: boolean; onToggle: () => void; mobileOpen: boolean; onMobileClose: () => void }) {
-  const location = useLocation()
-  const currentModule = location.pathname.split('/')[1]
   const { user, logout } = useAuthStore()
   const [menuModules, setMenuModules] = useState<any[] | null>(null)
 
@@ -118,18 +125,11 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
   }, [])
 
   const menuGroups = buildGroups(menuModules)
-  const activeGroup = currentModule ? moduleToGroup[currentModule] || '' : ''
-  const [expandedGroups, setExpandedGroups] = useState<string[]>([activeGroup || 'Marketing'])
 
-  useEffect(() => {
-    if (activeGroup) {
-      setExpandedGroups(prev => (prev.includes(activeGroup) ? prev : [...prev, activeGroup]))
-    }
-  }, [activeGroup])
-
-  const toggleGroup = (label: string) => {
-    setExpandedGroups(prev => (prev.includes(label) ? prev.filter(g => g !== label) : [...prev, label]))
-  }
+  const allItems = [...mainItems, ...menuGroups.flatMap(g => g.items)]
+  const flatItems = collapsed
+    ? allItems
+    : allItems
 
   return (
     <>
@@ -187,72 +187,57 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
         </div>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2.5 scrollbar-thin scrollbar-thumb-sidebar-hover scrollbar-track-transparent">
-          <SectionLabel collapsed={collapsed}>{t('Main')}</SectionLabel>
-          <div className="space-y-0.5">
-            <NavItem module="" label={t('Dashboard')} icon="LayoutDashboard" collapsed={collapsed} />
-            <NavItem module="calendar" label={t('Calendar')} icon="CalendarDays" collapsed={collapsed} />
-            <NavItem module="forecast" label={t('Forecasting')} icon="LineChart" collapsed={collapsed} />
-            <NavItem module="trash" label={t('Recycle Bin')} icon="Trash2" collapsed={collapsed} />
-          </div>
-
-          <SectionLabel collapsed={collapsed}>{t('Workspace')}</SectionLabel>
-          <div className="space-y-0.5">
-            {menuGroups.map((group) => {
-              const isExpanded = collapsed ? false : expandedGroups.includes(group.label)
-              return (
-                <div key={group.label}>
-                  <button
-                    onClick={() => toggleGroup(group.label)}
-                    className={cn(
-                      'group w-full flex items-center gap-2.5 rounded-lg px-2.5 h-9 text-[13px] font-medium transition-colors',
-                      'hover:bg-sidebar-hover hover:text-white',
-                      collapsed && 'md:justify-center md:px-0'
-                    )}
-                    title={collapsed ? t(group.label) : undefined}
-                  >
-                    <span className={cn(
-                      'shrink-0 h-1.5 w-1.5 rounded-full bg-primary/70',
-                      collapsed && 'md:h-2 md:w-2'
-                    )} />
-                    <span className={cn('flex-1 text-left truncate', collapsed && 'md:hidden')}>{t(group.label)}</span>
-                    <span className={cn(
-                      'shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-sidebar-hover text-sidebar-foreground/60',
-                      collapsed && 'md:hidden'
-                    )}>{group.items.length}</span>
-                    <ChevronDown
-                      size={14}
-                      className={cn(
-                        'shrink-0 text-sidebar-foreground/40 transition-transform duration-200',
-                        collapsed && 'md:hidden',
-                        isExpanded && 'rotate-180'
-                      )}
-                    />
-                  </button>
-                  {isExpanded && (
-                    <div className="relative space-y-0.5 mt-0.5 mb-1 ml-2.5 pl-2.5 border-l border-sidebar-hover">
-                      {group.items.map((item) => (
-                        <NavItem
-                          key={item.module}
-                          module={item.module}
-                          label={t(item.label)}
-                          icon={item.icon}
-                          collapsed={collapsed}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          {(user?.isAdmin || user?.isSuperAdmin) && (
+          {collapsed ? (
+            <div className="flex flex-col items-center space-y-1">
+              {flatItems.map(item => (
+                <NavItem key={item.module || 'dashboard'} module={item.module} label={t(item.label)} icon={item.icon} collapsed />
+              ))}
+              {user?.isAdmin && <NavItem module="settings" label={t('Settings')} icon="Settings" collapsed />}
+              {user?.isSuperAdmin && <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" collapsed />}
+            </div>
+          ) : (
             <>
-              <SectionLabel collapsed={collapsed}>{t('System')}</SectionLabel>
+              <SectionLabel>{t('Main')}</SectionLabel>
               <div className="space-y-0.5">
-                {user?.isAdmin && <NavItem module="settings" label={t('Settings')} icon="Settings" collapsed={collapsed} />}
-                {user?.isSuperAdmin && <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" collapsed={collapsed} />}
+                {mainItems.map(item => (
+                  <NavItem key={item.module || 'dashboard'} module={item.module} label={t(item.label)} icon={item.icon} />
+                ))}
               </div>
+
+              <SectionLabel>{t('Workspace')}</SectionLabel>
+              <div className="space-y-2.5">
+                {menuGroups.map(group => {
+                  const GroupIcon = iconMap[groupIcons[group.label]] || iconMap[group.items[0]?.icon] || FolderKanban
+                  return (
+                    <div key={group.label} className="rounded-xl border border-sidebar-hover bg-white/[0.03] overflow-hidden shadow-sm">
+                      <div className="flex items-center gap-2 px-2.5 h-10 border-b border-sidebar-hover bg-sidebar-hover/40">
+                        <span className="flex items-center justify-center h-6 w-6 rounded-md bg-primary/15 text-primary">
+                          <GroupIcon size={14} />
+                        </span>
+                        <span className="flex-1 text-[13px] font-semibold text-white truncate">{t(group.label)}</span>
+                        <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-sidebar-hover text-sidebar-foreground/60">
+                          {group.items.length}
+                        </span>
+                      </div>
+                      <div className="p-1.5 space-y-0.5">
+                        {group.items.map(item => (
+                          <NavItem key={item.module} module={item.module} label={t(item.label)} icon={item.icon} />
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {(user?.isAdmin || user?.isSuperAdmin) && (
+                <>
+                  <SectionLabel>{t('System')}</SectionLabel>
+                  <div className="space-y-0.5">
+                    {user?.isAdmin && <NavItem module="settings" label={t('Settings')} icon="Settings" />}
+                    {user?.isSuperAdmin && <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" />}
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
@@ -285,32 +270,30 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
   )
 }
 
-function SectionLabel({ collapsed, children }: { collapsed: boolean; children: React.ReactNode }) {
-  if (collapsed) {
-    return <div className="hidden md:block h-2" />
-  }
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-2.5 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35">
+    <div className="px-2.5 pb-1.5 pt-4 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35">
       {children}
     </div>
   )
 }
 
-function NavItem({ module, label, icon, collapsed }: { module: string; label: string; icon: string; collapsed: boolean }) {
+function NavItem({ module, label, icon, collapsed }: { module: string; label: string; icon: string; collapsed?: boolean }) {
   const Icon = iconMap[icon] || FileText
   const href = module === '' ? '/dashboard' : `/${module}`
   return (
     <NavLink
       to={href}
       end
+      title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
           'group relative flex items-center gap-2.5 rounded-lg px-2.5 h-9 text-[13px] font-medium transition-all duration-150',
-          'hover:translate-x-0.5 hover:bg-sidebar-hover hover:text-white',
+          'hover:bg-sidebar-hover hover:text-white',
           isActive
             ? 'text-white bg-gradient-to-r from-primary/25 via-primary/10 to-transparent shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
             : 'text-sidebar-foreground',
-          collapsed && 'md:justify-center md:px-0 md:hover:translate-x-0'
+          collapsed && 'md:justify-center md:px-0 md:w-9 md:mx-auto'
         )
       }
     >
