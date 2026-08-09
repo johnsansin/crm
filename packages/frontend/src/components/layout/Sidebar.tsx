@@ -146,17 +146,8 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
         )}
       >
         <div className="flex items-center justify-between h-14 px-4 border-b border-sidebar-hover shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            {user?.company?.logo ? (
-              <img src={user.company.logo} alt={user.company.name} className={cn('h-7 w-7 rounded object-cover shrink-0', collapsed && 'md:hidden')} />
-            ) : (
-              <Building2 size={18} className={cn('text-primary shrink-0', collapsed && 'md:hidden')} />
-            )}
-            <span className={cn('font-bold text-white tracking-tight truncate', collapsed && 'md:hidden')}>
-              {user?.company?.name || 'BizForce'}
-            </span>
-            <span className={cn('font-bold text-white tracking-tight hidden', collapsed && 'md:block')}>BF</span>
-          </div>
+          <span className={cn('font-bold text-lg text-white tracking-tight', collapsed && 'md:hidden')}>BizForce</span>
+          <span className={cn('font-bold text-lg text-white tracking-tight hidden', collapsed && 'md:block')}>BF</span>
           <button
             onClick={() => {
               if (window.innerWidth < 768) { onMobileClose() } else { onToggle() }

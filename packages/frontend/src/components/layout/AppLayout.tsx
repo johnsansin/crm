@@ -153,13 +153,13 @@ export function AppLayout() {
             <Menu size={20} />
           </button>
 
-          <div className="flex items-center gap-2 shrink-0 mr-3">
+          <div className="flex items-center gap-2 shrink-0 mr-3 min-w-0">
             {user?.company?.logo ? (
-              <img src={user.company.logo} alt={user.company.name} className="h-7 w-7 rounded object-cover" />
+              <img src={user.company.logo} alt={user.company.name} className="h-7 w-7 rounded object-cover shrink-0" />
             ) : (
-              <Building2 size={20} className="text-primary" />
+              <Building2 size={20} className="text-primary shrink-0" />
             )}
-            <span className="text-sm font-semibold text-foreground hidden sm:inline">{user?.company?.name || 'BizForce'}</span>
+            <span className="text-sm font-semibold text-foreground truncate max-w-[160px]">{user?.company?.name || 'BizForce'}</span>
           </div>
 
           <div className="relative flex-1 max-w-md" ref={searchRef}>
