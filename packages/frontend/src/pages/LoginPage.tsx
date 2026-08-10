@@ -154,13 +154,12 @@ export function LoginPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <PasswordInput
                     placeholder="Enter your password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     required
-                    className="pl-9 h-11 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500"
+                    className="h-11 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500"
                   />
                 </div>
                 <div className="flex justify-end">

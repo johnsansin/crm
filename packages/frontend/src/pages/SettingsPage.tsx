@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard } from 'lucide-react'
+import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, type LucideIcon } from 'lucide-react'
 import { useTheme } from '@/lib/theme'
 import { useAuthStore } from '@/lib/auth'
 import { TIMEZONES, DATE_FORMATS, COUNTRIES, SOCIAL_FIELDS } from '@/lib/constants'
@@ -27,6 +27,7 @@ import { TermsSettings } from '@/pages/settings/TermsSettings'
 import { IntegrationSettings } from '@/pages/settings/IntegrationSettings'
 import { TagsSettings } from '@/pages/settings/TagsSettings'
 import { MenuSettings } from '@/pages/settings/MenuSettings'
+import { RecycleBinPage } from '@/pages/RecycleBinPage'
 
 const TINTS: Record<string, string> = {
   users: 'from-sky-500 to-blue-600',
@@ -47,6 +48,7 @@ const TINTS: Record<string, string> = {
   integrations: 'from-cyan-500 to-teal-600',
   tags: 'from-amber-400 to-orange-600',
   menu: 'from-violet-500 to-indigo-700',
+  trash: 'from-red-500 to-rose-700',
 }
 
 const CATEGORIES = [
@@ -75,6 +77,11 @@ const CATEGORIES = [
     blurb: 'REST API, portal, Google sync, layouts, menu and dependencies',
     keys: ['integrations', 'menu'],
   },
+  {
+    label: 'System',
+    blurb: 'Recover deleted records',
+    keys: ['trash'],
+  },
 ]
 
 const settingSections = [
@@ -96,6 +103,7 @@ const settingSections = [
   { key: 'integrations', label: 'Integrations', icon: PlugZap, desc: 'REST API keys, customer portal, Google sync, picklist dependencies, layout editor, payment reminders' },
   { key: 'tags', label: 'Tags', icon: Tag, desc: 'Manage organisation-wide tags for records' },
   { key: 'menu', label: 'Menu Editor', icon: LayoutDashboard, desc: 'Reorder modules, group under parents, and hide modules in the sidebar' },
+  { key: 'trash', label: 'Recycle Bin', icon: TrashIcon, desc: 'Restore or permanently delete soft-deleted records' },
 ]
 
 const sectionMap = Object.fromEntries(settingSections.map(s => [s.key, s]))
@@ -152,6 +160,7 @@ export function SettingsPage() {
         {activeSection === 'integrations' && <IntegrationSettings />}
         {activeSection === 'tags' && <TagsSettings />}
         {activeSection === 'menu' && <MenuSettings />}
+        {activeSection === 'trash' && <RecycleBinPage />}
       </div>
     )
   }
@@ -245,31 +254,51 @@ export function SettingsPage() {
 }
 
 const MODULES = [
-  { key: 'accounts', label: 'Accounts' },
-  { key: 'contacts', label: 'Contacts' },
-  { key: 'leads', label: 'Leads' },
-  { key: 'potentials', label: 'Potentials' },
-  { key: 'campaigns', label: 'Campaigns' },
-  { key: 'products', label: 'Products' },
-  { key: 'services', label: 'Services' },
-  { key: 'vendors', label: 'Vendors' },
-  { key: 'pricebooks', label: 'Price Books' },
-  { key: 'quotes', label: 'Quotes' },
-  { key: 'salesorders', label: 'Sales Orders' },
-  { key: 'purchaseorders', label: 'Purchase Orders' },
-  { key: 'invoices', label: 'Invoices' },
-  { key: 'tickets', label: 'Tickets' },
-  { key: 'faq', label: 'FAQ' },
-  { key: 'documents', label: 'Documents' },
-  { key: 'emails', label: 'Emails' },
-  { key: 'emailtemplates', label: 'Email Templates' },
-  { key: 'projects', label: 'Projects' },
-  { key: 'projecttasks', label: 'Project Tasks' },
-  { key: 'projectmilestones', label: 'Project Milestones' },
-  { key: 'assets', label: 'Assets' },
-  { key: 'servicecontracts', label: 'Service Contracts' },
-  { key: 'smsnotifier', label: 'SMS Notifier' },
+  { key: 'accounts', label: 'Accounts', parent: 'Marketing' },
+  { key: 'contacts', label: 'Contacts', parent: 'Marketing' },
+  { key: 'leads', label: 'Leads', parent: 'Marketing' },
+  { key: 'campaigns', label: 'Campaigns', parent: 'Marketing' },
+  { key: 'potentials', label: 'Potentials', parent: 'Sales' },
+  { key: 'quotes', label: 'Quotes', parent: 'Sales' },
+  { key: 'salesorders', label: 'Sales Orders', parent: 'Sales' },
+  { key: 'invoices', label: 'Invoices', parent: 'Sales' },
+  { key: 'smsnotifier', label: 'SMS Notifier', parent: 'Sales' },
+  { key: 'products', label: 'Products', parent: 'Inventory' },
+  { key: 'services', label: 'Services', parent: 'Inventory' },
+  { key: 'vendors', label: 'Vendors', parent: 'Inventory' },
+  { key: 'pricebooks', label: 'Price Books', parent: 'Inventory' },
+  { key: 'purchaseorders', label: 'Purchase Orders', parent: 'Inventory' },
+  { key: 'tickets', label: 'Tickets', parent: 'Support' },
+  { key: 'faq', label: 'FAQ', parent: 'Support' },
+  { key: 'servicecontracts', label: 'Service Contracts', parent: 'Support' },
+  { key: 'assets', label: 'Assets', parent: 'Support' },
+  { key: 'projects', label: 'Projects', parent: 'Projects' },
+  { key: 'projecttasks', label: 'Project Tasks', parent: 'Projects' },
+  { key: 'projectmilestones', label: 'Project Milestones', parent: 'Projects' },
+  { key: 'documents', label: 'Documents', parent: 'Tools' },
+  { key: 'emails', label: 'Emails', parent: 'Tools' },
+  { key: 'emailtemplates', label: 'Email Templates', parent: 'Tools' },
 ]
+
+const PERMISSION_GROUPS = ['Marketing', 'Sales', 'Inventory', 'Support', 'Projects', 'Tools']
+
+const PERMISSION_ACTIONS = [
+  { key: 'view', label: 'View', icon: Eye },
+  { key: 'create', label: 'Create', icon: Plus },
+  { key: 'edit', label: 'Edit', icon: Pencil },
+  { key: 'delete', label: 'Delete', icon: Trash2 },
+  { key: 'import', label: 'Import', icon: Upload },
+  { key: 'export', label: 'Export', icon: Download },
+] as const
+
+const GROUP_META: Record<string, { icon: LucideIcon; badge: string }> = {
+  Marketing: { icon: Megaphone, badge: 'bg-pink-500/10 text-pink-600' },
+  Sales: { icon: TrendingUp, badge: 'bg-emerald-500/10 text-emerald-600' },
+  Inventory: { icon: Package, badge: 'bg-amber-500/10 text-amber-600' },
+  Support: { icon: LifeBuoy, badge: 'bg-sky-500/10 text-sky-600' },
+  Projects: { icon: FolderKanban, badge: 'bg-violet-500/10 text-violet-600' },
+  Tools: { icon: Wrench, badge: 'bg-rose-500/10 text-rose-600' },
+}
 
 function PermissionsMatrix({ roleId }: { roleId: string }) {
   const { addToast } = useToast()
@@ -295,9 +324,52 @@ function PermissionsMatrix({ roleId }: { roleId: string }) {
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
+  const emptyPerms = () => ({ view: false, create: false, edit: false, delete: false, import: false, export: false })
+  const ACTIONS = PERMISSION_ACTIONS.map(a => a.key)
+
   const toggle = (moduleName: string, action: string) => {
-    const current = perms[moduleName] || { view: false, create: false, edit: false, delete: false, import: false, export: false }
+    const current = perms[moduleName] || emptyPerms()
     setPerms(p => ({ ...p, [moduleName]: { ...current, [action]: !current[action] } }))
+  }
+
+  const toggleColumn = (action: string) => {
+    const allOn = MODULES.every(m => (perms[m.key] || emptyPerms())[action])
+    setPerms(p => {
+      const next: Record<string, any> = { ...p }
+      for (const m of MODULES) {
+        const cur = next[m.key] || emptyPerms()
+        next[m.key] = { ...cur, [action]: !allOn }
+      }
+      return next
+    })
+  }
+
+  const moduleAllOn = (moduleName: string) => {
+    const p = perms[moduleName] || emptyPerms()
+    return ACTIONS.every(a => p[a])
+  }
+
+  const setAll = (on: boolean) => {
+    setPerms(p => {
+      const next: Record<string, any> = { ...p }
+      for (const m of MODULES) {
+        next[m.key] = { view: on, create: on, edit: on, delete: on, import: on, export: on }
+      }
+      return next
+    })
+  }
+
+  const groupAllOn = (group: string) => MODULES.filter(m => m.parent === group).every(m => moduleAllOn(m.key))
+
+  const toggleGroup = (group: string) => {
+    const on = !groupAllOn(group)
+    setPerms(p => {
+      const next: Record<string, any> = { ...p }
+      for (const m of MODULES.filter(m => m.parent === group)) {
+        next[m.key] = { view: on, create: on, edit: on, delete: on, import: on, export: on }
+      }
+      return next
+    })
   }
 
   const handleSave = () => {
@@ -305,49 +377,134 @@ function PermissionsMatrix({ roleId }: { roleId: string }) {
     saveMutation.mutate(list)
   }
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading permissions...</p>
+  const enabledCount = MODULES.reduce((sum, m) => {
+    const p = perms[m.key] || emptyPerms()
+    return sum + ACTIONS.filter(a => p[a]).length
+  }, 0)
+
+  if (isLoading) return (
+    <div className="flex justify-center py-16"><Loader2 className="animate-spin text-muted-foreground" /></div>
+  )
+
+  const switchCls = (on: boolean, size: 'sm' | 'md') => (
+    `relative inline-flex items-center rounded-full transition-colors cursor-pointer ${on ? 'bg-emerald-500' : 'bg-input hover:bg-muted-foreground/30'} ${size === 'sm' ? 'h-4 w-7' : 'h-5 w-9'}`
+  )
+  const knobCls = (on: boolean, size: 'sm' | 'md') => (
+    `inline-block transform rounded-full bg-white shadow-sm transition-transform ${size === 'sm' ? 'h-2.5 w-2.5' + (on ? ' translate-x-[15px]' : ' translate-x-0.5') : 'h-3.5 w-3.5' + (on ? ' translate-x-[18px]' : ' translate-x-1')}`
+  )
 
   return (
-    <div className="space-y-2">
-      <div className="text-xs font-medium text-muted-foreground uppercase mb-1">Module Permissions</div>
-      <div className="rounded-xl border overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="text-left px-3 py-3 font-semibold text-muted-foreground uppercase tracking-wider">Module</th>
-              {(['view', 'create', 'edit', 'delete', 'import', 'export'] as const).map(a => (
-                <th key={a} className="text-center px-3 py-3 font-semibold text-muted-foreground uppercase tracking-wider">{a}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {MODULES.map((m, i) => {
-              const p = perms[m.key] || { view: false, create: false, edit: false, delete: false, import: false, export: false }
-              return (
-                <tr key={m.key} className={`border-b last:border-0 hover:bg-muted/40 transition-colors ${i % 2 === 1 ? 'bg-muted/20' : ''}`}>
-                  <td className="px-3 py-2 font-medium">{m.label}</td>
-                  {(['view', 'create', 'edit', 'delete', 'import', 'export'] as const).map(action => (
-                    <td key={action} className="text-center px-3 py-2">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-bold flex items-center gap-2"><Shield size={15} className="text-primary" /> Module Permissions</div>
+          <p className="text-xs text-muted-foreground mt-0.5">Toggle a group, module column, or individual action. Changes apply when you save.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${enabledCount === MODULES.length * ACTIONS.length ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
+            <CheckCircle2 size={13} /> {enabledCount}/{MODULES.length * ACTIONS.length} enabled
+          </span>
+          <Button variant="outline" size="sm" onClick={() => setAll(true)}>Enable all</Button>
+          <Button variant="outline" size="sm" onClick={() => setAll(false)}>Disable all</Button>
+          <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending}>
+            {saveMutation.isPending ? <Loader2 className="animate-spin mr-1.5 h-4 w-4" /> : <Save size={14} className="mr-1.5" />}
+            {saveMutation.isPending ? 'Saving...' : 'Save Permissions'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs min-w-[760px]">
+            <thead>
+              <tr className="border-b bg-muted/40">
+                <th className="text-left px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setAll(!MODULES.every(m => moduleAllOn(m.key)))}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-foreground/90 hover:text-primary transition-colors"
+                    title={MODULES.every(m => moduleAllOn(m.key)) ? 'Disable all actions for all modules' : 'Enable all actions for all modules'}
+                  >
+                    <span className={switchCls(MODULES.every(m => moduleAllOn(m.key)), 'sm')}>
+                      <span className={knobCls(MODULES.every(m => moduleAllOn(m.key)), 'sm')} />
+                    </span>
+                    Module
+                  </button>
+                </th>
+                {PERMISSION_ACTIONS.map(({ key, label, icon: ActIcon }) => {
+                  const allOn = MODULES.every(m => (perms[m.key] || emptyPerms())[key])
+                  const someOn = MODULES.some(m => (perms[m.key] || emptyPerms())[key])
+                  return (
+                    <th key={key} className="text-center px-3 py-3">
                       <button
                         type="button"
-                        onClick={() => toggle(m.key, action)}
-                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${p[action] ? 'bg-emerald-500' : 'bg-muted'}`}
-                        title={p[action] ? `Disable ${action}` : `Enable ${action}`}
+                        onClick={() => toggleColumn(key)}
+                        className="inline-flex flex-col items-center gap-1.5 hover:text-primary transition-colors group"
+                        title={allOn ? `Disable ${label} for all modules` : `Enable ${label} for all modules`}
                       >
-                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${p[action] ? 'translate-x-[18px]' : 'translate-x-1'}`} />
+                        <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${allOn ? 'text-emerald-600' : someOn ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                          <ActIcon size={14} /> {label}
+                        </span>
+                        <span className={switchCls(allOn, 'sm')}>
+                          <span className={knobCls(allOn, 'sm')} />
+                        </span>
                       </button>
+                    </th>
+                  )
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {PERMISSION_GROUPS.flatMap(group => {
+                const groupMods = MODULES.filter(m => m.parent === group)
+                const meta = GROUP_META[group]
+                const GIcon = meta?.icon
+                const headerRow = (
+                  <tr key={`group-${group}`} className="border-b">
+                    <td colSpan={7} className="px-3 py-0">
+                      <div className="bg-muted/30 -mx-3 px-3 py-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleGroup(group)}
+                          className="inline-flex items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-foreground/80 hover:text-primary transition-colors group"
+                          title={groupAllOn(group) ? `Disable all actions for ${group}` : `Enable all actions for ${group}`}
+                        >
+                          {GIcon && <span className={`p-1.5 rounded-lg ${meta.badge}`}><GIcon size={14} /></span>}
+                          <span className={groupAllOn(group) ? 'text-emerald-600' : 'group-hover:text-primary'}>{group}</span>
+                          <span className={switchCls(groupAllOn(group), 'sm')}>
+                            <span className={knobCls(groupAllOn(group), 'sm')} />
+                          </span>
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-background border text-muted-foreground">{groupMods.length}</span>
+                        </button>
+                      </div>
                     </td>
-                  ))}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex justify-end pt-2">
-        <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending}>
-          {saveMutation.isPending ? 'Saving...' : 'Save Permissions'}
-        </Button>
+                  </tr>
+                )
+                const modRows = groupMods.map((m, i) => {
+                  const p = perms[m.key] || emptyPerms()
+                  return (
+                    <tr key={m.key} className={`border-b last:border-0 hover:bg-muted/40 transition-colors ${i % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                      <td className="px-4 py-2.5 font-medium text-foreground/90">{m.label}</td>
+                      {ACTIONS.map(action => (
+                        <td key={action} className="text-center px-3 py-2.5">
+                          <button
+                            type="button"
+                            onClick={() => toggle(m.key, action)}
+                            className={switchCls(!!p[action], 'md')}
+                            title={p[action] ? `Disable ${action}` : `Enable ${action}`}
+                          >
+                            <span className={knobCls(!!p[action], 'md')} />
+                          </button>
+                        </td>
+                      ))}
+                    </tr>
+                  )
+                })
+                return [headerRow, ...modRows]
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
@@ -359,11 +516,12 @@ function UsersSettings() {
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [form, setForm] = useState({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '' })
 
   const { data: usersData } = useQuery({
     queryKey: ['all-users'],
-    queryFn: () => fetch('/api/users', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()).catch(() => ({ data: [] })),
+    queryFn: () => fetch('/api/users?includeInactive=1', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()).catch(() => ({ data: [] })),
   })
 
   const { data: rolesData } = useQuery({
@@ -392,19 +550,48 @@ function UsersSettings() {
   const deleteMutation = useMutation({
     mutationFn: () =>
       fetch(`/api/users/${deleteId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User deactivated', variant: 'success' }); setDeleteId(null) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User deactivated', description: 'The user can no longer sign in', variant: 'success' }); setDeleteId(null) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: (u: any) =>
+      fetch(`/api/users/${u.id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ isActive: u.isActive === false }),
+      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User status updated', variant: 'success' }) },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
   const roles = rolesData?.data || []
 
+  const filteredUsers = (usersData?.data || [])
+    .map((u: any) => ({ ...u, name: `${u.firstName} ${u.lastName}` }))
+    .filter((u: any) =>
+      statusFilter === 'all' ? true
+      : statusFilter === 'active' ? u.isActive !== false
+      : u.isActive === false
+    )
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-bold">Users</h2>
-        <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '' }) }}>
-          <Plus size={16} className="mr-2" /> New User
-        </Button>
+        <div className="flex items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as any)}
+            className="flex h-9 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="all">All Users</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '' }) }}>
+            <Plus size={16} className="mr-2" /> New User
+          </Button>
+        </div>
       </div>
       <Card>
         <CardContent className="p-0">
@@ -429,7 +616,7 @@ function UsersSettings() {
               { key: 'isAdmin', label: 'Admin', sortable: true, render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium">Yes</span> : <span className="text-muted-foreground text-xs">No</span> },
               { key: 'status', label: 'Status', sortable: true, render: (_: any, u: any) => u.isActive === false ? <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">Inactive</span> : <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs">Active</span> },
             ]}
-            data={(usersData?.data || []).map((u: any) => ({ ...u, name: `${u.firstName} ${u.lastName}` }))}
+            data={filteredUsers}
             loading={!usersData}
             emptyMessage="No users found"
             pageSize={10}
@@ -438,9 +625,15 @@ function UsersSettings() {
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(u.id); setForm({ userName: u.userName, email: u.email, firstName: u.firstName, lastName: u.lastName, password: '', isAdmin: u.isAdmin, roleId: u.roleId || '' }); setShowForm(true) }} title="Edit">
                   <Pencil size={14} />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(u.id)} title="Deactivate">
-                  <Trash2 size={14} className="text-destructive" />
-                </Button>
+                {u.isActive === false ? (
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleActiveMutation.mutate(u)} title="Activate">
+                    <UserCheck size={14} className="text-emerald-600" />
+                  </Button>
+                ) : (
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(u.id)} title="Deactivate">
+                    <Power size={14} className="text-destructive" />
+                  </Button>
+                )}
               </div>
             )}
           />
@@ -502,7 +695,7 @@ function UsersSettings() {
         onOpenChange={() => setDeleteId(null)}
         onConfirm={() => deleteMutation.mutate()}
         title="Deactivate User"
-        description="Are you sure you want to deactivate this user?"
+        description="This user will lose access to the CRM and will no longer be able to sign in. Their data is preserved and they can be reactivated later."
         confirmLabel="Deactivate"
       />
     </div>
@@ -573,7 +766,7 @@ function RolesSettings() {
           <Plus size={16} className="mr-2" /> New Role
         </Button>
       </div>
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="space-y-4">
         <Card>
           <CardHeader><CardTitle className="text-sm">Role Hierarchy</CardTitle></CardHeader>
           <CardContent className="p-0">

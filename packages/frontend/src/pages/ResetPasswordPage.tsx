@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { PasswordInput } from '@/components/ui/password-input'
-import { Loader2, CheckCircle2, Lock, KeyRound, Sparkles } from 'lucide-react'
+import { Loader2, CheckCircle2, KeyRound, Sparkles } from 'lucide-react'
 import { api } from '@/lib/api'
 import { SiteLayout } from '@/components/SiteLayout'
 
@@ -104,13 +104,12 @@ export function ResetPasswordPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-200">New Password</label>
                     <div className="relative">
-                      <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <PasswordInput
                         placeholder="Min. 6 characters"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         required
-                        className="pl-9 h-11 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500"
+                        className="h-11 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -118,13 +117,12 @@ export function ResetPasswordPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Confirm Password</label>
                     <div className="relative">
-                      <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <PasswordInput
                         placeholder="Re-enter your password"
                         value={confirm}
                         onChange={e => setConfirm(e.target.value)}
                         required
-                        className="pl-9 h-11 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500"
+                        className="h-11 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500"
                       />
                     </div>
                   </div>

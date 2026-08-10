@@ -12,6 +12,8 @@ export interface OrgFormatSettings {
   timezone: string
   dateFormat: string
   calendar: OrgCalendarSettings
+  defaultCurrency: string
+  currencySymbol: string
 }
 
 const DEFAULT_CALENDAR: OrgCalendarSettings = {
@@ -26,6 +28,8 @@ const DEFAULT_SETTINGS: OrgFormatSettings = {
   timezone: 'Asia/Karachi',
   dateFormat: 'mm-dd-yyyy',
   calendar: DEFAULT_CALENDAR,
+  defaultCurrency: 'USD',
+  currencySymbol: '$',
 }
 
 let settings: OrgFormatSettings = DEFAULT_SETTINGS
@@ -39,7 +43,6 @@ export function setOrgSettings(s: Partial<OrgFormatSettings>) {
   }
   listeners.forEach((l) => l())
 }
-
 function subscribe(listener: () => void) {
   listeners.add(listener)
   return () => {
@@ -130,10 +133,27 @@ export function formatNumber(value: any, digits = 2): string {
   }).format(n)
 }
 
+export function orgCurrency(): string {
+  return settings.defaultCurrency || 'USD'
+}
+
+export function orgCurrencySymbol(): string {
+  return settings.currencySymbol || '$'
+}
+
 export function formatMoney(value: any): string {
   const n = Number(value)
   if (isNaN(n)) return value == null ? '' : String(value)
-  return `$${formatNumber(n)}`
+  const code = orgCurrency()
+  try {
+    return new Intl.NumberFormat(orgLocale(), {
+      style: 'currency',
+      currency: code,
+      currencyDisplay: 'narrowSymbol',
+    }).format(n)
+  } catch {
+    return `${orgCurrencySymbol()}${formatNumber(n)}`
+  }
 }
 
 export function monthNames(style: 'long' | 'short' = 'long'): string[] {

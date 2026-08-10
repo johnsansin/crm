@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch'
 import { Building2, Users, UserPlus, TrendingUp, LifeBuoy, Package, FolderKanban, Receipt, CalendarDays, Filter, PlusCircle, LayoutDashboard, Check, RotateCcw, Save, BarChart3, PieChart, ListTodo, Ticket, User, GripVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useOrgSettings, formatDateTime, weekDayNames } from '@/lib/org-format'
+import { useViewableModules } from '@/lib/permissions'
 import { t } from '@/lib/i18n'
 
 const statCards = [
@@ -22,26 +23,26 @@ const statCards = [
 ]
 
 const quickActions = [
-  { to: '/leads/new', label: 'New Lead' },
-  { to: '/potentials/new', label: 'New Opportunity' },
-  { to: '/tickets/new', label: 'New Ticket' },
-  { to: '/projects/new', label: 'New Project' },
+  { to: '/leads/new', label: 'New Lead', module: 'leads' },
+  { to: '/potentials/new', label: 'New Opportunity', module: 'potentials' },
+  { to: '/tickets/new', label: 'New Ticket', module: 'tickets' },
+  { to: '/projects/new', label: 'New Project', module: 'projects' },
 ]
 
 type WidgetKey = 'stats' | 'salesByMonth' | 'funnel' | 'projectMilestones' | 'recentLeads' | 'leadsByStatus' | 'upcoming' | 'openPotentials' | 'openTickets' | 'recentPotentials' | 'recentTickets'
 
-const WIDGETS: { key: WidgetKey; label: string; icon: React.ElementType; tint: string; span: string; render: () => React.ReactNode }[] = [
-  { key: 'stats', label: 'Summary cards', icon: LayoutDashboard, tint: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400', span: 'md:col-span-2 xl:col-span-3', render: () => <StatGrid /> },
-  { key: 'salesByMonth', label: 'Sales by month', icon: BarChart3, tint: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400', span: 'xl:col-span-2', render: () => <SalesByMonthWidget /> },
-  { key: 'funnel', label: 'Sales funnel', icon: Filter, tint: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400', span: '', render: () => <SalesFunnelWidget /> },
-  { key: 'projectMilestones', label: 'Projects & milestones', icon: FolderKanban, tint: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400', span: '', render: () => <ProjectMilestonesWidget /> },
-  { key: 'recentLeads', label: 'Recent leads', icon: User, tint: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400', span: '', render: () => <RecentLeadsWidget /> },
-  { key: 'leadsByStatus', label: 'Leads by status', icon: PieChart, tint: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400', span: '', render: () => <LeadsByStatusWidget /> },
-  { key: 'upcoming', label: 'Upcoming activities', icon: CalendarDays, tint: 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400', span: '', render: () => <UpcomingActivitiesWidget /> },
-  { key: 'openPotentials', label: 'My open opportunities', icon: TrendingUp, tint: 'bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400', span: '', render: () => <OpenOpportunitiesWidget /> },
-  { key: 'openTickets', label: 'My open tickets', icon: LifeBuoy, tint: 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400', span: '', render: () => <OpenTicketsWidget /> },
-  { key: 'recentPotentials', label: 'Recent opportunities', icon: ListTodo, tint: 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400', span: '', render: () => <RecentWidget module="potentials" title="Recent Opportunities" primary="potentialName" secondary={['stage', 'amount']} icon={TrendingUp} tint="bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400" empty="No opportunities yet" /> },
-  { key: 'recentTickets', label: 'Recent tickets', icon: Ticket, tint: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400', span: '', render: () => <RecentWidget module="tickets" title="Recent Tickets" primary="title" secondary={['status', 'priority']} icon={LifeBuoy} tint="bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400" empty="No tickets yet" /> },
+const WIDGETS: { key: WidgetKey; label: string; icon: React.ElementType; tint: string; span: string; module: string | null; render: () => React.ReactNode }[] = [
+  { key: 'stats', label: 'Summary cards', icon: LayoutDashboard, tint: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400', span: 'md:col-span-2 xl:col-span-3', module: null, render: () => <StatGrid /> },
+  { key: 'salesByMonth', label: 'Sales by month', icon: BarChart3, tint: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400', span: 'xl:col-span-2', module: 'potentials', render: () => <SalesByMonthWidget /> },
+  { key: 'funnel', label: 'Sales funnel', icon: Filter, tint: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400', span: '', module: 'potentials', render: () => <SalesFunnelWidget /> },
+  { key: 'projectMilestones', label: 'Projects & milestones', icon: FolderKanban, tint: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400', span: '', module: 'projectmilestones', render: () => <ProjectMilestonesWidget /> },
+  { key: 'recentLeads', label: 'Recent leads', icon: User, tint: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400', span: '', module: 'leads', render: () => <RecentLeadsWidget /> },
+  { key: 'leadsByStatus', label: 'Leads by status', icon: PieChart, tint: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400', span: '', module: 'leads', render: () => <LeadsByStatusWidget /> },
+  { key: 'upcoming', label: 'Upcoming activities', icon: CalendarDays, tint: 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400', span: '', module: null, render: () => <UpcomingActivitiesWidget /> },
+  { key: 'openPotentials', label: 'My open opportunities', icon: TrendingUp, tint: 'bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400', span: '', module: 'potentials', render: () => <OpenOpportunitiesWidget /> },
+  { key: 'openTickets', label: 'My open tickets', icon: LifeBuoy, tint: 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400', span: '', module: 'tickets', render: () => <OpenTicketsWidget /> },
+  { key: 'recentPotentials', label: 'Recent opportunities', icon: ListTodo, tint: 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400', span: '', module: 'potentials', render: () => <RecentWidget module="potentials" title="Recent Opportunities" primary="potentialName" secondary={['stage', 'amount']} icon={TrendingUp} tint="bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400" empty="No opportunities yet" /> },
+  { key: 'recentTickets', label: 'Recent tickets', icon: Ticket, tint: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400', span: '', module: 'tickets', render: () => <RecentWidget module="tickets" title="Recent Tickets" primary="title" secondary={['status', 'priority']} icon={LifeBuoy} tint="bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400" empty="No tickets yet" /> },
 ]
 
 const WIDGET_KEYS = WIDGETS.map(w => w.key)
@@ -58,6 +59,7 @@ export function DashboardPage() {
   const { user } = useAuthStore()
   useOrgSettings()
   const queryClient = useQueryClient()
+  const viewable = useViewableModules()
   const name = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'there'
   const today = `${weekDayNames('long')[new Date().getDay()]}, ${formatDateTime(new Date())}`
 
@@ -129,10 +131,14 @@ export function DashboardPage() {
   const clearDrag = () => { setDragKey(null); setOverKey(null) }
 
   const effectiveOrder = order ?? [...DEFAULT_ORDER]
+  const canViewWidget = (module: string | null) => !module || viewable.has(module)
   const widgets = effectiveOrder
     .filter(key => !hidden.includes(key))
     .map(key => WIDGETS.find(w => w.key === key))
     .filter((w): w is (typeof WIDGETS)[number] => Boolean(w))
+    .filter(w => canViewWidget(w.module))
+
+  const visibleQuickActions = quickActions.filter(a => viewable.has(a.module))
 
   return (
     <div className="space-y-6">
@@ -144,7 +150,7 @@ export function DashboardPage() {
               <p className="mt-1 text-sm text-muted-foreground">{today}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {quickActions.map(a => (
+              {visibleQuickActions.map(a => (
                 <Link key={a.to} to={a.to} className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                   <PlusCircle size={13} /> {t(a.label)}
                 </Link>
@@ -181,7 +187,7 @@ export function DashboardPage() {
               </button>
             </div>
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {effectiveOrder.map((key) => {
+              {effectiveOrder.filter(k => canViewWidget(WIDGETS.find(x => x.key === k)?.module || null)).map((key) => {
                 const w = WIDGETS.find(x => x.key === key)
                 if (!w) return null
                 const isHidden = hidden.includes(key)
@@ -265,6 +271,13 @@ export function DashboardPage() {
           </div>
         ))}
       </div>
+      {widgets.length === 0 && (
+        <div className="rounded-2xl border bg-card p-10 text-center">
+          <LayoutDashboard size={32} className="mx-auto mb-3 text-muted-foreground/40" />
+          <p className="text-sm font-medium text-foreground/80">{t('Nothing to show yet')}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t('Your role has no module permissions yet. Ask an administrator to grant access in the Permission Manager.')}</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -295,9 +308,12 @@ function StatCard({ module, label, icon: Icon, tile }: { module: string; label: 
 }
 
 function StatGrid() {
+  const viewable = useViewableModules()
+  const cards = statCards.filter(c => viewable.has(c.module))
+  if (cards.length === 0) return null
   return (
     <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8">
-      {statCards.map((card) => (
+      {cards.map((card) => (
         <StatCard key={card.module} {...card} />
       ))}
     </div>

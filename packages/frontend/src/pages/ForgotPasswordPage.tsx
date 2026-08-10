@@ -7,6 +7,8 @@ import { SiteLayout } from '@/components/SiteLayout'
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
+  const [sentTo, setSentTo] = useState('')
+  const [sentMessage, setSentMessage] = useState('')
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,7 +19,9 @@ export function ForgotPasswordPage() {
     if (!email) { setError('Email is required'); return }
     setLoading(true)
     try {
-      await api.forgotPassword(email)
+      const res = await api.forgotPassword(email)
+      setSentTo(res.email || email)
+      setSentMessage(res.message || '')
       setSent(true)
     } catch (err: any) {
       setError(err.message || 'Request failed')
@@ -62,8 +66,16 @@ export function ForgotPasswordPage() {
                   </div>
                 </div>
                 <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Check your inbox</h2>
+                {sentMessage && (
+                  <p className="text-sm text-slate-600 dark:text-slate-300">{sentMessage}</p>
+                )}
+                <div className="mx-auto max-w-xs rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-100 dark:border-sky-900 px-4 py-3">
+                  <p className="text-sm text-slate-700 dark:text-slate-200 break-all">
+                    We've sent a reset link to <span className="font-semibold text-sky-700 dark:text-sky-300">{sentTo}</span>
+                  </p>
+                </div>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  If that email exists in our system, a reset link has been sent. Check your inbox and server logs for the token.
+                  The link expires in 1 hour. If it doesn't arrive, check your spam folder.
                 </p>
                 <Link
                   to="/login"

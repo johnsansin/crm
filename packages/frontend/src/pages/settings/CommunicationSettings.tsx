@@ -4,6 +4,7 @@ import { api } from '@/lib/api'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateField, DateTimeField } from '@/components/ui/date-field'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
@@ -115,11 +116,11 @@ function AnnouncementsTab() {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-sm font-medium block mb-1.5">Starts at</label>
-                <Input type="datetime-local" value={form.startsAt} onChange={e => setForm((f: any) => ({ ...f, startsAt: e.target.value }))} />
+                <DateTimeField value={form.startsAt} onChange={v => setForm((f: any) => ({ ...f, startsAt: v }))} />
               </div>
               <div>
                 <label className="text-sm font-medium block mb-1.5">Expires at</label>
-                <Input type="datetime-local" value={form.expiresAt} onChange={e => setForm((f: any) => ({ ...f, expiresAt: e.target.value }))} />
+                <DateTimeField value={form.expiresAt} onChange={v => setForm((f: any) => ({ ...f, expiresAt: v }))} />
               </div>
             </div>
             <label className="flex items-center gap-2 text-sm">
@@ -250,7 +251,7 @@ function HolidaysTab() {
         <DialogContent>
           <DialogHeader><DialogTitle>{editId ? 'Edit Holiday' : 'Add Holiday'}</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); if (editId) updateMutation.mutate(form); else createMutation.mutate(form) }} className="space-y-3">
-            <Input type="date" value={form.date} onChange={e => setForm((f: any) => ({ ...f, date: e.target.value }))} required />
+            <DateField value={form.date} onChange={v => setForm((f: any) => ({ ...f, date: v }))} required />
             <Input placeholder="Title (e.g. Independence Day)" value={form.title} onChange={e => setForm((f: any) => ({ ...f, title: e.target.value }))} required />
             <Input placeholder="Description (optional)" value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} />
             <div className="flex justify-end gap-2">

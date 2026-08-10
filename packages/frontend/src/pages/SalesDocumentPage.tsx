@@ -4,6 +4,7 @@ import { api } from '@/lib/api'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateField } from '@/components/ui/date-field'
 import { DataTable } from '@/components/ui/data-table'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -556,7 +557,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
       return (
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">{label}</label>
-          <Input type="date" className="h-9 text-sm" value={form[fld.name] || ''} onChange={e => updateForm(fld.name, e.target.value)} />
+          <DateField className="h-9 text-sm" value={form[fld.name] || ''} onChange={v => updateForm(fld.name, v)} />
         </div>
       )
     }
@@ -648,11 +649,11 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Start Period</label>
-                    <Input type="date" className="h-9 text-sm" value={form.startPeriod || ''} onChange={e => updateForm('startPeriod', e.target.value)} />
+                    <DateField className="h-9 text-sm" value={form.startPeriod || ''} onChange={v => updateForm('startPeriod', v)} />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">End Period</label>
-                    <Input type="date" className="h-9 text-sm" value={form.endPeriod || ''} onChange={e => updateForm('endPeriod', e.target.value)} />
+                    <DateField className="h-9 text-sm" value={form.endPeriod || ''} onChange={v => updateForm('endPeriod', v)} />
                   </div>
                 </div>
               </div>
@@ -994,7 +995,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
               <p className="text-sm font-medium mb-2">Record Payment</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
                 <Input type="number" min={0} step="0.01" placeholder="Amount" value={payForm.amount} onChange={e => setPayForm(f => ({ ...f, amount: e.target.value }))} className="h-9" />
-                <Input type="date" value={payForm.paymentDate} onChange={e => setPayForm(f => ({ ...f, paymentDate: e.target.value }))} className="h-9" />
+                <DateField value={payForm.paymentDate} onChange={v => setPayForm(f => ({ ...f, paymentDate: v }))} className="h-9" />
                 <select value={payForm.method} onChange={e => setPayForm(f => ({ ...f, method: e.target.value }))} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
                   {['Cash', 'Check', 'Credit Card', 'Bank Transfer', 'PayPal', 'Other'].map(m => <option key={m} value={m}>{m}</option>)}
                 </select>

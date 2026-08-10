@@ -4,6 +4,7 @@ import { api } from '@/lib/api'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { DataTable } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -113,7 +114,7 @@ function MailboxesTab({ onSelect }: { onSelect: () => void }) {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Input placeholder="Username / Email" value={form.user} onChange={(e) => setForm((f: any) => ({ ...f, user: e.target.value }))} required />
-              <Input type="password" placeholder="Password / App password" value={form.pass} onChange={(e) => setForm((f: any) => ({ ...f, pass: e.target.value }))} />
+              <PasswordInput placeholder="Password / App password" value={form.pass} onChange={(e) => setForm((f: any) => ({ ...f, pass: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Input placeholder="Folder (default INBOX)" value={form.folder} onChange={(e) => setForm((f: any) => ({ ...f, folder: e.target.value }))} />

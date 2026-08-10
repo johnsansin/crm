@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { DateField } from '@/components/ui/date-field'
 import { getFieldLabel } from '@/lib/field-utils'
 
 export function FormField({ field, type = 'text', options, label, form, updateForm, accounts, contacts, potentials, products }: {
@@ -34,6 +35,14 @@ export function FormField({ field, type = 'text', options, label, form, updateFo
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{lbl}</label>
         <Input type="number" step="0.01" className="h-9 text-sm" value={value} onChange={e => updateForm(field, parseFloat(e.target.value) || 0)} />
+      </div>
+    )
+  }
+  if (type === 'date') {
+    return (
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{lbl}</label>
+        <DateField className="h-9 text-sm" value={value} onChange={(v) => updateForm(field, v)} />
       </div>
     )
   }

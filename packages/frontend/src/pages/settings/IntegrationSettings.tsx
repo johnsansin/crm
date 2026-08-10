@@ -4,6 +4,8 @@ import { api } from '@/lib/api'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateField } from '@/components/ui/date-field'
+import { formatDate, formatDateTime } from '@/lib/org-format'
 import { DataTable } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -72,8 +74,8 @@ function ApiKeysTab() {
           { key: 'name', label: 'Name', render: (v) => <span className="font-medium">{v}</span> },
           { key: 'keyPrefix', label: 'Key', render: (v) => <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{v}.••••••••</code> },
           { key: 'scopes', label: 'Scopes', render: (v) => <span className="text-muted-foreground">{(v || []).join(', ')}</span> },
-          { key: 'expiresAt', label: 'Expires', render: (v) => <span className="text-muted-foreground">{v ? new Date(v).toLocaleDateString() : 'Never'}</span> },
-          { key: 'lastUsedAt', label: 'Last Used', render: (v) => <span className="text-muted-foreground">{v ? new Date(v).toLocaleString() : 'Never'}</span> },
+          { key: 'expiresAt', label: 'Expires', render: (v) => <span className="text-muted-foreground">{v ? formatDate(v) : 'Never'}</span> },
+          { key: 'lastUsedAt', label: 'Last Used', render: (v) => <span className="text-muted-foreground">{v ? formatDateTime(v) : 'Never'}</span> },
         ]}
         data={data?.data || []}
         loading={isLoading}
@@ -98,7 +100,7 @@ function ApiKeysTab() {
             </div>
             <div>
               <label className="text-sm font-medium block mb-1.5">Expires at (optional)</label>
-              <Input type="date" value={form.expiresAt} onChange={(e) => setForm((f: any) => ({ ...f, expiresAt: e.target.value }))} />
+              <DateField value={form.expiresAt} onChange={(v) => setForm((f: any) => ({ ...f, expiresAt: v }))} />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
@@ -172,7 +174,7 @@ function PortalTab() {
             return <span className="font-medium">{c ? `${c.firstName} ${c.lastName}` : v}</span>
           } },
           { key: 'accessCode', label: 'Access Code', render: (v) => <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{v || '—'}</code> },
-          { key: 'lastLoginAt', label: 'Last Login', render: (v) => <span className="text-muted-foreground">{v ? new Date(v).toLocaleString() : 'Never'}</span> },
+          { key: 'lastLoginAt', label: 'Last Login', render: (v) => <span className="text-muted-foreground">{v ? formatDateTime(v) : 'Never'}</span> },
           { key: 'isActive', label: 'Active', render: (v) => <span className={`text-xs font-medium ${v ? 'text-emerald-600' : 'text-muted-foreground'}`}>{v ? 'Yes' : 'No'}</span> },
         ]}
         data={(portalUsers?.data || []).filter((p: any) => p.isActive)}
@@ -238,7 +240,7 @@ function GoogleTab() {
           { key: 'email', label: 'Account', render: (v) => <span className="font-medium">{v}</span> },
           { key: 'syncCalendar', label: 'Calendar', render: (v) => <span className="text-xs">{v ? 'On' : 'Off'}</span> },
           { key: 'syncContacts', label: 'Contacts', render: (v) => <span className="text-xs">{v ? 'On' : 'Off'}</span> },
-          { key: 'lastSyncedAt', label: 'Last Synced', render: (v) => <span className="text-muted-foreground">{v ? new Date(v).toLocaleString() : 'Never'}</span> },
+          { key: 'lastSyncedAt', label: 'Last Synced', render: (v) => <span className="text-muted-foreground">{v ? formatDateTime(v) : 'Never'}</span> },
         ]}
         data={accounts?.data || []}
         loading={isLoading}

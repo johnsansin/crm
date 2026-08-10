@@ -5,7 +5,7 @@ import crypto from 'crypto'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { canLogin, recordLoginFailure, resetLoginFailures, validatePassword } from '../lib/settings'
-import { sendMail } from '../lib/mailer'
+import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { verifyTotp } from '../lib/otp'
 import { getClientIp, writeAudit } from '../lib/audit'
 
@@ -222,27 +222,32 @@ authRouter.get('/me', authMiddleware, async (req, res, next) => {
 // Forgot password — generates a reset token (valid 1 hour)
 authRouter.post('/forgot-password', async (req, res, next) => {
   try {
-    const { email } = req.body
-    if (!email) return res.status(400).json({ error: 'Email is required' })
-    const user = await prisma.user.findUnique({ where: { email } })
-    if (!user) return res.json({ message: 'If that email exists, a reset link has been sent.' })
+    const raw = (req.body?.email || '').toString().trim().toLowerCase()
+    if (!raw) return res.status(400).json({ error: 'Email is required' })
+    const user = await prisma.user.findUnique({ where: { email: raw } })
+    if (!user) return res.status(404).json({ error: `Invalid email id. No account found for ${raw}` })
+    const now = Date.now()
+    if (user.resetToken && user.resetTokenExpires && user.resetTokenExpires.getTime() > now) {
+      return res.json({ message: `A reset link was already sent to ${raw}. Please check your inbox.`, email: raw, alreadySent: true, delivered: false })
+    }
     const token = crypto.randomUUID()
-    const expires = new Date(Date.now() + 3600_000)
+    const expires = new Date(now + 3600_000)
     await prisma.user.update({
       where: { id: user.id },
       data: { resetToken: token, resetTokenExpires: expires }
     })
-    console.log(`[RESET] Token for ${email}: ${token}`)
+    console.log(`[RESET] Token for ${raw}: ${token}`)
     const baseUrl = req.headers.origin || 'http://localhost:5173'
     const resetLink = `${baseUrl}/reset-password?token=${token}`
     const sent = await sendMail({
-      to: email,
+      to: raw,
       subject: 'Reset your BizForce password',
       html: `<p>Hello,</p><p>We received a request to reset your password.</p><p><a href="${resetLink}">Click here to reset your password</a></p><p>This link expires in 1 hour. If you did not request this, you can safely ignore this email.</p>`,
       companyId: user.companyId,
+      fromOverride: await getSmtpConfig(null),
     })
     console.log(`[RESET] ${sent.delivered ? 'Email sent' : 'Email logged (SMTP not configured)'}`)
-    res.json({ message: 'If that email exists, a reset link has been sent.' })
+    res.json({ message: 'If that email exists, a reset link has been sent.', email: raw, delivered: sent.delivered })
   } catch (err) { next(err) }
 })
 

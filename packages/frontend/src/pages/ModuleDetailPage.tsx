@@ -17,6 +17,7 @@ import { ProjectSearchSelect } from '@/components/project-search-select'
 import { UserRoleSelect, userDisplayName } from '@/components/user-role-select'
 import { SearchSelect } from '@/components/search-select'
 import { VendorSearchSelect } from '@/components/vendor-search-select'
+import { DateField } from '@/components/ui/date-field'
 import { ArrowLeft, Save, Loader2, Trash2, Pencil, ChevronRight, Asterisk, ImagePlus, Plus, Package, History } from 'lucide-react'
 
 const labelMap: Record<string, string> = {
@@ -1196,10 +1197,9 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                       className="rounded-lg"
                     />
                   ) : field.type === 'date' ? (
-                    <Input
-                      type="date"
+                    <DateField
                       value={formData[field.name] || ''}
-                      onChange={e => handleChange(field.name, e.target.value)}
+                      onChange={(v) => handleChange(field.name, v)}
                       className="rounded-lg"
                     />
                   ) : field.type === 'project-select' ? (

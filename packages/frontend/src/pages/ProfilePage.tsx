@@ -4,6 +4,7 @@ import { api } from '@/lib/api'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -269,11 +270,11 @@ export function ProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium block mb-1.5">Current Password</label>
-                        <Input type="password" value={pwd.current} onChange={e => setPwd(p => ({ ...p, current: e.target.value }))} className="rounded-lg" />
+                        <PasswordInput value={pwd.current} onChange={e => setPwd(p => ({ ...p, current: e.target.value }))} className="rounded-lg" />
                       </div>
                       <div>
                         <label className="text-sm font-medium block mb-1.5">New Password</label>
-                        <Input type="password" value={pwd.next} onChange={e => setPwd(p => ({ ...p, next: e.target.value }))} className="rounded-lg" />
+                        <PasswordInput value={pwd.next} onChange={e => setPwd(p => ({ ...p, next: e.target.value }))} className="rounded-lg" />
                       </div>
                       <div className="md:col-span-2 flex justify-end">
                         <Button type="button" onClick={handleChangePassword} disabled={pwdBusy}>
@@ -314,7 +315,7 @@ export function ProfilePage() {
                       <div className="flex flex-wrap items-end gap-2">
                         <div className="flex-1 min-w-[200px]">
                           <label className="text-sm font-medium block mb-1.5">Password to disable</label>
-                          <Input type="password" value={twoFa.disableCode} onChange={e => setTwoFa(t => ({ ...t, disableCode: e.target.value }))} placeholder="Enter your password" className="rounded-lg" />
+                          <PasswordInput value={twoFa.disableCode} onChange={e => setTwoFa(t => ({ ...t, disableCode: e.target.value }))} placeholder="Enter your password" className="rounded-lg" />
                         </div>
                         <Button type="button" variant="destructive" onClick={confirmDisable2fa}>
                           <Unlink size={16} className="mr-2" /> Disable 2FA

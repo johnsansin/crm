@@ -78,7 +78,7 @@ export const api = {
   get: (module: string, id: string) => request<any>(`/${module}/${id}`),
 
   forgotPassword: (email: string) =>
-    request<{ message: string }>('/auth/forgot-password', {
+    request<{ message: string; email?: string; delivered?: boolean; alreadySent?: boolean }>('/auth/forgot-password', {
       method: 'POST', body: JSON.stringify({ email })
     }),
 

@@ -5,6 +5,7 @@ import { useAuthStore } from '@/lib/auth'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Save, Loader2, Send, PlugZap, Mail, Pencil, X } from 'lucide-react'
 
@@ -103,7 +104,7 @@ export function EmailSettings() {
           </div>
           <div>
             <label className="text-sm font-medium block mb-1.5">Password</label>
-            <Input type="password" value={editing ? (form.pass || '') : (form.pass ? '••••••••' : '')} onChange={e => set('pass', e.target.value)} disabled={!editing} placeholder={editing ? '' : 'No password set'} />
+            <PasswordInput value={editing ? (form.pass || '') : (form.pass ? '••••••••' : '')} onChange={e => set('pass', e.target.value)} disabled={!editing} placeholder={editing ? '' : 'No password set'} />
           </div>
           <div>
             <label className="text-sm font-medium block mb-1.5">From Email</label>

@@ -159,7 +159,7 @@ settingsRouter.get('/modules/menu', userOnly(async (req, res, next) => {
   try {
     const moduleRows = await prisma.module.findMany({ where: { isActive: true }, orderBy: { sequence: 'asc' } })
     const configs = getModuleConfigCache()
-    const data = moduleRows.map(row => {
+    let data = moduleRows.map(row => {
       const cfg = configs[row.name]
       return {
         name: row.name,
@@ -169,6 +169,18 @@ settingsRouter.get('/modules/menu', userOnly(async (req, res, next) => {
         sequence: row.sequence,
       }
     })
+    // Non-admin users only see modules their role has view permission on
+    if (!req.user!.isAdmin && !req.user!.isSuperAdmin) {
+      let allowed = new Set<string>()
+      if (req.user!.roleId) {
+        const perms = await prisma.rolePermission.findMany({
+          where: { roleId: req.user!.roleId, view: true },
+          select: { moduleName: true },
+        })
+        allowed = new Set(perms.map(p => p.moduleName))
+      }
+      data = data.filter(m => allowed.has(m.name))
+    }
     res.json({ data })
   } catch (err) { next(err) }
 }))

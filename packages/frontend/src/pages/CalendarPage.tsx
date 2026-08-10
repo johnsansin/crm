@@ -4,6 +4,7 @@ import { api } from '@/lib/api'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateTimeField } from '@/components/ui/date-field'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -673,7 +674,7 @@ function ActivityDialog({ open, onOpenChange, editing, preset, onDelete }: {
             {isTask ? (
               <div>
                 <label className="text-sm font-medium block mb-1.5">{t('Due')}</label>
-                <Input type="datetime-local" value={form.dueAt} onChange={e => setForm((f: any) => ({ ...f, dueAt: e.target.value }))} />
+                <DateTimeField value={form.dueAt} onChange={v => setForm((f: any) => ({ ...f, dueAt: v }))} />
               </div>
             ) : (
               <div>
@@ -686,11 +687,11 @@ function ActivityDialog({ open, onOpenChange, editing, preset, onDelete }: {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-sm font-medium block mb-1.5">{t('Start')}</label>
-                <Input type="datetime-local" value={form.startAt} onChange={e => setForm((f: any) => ({ ...f, startAt: e.target.value }))} />
+                <DateTimeField value={form.startAt} onChange={v => setForm((f: any) => ({ ...f, startAt: v }))} />
               </div>
               <div>
                 <label className="text-sm font-medium block mb-1.5">{t('End')}</label>
-                <Input type="datetime-local" value={form.endAt} onChange={e => setForm((f: any) => ({ ...f, endAt: e.target.value }))} />
+                <DateTimeField value={form.endAt} onChange={v => setForm((f: any) => ({ ...f, endAt: v }))} />
               </div>
             </div>
           )}

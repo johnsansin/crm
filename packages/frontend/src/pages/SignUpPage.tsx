@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { PasswordInput } from '@/components/ui/password-input'
-import { Loader2, Mail, Lock, Building2, User, Sparkles } from 'lucide-react'
+import { Loader2, Mail, Building2, User, Sparkles } from 'lucide-react'
 import { SiteLayout } from '@/components/SiteLayout'
 
 export function SignUpPage() {
@@ -136,18 +136,17 @@ export function SignUpPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <PasswordInput
-                    placeholder="Min. 6 characters"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    required
-                    className="pl-9 h-11 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500"
-                  />
-                </div>
+               <div className="space-y-2">
+                 <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
+                 <div className="relative">
+                   <PasswordInput
+                     placeholder="Min. 6 characters"
+                     value={password}
+                     onChange={e => setPassword(e.target.value)}
+                     required
+                     className="h-11 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500"
+                   />
+                 </div>
               </div>
 
               {/* Glossy sign-in button */}

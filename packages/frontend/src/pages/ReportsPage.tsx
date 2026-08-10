@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Plus, Pencil, Trash2, Loader2, BarChart3, Play, Printer, Table2, ChartPie } from 'lucide-react'
 import { getFieldLabel, formatFieldValue } from '@/lib/field-utils'
+import { formatDate } from '@/lib/org-format'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
@@ -83,7 +84,7 @@ export function ReportsPage() {
           { key: 'name', label: 'Name', render: (v, r) => <span className="font-medium">{v}</span> },
           { key: 'moduleName', label: 'Module', render: (v) => <span className="text-muted-foreground capitalize">{v}</span> },
           { key: 'reportType', label: 'Type', render: (v) => <span className="capitalize">{v}</span> },
-          { key: 'createdAt', label: 'Created', render: (v) => <span className="text-muted-foreground">{v ? new Date(v).toLocaleDateString() : '—'}</span> },
+          { key: 'createdAt', label: 'Created', render: (v) => <span className="text-muted-foreground">{v ? formatDate(v) : '—'}</span> },
         ]}
         data={data?.data || []}
         loading={isLoading}

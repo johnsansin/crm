@@ -6,6 +6,7 @@ import { useToast } from '@/lib/toast'
 import { useAuthStore } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateField, DateTimeField } from '@/components/ui/date-field'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
@@ -1346,7 +1347,7 @@ export function LeadDetailPage() {
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Due Date *</label>
-                    <Input type="datetime-local" value={actForm.dueAt} onChange={e => setActForm({ ...actForm, dueAt: e.target.value })} className="[color-scheme:light] dark:[color-scheme:dark]" />
+                    <DateTimeField value={actForm.dueAt} onChange={v => setActForm({ ...actForm, dueAt: v })} className="[color-scheme:light] dark:[color-scheme:dark]" />
                   </div>
                 </div>
               </>
@@ -1359,11 +1360,11 @@ export function LeadDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Start Date *</label>
-                    <Input type="datetime-local" value={actForm.startAt} onChange={e => setActForm({ ...actForm, startAt: e.target.value })} className="[color-scheme:light] dark:[color-scheme:dark]" />
+                    <DateTimeField value={actForm.startAt} onChange={v => setActForm({ ...actForm, startAt: v })} className="[color-scheme:light] dark:[color-scheme:dark]" />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">End Date *</label>
-                    <Input type="datetime-local" value={actForm.endAt} onChange={e => setActForm({ ...actForm, endAt: e.target.value })} className="[color-scheme:light] dark:[color-scheme:dark]" />
+                    <DateTimeField value={actForm.endAt} onChange={v => setActForm({ ...actForm, endAt: v })} className="[color-scheme:light] dark:[color-scheme:dark]" />
                   </div>
                 </div>
               </>
@@ -1502,7 +1503,7 @@ export function LeadDetailPage() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Closing Date</label>
-                  <Input type="date" value={convForm?.closingDate ? String(convForm.closingDate).slice(0, 10) : ''} onChange={e => setConvForm({ ...convForm, closingDate: e.target.value })} className="[color-scheme:light] dark:[color-scheme:dark]" />
+                  <DateField value={convForm?.closingDate ? String(convForm.closingDate).slice(0, 10) : ''} onChange={v => setConvForm({ ...convForm, closingDate: v })} className="[color-scheme:light] dark:[color-scheme:dark]" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">

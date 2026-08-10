@@ -8,7 +8,8 @@ import {
   Package, Wrench, Truck, BookOpen, FileText, ShoppingCart, ClipboardList,
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, Menu, X,
-  LogOut, Shield, CalendarDays, LineChart, Trash2, Zap
+  ChevronDown, LogOut, Shield, CalendarDays, CreditCard, Repeat, Phone,
+  BarChart3, Inbox, Rss, Trash2, LineChart, Zap
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { t } from '@/lib/i18n'
@@ -18,7 +19,7 @@ const iconMap: Record<string, React.ElementType> = {
   Package, Wrench, Truck, BookOpen, FileText, ShoppingCart, ClipboardList,
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, CalendarDays,
-  LineChart, Trash2
+  CreditCard, Repeat, Phone, BarChart3, Inbox, Rss, Trash2, LineChart, Zap
 }
 
 const GROUP_ORDER = ['Marketing', 'Sales', 'Inventory', 'Support', 'Projects', 'Tools']
@@ -80,8 +81,15 @@ const fallbackGroups = [
   }
 ]
 
+const moduleToGroup: Record<string, string> = {}
+for (const group of fallbackGroups) {
+  for (const item of group.items) {
+    moduleToGroup[item.module] = group.label
+  }
+}
+
 function buildGroups(modules: any[] | null) {
-  if (!modules || modules.length === 0) return fallbackGroups
+  if (!modules) return fallbackGroups
   const byGroup: Record<string, any[]> = {}
   for (const m of modules) {
     if (!m.parent) continue
@@ -96,14 +104,9 @@ function buildGroups(modules: any[] | null) {
     .filter(g => g.items.length > 0)
 }
 
-const mainItems = [
-  { module: '', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { module: 'calendar', label: 'Calendar', icon: 'CalendarDays' },
-  { module: 'forecast', label: 'Forecasting', icon: 'LineChart' },
-  { module: 'trash', label: 'Recycle Bin', icon: 'Trash2' },
-]
-
 export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { collapsed: boolean; onToggle: () => void; mobileOpen: boolean; onMobileClose: () => void }) {
+  const location = useLocation()
+  const currentModule = location.pathname.split('/')[1]
   const { user, logout } = useAuthStore()
   const [menuModules, setMenuModules] = useState<any[] | null>(null)
 
@@ -116,6 +119,13 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
   }, [])
 
   const menuGroups = buildGroups(menuModules)
+
+  const activeGroup = currentModule ? moduleToGroup[currentModule] || '' : ''
+  const [expandedGroup, setExpandedGroup] = useState(activeGroup || '')
+
+  useEffect(() => {
+    if (activeGroup) setExpandedGroup(activeGroup)
+  }, [activeGroup])
 
   return (
     <>
@@ -130,148 +140,124 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
         className={cn(
           'fixed left-0 top-0 z-50 h-screen bg-sidebar text-sidebar-foreground transition-all duration-300 flex flex-col',
           'w-64',
-          collapsed && 'md:w-[56px]',
+          collapsed && 'md:w-16',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
           'md:translate-x-0 md:z-40'
         )}
       >
-        <div className={cn(
-          'shrink-0 flex items-center gap-2.5 h-14 px-3.5 border-b border-sidebar-hover/70',
-          collapsed && 'md:px-0 md:justify-center'
-        )}>
-          <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 text-primary shrink-0">
-            <Zap size={16} />
-          </span>
-          <span className={cn('font-bold text-[15px] text-white tracking-tight', collapsed && 'md:hidden')}>
-            BizForce
-          </span>
+        <div className="flex items-center justify-between h-14 px-4 border-b border-sidebar-hover shrink-0">
+          <span className={cn('font-bold text-lg text-white tracking-tight', collapsed && 'md:hidden')}>BizForce</span>
+          <span className={cn('font-bold text-lg text-white tracking-tight hidden', collapsed && 'md:block')}>BF</span>
           <button
             onClick={() => {
               if (window.innerWidth < 768) { onMobileClose() } else { onToggle() }
             }}
-            className={cn(
-              'ml-auto p-1.5 rounded-md text-sidebar-foreground/60 hover:text-white hover:bg-sidebar-hover transition-colors',
-              collapsed && 'md:hidden'
-            )}
+            className="p-1 rounded hover:bg-sidebar-hover text-sidebar-foreground"
           >
-            <X size={17} />
-          </button>
-          <button
-            onClick={onToggle}
-            className={cn(
-              'hidden md:flex ml-auto p-1.5 rounded-md text-sidebar-foreground/60 hover:text-white hover:bg-sidebar-hover transition-colors',
-              !collapsed && 'md:hidden'
-            )}
-          >
-            <Menu size={17} />
+            <X size={20} className="md:hidden" />
+            {collapsed ? <Menu size={20} className="hidden md:block" /> : <X size={20} className="hidden md:block" />}
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2.5 scrollbar-thin scrollbar-thumb-sidebar-hover scrollbar-track-transparent">
-          {collapsed ? (
-            <div className="flex flex-col items-center space-y-1">
-              {[...mainItems, ...menuGroups.flatMap(g => g.items)].map(item => (
-                <NavItem key={item.module || 'dashboard'} module={item.module} label={t(item.label)} icon={item.icon} collapsed />
-              ))}
-              {user?.isAdmin && <NavItem module="settings" label={t('Settings')} icon="Settings" collapsed />}
-              {user?.isSuperAdmin && <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" collapsed />}
-            </div>
-          ) : (
-            <>
-              <SectionLabel>{t('Main')}</SectionLabel>
-              <div className="space-y-0.5">
-                {mainItems.map(item => (
-                  <NavItem key={item.module || 'dashboard'} module={item.module} label={t(item.label)} icon={item.icon} />
-                ))}
-              </div>
+        <div className="flex-1 overflow-y-auto py-2 px-2 space-y-1 scrollbar-thin">
+          <NavItem module="" label={t('Dashboard')} icon="LayoutDashboard" collapsed={collapsed} />
+          <NavItem module="calendar" label={t('Calendar')} icon="CalendarDays" collapsed={collapsed} />
+          <NavItem module="forecast" label={t('Forecasting')} icon="LineChart" collapsed={collapsed} />
 
-              {menuGroups.map(group => (
-                <div key={group.label}>
-                  <SectionLabel hairline>{t(group.label)}</SectionLabel>
-                  <div className="space-y-0.5">
-                    {group.items.map(item => (
-                      <NavItem key={item.module} module={item.module} label={t(item.label)} icon={item.icon} />
+          {menuGroups.map((group) => {
+            const isExpanded = collapsed ? false : expandedGroup === group.label
+            return (
+              <div key={group.label}>
+                <button
+                  onClick={() => setExpandedGroup(isExpanded ? '' : group.label)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-hover transition-colors"
+                >
+                  <span className={cn(collapsed && 'md:hidden')}>{t(group.label)}</span>
+                  <ChevronDown
+                    size={14}
+                    className={cn(
+                      'transition-transform',
+                      collapsed && 'md:hidden',
+                      isExpanded && 'rotate-180'
+                    )}
+                  />
+                </button>
+                {(isExpanded || collapsed) && (
+                  <div className="space-y-0.5 mt-0.5">
+                    {group.items.map((item) => (
+                      <NavItem
+                        key={item.module}
+                        module={item.module}
+                        label={t(item.label)}
+                        icon={item.icon}
+                        collapsed={collapsed}
+                      />
                     ))}
                   </div>
-                </div>
-              ))}
-
-              {(user?.isAdmin || user?.isSuperAdmin) && (
-                <>
-                  <SectionLabel hairline>{t('System')}</SectionLabel>
-                  <div className="space-y-0.5">
-                    {user?.isAdmin && <NavItem module="settings" label={t('Settings')} icon="Settings" />}
-                    {user?.isSuperAdmin && <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" />}
-                  </div>
-                </>
-              )}
-            </>
-          )}
+                )}
+              </div>
+            )
+          })}
         </div>
 
-        <div className={cn('shrink-0 border-t border-sidebar-hover/70 p-2.5', collapsed && 'md:p-2')}>
+        <div className={cn('shrink-0 border-t border-sidebar-hover p-3 space-y-0.5', collapsed && 'md:p-2')}>
+          {(user?.isAdmin || user?.isSuperAdmin) && (
+            <NavItem module="settings" label={t('Settings')} icon="Settings" collapsed={collapsed} />
+          )}
+          {user?.isSuperAdmin && (
+            <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" collapsed={collapsed} />
+          )}
           <NavLink
             to="/profile"
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors',
+                'flex items-center gap-3 rounded-lg transition-colors',
                 isActive ? 'bg-sidebar-active text-white' : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-white',
-                collapsed && 'md:justify-center md:px-0'
+                collapsed && 'md:justify-center md:p-2',
+                'p-2'
               )
             }
           >
-            <UserAvatar user={user} size={30} />
+            <UserAvatar user={user} size={32} />
             <div className={cn('flex-1 min-w-0', collapsed && 'md:hidden')}>
-              <p className="text-[13px] font-medium truncate">{user?.firstName} {user?.lastName}</p>
-              <p className="text-[10px] text-sidebar-foreground/50 truncate">{user?.email}</p>
+              <p className="text-sm font-medium truncate">{user?.firstName} {user?.lastName}</p>
+              <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
             </div>
-            <LogOut
-              size={14}
-              className={cn('shrink-0 text-sidebar-foreground/40 hover:text-destructive', collapsed && 'md:hidden')}
-              onClick={(e: any) => { e.preventDefault(); e.stopPropagation(); logout() }}
-            />
           </NavLink>
+          <div className={cn(collapsed && 'md:hidden')}>
+            <button
+              onClick={logout}
+              className="w-full flex items-center gap-3 px-2 py-1.5 mt-1 rounded-md text-xs text-sidebar-foreground/50 hover:text-destructive hover:bg-sidebar-hover transition-colors"
+            >
+              <LogOut size={14} />
+              <span>{t('Sign out')}</span>
+            </button>
+          </div>
         </div>
       </aside>
     </>
   )
 }
 
-function SectionLabel({ hairline, children }: { hairline?: boolean; children: React.ReactNode }) {
-  return (
-    <div className={cn(
-      'px-2.5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35',
-      hairline && 'mt-3 border-t border-sidebar-hover/60'
-    )}>
-      {children}
-    </div>
-  )
-}
-
-function NavItem({ module, label, icon, collapsed }: { module: string; label: string; icon: string; collapsed?: boolean }) {
+function NavItem({ module, label, icon, collapsed }: { module: string; label: string; icon: string; collapsed: boolean }) {
   const Icon = iconMap[icon] || FileText
   const href = module === '' ? '/dashboard' : `/${module}`
   return (
     <NavLink
       to={href}
       end
-      title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-2.5 rounded-md px-2.5 h-8 text-[13px] transition-colors',
+          'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
           isActive
             ? 'bg-sidebar-active text-white'
             : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-white',
-          collapsed && 'md:justify-center md:px-0 md:h-9 md:w-9 md:mx-auto'
+          collapsed && 'md:justify-center md:px-2'
         )
       }
     >
-      {({ isActive }) => (
-        <>
-          <Icon size={16} className={cn('shrink-0', isActive ? 'text-primary' : 'text-sidebar-foreground/70')} />
-          <span className={cn('truncate', collapsed && 'md:hidden')}>{label}</span>
-        </>
-      )}
+      <Icon size={20} />
+      <span className={cn('truncate', collapsed && 'md:hidden')}>{label}</span>
     </NavLink>
   )
 }
