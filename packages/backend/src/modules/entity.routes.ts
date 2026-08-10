@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { getModuleConfig } from './moduleSetup'
-import { runWorkflows } from '../lib/settings'
+import { runWorkflows, nextSequenceNumber } from '../lib/settings'
 import { writeAudit, writeAuditFields, auditSummary } from '../lib/audit'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
 
@@ -57,6 +57,10 @@ const NO_ASSIGNED_TO = new Set([
   'portalUser', 'googleAccount',
 ])
 
+// Products/Services keep their "active" flag independent of soft-delete,
+// matching vtiger (an inactive product stays visible in the list).
+const TRASH_BY_IS_DELETED = new Set(['product', 'service'])
+
 const modelMap: Record<string, string> = {
   accounts: 'account',
   contacts: 'contact',
@@ -108,7 +112,7 @@ const scopedModels = new Set([
   'asset', 'serviceContract', 'smsNotifier', 'role',
   'userGroup', 'userGroupMember',
   'currency', 'taxInfo', 'tag', 'customView',
-  'potentialProduct', 'potentialStageHistory'
+  'potentialProduct', 'potentialStageHistory', 'callLog'
 ])
 
 const permissionModules = new Set([
@@ -240,6 +244,9 @@ function buildInclude(moduleName: string): Record<string, any> {
       stageHistory: { include: { changedByUser: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: 'asc' } },
     }
   }
+  if (moduleName === 'products') {
+    return { images: { orderBy: { sortOrder: 'asc' as const } } }
+  }
   return {}
 }
 
@@ -258,6 +265,30 @@ async function replacePotentialProducts(potentialId: string, products: any[], co
       },
     }).catch(() => {})
   }
+}
+
+async function replaceProductImages(productId: string, images: any[]) {
+  const list = Array.isArray(images) ? images.filter((i: any) => i?.url && String(i.url).trim()) : []
+  await prisma.productImage.deleteMany({ where: { productId } }).catch(() => {})
+  const hasDefault = list.some((i: any) => !!i.isDefault)
+  for (let i = 0; i < list.length; i++) {
+    await prisma.productImage.create({
+      data: {
+        productId,
+        imageUrl: String(list[i].url).trim(),
+        isDefault: hasDefault ? !!list[i].isDefault : i === 0,
+        sortOrder: i,
+      },
+    }).catch(() => {})
+  }
+}
+
+async function ensureUniqueProductNo(productNo: string, excludeId?: string): Promise<string | null> {
+  const where: any = { productNo }
+  if (excludeId) where.id = { not: excludeId }
+  const existing = await prisma.product.findFirst({ where })
+  if (existing) return 'Product No already exists. Please use a different value.'
+  return null
 }
 
 export function entityRouter(moduleName: string): Router {
@@ -295,7 +326,7 @@ export function entityRouter(moduleName: string): Router {
       const skip = (pageNum - 1) * limitNum
       const config = getModuleConfig(moduleName)
 
-      let where: any = { isActive: true }
+      let where: any = TRASH_BY_IS_DELETED.has(modelName) ? { isDeleted: false } : { isActive: true }
       if (isScoped) addScope(where, req.user!.companyId)
       if (search && config) {
         where.OR = config.searchFields.map((f: string) => ({
@@ -369,7 +400,8 @@ export function entityRouter(moduleName: string): Router {
       }
       let orderBy: any = { createdAt: 'desc' }
       if (sortBy) orderBy = { [sortBy as string]: sortOrder === 'asc' ? 'asc' : 'desc' }
-      const data = await prismaModel.findMany({ where, orderBy })
+      const include = moduleName === 'products' ? { images: { orderBy: { sortOrder: 'asc' as const } } } : {}
+      const data = await prismaModel.findMany({ where, orderBy, include })
       const merged = await mergeCustomValues(moduleName, data)
       res.json({ data: merged })
     } catch (err) { next(err) }
@@ -424,6 +456,13 @@ export function entityRouter(moduleName: string): Router {
         data.createdBy = req.user!.userId
         if (!NO_ASSIGNED_TO.has(modelName)) data.assignedTo = req.body.assignedTo || req.user!.userId
       }
+      if (modelName === 'product' && !data.productNo) {
+        data.productNo = await nextSequenceNumber('Product', req.user!.companyId)
+      }
+      if (modelName === 'product' && data.productNo) {
+        const dupErr = await ensureUniqueProductNo(String(data.productNo))
+        if (dupErr) return res.status(400).json({ error: dupErr })
+      }
       fixBooleans(data)
       fixDecimals(data)
       delete data.products
@@ -433,6 +472,9 @@ export function entityRouter(moduleName: string): Router {
       }
       const record = await prismaModel.create({ data })
       if (custom) await saveCustomData(moduleName, record.id, custom)
+      if (modelName === 'product' && Array.isArray(req.body.images)) {
+        await replaceProductImages(record.id, req.body.images)
+      }
       if (modelName === 'potential' && Array.isArray(req.body.products)) {
         await replacePotentialProducts(record.id, req.body.products, req.user!.companyId)
       }
@@ -471,6 +513,10 @@ export function entityRouter(moduleName: string): Router {
       const body: any = { ...req.body }
       const { data, custom } = splitCustomData(body)
       delete data.companyId
+      if (modelName === 'product' && data.productNo) {
+        const dupErr = await ensureUniqueProductNo(String(data.productNo), req.params.id)
+        if (dupErr) return res.status(400).json({ error: dupErr })
+      }
       for (const k of Object.keys(data)) {
         if (typeof data[k] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data[k])) {
           data[k] = new Date(data[k] + 'T12:00:00').toISOString()
@@ -486,6 +532,9 @@ export function entityRouter(moduleName: string): Router {
       }
       const record = await prismaModel.update({ where, data })
       if (custom) await saveCustomData(moduleName, record.id, custom)
+      if (modelName === 'product' && Array.isArray(req.body.images)) {
+        await replaceProductImages(record.id, req.body.images)
+      }
       if (modelName === 'potential') {
         if (Array.isArray(req.body.products)) {
           await replacePotentialProducts(record.id, req.body.products, req.user!.companyId)
@@ -511,7 +560,7 @@ export function entityRouter(moduleName: string): Router {
       const before = await prismaModel.findFirst({ where })
       if (!before) return res.status(404).json({ error: 'Not found' })
       if (!(await canMutateRecord(req, before, moduleName))) return res.status(403).json({ error: 'Access denied by sharing rules' })
-      await prismaModel.update({ where, data: { isActive: false } })
+      await prismaModel.update({ where, data: TRASH_BY_IS_DELETED.has(modelName) ? { isDeleted: true } : { isActive: false } })
       await writeAudit({ moduleName, recordId: before.id, action: 'DELETE', oldValue: auditSummary(before), userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onDelete', record: before, req })
       res.json({ success: true })
@@ -533,12 +582,12 @@ export function entityRouter(moduleName: string): Router {
       if (!(await checkPermission(req, 'edit'))) return res.status(403).json({ error: 'Access denied' })
       let where: any = { id: req.params.id }
       if (isScoped) addScope(where, req.user!.companyId)
-      const record = await prismaModel.update({ where, data: { isActive: true } })
+      const record = await prismaModel.update({ where, data: TRASH_BY_IS_DELETED.has(modelName) ? { isDeleted: false } : { isActive: true } })
       res.json(record)
     } catch (err) { next(err) }
   })
 
-  // ---- Merge & Duplicate Handling (vtiger) ----
+  // ---- Merge & Duplicate Handling ----
   const identityFields: Record<string, string[]> = {
     accounts: ['accountName', 'email', 'phone', 'website'],
     contacts: ['email', 'phone'],

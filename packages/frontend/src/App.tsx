@@ -29,6 +29,8 @@ import { RecycleBinPage } from '@/pages/RecycleBinPage'
 import { LeadDetailPage } from '@/pages/LeadDetailPage'
 import { QuotationsPage } from '@/pages/QuotationsPage'
 import { SalesDocumentPage } from '@/pages/SalesDocumentPage'
+import { ProductsPage } from '@/pages/ProductsPage'
+import { ProductDetailPage } from '@/pages/ProductDetailPage'
 import { SuperAdminLayout } from '@/pages/SuperAdminLayout'
 import { SuperAdminDashboard } from '@/pages/SuperAdminDashboard'
 import { SuperAdminOrgs } from '@/pages/SuperAdminOrgs'
@@ -121,6 +123,10 @@ export default function App() {
             <Route path="/salesorders/:id" element={<SalesDocumentPage key="so-detail" module="salesorders" />} />
             <Route path="/invoices" element={<SalesDocumentPage key="inv-list" module="invoices" />} />
             <Route path="/invoices/:id" element={<SalesDocumentPage key="inv-detail" module="invoices" />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/products/new" element={<ProductDetailPage />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
+            <Route path="/products/:id/edit" element={<ProductDetailPage />} />
             <Route path="/:module" element={<ModuleListPage />} />
             <Route path="/:module/new" element={<ModuleDetailPage />} />
             <Route path="/:module/:id" element={<ModuleDetailPage />} />

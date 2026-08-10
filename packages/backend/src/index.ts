@@ -17,6 +17,7 @@ import { calendarRouter } from './modules/calendar.routes'
 import { recordRouter } from './modules/record.routes'
 import { leadRouter } from './modules/lead.routes'
 import { extrasRouter } from './modules/extras.routes'
+import { pbxRouter } from './modules/pbx.routes'
 import { presenceRouter } from './modules/presence.routes'
 import { errorHandler } from './middleware/errorHandler'
 import { setupModules, getModuleConfig } from './modules/moduleSetup'
@@ -46,6 +47,7 @@ app.post('/api/contact', (req, res) => {
 
 app.use('/api/auth', authRouter)
 app.use('/api', extrasRouter)
+app.use('/api/pbx', pbxRouter)
 app.use('/api/users', userRouter)
 app.use('/api/company', companyRouter)
 app.use('/api', rbacRouter)

@@ -2,10 +2,17 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
+import { useAuthStore } from '@/lib/auth'
 
 export function SiteHeader() {
   const navigate = useNavigate()
   const [mobileMenu, setMobileMenu] = useState(false)
+  const { token, user } = useAuthStore()
+
+  const displayName = user?.firstName
+    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
+    : user?.userName || user?.email || ''
+  const initial = (user?.firstName || user?.userName || user?.email || 'U')?.[0]?.toUpperCase()
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/60 dark:border-white/10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl">
@@ -27,14 +34,27 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" onClick={() => navigate('/login')} className="text-slate-700 dark:text-slate-200 hover:bg-white/70 dark:hover:bg-white/10">Sign In</Button>
-          <Button
-            onClick={() => navigate('/signup')}
-            className="relative h-9 overflow-hidden rounded-lg text-white text-sm font-semibold border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 hover:from-sky-400 hover:via-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/40 transition-all"
-          >
-            <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
-            <span className="relative">Get Started</span>
-          </Button>
+          {token && user ? (
+            <button
+              onClick={() => navigate('/dashboard')}
+              title="Go to Dashboard"
+              className="flex items-center gap-2 rounded-full border border-white/70 dark:border-white/10 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 shadow-sm transition-colors"
+            >
+              <span className="w-6 h-6 rounded-full bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">{initial}</span>
+              <span className="max-w-[140px] truncate">{displayName}</span>
+            </button>
+          ) : (
+            <>
+              <Button variant="ghost" onClick={() => navigate('/login')} className="text-slate-700 dark:text-slate-200 hover:bg-white/70 dark:hover:bg-white/10">Sign In</Button>
+              <Button
+                onClick={() => navigate('/signup')}
+                className="relative h-9 overflow-hidden rounded-lg text-white text-sm font-semibold border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 hover:from-sky-400 hover:via-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/40 transition-all"
+              >
+                <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
+                <span className="relative">Get Started</span>
+              </Button>
+            </>
+          )}
         </div>
 
         <button className="md:hidden p-2 text-slate-700 dark:text-slate-200" onClick={() => setMobileMenu(!mobileMenu)}>
@@ -50,14 +70,23 @@ export function SiteHeader() {
           <Link to="/contact" className="block text-sm" onClick={() => setMobileMenu(false)}>Contact</Link>
           <Link to="/pricing" className="block text-sm" onClick={() => setMobileMenu(false)}>Pricing</Link>
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => navigate('/login')}>Sign In</Button>
-            <Button
-              className="relative flex-1 overflow-hidden rounded-lg text-white text-sm font-semibold border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/40"
-              onClick={() => navigate('/signup')}
-            >
-              <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
-              <span className="relative">Get Started</span>
-            </Button>
+            {token && user ? (
+              <Button className="relative flex-1 overflow-hidden rounded-lg text-white text-sm font-semibold border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/40" onClick={() => { setMobileMenu(false); navigate('/dashboard') }}>
+                <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
+                <span className="relative">{displayName || 'Dashboard'}</span>
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" className="flex-1" onClick={() => navigate('/login')}>Sign In</Button>
+                <Button
+                  className="relative flex-1 overflow-hidden rounded-lg text-white text-sm font-semibold border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/40"
+                  onClick={() => navigate('/signup')}
+                >
+                  <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
+                  <span className="relative">Get Started</span>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}

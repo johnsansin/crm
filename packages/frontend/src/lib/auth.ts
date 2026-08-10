@@ -9,6 +9,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<any>
   login2fa: (userId: string, code: string) => Promise<void>
   register: (data: any) => Promise<any>
+  verifyRegister: (verificationId: string, code: string) => Promise<any>
   logout: () => void
   loadUser: () => Promise<void>
 }
@@ -41,7 +42,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   register: async (data) => {
-    const res = await api.orgRegister(data)
+    // New registrations require email verification first; no token is issued
+    // until /auth/register/verify confirms the code.
+    return api.orgRegister(data)
+  },
+
+  verifyRegister: async (verificationId, code) => {
+    const res = await api.verifyRegister(verificationId, code)
     localStorage.setItem('token', res.token)
     set({ token: res.token, user: res.user, loading: false })
     return res

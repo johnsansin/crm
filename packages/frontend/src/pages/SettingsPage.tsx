@@ -517,7 +517,7 @@ function UsersSettings() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
-  const [form, setForm] = useState({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '' })
+  const [form, setForm] = useState({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '' })
 
   const { data: usersData } = useQuery({
     queryKey: ['all-users'],
@@ -534,7 +534,7 @@ function UsersSettings() {
       fetch('/api/users', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data),
       }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User created', variant: 'success' }); setShowForm(false); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '' }) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User created', variant: 'success' }); setShowForm(false); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '' }) },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
@@ -588,7 +588,7 @@ function UsersSettings() {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-          <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '' }) }}>
+          <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '' }) }}>
             <Plus size={16} className="mr-2" /> New User
           </Button>
         </div>
@@ -612,6 +612,7 @@ function UsersSettings() {
               { key: 'email', label: 'Email', sortable: true },
               { key: 'roleName', label: 'Role', sortable: true, render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 text-xs font-medium">{v}</span> : '—' },
               { key: 'groups', label: 'Group', sortable: true, render: (v: any) => v && v.length ? <span className="inline-flex items-center rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 px-2 py-0.5 text-xs font-medium">{v.join(', ')}</span> : '—' },
+              { key: 'pbxExtension', label: 'PBX Ext.', sortable: true, render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 text-xs font-mono">{v}</span> : <span className="text-muted-foreground text-xs">—</span> },
               { key: 'online', label: 'Online', sortable: true, render: (v: any) => v ? <span className="inline-flex items-center gap-1.5 text-xs"><span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />Online</span> : <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600 inline-block" />Offline</span> },
               { key: 'isAdmin', label: 'Admin', sortable: true, render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium">Yes</span> : <span className="text-muted-foreground text-xs">No</span> },
               { key: 'status', label: 'Status', sortable: true, render: (_: any, u: any) => u.isActive === false ? <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">Inactive</span> : <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs">Active</span> },
@@ -622,7 +623,7 @@ function UsersSettings() {
             pageSize={10}
             actions={(u: any) => (
               <div className="flex items-center justify-end gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(u.id); setForm({ userName: u.userName, email: u.email, firstName: u.firstName, lastName: u.lastName, password: '', isAdmin: u.isAdmin, roleId: u.roleId || '' }); setShowForm(true) }} title="Edit">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(u.id); setForm({ userName: u.userName, email: u.email, firstName: u.firstName, lastName: u.lastName, password: '', isAdmin: u.isAdmin, roleId: u.roleId || '', pbxExtension: u.pbxExtension || '' }); setShowForm(true) }} title="Edit">
                   <Pencil size={14} />
                 </Button>
                 {u.isActive === false ? (
@@ -677,6 +678,10 @@ function UsersSettings() {
                 <option value="">No role</option>
                 {roles.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">PBX Extension</label>
+              <Input placeholder="e.g. 2001 (used for click-to-call and call routing)" value={form.pbxExtension} onChange={e => setForm(f => ({ ...f, pbxExtension: e.target.value }))} />
             </div>
             <div className="flex items-center gap-2">
               <input type="checkbox" id="isAdmin" checked={form.isAdmin} onChange={e => setForm(f => ({ ...f, isAdmin: e.target.checked }))} />

@@ -74,7 +74,7 @@ export function ReportsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><BarChart3 className="text-primary" /> Reports</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Build tabular and summary reports over CRM modules (vtiger report module).</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Build tabular and summary reports over CRM modules (report module).</p>
         </div>
         <Button size="sm" onClick={() => { setEditing(null); setShowForm(true) }}><Plus size={15} className="mr-1.5" /> New Report</Button>
       </div>

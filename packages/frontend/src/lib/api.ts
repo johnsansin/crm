@@ -40,9 +40,21 @@ export const api = {
     }),
 
   orgRegister: (data: { userName: string; email: string; firstName: string; lastName: string; password: string; companyName: string }) =>
-    request<{ token: string; user: any }>('/auth/register', {
+    request<{ needsVerification: boolean; verificationId: string; email: string; delivered: boolean }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+
+  verifyRegister: (verificationId: string, code: string) =>
+    request<{ token: string; user: any }>('/auth/register/verify', {
+      method: 'POST',
+      body: JSON.stringify({ verificationId, code }),
+    }),
+
+  resendRegisterCode: (verificationId: string) =>
+    request<{ needsVerification: boolean; verificationId: string; email: string; delivered: boolean }>('/auth/register/resend', {
+      method: 'POST',
+      body: JSON.stringify({ verificationId }),
     }),
 
   register: (data: { userName: string; email: string; firstName: string; lastName: string; password: string }) =>
@@ -382,7 +394,7 @@ export const api = {
     }
   },
 
-  // ---- Record detail (vtiger-style) ----
+  // ---- Record detail ----
   record: (module: string, id: string) => ({
     activities: () => request<{ data: any[] }>(`/records/${module}/${id}/activities`),
     createActivity: (data: any) =>
@@ -435,7 +447,7 @@ export const api = {
   convertLead: (id: string, data: any) =>
     request<any>(`/leads/${id}/convert`, { method: 'POST', body: JSON.stringify(data) }),
 
-  // ---- Forecast (vtiger forecasting) ----
+  // ---- Forecast ----
   getForecast: (range?: string) =>
     request<{ data: any }>(`/forecast/opportunities${range ? `?range=${range}` : ''}`),
   recalculateForecast: () =>
@@ -518,6 +530,12 @@ export const api = {
   // ---- Call logs / PBX ----
   clickToCall: (data: any) =>
     request<any>('/calllogs/click-to-call', { method: 'POST', body: JSON.stringify(data) }),
+  getPbxConfig: () => request<{ data: any }>('/pbx/config'),
+  updatePbxConfig: (data: any) =>
+    request<{ data: any }>('/pbx/config', { method: 'PUT', body: JSON.stringify(data) }),
+  testPbxConnection: () => request<{ ok: boolean; message: string }>('/pbx/test', { method: 'POST' }),
+  dialNumber: (data: any) =>
+    request<any>('/pbx/dial', { method: 'POST', body: JSON.stringify(data) }),
 
   // ---- REST WebService API ----
   restLogin: (username: string, password: string) =>

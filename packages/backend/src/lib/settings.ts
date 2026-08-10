@@ -21,6 +21,7 @@ export const DEFAULT_ORG_SETTINGS: Record<string, any> = {
   globalVariables: {},
   calendar: { workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], workingHoursStart: '09:00', workingHoursEnd: '18:00', firstDayOfWeek: 'Sunday' },
   importExport: { maxRows: 1000 },
+  pbx: { enabled: false, webappUrl: '', outboundContext: '', outboundTrunk: '', secretKey: '', companyToken: '' },
 }
 
 export async function getOrgSetting(companyId: string | null | undefined, key: string, fallback?: any): Promise<any> {

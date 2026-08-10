@@ -42,7 +42,7 @@ export function ForecastPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><LineChart className="text-primary" /> Opportunity Forecasting</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Expected revenue by close period, weighted by probability (vtiger forecast).</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Expected revenue by close period, weighted by probability (forecast).</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={range} onValueChange={setRange}>

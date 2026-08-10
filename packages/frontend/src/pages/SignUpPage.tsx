@@ -1,21 +1,48 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/lib/auth'
+import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { PasswordInput } from '@/components/ui/password-input'
-import { Loader2, Mail, Building2, User, Sparkles } from 'lucide-react'
+import { Loader2, Mail, Building2, User, Sparkles, ShieldCheck, ArrowLeft } from 'lucide-react'
 import { SiteLayout } from '@/components/SiteLayout'
+
+const CODE_RESEND_COOLDOWN = 30
 
 export function SignUpPage() {
   const navigate = useNavigate()
-  const { register } = useAuthStore()
+  const { register, verifyRegister } = useAuthStore()
+  const [step, setStep] = useState<'form' | 'verify'>('form')
   const [companyName, setCompanyName] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [verificationId, setVerificationId] = useState('')
+  const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
+  const [delivered, setDelivered] = useState(true)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [])
+
+  const startCooldown = () => {
+    setCooldown(CODE_RESEND_COOLDOWN)
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => {
+      setCooldown(prev => {
+        if (prev <= 1 && timerRef.current) clearInterval(timerRef.current)
+        return prev > 0 ? prev - 1 : 0
+      })
+    }, 1000)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,12 +58,50 @@ export function SignUpPage() {
     setLoading(true)
     try {
       const userName = email.split('@')[0]
-      await register({ userName, email, firstName, lastName, password, companyName })
-      navigate('/org/setup')
+      const res = await register({ userName, email, firstName, lastName, password, companyName })
+      setVerificationId(res.verificationId)
+      setDelivered(res.delivered !== false)
+      setStep('verify')
+      startCooldown()
     } catch (err: any) {
       setError(err.message || 'Registration failed')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!code.trim()) {
+      setError('Please enter the verification code')
+      return
+    }
+    setLoading(true)
+    try {
+      await verifyRegister(verificationId, code.trim())
+      navigate('/org/setup')
+    } catch (err: any) {
+      setError(err.message || 'Verification failed')
+      setCode('')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResend = async () => {
+    if (cooldown > 0 || resendLoading) return
+    setResendLoading(true)
+    setError('')
+    try {
+      const res = await api.resendRegisterCode(verificationId)
+      setDelivered(res.delivered !== false)
+      startCooldown()
+      setCode('')
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend code')
+    } finally {
+      setResendLoading(false)
     }
   }
 
@@ -59,110 +124,181 @@ export function SignUpPage() {
             <div className="relative flex flex-col items-center text-center">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white/30 to-white/5 border border-white/40 flex items-center justify-center shadow-lg shadow-blue-900/30 mb-4 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-transparent" />
-                <Building2 size={22} className="relative text-white" />
+                {step === 'verify' ? <ShieldCheck size={22} className="relative text-white" /> : <Building2 size={22} className="relative text-white" />}
               </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight drop-shadow-sm">Create your organization</h1>
-              <p className="text-sm text-blue-100 mt-1">Set up your company and start managing customer relationships</p>
+              <h1 className="text-2xl font-bold text-white tracking-tight drop-shadow-sm">
+                {step === 'verify' ? 'Verify your email' : 'Create your organization'}
+              </h1>
+              <p className="text-sm text-blue-100 mt-1">
+                {step === 'verify'
+                  ? 'Enter the 6-digit code we emailed you to finish signing up'
+                  : 'Set up your company and start managing customer relationships'}
+              </p>
             </div>
           </div>
 
-          {/* Form body */}
+          {/* Body */}
           <div className="p-6 md:p-7">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900 px-3 py-2 rounded-lg">
-                  {error}
-                </p>
-              )}
+            {step === 'verify' ? (
+              <form onSubmit={handleVerify} className="space-y-4">
+                {error && (
+                  <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900 px-3 py-2 rounded-lg">
+                    {error}
+                  </p>
+                )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Organization Name</label>
-                <div className="relative">
-                  <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <div className="rounded-xl bg-sky-50 dark:bg-slate-800/60 border border-sky-100 dark:border-slate-700 px-4 py-3 text-sm text-slate-600 dark:text-slate-300 flex items-start gap-3">
+                  <Mail size={16} className="mt-0.5 text-sky-600 dark:text-sky-400 shrink-0" />
+                  <span>
+                    A 6-digit verification code was sent to <span className="font-semibold text-slate-800 dark:text-white">{email}</span>.
+                    {!delivered && ' We could not send the email automatically — please use the resend button.'}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Verification Code</label>
                   <input
                     type="text"
-                    placeholder="Acme Corp"
-                    value={companyName}
-                    onChange={e => setCompanyName(e.target.value)}
-                    required
-                    className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-1 text-sm text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    placeholder="••••••"
+                    value={code}
+                    onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
+                    autoFocus
+                    className="flex h-12 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 text-center text-lg tracking-[0.5em] font-mono text-slate-900 dark:text-white shadow-sm placeholder:text-slate-300 dark:placeholder:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">First Name</label>
-                  <div className="relative">
-                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="First Name"
-                      value={firstName}
-                      onChange={e => setFirstName(e.target.value)}
-                      required
-                      className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-1 text-sm text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
-                    />
-                  </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="relative w-full h-12 overflow-hidden rounded-lg text-white font-semibold text-sm border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 hover:from-sky-400 hover:via-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/40 transition-all"
+                >
+                  <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
+                  {loading ? (
+                    <span className="relative inline-flex items-center"><Loader2 size={16} className="mr-2 animate-spin" /> Verifying...</span>
+                  ) : (
+                    <span className="relative inline-flex items-center"><ShieldCheck size={16} className="mr-2" /> Verify & Create Account</span>
+                  )}
+                </Button>
+
+                <div className="flex items-center justify-between text-sm">
+                  <button
+                    type="button"
+                    onClick={() => { setStep('form'); setError('') }}
+                    className="inline-flex items-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                  >
+                    <ArrowLeft size={14} className="mr-1" /> Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={cooldown > 0 || resendLoading}
+                    className="inline-flex items-center font-medium text-blue-600 dark:text-blue-400 hover:underline disabled:text-slate-400 dark:disabled:text-slate-600 disabled:no-underline"
+                  >
+                    {resendLoading ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
+                    {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
+                  </button>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Last Name</label>
-                  <div className="relative">
-                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Last Name"
-                      value={lastName}
-                      onChange={e => setLastName(e.target.value)}
-                      required
-                      className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-1 text-sm text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Work Email</label>
-                <div className="relative">
-                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="email"
-                    placeholder="you@company.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-1 text-sm text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
-                  />
-                </div>
-              </div>
-
-               <div className="space-y-2">
-                 <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
-                 <div className="relative">
-                   <PasswordInput
-                     placeholder="Min. 6 characters"
-                     value={password}
-                     onChange={e => setPassword(e.target.value)}
-                     required
-                     className="h-11 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500"
-                   />
-                 </div>
-              </div>
-
-              {/* Glossy sign-in button */}
-              <Button
-                type="submit"
-                disabled={loading}
-                className="relative w-full h-12 overflow-hidden rounded-lg text-white font-semibold text-sm border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 hover:from-sky-400 hover:via-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/40 transition-all"
-              >
-                <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
-                {loading ? (
-                  <span className="relative inline-flex items-center"><Loader2 size={16} className="mr-2 animate-spin" /> Creating...</span>
-                ) : (
-                  <span className="relative inline-flex items-center"><Sparkles size={16} className="mr-2" /> Create Account</span>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900 px-3 py-2 rounded-lg">
+                    {error}
+                  </p>
                 )}
-              </Button>
-            </form>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Organization Name</label>
+                  <div className="relative">
+                    <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Acme Corp"
+                      value={companyName}
+                      onChange={e => setCompanyName(e.target.value)}
+                      required
+                      className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-1 text-sm text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">First Name</label>
+                    <div className="relative">
+                      <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="First Name"
+                        value={firstName}
+                        onChange={e => setFirstName(e.target.value)}
+                        required
+                        className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-1 text-sm text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Last Name</label>
+                    <div className="relative">
+                      <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Last Name"
+                        value={lastName}
+                        onChange={e => setLastName(e.target.value)}
+                        required
+                        className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-1 text-sm text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Work Email</label>
+                  <div className="relative">
+                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="email"
+                      placeholder="you@company.com"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                      className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-1 text-sm text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
+                    />
+                  </div>
+                </div>
+
+                 <div className="space-y-2">
+                   <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
+                   <div className="relative">
+                     <PasswordInput
+                       placeholder="Min. 6 characters"
+                       value={password}
+                       onChange={e => setPassword(e.target.value)}
+                       required
+                       className="h-11 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500"
+                     />
+                   </div>
+                </div>
+
+                {/* Glossy sign-in button */}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="relative w-full h-12 overflow-hidden rounded-lg text-white font-semibold text-sm border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 hover:from-sky-400 hover:via-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/40 transition-all"
+                >
+                  <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
+                  {loading ? (
+                    <span className="relative inline-flex items-center"><Loader2 size={16} className="mr-2 animate-spin" /> Creating...</span>
+                  ) : (
+                    <span className="relative inline-flex items-center"><Sparkles size={16} className="mr-2" /> Create Account</span>
+                  )}
+                </Button>
+              </form>
+            )}
 
             <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
               Already have an account?{' '}

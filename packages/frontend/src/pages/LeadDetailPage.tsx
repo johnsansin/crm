@@ -251,6 +251,76 @@ function InlineField({
   )
 }
 
+function PbxManagerPanel({ lead }: { lead: any }) {
+  const { addToast } = useToast()
+  const queryClient = useQueryClient()
+  const [customNumber, setCustomNumber] = useState('')
+  const [calling, setCalling] = useState(false)
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['calllogs', 'lead', lead?.id],
+    queryFn: () => api.list('calllogs', { limit: '50', filter: JSON.stringify({ relatedToId: lead?.id, relatedToModule: 'leads' }) }).catch(() => ({ data: [] })),
+  })
+
+  const placeCall = async (toNumber: string) => {
+    if (!toNumber) return
+    setCalling(true)
+    try {
+      const res = await api.clickToCall({ toNumber, relatedToModule: 'leads', relatedToId: lead?.id })
+      queryClient.invalidateQueries({ queryKey: ['calllogs'] })
+      if (res.dialed) addToast({ title: 'Call initiated', description: `Dialing ${toNumber}…`, variant: 'success' })
+      else addToast({ title: 'Could not place call', description: res.message || 'PBX not configured. Enable it in Settings → Integrations → PBX.', variant: 'destructive' })
+    } catch (e: any) {
+      addToast({ title: 'Error', description: e.message, variant: 'destructive' })
+    } finally {
+      setCalling(false)
+    }
+  }
+
+  const callTargets = [lead?.phone, lead?.mobile].filter(Boolean) as string[]
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border p-4">
+        <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground"><Phone size={15} /> Click-to-Call</h3>
+        <p className="mb-4 text-xs text-muted-foreground">
+          Places the call through the org PBX server and logs it automatically. Configure the server in Settings → Integrations → PBX / Phone.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {callTargets.length === 0 && <span className="text-xs text-muted-foreground">No phone number on this lead.</span>}
+          {callTargets.map((n) => (
+            <Button key={n} size="sm" variant="outline" onClick={() => placeCall(n)} disabled={calling}>
+              <Phone size={13} className="mr-1.5 text-emerald-500" /> {n}
+            </Button>
+          ))}
+          <Input className="h-9 w-44" placeholder="Custom number…" value={customNumber} onChange={(e) => setCustomNumber(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') placeCall(customNumber) }} />
+          <Button size="sm" onClick={() => placeCall(customNumber)} disabled={calling || !customNumber}>
+            {calling ? <Loader2 size={13} className="mr-1.5 animate-spin" /> : <Phone size={13} className="mr-1.5" />} Call
+          </Button>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-foreground">Recent Call Logs</h3>
+        <DataTable
+          columns={[
+            { key: 'direction', label: 'Direction', render: (v) => <span className={`text-xs font-medium ${v === 'outbound' ? 'text-blue-600' : 'text-emerald-600'}`}>{v}</span> },
+            { key: 'fromNumber', label: 'From', render: (v) => <span className="text-sm">{v || '—'}</span> },
+            { key: 'toNumber', label: 'To', render: (v) => <span className="text-sm">{v || '—'}</span> },
+            { key: 'status', label: 'Status', render: (v) => <span className="text-xs font-medium text-muted-foreground">{v || '—'}</span> },
+            { key: 'duration', label: 'Duration (s)', render: (v) => <span className="text-sm">{v ?? '—'}</span> },
+            { key: 'callTime', label: 'Time', render: (v) => <span className="text-sm text-muted-foreground">{v ? formatDateTime(v) : '—'}</span> },
+          ]}
+          data={data?.data || []}
+          loading={isLoading}
+          emptyMessage="No calls logged for this lead yet."
+          pageSize={10}
+        />
+      </div>
+    </div>
+  )
+}
+
 export function LeadDetailPage() {
   useOrgSettings()
   const { id } = useParams()
@@ -1228,16 +1298,7 @@ export function LeadDetailPage() {
 
             {/* PBX Manager */}
             <TabsContent value="PBX Manager" className="px-6 py-6">
-              <div className="text-center py-8 text-muted-foreground">
-                <Phone size={32} className="mx-auto opacity-40" />
-                <h3 className="mt-3 text-sm font-semibold text-foreground">PBX Manager</h3>
-                <p className="mt-2 text-sm max-w-md mx-auto">
-                  Configure a PBX server to enable click-to-call and call logging for this lead. This feature requires a PBX integration (e.g. Asterisk, VICIDial, GoAutoDial).
-                </p>
-                <Button className="mt-5" onClick={() => addToast({ title: 'PBX not configured', description: 'Contact your administrator to enable PBX integration.', variant: 'default' })}>
-                  <Globe size={15} /> Open PBX Settings
-                </Button>
-              </div>
+              <PbxManagerPanel lead={lead} />
             </TabsContent>
 
             {/* Comments */}

@@ -10,7 +10,7 @@ import { DataTable } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { KeyRound, Lock, Plus, Trash2, Loader2, Link2, Copy, RefreshCw, LayoutTemplate, ListTree, BellRing } from 'lucide-react'
+import { KeyRound, Lock, Plus, Trash2, Loader2, Link2, Copy, RefreshCw, LayoutTemplate, ListTree, BellRing, Phone } from 'lucide-react'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
@@ -26,6 +26,7 @@ export function IntegrationSettings() {
           <TabsTrigger value="deps" className="gap-2 data-[state=active]:border-pink-500 data-[state=active]:text-pink-600"><ListTree size={15} /> Picklist Dependencies</TabsTrigger>
           <TabsTrigger value="layout" className="gap-2 data-[state=active]:border-pink-500 data-[state=active]:text-pink-600"><LayoutTemplate size={15} /> Layout Editor</TabsTrigger>
           <TabsTrigger value="reminders" className="gap-2 data-[state=active]:border-pink-500 data-[state=active]:text-pink-600"><BellRing size={15} /> Payment Reminders</TabsTrigger>
+          <TabsTrigger value="pbx" className="gap-2 data-[state=active]:border-pink-500 data-[state=active]:text-pink-600"><Phone size={15} /> PBX / Phone</TabsTrigger>
         </TabsList>
         <TabsContent value="api"><ApiKeysTab /></TabsContent>
         <TabsContent value="portal"><PortalTab /></TabsContent>
@@ -33,6 +34,7 @@ export function IntegrationSettings() {
         <TabsContent value="deps"><DependenciesTab /></TabsContent>
         <TabsContent value="layout"><LayoutTab /></TabsContent>
         <TabsContent value="reminders"><RemindersTab /></TabsContent>
+        <TabsContent value="pbx"><PbxTab /></TabsContent>
       </TabsRoot>
     </div>
   )
@@ -299,7 +301,7 @@ function DependenciesTab() {
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        When a parent picklist value is chosen, the child picklist is limited to mapped values (vtiger picklist dependency). Format each line as: <code className="text-xs bg-muted px-1 rounded">Parent Value {'=>'} Child A, Child B</code>
+        When a parent picklist value is chosen, the child picklist is limited to mapped values (picklist dependency). Format each line as: <code className="text-xs bg-muted px-1 rounded">Parent Value {'=>'} Child A, Child B</code>
       </p>
       <div className="rounded-lg border p-4 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -376,7 +378,7 @@ function LayoutTab() {
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        Reorder fields (one per line, top first) and list fields to hide (one per line). Customizes the detail view per module (vtiger layout editor).
+        Reorder fields (one per line, top first) and list fields to hide (one per line). Customizes the detail view per module (layout editor).
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
@@ -444,6 +446,97 @@ function RemindersTab() {
         <Input type="number" min={1} value={current.daysBefore ?? 3} onChange={(e) => setForm((f: any) => ({ ...(f || reminders), daysBefore: Number(e.target.value) }))} />
       </div>
       <Button onClick={() => saveMutation.mutate(current)} disabled={saveMutation.isPending}>{saveMutation.isPending && <Loader2 size={14} className="mr-1.5 animate-spin" />}Save</Button>
+    </div>
+  )
+}
+
+function PbxTab() {
+  const { addToast } = useToast()
+  const queryClient = useQueryClient()
+  const [form, setForm] = useState<any>(null)
+  const [testResult, setTestResult] = useState<string | null>(null)
+
+  const { data, isLoading } = useQuery({ queryKey: ['pbx-config'], queryFn: () => api.getPbxConfig() })
+  const cfg = form ?? data?.data ?? { enabled: false, webappUrl: '', outboundContext: '', outboundTrunk: '', secretKey: '', webhookUrl: '' }
+
+  const saveMutation = useMutation({
+    mutationFn: (d: any) => api.updatePbxConfig(d),
+    onSuccess: (r: any) => { queryClient.setQueryData(['pbx-config'], r); setForm(null); setTestResult(null); addToast({ title: 'PBX settings saved', variant: 'success' }) },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const testMutation = useMutation({
+    mutationFn: () => api.testPbxConnection(),
+    onSuccess: (r: any) => setTestResult(r.message),
+    onError: (e: Error) => setTestResult(`Connection failed: ${e.message}`),
+  })
+
+  const copy = (text: string) => {
+    navigator.clipboard?.writeText(text)
+    addToast({ title: 'Copied', variant: 'success' })
+  }
+
+  return (
+    <div className="space-y-4 max-w-2xl">
+      <p className="text-sm text-muted-foreground">
+        Connect a PBX webapp (Asterisk/VICIDial/GoAutoDial) for click-to-call and automatic call logging. Incoming and outgoing call events are received on the webhook URL below.
+      </p>
+
+      <div className="rounded-lg border p-4 space-y-3">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" checked={!!cfg.enabled} onChange={(e) => setForm((f: any) => ({ ...(f || data?.data), enabled: e.target.checked }))} />
+          Enable PBX integration
+        </label>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2">
+            <label className="text-sm font-medium block mb-1.5">Webapp URL</label>
+            <Input placeholder="http://pbx.example.com:8088" value={cfg.webappUrl || ''} onChange={(e) => setForm((f: any) => ({ ...(f || data?.data), webappUrl: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1.5">Outbound context</label>
+            <Input placeholder="from-internal" value={cfg.outboundContext || ''} onChange={(e) => setForm((f: any) => ({ ...(f || data?.data), outboundContext: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1.5">Outbound trunk</label>
+            <Input placeholder="PSTN" value={cfg.outboundTrunk || ''} onChange={(e) => setForm((f: any) => ({ ...(f || data?.data), outboundTrunk: e.target.value }))} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-sm font-medium block mb-1.5">Secret key (pbxsignature)</label>
+            <Input placeholder="Shared secret used to authenticate webhook calls" value={cfg.secretKey || ''} onChange={(e) => setForm((f: any) => ({ ...(f || data?.data), secretKey: e.target.value }))} />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 pt-1">
+          <Button onClick={() => saveMutation.mutate({ enabled: cfg.enabled, webappUrl: cfg.webappUrl, outboundContext: cfg.outboundContext, outboundTrunk: cfg.outboundTrunk, secretKey: cfg.secretKey })} disabled={saveMutation.isPending}>
+            {saveMutation.isPending && <Loader2 size={14} className="mr-1.5 animate-spin" />}Save
+          </Button>
+          <Button variant="outline" onClick={() => testMutation.mutate()} disabled={testMutation.isPending || !cfg.webappUrl}>
+            {testMutation.isPending ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <RefreshCw size={14} className="mr-1.5" />}Test Connection
+          </Button>
+        </div>
+        {testResult && <p className="text-sm text-muted-foreground">{testResult}</p>}
+      </div>
+
+      <div className="rounded-lg border p-4 space-y-3">
+        <p className="text-sm font-medium">Webhook URL</p>
+        <p className="text-xs text-muted-foreground">
+          Point the PBX webapp's AGI/AMI call-event handler here. It must POST events with <code className="bg-muted px-1 rounded">pbxsignature</code> = secret key and the PBX Manager fields
+          (<code className="bg-muted px-1 rounded">callstatus</code>, <code className="bg-muted px-1 rounded">callUUID</code>, <code className="bg-muted px-1 rounded">callerIdNumber</code>, <code className="bg-muted px-1 rounded">callerid1</code>, <code className="bg-muted px-1 rounded">callerid2</code>, <code className="bg-muted px-1 rounded">causetxt</code>, <code className="bg-muted px-1 rounded">StartTime</code>, <code className="bg-muted px-1 rounded">EndTime</code>, <code className="bg-muted px-1 rounded">Duration</code>, <code className="bg-muted px-1 rounded">billableseconds</code>, <code className="bg-muted px-1 rounded">recordinglink</code>).
+        </p>
+        {cfg.webhookUrl ? (
+          <div className="flex gap-2">
+            <code className="flex-1 rounded-md border bg-muted px-3 py-2 text-xs break-all">{cfg.webhookUrl}</code>
+            <Button size="icon" onClick={() => copy(cfg.webhookUrl)}><Copy size={14} /></Button>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Save the configuration to generate the webhook URL and company token.</p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Tip: give each user a PBX extension in <span className="font-medium">Admin → Users</span> so calls are matched to the person who placed or answered them.
+        </p>
+      </div>
+      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
     </div>
   )
 }

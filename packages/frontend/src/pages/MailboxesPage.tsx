@@ -21,7 +21,7 @@ export function MailboxesPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Inbox className="text-primary" /> Mailboxes & Inbox</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Connect IMAP mailboxes, sync emails and convert inbound mail into tickets (vtiger email module + email-to-ticket).</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Connect IMAP mailboxes, sync emails and convert inbound mail into tickets (email module + email-to-ticket).</p>
         </div>
       </div>
       <TabsRoot value={tab} onValueChange={setTab}>

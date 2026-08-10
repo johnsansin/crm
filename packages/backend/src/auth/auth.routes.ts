@@ -63,9 +63,13 @@ authRouter.post('/login', async (req, res, next) => {
       where: { email },
       include: { company: true, profile: true }
     })
-    if (!user || !user.isActive) {
+    if (!user) {
       await writeAudit({ moduleName: 'auth', action: 'LOGIN_FAILED', newValue: email || '', req })
-      return res.status(401).json({ error: 'Invalid credentials' })
+      return res.status(401).json({ error: 'Not registered email/user' })
+    }
+    if (!user.isActive) {
+      await writeAudit({ moduleName: 'auth', action: 'LOGIN_FAILED', newValue: email || '', req })
+      return res.status(403).json({ error: 'Your account is blocked. Please contact your organization administrator.' })
     }
     if (user.companyId) {
       const company = await prisma.company.findUnique({ where: { id: user.companyId } })
@@ -127,9 +131,87 @@ authRouter.post('/login/2fa', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+const REGISTRATION_TTL_MS = 15 * 60 * 1000
+const REGISTRATION_MAX_ATTEMPTS = 5
+
+function generateVerificationCode(): string {
+  return crypto.randomInt(100000, 1000000).toString()
+}
+
+function hashCode(code: string): string {
+  return crypto.createHash('sha256').update(code).digest('hex')
+}
+
+async function sendVerificationEmail(email: string, code: string) {
+  const html = [
+    '<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px">',
+    '<h2 style="margin-top:0;color:#0f172a">Verify your email</h2>',
+    '<p style="color:#334155;line-height:1.6">You requested to create a BizForce CRM organization for this email address. Enter the verification code below to complete your sign-up:</p>',
+    `<p style="font-size:28px;font-weight:700;letter-spacing:6px;color:#2563eb;background:#f1f5f9;border-radius:8px;padding:12px;text-align:center">${code}</p>`,
+    '<p style="color:#94a3b8;font-size:13px">This code expires in 15 minutes. If you did not request this, you can safely ignore this email.</p>',
+    '</div>',
+  ].join('')
+  const fromOverride = await getSmtpConfig(null)
+  const sent = await sendMail({ to: email, subject: 'Verify your email — BizForce CRM', html, fromOverride })
+  console.log(`[REGISTER] Verification code for ${email}: ${code}${sent.delivered ? '' : ' (email NOT delivered)'}`)
+  return sent
+}
+
+async function createCompanyForRegistration(payload: any) {
+  const company = await prisma.company.create({
+    data: { name: payload.companyName || `${payload.firstName}'s Organization` }
+  })
+
+  const modules = ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds']
+
+  const ceo = await prisma.role.create({ data: { name: 'CEO', description: 'Full access to all modules', companyId: company.id } })
+  await prisma.role.create({ data: { name: 'Manager', description: 'Manager level access', parentId: ceo.id, companyId: company.id } })
+  await prisma.role.create({ data: { name: 'User', description: 'Standard user', parentId: ceo.id, companyId: company.id } })
+
+  for (const role of await prisma.role.findMany({ where: { companyId: company.id } })) {
+    const isCeo = role.name === 'CEO'
+    for (const mod of modules) {
+      await prisma.rolePermission.create({
+        data: {
+          roleId: role.id, moduleName: mod,
+          view: true,
+          create: isCeo,
+          edit: isCeo,
+          delete: isCeo,
+          import: isCeo,
+          export: isCeo,
+        }
+      })
+    }
+  }
+
+  const user = await prisma.user.create({
+    data: {
+      userName: payload.userName,
+      email: payload.email,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      password: payload.passwordHash,
+      isAdmin: true,
+      roleId: ceo.id,
+      companyId: company.id
+    },
+    include: { company: true }
+  })
+  return user
+}
+
+// Step 1 — request registration: validate, send a verification code by email,
+// and hold the registration as pending until the code is confirmed.
 authRouter.post('/register', async (req, res, next) => {
   try {
     const { userName, email, firstName, lastName, password, companyName } = req.body
+    if (!email || !userName || !firstName || !lastName || !password) {
+      return res.status(400).json({ error: 'All fields are required' })
+    }
+    if (String(password).length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' })
+    }
     const existing = await prisma.user.findFirst({
       where: { OR: [{ email }, { userName }] }
     })
@@ -137,59 +219,100 @@ authRouter.post('/register', async (req, res, next) => {
       return res.status(400).json({ error: 'User already exists' })
     }
 
-    const company = await prisma.company.create({
-      data: { name: companyName || `${firstName}'s Organization` }
+    await prisma.pendingRegistration.deleteMany({ where: { email } })
+
+    const code = generateVerificationCode()
+    const pending = await prisma.pendingRegistration.create({
+      data: {
+        email,
+        payload: {
+          userName,
+          email,
+          firstName,
+          lastName,
+          passwordHash: await bcrypt.hash(password, 10),
+          companyName: companyName || null,
+        },
+        codeHash: hashCode(code),
+        expiresAt: new Date(Date.now() + REGISTRATION_TTL_MS),
+        attempts: 0,
+      },
     })
 
-    const modules = ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds']
+    const sent = await sendVerificationEmail(email, code)
+    res.status(201).json({ needsVerification: true, verificationId: pending.id, email, delivered: sent.delivered })
+  } catch (err) { next(err) }
+})
 
-    const ceo = await prisma.role.create({ data: { name: 'CEO', description: 'Full access to all modules', companyId: company.id } })
-    await prisma.role.create({ data: { name: 'Manager', description: 'Manager level access', parentId: ceo.id, companyId: company.id } })
-    await prisma.role.create({ data: { name: 'User', description: 'Standard user', parentId: ceo.id, companyId: company.id } })
-
-    for (const role of await prisma.role.findMany({ where: { companyId: company.id } })) {
-      const isCeo = role.name === 'CEO'
-      for (const mod of modules) {
-        await prisma.rolePermission.create({
-          data: {
-            roleId: role.id, moduleName: mod,
-            view: true,
-            create: isCeo,
-            edit: isCeo,
-            delete: isCeo,
-            import: isCeo,
-            export: isCeo,
-          }
-        })
-      }
+// Step 2 — confirm the code and permanently register the organization + admin user.
+authRouter.post('/register/verify', async (req, res, next) => {
+  try {
+    const { verificationId, code } = req.body
+    if (!verificationId || !code) {
+      return res.status(400).json({ error: 'Verification code is required' })
+    }
+    const pending = await prisma.pendingRegistration.findUnique({ where: { id: verificationId } })
+    if (!pending) {
+      return res.status(400).json({ error: 'Registration session not found or already completed. Please sign up again.' })
+    }
+    if (new Date(pending.expiresAt) < new Date()) {
+      await prisma.pendingRegistration.delete({ where: { id: pending.id } })
+      return res.status(400).json({ error: 'Verification code has expired. Please sign up again.' })
+    }
+    if (pending.attempts >= REGISTRATION_MAX_ATTEMPTS) {
+      await prisma.pendingRegistration.delete({ where: { id: pending.id } })
+      return res.status(400).json({ error: 'Too many incorrect attempts. Please sign up again.' })
     }
 
-    const hashed = await bcrypt.hash(password, 10)
-    const user = await prisma.user.create({
-      data: {
-        userName,
-        email,
-        firstName,
-        lastName,
-        password: hashed,
-        isAdmin: true,
-        roleId: ceo.id,
-        companyId: company.id
-      },
-      include: { company: true }
+    const valid = hashCode(String(code).trim()) === pending.codeHash
+    if (!valid) {
+      await prisma.pendingRegistration.update({ where: { id: pending.id }, data: { attempts: { increment: 1 } } })
+      return res.status(400).json({ error: 'Invalid verification code' })
+    }
+
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ email: pending.email }, { userName: (pending.payload as any).userName }] }
     })
+    if (existing) {
+      await prisma.pendingRegistration.delete({ where: { id: pending.id } })
+      return res.status(400).json({ error: 'User already exists' })
+    }
+
+    const payload = pending.payload as any
+    const user = await createCompanyForRegistration(payload)
+    await prisma.pendingRegistration.delete({ where: { id: pending.id } })
 
     await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date(), lastActiveAt: new Date() } })
     await recordLogin(req, user)
     await writeAudit({ moduleName: 'auth', action: 'LOGIN', newValue: user.email, userId: user.id, req })
 
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, isAdmin: user.isAdmin, companyId: user.companyId, roleId: user.roleId },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    )
+    const { token } = await issueToken(user)
     const { password: _, ...userData } = user
     res.status(201).json({ token, user: { ...userData, isSuperAdmin: false } })
+  } catch (err) { next(err) }
+})
+
+// Resend the verification code for a pending registration.
+authRouter.post('/register/resend', async (req, res, next) => {
+  try {
+    const { email, verificationId } = req.body
+    if (!email && !verificationId) {
+      return res.status(400).json({ error: 'email is required' })
+    }
+    const pending = verificationId
+      ? await prisma.pendingRegistration.findUnique({ where: { id: verificationId } })
+      : await prisma.pendingRegistration.findFirst({ where: { email } })
+    if (!pending) {
+      return res.status(400).json({ error: 'No pending registration found. Please sign up again.' })
+    }
+
+    const code = generateVerificationCode()
+    await prisma.pendingRegistration.update({
+      where: { id: pending.id },
+      data: { codeHash: hashCode(code), expiresAt: new Date(Date.now() + REGISTRATION_TTL_MS), attempts: 0 },
+    })
+    const sent = await sendVerificationEmail(pending.email, code)
+    res.json({ needsVerification: true, verificationId: pending.id, email: pending.email, delivered: sent.delivered })
   } catch (err) { next(err) }
 })
 
@@ -273,8 +396,8 @@ authRouter.post('/reset-password', async (req, res, next) => {
 
 authRouter.put('/me', authMiddleware, async (req, res, next) => {
   try {
-    const { firstName, lastName, email, phone, mobile, title, department, timezone, language, password, avatar, addressStreet, addressCity, addressState, addressCountry, addressPostalCode, dateFormat, hourFormat, startOfWeek, defaultModule, currencyCode } = req.body
-    const data: any = { firstName, lastName, email, phone, mobile, title, department, timezone, language, avatar, addressStreet, addressCity, addressState, addressCountry, addressPostalCode, dateFormat, hourFormat, startOfWeek, defaultModule, currencyCode }
+    const { firstName, lastName, email, phone, mobile, title, department, timezone, language, password, avatar, addressStreet, addressCity, addressState, addressCountry, addressPostalCode, dateFormat, hourFormat, startOfWeek, defaultModule, currencyCode, pbxExtension } = req.body
+    const data: any = { firstName, lastName, email, phone, mobile, title, department, timezone, language, avatar, addressStreet, addressCity, addressState, addressCountry, addressPostalCode, dateFormat, hourFormat, startOfWeek, defaultModule, currencyCode, pbxExtension }
     if (password) {
       const policyError = await validatePassword(req.user!.companyId, password)
       if (policyError) return res.status(400).json({ error: policyError })

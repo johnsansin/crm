@@ -26,6 +26,7 @@ model User {
   timezone      String   @default("Asia/Karachi") @db.VarChar(100)
   language      String   @default("en_us") @db.VarChar(10)
   avatar        String?  @db.VarChar(500)
+  pbxExtension  String?  @db.VarChar(50)
   isActive            Boolean   @default(true)
   isAdmin             Boolean   @default(false)
   lastLogin           DateTime?
@@ -409,6 +410,7 @@ model Product {
   id              String   @id @default(uuid())
   productNo       String?  @unique @db.VarChar(100)
   productName     String   @db.VarChar(200)
+  partNumber      String?  @db.VarChar(100)
   productCategory String?  @db.VarChar(100)
   productType     String?  @default("") @db.VarChar(100)
   manufacturer    String?  @db.VarChar(100)
@@ -447,6 +449,7 @@ model Product {
   description     String?  @db.Text
   companyId String?
   isActive Boolean  @default(true)
+  isDeleted Boolean  @default(false)
   image           String?  @db.VarChar(500)
   vendorId        String?
   assignedTo      String?
@@ -454,8 +457,23 @@ model Product {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  images          ProductImage[]
+
   priceBookProducts PriceBookProduct[]
   potentialProducts PotentialProduct[]
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String
+  imageUrl  String   @db.VarChar(1000)
+  isDefault Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
 }
 
 model LeadProduct {
@@ -516,6 +534,7 @@ model Service {
   vendorId        String?
   companyId String?
   isActive Boolean  @default(true)
+  isDeleted Boolean  @default(false)
   assignedTo      String?
   createdBy       String?
   createdAt       DateTime @default(now())
@@ -1274,6 +1293,18 @@ model LoginLog {
   @@index([companyId])
 }
 
+model PendingRegistration {
+  id        String   @id @default(uuid())
+  email     String   @db.VarChar(200)
+  payload   Json
+  codeHash  String   @db.VarChar(255)
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
 model SequenceNumber {
   id         String   @id @default(uuid())
   moduleName String   @db.VarChar(100)
@@ -1586,12 +1617,21 @@ model EmailToTicketRule {
 
 model CallLog {
   id             String   @id @default(uuid())
+  sourceUuid     String?  @unique @db.VarChar(100)
   direction      String?  @default("inbound") @db.VarChar(20)
   fromNumber     String?  @db.VarChar(50)
   toNumber       String?  @db.VarChar(50)
   callTime       DateTime?
+  startTime      DateTime?
+  endTime        DateTime?
   duration       Int?
+  totalDuration  Int?
+  billDuration   Int?
   status         String?  @db.VarChar(50)
+  recordingUrl   String?  @db.Text
+  customerNumber String?  @db.VarChar(50)
+  customerType   String?  @db.VarChar(100)
+  customerId     String?
   notes          String?  @db.Text
   relatedToModule String? @db.VarChar(100)
   relatedToId    String?

@@ -8,6 +8,7 @@ import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { writeAudit } from '../lib/audit'
 import { syncMailbox, generateRecurringInvoice, fetchRssFeed, applyEmailToTicketRule } from '../lib/automation'
 import { renderReport, escapeHtml } from './report'
+import { dialViaPbx } from './pbx.routes'
 
 export const extrasRouter = Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'bizforce-jwt-secret-dev-2026'
@@ -20,8 +21,13 @@ function fixedDecimal(v: any, d = 2): number {
   return Number(Number(v || 0).toFixed(d))
 }
 
+// Products/Services keep their active flag independent of soft-delete (vtiger behaviour).
+function trashByIsDeleted(modelName: string): boolean {
+  return modelName === 'product' || modelName === 'service'
+}
+
 // =====================================================================
-// Opportunity Forecasting (vtiger forecast)
+// Opportunity Forecasting
 // =====================================================================
 extrasRouter.get('/forecast/opportunities', authMiddleware, async (req, res, next) => {
   try {
@@ -110,7 +116,7 @@ extrasRouter.post('/forecast/recalculate', authMiddleware, async (req, res, next
 })
 
 // =====================================================================
-// Recycle Bin (vtiger trash / recyclebin)
+// Recycle Bin (soft delete / restore)
 // =====================================================================
 extrasRouter.get('/trash', authMiddleware, async (req, res, next) => {
   try {
@@ -123,7 +129,7 @@ extrasRouter.get('/trash', authMiddleware, async (req, res, next) => {
       if (name === 'reports' || name === 'mailboxes' || name === 'rssfeeds') continue
       const prismaModel = modelFor(cfg.modelName)
       if (!prismaModel || typeof prismaModel.findMany !== 'function') continue
-      const where: any = { isActive: false }
+      const where: any = trashByIsDeleted(cfg.modelName) ? { isDeleted: true } : { isActive: false }
       if (companyId) where.companyId = companyId
       try {
         const count = await prismaModel.count({ where })
@@ -139,7 +145,7 @@ extrasRouter.get('/trash/:moduleName', authMiddleware, async (req, res, next) =>
     const cfg = getModuleConfig(req.params.moduleName)
     if (!cfg?.modelName) return res.status(404).json({ error: 'Module not found' })
     const prismaModel = modelFor(cfg.modelName)
-    const where: any = { isActive: false }
+    const where: any = trashByIsDeleted(cfg.modelName) ? { isDeleted: true } : { isActive: false }
     if (req.user!.companyId) where.companyId = req.user!.companyId
     const data = await prismaModel.findMany({ where, take: 200, orderBy: { updatedAt: 'desc' } })
     res.json({ data, label: cfg.label })
@@ -156,7 +162,7 @@ extrasRouter.post('/trash/restore', authMiddleware, async (req, res, next) => {
     if (req.user!.companyId) where.companyId = req.user!.companyId
     const record = await prismaModel.findFirst({ where })
     if (!record) return res.status(404).json({ error: 'Not found' })
-    await prismaModel.update({ where: { id }, data: { isActive: true } })
+    await prismaModel.update({ where: { id }, data: trashByIsDeleted(cfg.modelName) ? { isDeleted: false } : { isActive: true } })
     await writeAudit({ moduleName, recordId: id, action: 'RESTORE', userId: req.user!.userId, req })
     res.json({ success: true })
   } catch (err) { next(err) }
@@ -520,14 +526,16 @@ extrasRouter.post('/calllogs/click-to-call', authMiddleware, async (req, res, ne
   try {
     const { toNumber, fromNumber, relatedToModule, relatedToId } = req.body
     if (!toNumber) return res.status(400).json({ error: 'toNumber is required' })
-    const user = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { phone: true, userName: true } })
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { phone: true, pbxExtension: true, userName: true } })
+    const dial = await dialViaPbx({ companyId: req.user!.companyId, fromNumber: fromNumber || user?.pbxExtension || user?.phone || null, toNumber, userId: req.user!.userId })
     const call = await prisma.callLog.create({
       data: {
         direction: 'outbound',
-        fromNumber: fromNumber || user?.phone || null,
+        fromNumber: fromNumber || user?.pbxExtension || user?.phone || null,
         toNumber,
         callTime: new Date(),
-        status: 'Initiated',
+        status: dial.dialed ? 'Initiated' : 'Failed',
+        notes: dial.dialed ? null : (dial.message || null),
         relatedToModule: relatedToModule || null,
         relatedToId: relatedToId || null,
         assignedTo: req.user!.userId,
@@ -535,12 +543,12 @@ extrasRouter.post('/calllogs/click-to-call', authMiddleware, async (req, res, ne
         companyId: req.user!.companyId,
       },
     })
-    res.status(201).json({ data: call, telLink: `tel:${toNumber}` })
+    res.status(201).json({ data: call, telLink: `tel:${toNumber}`, dialed: dial.dialed, message: dial.message })
   } catch (err) { next(err) }
 })
 
 // =====================================================================
-// REST WebService API (vtiger webservice)
+// REST WebService API
 // =====================================================================
 async function restAuth(req: any): Promise<boolean> {
   const token = req.query.sessionName || req.query.session || req.headers.authorization?.replace('Bearer ', '') || req.body?.sessionName
@@ -717,7 +725,7 @@ extrasRouter.delete('/apikeys/:id', authMiddleware, requireAdmin, async (req, re
 })
 
 // =====================================================================
-// Customer Portal (vtiger customer portal)
+// Customer Portal
 // =====================================================================
 extrasRouter.post('/portal/register', authMiddleware, requireAdmin, async (req, res, next) => {
   try {

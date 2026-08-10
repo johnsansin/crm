@@ -16,7 +16,7 @@ userRouter.get('/', async (req, res, next) => {
     const includeInactive = req.query.includeInactive === '1' || req.query.includeInactive === 'true'
     const users = await prisma.user.findMany({
       where: { companyId: req.user!.companyId, ...(includeInactive ? {} : { isActive: true }) },
-      select: { id: true, userName: true, email: true, firstName: true, lastName: true, isAdmin: true, isActive: true, roleId: true, avatar: true, lastActiveAt: true, createdAt: true, updatedAt: true, groups: { select: { group: { select: { name: true } } } } }
+      select: { id: true, userName: true, email: true, firstName: true, lastName: true, isAdmin: true, isActive: true, roleId: true, avatar: true, lastActiveAt: true, createdAt: true, updatedAt: true, pbxExtension: true, groups: { select: { group: { select: { name: true } } } } }
     })
     const roles = await prisma.role.findMany({ where: { companyId: req.user!.companyId } })
     const roleMap = new Map(roles.map(r => [r.id, r.name]))
@@ -34,7 +34,7 @@ userRouter.get('/', async (req, res, next) => {
 userRouter.post('/', async (req, res, next) => {
   try {
     if (!req.user!.companyId) return res.status(400).json({ error: 'No company' })
-    const { userName, email, firstName, lastName, password, isAdmin, roleId } = req.body
+    const { userName, email, firstName, lastName, password, isAdmin, roleId, pbxExtension } = req.body
     const policyError = await validatePassword(req.user!.companyId, password)
     if (policyError) return res.status(400).json({ error: policyError })
     const hashed = await bcrypt.hash(password, 10)
@@ -44,6 +44,7 @@ userRouter.post('/', async (req, res, next) => {
         password: hashed,
         isAdmin: isAdmin || false,
         roleId: roleId || null,
+        pbxExtension: pbxExtension || null,
         companyId: req.user!.companyId
       }
     })

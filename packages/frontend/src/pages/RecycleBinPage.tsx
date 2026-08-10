@@ -49,7 +49,7 @@ export function RecycleBinPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Trash2 className="text-primary" /> Recycle Bin</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Deleted records are soft-deleted and can be restored here (vtiger recyclebin). {totalTrashed > 0 && `${totalTrashed} record(s) total.`}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Deleted records are soft-deleted and can be restored here (recycle bin). {totalTrashed > 0 && `${totalTrashed} record(s) total.`}</p>
         </div>
       </div>
 
