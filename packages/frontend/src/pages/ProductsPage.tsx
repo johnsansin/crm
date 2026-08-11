@@ -68,11 +68,17 @@ export function ProductsPage() {
     queryFn: () => api.listAll('products', { limit: '1000' }),
   })
 
+  const categoryPicklistQuery = useQuery({
+    queryKey: ['picklists', 'products', 'productCategory'],
+    queryFn: () => api.getPicklists({ module: 'products', field: 'productCategory' }).catch(() => ({ data: [] })),
+  })
+
   const categories = useMemo(() => {
     const set = new Set<string>()
     ;(allProductsQuery.data?.data || []).forEach((p: Product) => p.productCategory && set.add(p.productCategory))
+    ;(categoryPicklistQuery.data?.data || []).forEach((o: any) => o.label && set.add(o.label))
     return Array.from(set).sort()
-  }, [allProductsQuery.data])
+  }, [allProductsQuery.data, categoryPicklistQuery.data])
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete('products', id),
