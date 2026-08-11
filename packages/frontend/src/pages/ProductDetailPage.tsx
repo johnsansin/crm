@@ -263,6 +263,15 @@ export function ProductDetailPage() {
     queryFn: () => api.request<any>('/products/users'),
   })
 
+  const categoryPicklistQuery = useQuery({
+    queryKey: ['picklists', 'products', 'productCategory'],
+    queryFn: () => api.getPicklists({ module: 'products', field: 'productCategory' }).catch(() => ({ data: [] })),
+  })
+  const categoryOptions = useMemo(() => {
+    const stored = (categoryPicklistQuery.data?.data || []).map((o: any) => o.label).filter(Boolean)
+    return stored.length ? stored : PRODUCT_CATEGORIES
+  }, [categoryPicklistQuery.data])
+
   useEffect(() => {
     if (record) {
       const images = Array.isArray(record.images)
@@ -441,7 +450,8 @@ export function ProductDetailPage() {
           </div>
         )
       }
-      const options = [{ id: '', label: '--None--' }, ...(f.options || []).map(o => ({ id: o, label: o }))]
+      const opts = f.key === 'productCategory' ? categoryOptions : (f.options || [])
+      const options = [{ id: '', label: '--None--' }, ...opts.map(o => ({ id: o, label: o }))]
       return (
         <div className="space-y-1.5">
           {label}
