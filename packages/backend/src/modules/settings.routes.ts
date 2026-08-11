@@ -39,7 +39,7 @@ settingsRouter.put('/', requireAdmin, async (req, res, next) => {
 })
 
 // ---- Picklist editor ----
-settingsRouter.get('/picklists', requireAdmin, async (req, res, next) => {
+settingsRouter.get('/picklists', async (req, res, next) => {
   try {
     const { module, field } = req.query
     const where: any = { isActive: true }
