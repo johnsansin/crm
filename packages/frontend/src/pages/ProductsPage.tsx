@@ -55,17 +55,24 @@ export function ProductsPage() {
     queryKey: ['products', 'list', page, search, category, status, sortKey, sortOrder],
     queryFn: () => {
       const params: Record<string, string> = { page: String(page), limit: '25', search, sortBy: sortKey, sortOrder }
-      if (category !== 'all') params.productCategory = category
-      if (status !== 'all') params.isActive = status === 'active' ? 'true' : 'false'
+      const filter: Record<string, any> = {}
+      if (category !== 'all') filter.productCategory = category
+      if (status !== 'all') filter.isActive = status === 'active'
+      if (Object.keys(filter).length) params.filter = JSON.stringify(filter)
       return api.list('products', params)
     },
   })
 
+  const allProductsQuery = useQuery({
+    queryKey: ['products', 'all'],
+    queryFn: () => api.listAll('products', { limit: '1000' }),
+  })
+
   const categories = useMemo(() => {
     const set = new Set<string>()
-    ;(data?.data || []).forEach((p: Product) => p.productCategory && set.add(p.productCategory))
+    ;(allProductsQuery.data?.data || []).forEach((p: Product) => p.productCategory && set.add(p.productCategory))
     return Array.from(set).sort()
-  }, [data])
+  }, [allProductsQuery.data])
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete('products', id),

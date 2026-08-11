@@ -3,7 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useToast } from '@/lib/toast'
-import { formatMoney } from '@/lib/org-format'
+import { formatMoney, formatDate } from '@/lib/org-format'
+import { DateField } from '@/components/ui/date-field'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -386,7 +387,7 @@ export function ProductDetailPage() {
     if (v == null || v === '') return null
     if (f.type === 'currency') return formatMoney(v)
     if (f.type === 'number') return String(Number(v))
-    if (f.type === 'date') return (v as string).slice(0, 10)
+    if (f.type === 'date') return formatDate(v)
     return v
   }
 
@@ -472,11 +473,21 @@ export function ProductDetailPage() {
       )
     }
 
+    if (f.type === 'date') {
+      return (
+        <div className="space-y-1.5">
+          {label}
+          <DateField value={String(value ?? '')} onChange={v => setField(f.key, v)} />
+          {f.hint && <p className="text-xs text-slate-400">{f.hint}</p>}
+        </div>
+      )
+    }
+
     return (
       <div className="space-y-1.5">
         {label}
         <Input
-          type={f.type === 'number' || f.type === 'currency' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+          type={f.type === 'number' || f.type === 'currency' ? 'number' : 'text'}
           step={f.type === 'currency' ? '0.01' : undefined}
           min={f.type === 'number' || f.type === 'currency' ? '0' : undefined}
           placeholder={f.placeholder}
@@ -632,12 +643,9 @@ export function ProductDetailPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-              <Button type="button" variant="outline" onClick={() => setField('images', [...images, { url: '', isDefault: images.length === 0 }])}>
-                <Plus size={14} className="mr-1.5" /> Add Image
-              </Button>
               <Button type="button" variant="outline" disabled={uploadingImage} onClick={() => imageInputRef.current?.click()}>
                 {uploadingImage ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <CloudUpload size={14} className="mr-1.5" />}
-                Upload Image
+                Upload New Image
               </Button>
             </div>
           </>
