@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -10,8 +10,12 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { UserRoleSelect, userDisplayName } from '@/components/user-role-select'
+import { VendorSearchSelect } from '@/components/vendor-search-select'
 import {
   ArrowLeft, Boxes, Save, Pencil, Trash2, ImageIcon, Loader2, Globe, Tag, Plus, X, Star,
+  ImagePlus, CloudUpload,
 } from 'lucide-react'
 
 const PRODUCT_CATEGORIES = ['Hardware', 'Software', 'CRM Applications']
@@ -40,6 +44,24 @@ const GL_ACCOUNTS = [
 const TAX_CLASSES = ['Sales Tax', 'Service Tax', 'Value Added Tax', 'GST']
 
 const COMMISSION_METHODS = ['Fixed', 'Percentage']
+
+const TAX_DEFAULTS: Record<'vat' | 'isService' | 'isSales', number> = {
+  vat: 4.5,
+  isService: 12.5,
+  isSales: 10,
+}
+
+interface TaxFieldDef {
+  key: 'vat' | 'isService' | 'isSales'
+  percentKey: 'vatPercentage' | 'servicePercentage' | 'salesPercentage'
+  label: string
+}
+
+const TAX_FIELDS: TaxFieldDef[] = [
+  { key: 'vat', percentKey: 'vatPercentage', label: 'VAT (%)' },
+  { key: 'isService', percentKey: 'servicePercentage', label: 'Service (%)' },
+  { key: 'isSales', percentKey: 'salesPercentage', label: 'Sales (%)' },
+]
 
 interface ProductImage {
   url: string
@@ -84,6 +106,12 @@ interface ProductRecord {
   packSize?: number | string | null
   assignedTo?: string | null
   vendorId?: string | null
+  vat?: boolean
+  isService?: boolean
+  isSales?: boolean
+  vatPercentage?: number | string | null
+  servicePercentage?: number | string | null
+  salesPercentage?: number | string | null
 }
 
 interface FieldDef {
@@ -97,11 +125,11 @@ interface FieldDef {
 }
 
 const DETAIL_FIELDS: FieldDef[] = [
-  { key: 'productName', label: 'Product Name', type: 'textarea', span: 4, placeholder: 'Full descriptive product name' },
-  { key: 'productNo', label: 'Product No', type: 'text', span: 2, hint: 'Leave blank to auto-generate. Must be unique.' },
-  { key: 'partNumber', label: 'Part Number', type: 'text', span: 2, placeholder: 'SKU / part code' },
+  { key: 'productName', label: 'Product Name', type: 'text', span: 2, placeholder: 'Product name' },
   { key: 'isActive', label: 'Product Active', type: 'checkbox', span: 1 },
   { key: 'discontinued', label: 'Discontinued', type: 'checkbox', span: 1 },
+  { key: 'productNo', label: 'Product No', type: 'text', span: 2, hint: 'Leave blank to auto-generate. Must be unique.' },
+  { key: 'partNumber', label: 'Part Number', type: 'text', span: 2, placeholder: 'SKU / part code' },
   { key: 'productCategory', label: 'Product Category', type: 'select', options: PRODUCT_CATEGORIES, span: 1 },
   { key: 'manufacturer', label: 'Manufacturer', type: 'select', options: MANUFACTURERS, span: 1 },
   { key: 'website', label: 'Website', type: 'text', span: 2 },
@@ -179,11 +207,18 @@ const defaultDraft: ProductRecord = {
   packSize: '',
   assignedTo: '',
   vendorId: '',
+  vat: false,
+  isService: false,
+  isSales: false,
+  vatPercentage: '',
+  servicePercentage: '',
+  salesPercentage: '',
 }
 
 const NUMERIC_FIELDS = new Set<keyof ProductRecord>([
   'unitPrice', 'costPrice', 'commissionRate', 'commissionPercentage', 'markupPercent',
   'qtyInStock', 'qtyInDemand', 'qtyOnOrder', 'reorderLevel', 'weight', 'packSize',
+  'vatPercentage', 'servicePercentage', 'salesPercentage',
 ])
 
 const SPAN_CLASS: Record<number, string> = {
@@ -204,6 +239,11 @@ export function ProductDetailPage() {
   const [editing, setEditing] = useState(isNew)
   const [draft, setDraft] = useState<ProductRecord>(defaultDraft)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [vendorModalOpen, setVendorModalOpen] = useState(false)
+  const [vendorForm, setVendorForm] = useState<Record<string, string>>({})
+  const [savingVendor, setSavingVendor] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   const { data: record, isLoading } = useQuery({
     queryKey: ['products', id],
@@ -217,8 +257,8 @@ export function ProductDetailPage() {
   })
 
   const usersQuery = useQuery({
-    queryKey: ['users', 'all'],
-    queryFn: () => api.listAll('users', { limit: '500' }),
+    queryKey: ['products', 'users'],
+    queryFn: () => api.request<any>('/products/users'),
   })
 
   useEffect(() => {
@@ -251,24 +291,59 @@ export function ProductDetailPage() {
     onError: (err: Error) => addToast({ title: 'Error', description: err.message, variant: 'destructive' }),
   })
 
+  const addVendorMutation = useMutation({
+    mutationFn: (data: any) => api.create('vendors', data),
+    onSuccess: (created: any) => {
+      queryClient.invalidateQueries({ queryKey: ['vendors'] })
+      addToast({ title: 'Vendor created', variant: 'success' })
+      setField('vendorId', created.id || '')
+      setVendorModalOpen(false)
+      setVendorForm({})
+    },
+    onError: (err: Error) => addToast({ title: 'Error', description: err.message, variant: 'destructive' }),
+  })
+
   const vendorOptions = useMemo(() => {
     const rows = vendorsQuery.data?.data || vendorsQuery.data || []
     return Array.isArray(rows) ? rows : []
   }, [vendorsQuery.data])
 
   const userOptions = useMemo(() => {
-    const rows = usersQuery.data?.data || usersQuery.data || []
+    const rows = usersQuery.data?.data || []
+    return Array.isArray(rows) ? rows : []
+  }, [usersQuery.data])
+
+  const roleOptions = useMemo(() => {
+    const rows = usersQuery.data?.roles || []
     return Array.isArray(rows) ? rows : []
   }, [usersQuery.data])
 
   const vendorName = (v: string) => vendorOptions.find((x: any) => x.id === v)?.vendorName || v
   const userName = (v: string) => {
     const u = userOptions.find((x: any) => x.id === v)
-    return u ? `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || v : v
+    if (u) return userDisplayName(u)
+    const r = roleOptions.find((x: any) => x.id === v)
+    if (r) return r.name || v
+    return v
   }
 
   const setField = (key: keyof ProductRecord, value: any) => {
     setDraft(d => ({ ...d, [key]: value }))
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setUploadingImage(true)
+    try {
+      const res = await api.uploadFile(file)
+      setField('images', [...(draft.images || []), { url: res.path, isDefault: (draft.images?.length || 0) === 0 }])
+    } catch (err: any) {
+      addToast({ title: 'Upload failed', description: err.message, variant: 'destructive' })
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   const defaultImage = draft.images?.find(i => i.isDefault)?.url || draft.images?.[0]?.url || draft.image
@@ -292,6 +367,14 @@ export function ProductDetailPage() {
     const images = (draft.images || []).map(img => ({ url: img.url, isDefault: !!img.isDefault }))
     payload.images = images
     payload.image = defaultImage || null
+    for (const tax of TAX_FIELDS) {
+      payload[tax.key] = !!draft[tax.key]
+      payload[tax.percentKey] = draft[tax.key]
+        ? draft[tax.percentKey] === '' || draft[tax.percentKey] == null
+          ? TAX_DEFAULTS[tax.key]
+          : Number(draft[tax.percentKey])
+        : null
+    }
     saveMutation.mutate(payload)
   }
 
@@ -329,12 +412,34 @@ export function ProductDetailPage() {
     }
 
     if (f.type === 'select') {
-      const options =
-        f.key === 'vendorId'
-          ? [{ id: '', label: 'No Vendor' }, ...vendorOptions.map((v: any) => ({ id: v.id, label: v.vendorName }))]
-          : f.key === 'assignedTo'
-            ? [{ id: '', label: 'Unassigned' }, ...userOptions.map((u: any) => ({ id: u.id, label: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email }))]
-            : [{ id: '', label: '--None--' }, ...(f.options || []).map(o => ({ id: o, label: o }))]
+      if (f.key === 'vendorId') {
+        return (
+          <div className="space-y-1.5">
+            {label}
+            <VendorSearchSelect
+              value={String(value ?? '')}
+              vendors={vendorOptions}
+              onSelect={v => setField('vendorId', v === '' ? null : v)}
+              onAddNew={() => setVendorModalOpen(true)}
+              onOpenFullForm={() => navigate('/vendors/new')}
+            />
+          </div>
+        )
+      }
+      if (f.key === 'assignedTo') {
+        return (
+          <div className="space-y-1.5">
+            {label}
+            <UserRoleSelect
+              value={String(value ?? '')}
+              users={userOptions}
+              roles={roleOptions}
+              onSelect={v => setField('assignedTo', v === '' ? null : v)}
+            />
+          </div>
+        )
+      }
+      const options = [{ id: '', label: '--None--' }, ...(f.options || []).map(o => ({ id: o, label: o }))]
       return (
         <div className="space-y-1.5">
           {label}
@@ -357,13 +462,12 @@ export function ProductDetailPage() {
         <div className="space-y-1.5">
           {label}
           <textarea
-            rows={f.key === 'productName' ? 3 : 4}
+            rows={4}
             placeholder={f.placeholder}
             value={value || ''}
             onChange={e => setField(f.key, e.target.value)}
             className="flex w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           />
-          {f.key === 'productName' && <p className="text-xs text-slate-400">Use a full descriptive name — up to 200 characters.</p>}
         </div>
       )
     }
@@ -416,6 +520,62 @@ export function ProductDetailPage() {
       ))}
     </div>
   )
+
+  const renderTaxes = () => {
+    if (!editing) {
+      const active = TAX_FIELDS.filter(t => draft[t.key])
+      return active.length === 0
+        ? <span className="text-sm text-muted-foreground">—</span>
+        : (
+          <div className="flex flex-wrap gap-2">
+            {active.map(t => (
+              <span key={t.key} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-sm font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                {t.label.replace(' (%)', '')}: {draft[t.percentKey] ?? TAX_DEFAULTS[t.key]}%
+              </span>
+            ))}
+          </div>
+        )
+    }
+    return (
+      <div className="grid gap-x-4 gap-y-4 md:grid-cols-2 xl:grid-cols-4">
+        {TAX_FIELDS.map(t => {
+          const checked = !!draft[t.key]
+          const percentValue: any = draft[t.percentKey]
+          return (
+            <div key={t.key} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+              <label className="flex cursor-pointer items-center justify-between gap-2">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t.label}</span>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={e => {
+                    setField(t.key, e.target.checked)
+                    if (e.target.checked && (draft[t.percentKey] === '' || draft[t.percentKey] == null)) {
+                      setField(t.percentKey, TAX_DEFAULTS[t.key])
+                    }
+                  }}
+                  className="h-4 w-4 rounded accent-indigo-600"
+                />
+              </label>
+              {checked && (
+                <div className="mt-2 flex items-center gap-1.5">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={percentValue === null || percentValue === undefined ? '' : String(percentValue)}
+                    onChange={e => setField(t.percentKey, e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                  <span className="text-sm text-muted-foreground">%</span>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
 
   const renderImagesTab = () => {
     const images = draft.images || []
@@ -470,9 +630,16 @@ export function ProductDetailPage() {
                 </div>
               ))}
             </div>
-            <Button type="button" variant="outline" onClick={() => setField('images', [...images, { url: '', isDefault: images.length === 0 }])}>
-              <Plus size={14} className="mr-1.5" /> Add Image
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              <Button type="button" variant="outline" onClick={() => setField('images', [...images, { url: '', isDefault: images.length === 0 }])}>
+                <Plus size={14} className="mr-1.5" /> Add Image
+              </Button>
+              <Button type="button" variant="outline" disabled={uploadingImage} onClick={() => imageInputRef.current?.click()}>
+                {uploadingImage ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <CloudUpload size={14} className="mr-1.5" />}
+                Upload Image
+              </Button>
+            </div>
           </>
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -593,6 +760,7 @@ export function ProductDetailPage() {
                   <TabsTrigger value="stock"><Boxes size={14} className="mr-1.5" /> Stock Information</TabsTrigger>
                   <TabsTrigger value="prices"><Globe size={14} className="mr-1.5" /> Product Prices</TabsTrigger>
                   <TabsTrigger value="images"><ImageIcon size={14} className="mr-1.5" /> Product Images</TabsTrigger>
+                  <TabsTrigger value="taxes"><Star size={14} className="mr-1.5" /> Taxes</TabsTrigger>
                 </TabsList>
                 <TabsContent value="details">
                   {fieldGrid(DETAIL_FIELDS)}
@@ -606,11 +774,64 @@ export function ProductDetailPage() {
                 <TabsContent value="images">
                   {renderImagesTab()}
                 </TabsContent>
+                <TabsContent value="taxes">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-semibold">Product Taxes</h3>
+                      <p className="text-xs text-muted-foreground">Tick a tax to apply it. The percentage can be changed per product.</p>
+                    </div>
+                    {renderTaxes()}
+                  </div>
+                </TabsContent>
               </TabsRoot>
             </CardContent>
           </Card>
         </>
       )}
+
+      <Dialog open={vendorModalOpen} onOpenChange={setVendorModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Vendor</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Vendor Name *</label>
+              <Input value={vendorForm.vendorName || ''} onChange={e => setVendorForm(f => ({ ...f, vendorName: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Email</label>
+              <Input type="email" value={vendorForm.email || ''} onChange={e => setVendorForm(f => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Phone</label>
+              <Input value={vendorForm.phone || ''} onChange={e => setVendorForm(f => ({ ...f, phone: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Website</label>
+              <Input value={vendorForm.website || ''} onChange={e => setVendorForm(f => ({ ...f, website: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Category</label>
+              <Input value={vendorForm.category || ''} onChange={e => setVendorForm(f => ({ ...f, category: e.target.value }))} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button type="button" variant="outline" onClick={() => setVendorModalOpen(false)}>Cancel</Button>
+            <Button
+              type="button"
+              disabled={!vendorForm.vendorName || savingVendor}
+              onClick={() => {
+                setSavingVendor(true)
+                addVendorMutation.mutate(vendorForm, { onSettled: () => setSavingVendor(false) })
+              }}
+            >
+              {savingVendor ? <Loader2 size={15} className="mr-2 animate-spin" /> : <Plus size={15} className="mr-2" />}
+              Create Vendor
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={deleteOpen}

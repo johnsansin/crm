@@ -134,7 +134,8 @@ const booleanFields = new Set([
   'emailOptOut', 'notifyOwner', 'doNotCall', 'portal', 'discontinued',
   'active', 'isDefault', 'isActive', 'isPublic', 'isAdmin',
   'enableRecurring', 'pending', 'isRead', 'shared',
-  'syncCalendar', 'syncContacts', 'createContactIfMissing'
+  'syncCalendar', 'syncContacts', 'createContactIfMissing',
+  'vat', 'isService', 'isSales',
 ])
 
 const decimalFields = new Set([
@@ -151,6 +152,7 @@ const decimalFields = new Set([
   'hours', 'days', 'totalUnits', 'usedUnits',
   'plannedHours', 'actualHours', 'sequence',
   'amount', 'markupPercent', 'paidAmount',
+  'vatPercentage', 'servicePercentage', 'salesPercentage',
 ])
 
 function fixBooleans(data: any) {
@@ -467,6 +469,7 @@ export function entityRouter(moduleName: string): Router {
       fixDecimals(data)
       delete data.products
       delete data.stageHistory
+      delete data.images
       if (modelName === 'currency' && data.isDefault) {
         await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
       }
@@ -527,6 +530,7 @@ export function entityRouter(moduleName: string): Router {
       fixDecimals(data)
       delete data.products
       delete data.stageHistory
+      delete data.images
       if (modelName === 'currency' && data.isDefault) {
         await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
       }
