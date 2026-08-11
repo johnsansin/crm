@@ -245,6 +245,7 @@ export function ProductDetailPage() {
   const [savingVendor, setSavingVendor] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   const { data: record, isLoading } = useQuery({
     queryKey: ['products', id],
@@ -597,23 +598,19 @@ export function ProductDetailPage() {
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {images.map((img, idx) => (
                 <div key={idx} className="rounded-lg border p-3">
-                  <div className="mb-2 flex h-32 items-center justify-center overflow-hidden rounded-md bg-slate-100 dark:bg-slate-800">
+                  <button
+                    type="button"
+                    title="Click to view"
+                    onClick={() => img.url && setLightboxUrl(img.url)}
+                    className="mb-2 flex h-32 w-full cursor-pointer items-center justify-center overflow-hidden rounded-md bg-slate-100 dark:bg-slate-800"
+                  >
                     {img.url ? (
                       <img src={img.url} alt={`Product image ${idx + 1}`} className="h-full w-full object-cover" />
                     ) : (
                       <ImageIcon size={22} className="text-slate-400" />
                     )}
-                  </div>
+                  </button>
                   <div className="space-y-2">
-                    <Input
-                      placeholder="Image URL"
-                      value={img.url}
-                      onChange={e => {
-                        const next = [...images]
-                        next[idx] = { ...next[idx], url: e.target.value }
-                        setField('images', next)
-                      }}
-                    />
                     <div className="flex items-center justify-between">
                       <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium">
                         <input
@@ -652,11 +649,17 @@ export function ProductDetailPage() {
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {images.map((img, idx) => (
-              <div key={idx} className="relative overflow-hidden rounded-lg border">
+              <button
+                key={idx}
+                type="button"
+                title="Click to view"
+                onClick={() => img.url && setLightboxUrl(img.url)}
+                className="relative block h-40 w-full cursor-pointer overflow-hidden rounded-lg border"
+              >
                 {img.url ? (
-                  <img src={img.url} alt={`Product image ${idx + 1}`} className="h-40 w-full object-cover" />
+                  <img src={img.url} alt={`Product image ${idx + 1}`} className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-40 items-center justify-center bg-slate-100 dark:bg-slate-800">
+                  <div className="flex h-full items-center justify-center bg-slate-100 dark:bg-slate-800">
                     <ImageIcon size={22} className="text-slate-400" />
                   </div>
                 )}
@@ -665,7 +668,7 @@ export function ProductDetailPage() {
                     <Star size={11} /> Default
                   </span>
                 )}
-              </div>
+              </button>
             ))}
             {images.length === 0 && (
               <p className="text-sm text-muted-foreground">No images added yet.</p>
@@ -838,6 +841,14 @@ export function ProductDetailPage() {
               Create Vendor
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!lightboxUrl} onOpenChange={o => !o && setLightboxUrl(null)}>
+        <DialogContent className="max-w-4xl p-3 sm:p-4">
+          {lightboxUrl ? (
+            <img src={lightboxUrl} alt="Product image" className="max-h-[80vh] w-full rounded-lg object-contain" />
+          ) : null}
         </DialogContent>
       </Dialog>
 
