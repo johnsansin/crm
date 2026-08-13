@@ -96,6 +96,9 @@ function buildGroups(modules: any[] | null) {
     if (!byGroup[m.parent]) byGroup[m.parent] = []
     byGroup[m.parent].push({ module: m.name, label: m.label || m.name, icon: m.icon || 'FileText' })
   }
+  if (!byGroup['Tools']?.some((m: any) => m.module === 'trash')) {
+    byGroup['Tools'] = [...(byGroup['Tools'] || []), { module: 'trash', label: 'Recycle Bin', icon: 'Trash2' }]
+  }
   const groups: string[] = []
   for (const g of GROUP_ORDER) if (byGroup[g]) groups.push(g)
   for (const g of Object.keys(byGroup)) if (!groups.includes(g)) groups.push(g)
@@ -162,6 +165,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
         <div className="flex-1 overflow-y-auto py-2 px-2 space-y-1 scrollbar-thin">
           <NavItem module="" label={t('Dashboard')} icon="LayoutDashboard" collapsed={collapsed} />
           <NavItem module="calendar" label={t('Calendar')} icon="CalendarDays" collapsed={collapsed} />
+          <NavItem module="chat" label={t('Chat')} icon="MessageSquare" collapsed={collapsed} />
           <NavItem module="forecast" label={t('Forecasting')} icon="LineChart" collapsed={collapsed} />
 
           {menuGroups.map((group) => {

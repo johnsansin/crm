@@ -17,8 +17,13 @@ import { ProjectSearchSelect } from '@/components/project-search-select'
 import { UserRoleSelect, userDisplayName } from '@/components/user-role-select'
 import { SearchSelect } from '@/components/search-select'
 import { VendorSearchSelect } from '@/components/vendor-search-select'
+import { AccountSearchSelect } from '@/components/account-search-select'
+import { ContactSearchSelect } from '@/components/contact-search-select'
+import { ProductSearchSelect } from '@/components/product-search-select'
 import { DateField } from '@/components/ui/date-field'
-import { ArrowLeft, Save, Loader2, Trash2, Pencil, ChevronRight, Asterisk, ImagePlus, Plus, Package, History } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Trash2, Pencil, ChevronRight, Asterisk, ImagePlus, Plus, Package, History, GitMerge } from 'lucide-react'
+import { MergeRecordsDialog, MERGEABLE_MODULES } from '@/components/merge-records-dialog'
+import { fieldConfigs } from '@/lib/module-fields'
 
 const labelMap: Record<string, string> = {
   accounts: 'Account', contacts: 'Contact', leads: 'Lead',
@@ -44,496 +49,87 @@ const TAB_ACTIVE_COLORS = [
 ]
 
 const SELECT_OPTIONS: Record<string, Record<string, string[]>> = {
-  accounts: { industry: ['--None--','Apparel','Banking','Biotechnology','Chemicals','Communications','Construction','Consulting','Education','Electronics','Energy','Engineering','Entertainment','Environmental','Finance','Food & Beverage','Government','Healthcare','Hospitality','Insurance','Machinery','Manufacturing','Media','Not for Profit','Other','Recreation','Retail','Shipping','Technology','Telecommunications','Transportation','Utilities'], accountType: ['--None--','Prospect','Customer','Vendor','Reseller','Partner','Investor','Other'] },
-  leads: { leadStatus: ['--None--','New','Contacted','Working','Qualified','Unqualified','Converted','Junk','Lost'], leadSource: ['--None--','Cold Call','Existing Customer','Self Generated','Employee','Partner','Public Relations','Direct Mail','Conference','Trade Show','Website','Word of Mouth','Email','Campaign','Other'], salutation: ['--None--','Mr.','Ms.','Mrs.','Dr.','Prof.'], industry: ['--None--','Apparel','Banking','Biotechnology','Chemicals','Communications','Construction','Consulting','Education','Electronics','Energy','Engineering','Entertainment','Environmental','Finance','Food & Beverage','Government','Healthcare','Hospitality','Insurance','Machinery','Manufacturing','Media','Not for Profit','Other','Recreation','Retail','Shipping','Technology','Telecommunications','Transportation','Utilities'] },
-  potentials: { stage: ['--None--','Prospecting','Qualification','Needs Analysis','Value Proposition','Id. Decision Makers','Perception Analysis','Proposal/Price Quote','Negotiation/Review','Closed Won','Closed Lost'], leadSource: ['--None--','Cold Call','Existing Customer','Self Generated','Employee','Partner','Public Relations','Direct Mail','Conference','Trade Show','Website','Word of Mouth','Email','Campaign','Other'], type: ['--None--','Existing Business','New Business'], forecastCategory: ['--None--','Pipeline','Best Case','Commit','Closed','Omitted'] },
-  campaigns: { campaignType: ['--None--','Marketing','Webinar','Email','Newsletter','Product Launch','Partners','Referral Program','Social Media','Television','Print','Other'], status: ['--None--','Planning','Active','Inactive','Completed','Cancelled'] },
-  tickets: { status: ['--None--','Open','In Progress','Wait for Response','Closed'], priority: ['--None--','Low','Medium','High','Urgent'], severity: ['--None--','Minor','Major','Critical','Feature'], category: ['--None--','General','Technical','Billing','Sales','Administrative'] },
-  projects: { status: ['--None--','Prospecting','Initiated','In Progress','Waiting for Feedback','On Hold','Completed','Delivered','Cancelled'], priority: ['--None--','Low','Medium','High','Urgent'], projectType: ['--None--','Internal','External','Research & Development','Training','Other'] },
-  projecttasks: { status: ['--None--','Not Started','In Progress','Completed','Deferred','Waiting for Feedback'], priority: ['--None--','Low','Medium','High','Urgent'], projectTaskType: ['--None--','Development','Design','Testing','Documentation','Meeting','Administrative','Other'] },
-  projectmilestones: { status: ['--None--','Not Started','In Progress','Completed','Deferred'], milestoneType: ['--None--','Internal','External','Milestone'] },
-  invoices: { invoiceStatus: ['--None--','Created','Sent','Paid','Partially Paid','Cancelled','Credit'], taxType: ['--None--','Individual','Group','VAT','GST','Sales Tax'] },
-  quotes: { quoteStage: ['--None--','Created','Draft','Reviewed','Delivered','Accepted','Rejected'], taxType: ['--None--','Individual','Group','VAT','GST','Sales Tax'] },
-  salesorders: { soStatus: ['--None--','Created','Approved','Delivered','Cancelled'], taxType: ['--None--','Individual','Group','VAT','GST','Sales Tax'] },
-  purchaseorders: { poStatus: ['--None--','Created','Approved','Delivered','Cancelled'], taxType: ['--None--','Individual','Group','VAT','GST','Sales Tax'] },
-  assets: { status: ['--None--','In Service','Out of Service','Disposed'] },
-  servicecontracts: { contractType: ['--None--','Support','Service','Maintenance','SLA'], status: ['--None--','In Planning','In Progress','Active','On Hold','Completed','Cancelled'], priority: ['--None--','Low','Medium','High','Urgent'], trackingUnit: ['--None--','Hours','Days','Months','Years','Support Incidents'] },
-  faq: { status: ['--None--','Draft','Published','Archived'], category: ['--None--','General','Technical','Billing','Sales','Support'] },
-  products: { productCategory: ['--None--','Hardware','Software','Services','Consulting','Training','Other'], manufacturer: ['--None--','ACME Corp','Alpha Manufacturing','Beta Industries','Delta Tech','ElectroWorks','Global Parts','Mega Machines','Omega Systems','Precision Tools','Vertex Inc.'], glAccount: ['--None--','2204 - Inventory','2204 - Inventory Assets','4100 - Sales','5100 - Cost of Goods Sold','6100 - Product Purchases'], taxClass: ['--None--','Taxable','Exempt','Zero Rated','Reduced Rate'], usageUnit: ['--None--','Each','Hour','Day','Month','Year','Box','Dozen','Kg','Lb','Set'], commissionMethod: ['--None--','Fixed','Percentage'] },
-  services: { serviceCategory: ['--None--','Consulting','Training','Support','Maintenance','Installation','Other'], usageUnit: ['--None--','Each','Hour','Day','Month','Year','Box','Dozen','Kg','Lb','Set'], commissionMethod: ['--None--','Fixed','Percentage'] },
-  vendors: { category: ['--None--','Software','Hardware','Services','Consulting','Training','Other'] },
+  accounts: {
+    industry: ['--None--','Apparel','Banking','Biotechnology','Chemicals','Communications','Construction','Consulting','Education','Electronics','Energy','Engineering','Entertainment','Environmental','Finance','Food & Beverage','Government','Healthcare','Hospitality','Insurance','Machinery','Manufacturing','Media','Not For Profit','Other','Recreation','Retail','Shipping','Technology','Telecommunications','Transportation','Utilities'],
+    accountType: ['--None--','Analyst','Competitor','Customer','Integrator','Investor','Partner','Press','Prospect','Reseller','Other'],
+    ownership: ['--None--','Private','Public'],
+    rating: ['--None--','Acquired','Active','Market Failed','Project Cancelled','Shutdown'],
+  },
+  contacts: {
+    salutation: ['--None--','Mr.','Ms.','Mrs.','Dr.','Prof.'],
+    leadSource: ['--None--','Cold Call','Existing Customer','Self Generated','Employee','Partner','Public Relations','Direct Mail','Conference','Trade Show','Web Site','Word of mouth','Other'],
+  },
+  leads: {
+    leadStatus: ['--None--','Attempted to Contact','Cold','Contact in Future','Contacted','Hot','Junk Lead','Lost Lead','Not Contacted','Pre Qualified','Qualified','Warm'],
+    leadSource: ['--None--','Cold Call','Existing Customer','Self Generated','Employee','Partner','Public Relations','Direct Mail','Conference','Trade Show','Web Site','Word of mouth','Other'],
+    salutation: ['--None--','Mr.','Ms.','Mrs.','Dr.','Prof.'],
+    industry: ['--None--','Apparel','Banking','Biotechnology','Chemicals','Communications','Construction','Consulting','Education','Electronics','Energy','Engineering','Entertainment','Environmental','Finance','Food & Beverage','Government','Healthcare','Hospitality','Insurance','Machinery','Manufacturing','Media','Not For Profit','Other','Recreation','Retail','Shipping','Technology','Telecommunications','Transportation','Utilities'],
+  },
+  potentials: {
+    stage: ['--None--','Prospecting','Qualification','Needs Analysis','Value Proposition','Id. Decision Makers','Perception Analysis','Proposal/Price Quote','Negotiation/Review','Closed Won','Closed Lost'],
+    leadSource: ['--None--','Cold Call','Existing Customer','Self Generated','Employee','Partner','Public Relations','Direct Mail','Conference','Trade Show','Web Site','Word of mouth','Other'],
+    type: ['--None--','Existing Business','New Business'],
+    forecastCategory: ['--None--','Pipeline','Best Case','Commit','Closed','Omitted'],
+  },
+  campaigns: {
+    campaignType: ['--None--','Conference','Webinar','Trade Show','Public Relations','Partners','Referral Program','Advertisement','Banner Ads','Direct Mail','Email','Telemarketing','Others'],
+    status: ['--None--','Planning','Active','Inactive','Completed','Cancelled'],
+  },
+  tickets: {
+    status: ['--None--','Open','In Progress','Wait For Response','Closed'],
+    priority: ['--None--','Low','Normal','High','Urgent'],
+    severity: ['--None--','Minor','Major','Feature','Critical'],
+    category: ['--None--','Big Problem','Small Problem','Other Problem'],
+  },
+  projects: {
+    status: ['--None--','Prospecting','Initiated','In Progress','Waiting for Feedback','On Hold','Completed','Delivered','Cancelled'],
+    priority: ['--None--','Low','Normal','High','Urgent'],
+    projectType: ['--None--','Internal','External','Research & Development','Training','Other'],
+  },
+  projecttasks: {
+    status: ['--None--','Not Started','In Progress','Completed','Deferred','Waiting for Feedback'],
+    priority: ['--None--','Low','Normal','High','Urgent'],
+    projectTaskType: ['--None--','Development','Design','Testing','Documentation','Meeting','Administrative','Other'],
+  },
+  projectmilestones: {
+    status: ['--None--','Not Started','In Progress','Completed','Deferred'],
+    milestoneType: ['--None--','Internal','External','Milestone'],
+  },
+  invoices: {
+    invoiceStatus: ['--None--','AutoCreated','Created','Approved','Sent','Credit Invoice','Paid'],
+    taxType: ['--None--','Individual','Group','VAT','GST','Sales Tax'],
+  },
+  quotes: {
+    quoteStage: ['--None--','Created','Delivered','Reviewed','Accepted','Rejected'],
+    taxType: ['--None--','Individual','Group','VAT','GST','Sales Tax'],
+    carrier: ['--None--','FedEx','UPS','USPS','DHL','BlueDart'],
+  },
+  salesorders: {
+    soStatus: ['--None--','Created','Approved','Delivered','Cancelled'],
+    taxType: ['--None--','Individual','Group','VAT','GST','Sales Tax'],
+    carrier: ['--None--','FedEx','UPS','USPS','DHL','BlueDart'],
+  },
+  purchaseorders: {
+    poStatus: ['--None--','Created','Approved','Delivered','Cancelled','Received Shipment'],
+    taxType: ['--None--','Individual','Group','VAT','GST','Sales Tax'],
+    carrier: ['--None--','FedEx','UPS','USPS','DHL','BlueDart'],
+  },
+  assets: { status: ['--None--','In Service','Out-of-service'] },
+  servicecontracts: {
+    contractType: ['--None--','Support','Service','Maintenance','SLA'],
+    status: ['--None--','In Planning','In Progress','Active','On Hold','Completed','Cancelled'],
+    priority: ['--None--','Low','Normal','High','Urgent'],
+    trackingUnit: ['--None--','Hours','Days','Months','Years','Support Incidents'],
+  },
+  faq: { status: ['--None--','Draft','Reviewed','Published','Obsolete'], category: ['--None--','General'] },
+  products: { productCategory: ['--None--','Hardware','Software','CRM Applications'], manufacturer: ['--None--','AltvetPet Inc.','LexPon Inc.','MetBeat Corp'], glAccount: ['--None--','2204 - Inventory','4100 - Sales','5100 - Cost of Goods Sold','300-Sales-Software','301-Sales-Hardware','305-Sales Other'], taxClass: ['--None--','SalesTax','Vat'], usageUnit: ['--None--','Box','Carton','Dozen','Each','Hours','Impressions','Lb','M','Pack','Pages','Pieces','Quantity','Reams','Sheet','Spiral Binder','Sq Ft'], commissionMethod: ['--None--','Fixed','Percentage'] },
+  services: { serviceCategory: ['--None--','Consulting','Training','Support','Maintenance','Installation','Other'], usageUnit: ['--None--','Box','Carton','Dozen','Each','Hours','Impressions','Lb','M','Pack','Pages','Pieces','Quantity','Reams','Sheet','Spiral Binder','Sq Ft'], commissionMethod: ['--None--','Fixed','Percentage'] },
+  vendors: { glAccount: ['--None--','300-Sales-Software','301-Sales-Hardware','302-Rental-Income','303-Interest-Income','304-Sales-Software-Support','305-Sales Other','306-Internet Sales','307-Service-Hardware Labor','308-Sales-Books'] },
   documents: { fileType: ['--None--','PDF','Document','Spreadsheet','Presentation','Image','Video','Audio','Archive','Other'], fileStatus: ['--None--','Active','Archived','Deleted'] },
   emails: { emailFlag: ['--None--','Sent','Received','Draft','Spam','Forwarded'] },
   smsnotifier: { status: ['--None--','Sent','Failed','Queued'] }
 }
 
-const fieldConfigs: Record<string, { name: string; type: string; required?: boolean }[]> = {
-  accounts: [
-    { name: 'accountName', type: 'text', required: true },
-    { name: 'accountNo', type: 'text' },
-    { name: 'parentId', type: 'text' },
-    { name: 'website', type: 'text' },
-    { name: 'phone', type: 'text' },
-    { name: 'otherPhone', type: 'text' },
-    { name: 'fax', type: 'text' },
-    { name: 'email', type: 'email' },
-    { name: 'email2', type: 'email' },
-    { name: 'emailOptOut', type: 'text' },
-    { name: 'notifyOwner', type: 'text' },
-    { name: 'industry', type: 'select' },
-    { name: 'accountType', type: 'select' },
-    { name: 'ownership', type: 'text' },
-    { name: 'rating', type: 'text' },
-    { name: 'sicCode', type: 'text' },
-    { name: 'tickerSymbol', type: 'text' },
-    { name: 'annualRevenue', type: 'number' },
-    { name: 'employees', type: 'number' },
-    { name: 'description', type: 'textarea' },
-    { name: 'billingStreet', type: 'text' },
-    { name: 'billingCity', type: 'text' },
-    { name: 'billingState', type: 'text' },
-    { name: 'billingCountry', type: 'text' },
-    { name: 'billingPostalCode', type: 'text' },
-    { name: 'billingPoBox', type: 'text' },
-    { name: 'shippingStreet', type: 'text' },
-    { name: 'shippingCity', type: 'text' },
-    { name: 'shippingState', type: 'text' },
-    { name: 'shippingCountry', type: 'text' },
-    { name: 'shippingPostalCode', type: 'text' },
-    { name: 'shippingPoBox', type: 'text' },
-  ],
-  contacts: [
-    { name: 'firstName', type: 'text', required: true },
-    { name: 'lastName', type: 'text', required: true },
-    { name: 'email', type: 'email' },
-    { name: 'secondaryEmail', type: 'email' },
-    { name: 'phone', type: 'text' },
-    { name: 'mobile', type: 'text' },
-    { name: 'homePhone', type: 'text' },
-    { name: 'otherPhone', type: 'text' },
-    { name: 'fax', type: 'text' },
-    { name: 'title', type: 'text' },
-    { name: 'department', type: 'text' },
-    { name: 'assistant', type: 'text' },
-    { name: 'assistantPhone', type: 'text' },
-    { name: 'dob', type: 'date' },
-    { name: 'reportsTo', type: 'text' },
-    { name: 'leadSource', type: 'select' },
-    { name: 'description', type: 'textarea' },
-    { name: 'mailingStreet', type: 'text' },
-    { name: 'mailingCity', type: 'text' },
-    { name: 'mailingState', type: 'text' },
-    { name: 'mailingCountry', type: 'text' },
-    { name: 'mailingPostalCode', type: 'text' },
-    { name: 'mailingPoBox', type: 'text' },
-    { name: 'otherStreet', type: 'text' },
-    { name: 'otherCity', type: 'text' },
-    { name: 'otherState', type: 'text' },
-    { name: 'otherCountry', type: 'text' },
-    { name: 'otherPostalCode', type: 'text' },
-    { name: 'otherPoBox', type: 'text' },
-  ],
-  leads: [
-    { name: 'salutation', type: 'select' },
-    { name: 'firstName', type: 'text', required: true },
-    { name: 'lastName', type: 'text', required: true },
-    { name: 'company', type: 'text', required: true },
-    { name: 'assignedTo', type: 'user-select', required: true },
-    { name: 'title', type: 'text' },
-    { name: 'email', type: 'email' },
-    { name: 'secondaryEmail', type: 'email' },
-    { name: 'phone', type: 'text' },
-    { name: 'mobile', type: 'text' },
-    { name: 'fax', type: 'text' },
-    { name: 'website', type: 'text' },
-    { name: 'leadSource', type: 'select' },
-    { name: 'leadStatus', type: 'select' },
-    { name: 'industry', type: 'select' },
-    { name: 'annualRevenue', type: 'number' },
-    { name: 'noOfEmployees', type: 'number' },
-    { name: 'rating', type: 'text' },
-    { name: 'interest', type: 'text' },
-    { name: 'description', type: 'textarea' },
-    { name: 'street', type: 'text' },
-    { name: 'city', type: 'text' },
-    { name: 'state', type: 'text' },
-    { name: 'country', type: 'text' },
-    { name: 'postalCode', type: 'text' },
-    { name: 'poBox', type: 'text' },
-  ],
-  potentials: [
-    { name: 'potentialName', type: 'text', required: true },
-    { name: 'amount', type: 'number' },
-    { name: 'closingDate', type: 'date' },
-    { name: 'stage', type: 'select' },
-    { name: 'probability', type: 'number' },
-    { name: 'type', type: 'select' },
-    { name: 'leadSource', type: 'select' },
-    { name: 'forecastCategory', type: 'select' },
-    { name: 'outcomeAnalysis', type: 'text' },
-    { name: 'nextStep', type: 'text' },
-    { name: 'description', type: 'textarea' },
-  ],
-  tickets: [
-    { name: 'title', type: 'text', required: true },
-    { name: 'description', type: 'textarea' },
-    { name: 'status', type: 'select' },
-    { name: 'priority', type: 'select' },
-    { name: 'severity', type: 'select' },
-    { name: 'category', type: 'select' },
-    { name: 'solution', type: 'textarea' },
-    { name: 'updateLog', type: 'textarea' },
-    { name: 'hours', type: 'number' },
-    { name: 'days', type: 'number' },
-    { name: 'fromMail', type: 'email' },
-    { name: 'versionId', type: 'text' },
-  ],
-  products: [
-    { name: 'productNo', type: 'text' },
-    { name: 'productName', type: 'text', required: true },
-    { name: 'image', type: 'image' },
-    { name: 'productCategory', type: 'search-select' },
-    { name: 'manufacturer', type: 'search-select' },
-    { name: 'glAccount', type: 'search-select' },
-    { name: 'usageUnit', type: 'search-select' },
-    { name: 'taxClass', type: 'search-select' },
-    { name: 'isActive', type: 'checkbox' },
-    { name: 'vat', type: 'checkbox' },
-    { name: 'isService', type: 'checkbox' },
-    { name: 'isSales', type: 'checkbox' },
-    { name: 'serialNo', type: 'text' },
-    { name: 'mfrPartNo', type: 'text' },
-    { name: 'vendorPartNo', type: 'text' },
-    { name: 'productSheet', type: 'text' },
-    { name: 'qtyPerUnit', type: 'text' },
-    { name: 'website', type: 'text' },
-    { name: 'unitPrice', type: 'number' },
-    { name: 'costPrice', type: 'number' },
-    { name: 'commissionRate', type: 'number' },
-    { name: 'commissionMethod', type: 'search-select' },
-    { name: 'qtyInStock', type: 'number' },
-    { name: 'reorderLevel', type: 'number' },
-    { name: 'qtyOnOrder', type: 'number' },
-    { name: 'qtyInDemand', type: 'number' },
-    { name: 'weight', type: 'number' },
-    { name: 'packSize', type: 'number' },
-    { name: 'vendorId', type: 'vendor-select' },
-    { name: 'assignedTo', type: 'user-select' },
-    { name: 'description', type: 'textarea' },
-  ],
-  projects: [
-    { name: 'projectName', type: 'text', required: true },
-    { name: 'projectNo', type: 'text' },
-    { name: 'projectType', type: 'select' },
-    { name: 'status', type: 'select' },
-    { name: 'priority', type: 'select' },
-    { name: 'progress', type: 'number' },
-    { name: 'assignedTo', type: 'user-select' },
-    { name: 'startDate', type: 'date' },
-    { name: 'endDate', type: 'date' },
-    { name: 'actualEndDate', type: 'date' },
-    { name: 'targetBudget', type: 'number' },
-    { name: 'actualBudget', type: 'number' },
-    { name: 'url', type: 'text' },
-    { name: 'description', type: 'textarea' },
-  ],
-  campaigns: [
-    { name: 'campaignName', type: 'text', required: true },
-    { name: 'campaignType', type: 'select' },
-    { name: 'status', type: 'select' },
-    { name: 'startDate', type: 'date' },
-    { name: 'endDate', type: 'date' },
-    { name: 'closingDate', type: 'date' },
-    { name: 'expectedRevenue', type: 'number' },
-    { name: 'budget', type: 'number' },
-    { name: 'actualCost', type: 'number' },
-    { name: 'expectedResponse', type: 'number' },
-    { name: 'targetSize', type: 'number' },
-    { name: 'sponsor', type: 'text' },
-    { name: 'targetAudience', type: 'text' },
-    { name: 'expectedROI', type: 'number' },
-    { name: 'actualROI', type: 'number' },
-    { name: 'description', type: 'textarea' },
-  ],
-  invoices: [
-    { name: 'subject', type: 'text', required: true },
-    { name: 'invoiceNo', type: 'text' },
-    { name: 'invoiceDate', type: 'date' },
-    { name: 'dueDate', type: 'date' },
-    { name: 'grandTotal', type: 'number' },
-    { name: 'subTotal', type: 'number' },
-    { name: 'discount', type: 'number' },
-    { name: 'discountPercent', type: 'number' },
-    { name: 'adjustment', type: 'number' },
-    { name: 'shipping', type: 'number' },
-    { name: 'shippingHandling', type: 'number' },
-    { name: 'taxAmount', type: 'number' },
-    { name: 'total', type: 'number' },
-    { name: 'salesCommission', type: 'number' },
-    { name: 'exciseDuty', type: 'number' },
-    { name: 'customerNo', type: 'text' },
-    { name: 'purchaseOrderNo', type: 'text' },
-    { name: 'invoiceStatus', type: 'select' },
-    { name: 'taxType', type: 'select' },
-    { name: 'notes', type: 'textarea' },
-    { name: 'terms', type: 'textarea' },
-    { name: 'description', type: 'textarea' },
-    { name: 'billingStreet', type: 'text' },
-    { name: 'billingCity', type: 'text' },
-    { name: 'billingState', type: 'text' },
-    { name: 'billingCountry', type: 'text' },
-    { name: 'billingPostalCode', type: 'text' },
-    { name: 'billingPoBox', type: 'text' },
-    { name: 'shippingStreet', type: 'text' },
-    { name: 'shippingCity', type: 'text' },
-    { name: 'shippingState', type: 'text' },
-    { name: 'shippingCountry', type: 'text' },
-    { name: 'shippingPostalCode', type: 'text' },
-    { name: 'shippingPoBox', type: 'text' },
-  ],
-  services: [
-    { name: 'serviceName', type: 'text', required: true },
-    { name: 'serviceNo', type: 'text' },
-    { name: 'serviceCategory', type: 'select' },
-    { name: 'unitPrice', type: 'number' },
-    { name: 'costPrice', type: 'number' },
-    { name: 'commissionRate', type: 'number' },
-    { name: 'commissionMethod', type: 'select' },
-    { name: 'usageUnit', type: 'select' },
-    { name: 'reorderLevel', type: 'number' },
-    { name: 'qtyInStock', type: 'number' },
-    { name: 'qtyInDemand', type: 'number' },
-    { name: 'website', type: 'text' },
-    { name: 'serialNo', type: 'text' },
-    { name: 'glAccount', type: 'text' },
-    { name: 'taxClass', type: 'text' },
-    { name: 'description', type: 'textarea' },
-  ],
-  vendors: [
-    { name: 'vendorName', type: 'text', required: true },
-    { name: 'email', type: 'email' },
-    { name: 'phone', type: 'text' },
-    { name: 'mobile', type: 'text' },
-    { name: 'website', type: 'text' },
-    { name: 'category', type: 'select' },
-    { name: 'glAccount', type: 'text' },
-    { name: 'description', type: 'textarea' },
-    { name: 'street', type: 'text' },
-    { name: 'city', type: 'text' },
-    { name: 'state', type: 'text' },
-    { name: 'country', type: 'text' },
-    { name: 'postalCode', type: 'text' },
-  ],
-  pricebooks: [
-    { name: 'priceBookName', type: 'text', required: true },
-    { name: 'active', type: 'text' },
-    { name: 'description', type: 'textarea' },
-  ],
-  quotes: [
-    { name: 'subject', type: 'text', required: true },
-    { name: 'quoteNo', type: 'text' },
-    { name: 'validUntil', type: 'date' },
-    { name: 'grandTotal', type: 'number' },
-    { name: 'subTotal', type: 'number' },
-    { name: 'discount', type: 'number' },
-    { name: 'discountPercent', type: 'number' },
-    { name: 'adjustment', type: 'number' },
-    { name: 'shipping', type: 'number' },
-    { name: 'shippingHandling', type: 'number' },
-    { name: 'taxAmount', type: 'number' },
-    { name: 'total', type: 'number' },
-    { name: 'carrier', type: 'text' },
-    { name: 'inventoryManager', type: 'text' },
-    { name: 'taxType', type: 'select' },
-    { name: 'quoteStage', type: 'select' },
-    { name: 'terms', type: 'textarea' },
-    { name: 'description', type: 'textarea' },
-    { name: 'billingStreet', type: 'text' },
-    { name: 'billingCity', type: 'text' },
-    { name: 'billingState', type: 'text' },
-    { name: 'billingCountry', type: 'text' },
-    { name: 'billingPostalCode', type: 'text' },
-    { name: 'billingPoBox', type: 'text' },
-    { name: 'shippingStreet', type: 'text' },
-    { name: 'shippingCity', type: 'text' },
-    { name: 'shippingState', type: 'text' },
-    { name: 'shippingCountry', type: 'text' },
-    { name: 'shippingPostalCode', type: 'text' },
-    { name: 'shippingPoBox', type: 'text' },
-  ],
-  salesorders: [
-    { name: 'subject', type: 'text', required: true },
-    { name: 'salesOrderNo', type: 'text' },
-    { name: 'validUntil', type: 'date' },
-    { name: 'grandTotal', type: 'number' },
-    { name: 'subTotal', type: 'number' },
-    { name: 'discount', type: 'number' },
-    { name: 'discountPercent', type: 'number' },
-    { name: 'adjustment', type: 'number' },
-    { name: 'shipping', type: 'number' },
-    { name: 'shippingHandling', type: 'number' },
-    { name: 'taxAmount', type: 'number' },
-    { name: 'total', type: 'number' },
-    { name: 'carrier', type: 'text' },
-    { name: 'customerNo', type: 'text' },
-    { name: 'purchaseOrderNo', type: 'text' },
-    { name: 'salesCommission', type: 'number' },
-    { name: 'exciseDuty', type: 'number' },
-    { name: 'soStatus', type: 'select' },
-    { name: 'taxType', type: 'select' },
-    { name: 'terms', type: 'textarea' },
-    { name: 'description', type: 'textarea' },
-    { name: 'billingStreet', type: 'text' },
-    { name: 'billingCity', type: 'text' },
-    { name: 'billingState', type: 'text' },
-    { name: 'billingCountry', type: 'text' },
-    { name: 'billingPostalCode', type: 'text' },
-    { name: 'billingPoBox', type: 'text' },
-    { name: 'shippingStreet', type: 'text' },
-    { name: 'shippingCity', type: 'text' },
-    { name: 'shippingState', type: 'text' },
-    { name: 'shippingCountry', type: 'text' },
-    { name: 'shippingPostalCode', type: 'text' },
-    { name: 'shippingPoBox', type: 'text' },
-  ],
-  purchaseorders: [
-    { name: 'subject', type: 'text', required: true },
-    { name: 'purchaseOrderNo', type: 'text' },
-    { name: 'validUntil', type: 'date' },
-    { name: 'grandTotal', type: 'number' },
-    { name: 'subTotal', type: 'number' },
-    { name: 'discount', type: 'number' },
-    { name: 'discountPercent', type: 'number' },
-    { name: 'adjustment', type: 'number' },
-    { name: 'shipping', type: 'number' },
-    { name: 'shippingHandling', type: 'number' },
-    { name: 'taxAmount', type: 'number' },
-    { name: 'total', type: 'number' },
-    { name: 'carrier', type: 'text' },
-    { name: 'salesCommission', type: 'number' },
-    { name: 'exciseDuty', type: 'number' },
-    { name: 'poStatus', type: 'select' },
-    { name: 'taxType', type: 'select' },
-    { name: 'vendorId', type: 'vendor-select' },
-    { name: 'contactId', type: 'text' },
-    { name: 'terms', type: 'textarea' },
-    { name: 'description', type: 'textarea' },
-    { name: 'billingStreet', type: 'text' },
-    { name: 'billingCity', type: 'text' },
-    { name: 'billingState', type: 'text' },
-    { name: 'billingCountry', type: 'text' },
-    { name: 'billingPostalCode', type: 'text' },
-    { name: 'billingPoBox', type: 'text' },
-    { name: 'shippingStreet', type: 'text' },
-    { name: 'shippingCity', type: 'text' },
-    { name: 'shippingState', type: 'text' },
-    { name: 'shippingCountry', type: 'text' },
-    { name: 'shippingPostalCode', type: 'text' },
-    { name: 'shippingPoBox', type: 'text' },
-  ],
-  faq: [
-    { name: 'title', type: 'text', required: true },
-    { name: 'category', type: 'select' },
-    { name: 'status', type: 'select' },
-    { name: 'description', type: 'textarea' },
-    { name: 'answer', type: 'textarea' },
-  ],
-  documents: [
-    { name: 'title', type: 'text', required: true },
-    { name: 'fileName', type: 'file' },
-    { name: 'fileType', type: 'select' },
-    { name: 'fileLocationType', type: 'text' },
-    { name: 'fileStatus', type: 'select' },
-    { name: 'fileVersion', type: 'text' },
-    { name: 'noteContent', type: 'textarea' },
-    { name: 'folderId', type: 'text' },
-  ],
-  emails: [
-    { name: 'subject', type: 'text' },
-    { name: 'fromEmail', type: 'email' },
-    { name: 'toEmails', type: 'text' },
-    { name: 'ccEmails', type: 'text' },
-    { name: 'bccEmails', type: 'text' },
-    { name: 'emailFlag', type: 'select' },
-    { name: 'parentId', type: 'text' },
-    { name: 'parentModule', type: 'text' },
-    { name: 'body', type: 'textarea' },
-  ],
-  emailtemplates: [
-    { name: 'templateName', type: 'text', required: true },
-    { name: 'subject', type: 'text' },
-    { name: 'module', type: 'text' },
-    { name: 'folderName', type: 'text' },
-    { name: 'body', type: 'textarea' },
-  ],
-  projecttasks: [
-    { name: 'projectId', type: 'project-select', required: true },
-    { name: 'projectTaskNo', type: 'text' },
-    { name: 'title', type: 'text', required: true },
-    { name: 'status', type: 'select' },
-    { name: 'priority', type: 'select' },
-    { name: 'projectTaskType', type: 'select' },
-    { name: 'progress', type: 'number' },
-    { name: 'hours', type: 'number' },
-    { name: 'assignedTo', type: 'user-select' },
-    { name: 'startDate', type: 'date' },
-    { name: 'endDate', type: 'date' },
-    { name: 'description', type: 'textarea' },
-  ],
-  projectmilestones: [
-    { name: 'projectId', type: 'project-select', required: true },
-    { name: 'milestoneNo', type: 'text' },
-    { name: 'title', type: 'text', required: true },
-    { name: 'status', type: 'select' },
-    { name: 'progress', type: 'number' },
-    { name: 'milestoneDate', type: 'date' },
-    { name: 'milestoneType', type: 'select' },
-    { name: 'plannedHours', type: 'number' },
-    { name: 'actualHours', type: 'number' },
-    { name: 'sequence', type: 'number' },
-    { name: 'assignedTo', type: 'user-select' },
-    { name: 'startDate', type: 'date' },
-    { name: 'endDate', type: 'date' },
-    { name: 'description', type: 'textarea' },
-  ],
-  assets: [
-    { name: 'assetName', type: 'text', required: true },
-    { name: 'assetNo', type: 'text' },
-    { name: 'serialNo', type: 'text' },
-    { name: 'tagNumber', type: 'text' },
-    { name: 'datesInService', type: 'date' },
-    { name: 'dateOutOfService', type: 'date' },
-    { name: 'dateSold', type: 'date' },
-    { name: 'status', type: 'select' },
-    { name: 'shippingMethod', type: 'text' },
-    { name: 'shippingTrackingNumber', type: 'text' },
-    { name: 'description', type: 'textarea' },
-  ],
-  servicecontracts: [
-    { name: 'contractName', type: 'text', required: true },
-    { name: 'contractNo', type: 'text' },
-    { name: 'contractType', type: 'select' },
-    { name: 'status', type: 'select' },
-    { name: 'priority', type: 'select' },
-    { name: 'startDate', type: 'date' },
-    { name: 'endDate', type: 'date' },
-    { name: 'renewalDate', type: 'date' },
-    { name: 'trackingUnit', type: 'select' },
-    { name: 'totalUnits', type: 'number' },
-    { name: 'usedUnits', type: 'number' },
-    { name: 'unitPrice', type: 'number' },
-    { name: 'costPrice', type: 'number' },
-    { name: 'relatedTo', type: 'text' },
-    { name: 'relatedModule', type: 'text' },
-    { name: 'description', type: 'textarea' },
-  ],
-  smsnotifier: [
-    { name: 'toNumber', type: 'text', required: true },
-    { name: 'fromNumber', type: 'text' },
-    { name: 'message', type: 'textarea' },
-    { name: 'status', type: 'select' },
-  ],
-}
 
 function formatDisplayValue(value: any, type: string, name?: string) {
   if (value == null || value === '') return '-'
@@ -556,6 +152,7 @@ export function ModuleDetailPage() {
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showDelete, setShowDelete] = useState(false)
+  const [mergeOpen, setMergeOpen] = useState(false)
 
   const { data: record, isLoading: loadingRecord } = useQuery({
     queryKey: [mod, id],
@@ -600,6 +197,38 @@ export function ModuleDetailPage() {
   })
   const vendors = vendorsData?.data || []
 
+  const needsAccounts = mod === 'contacts' || mod === 'tickets' || mod === 'assets' || mod === 'servicecontracts' || mod === 'projects'
+  const { data: accountsData } = useQuery({
+    queryKey: ['module-accounts', mod],
+    queryFn: () => api.listAll('accounts'),
+    enabled: needsAccounts,
+  })
+  const accounts = accountsData?.data || []
+
+  const needsContacts = mod === 'contacts' || mod === 'tickets' || mod === 'assets' || mod === 'servicecontracts' || mod === 'projects' || mod === 'purchaseorders'
+  const { data: contactsData } = useQuery({
+    queryKey: ['module-contacts', mod],
+    queryFn: () => api.listAll('contacts'),
+    enabled: needsContacts,
+  })
+  const allContacts = contactsData?.data || []
+
+  const needsProducts = mod === 'tickets' || mod === 'assets'
+  const { data: productsData } = useQuery({
+    queryKey: ['module-products', mod],
+    queryFn: () => api.listAll('products'),
+    enabled: needsProducts,
+  })
+  const products = productsData?.data || []
+
+  const needsCurrencies = (fieldConfigs[mod] || []).some((f: any) => f.type === 'currency-select')
+  const { data: currenciesData } = useQuery({
+    queryKey: ['module-currencies', mod],
+    queryFn: () => api.listAll('currencies'),
+    enabled: needsCurrencies,
+  })
+  const currencies = (currenciesData?.data || [])
+
   const [vendorModalOpen, setVendorModalOpen] = useState(false)
   const [vendorForm, setVendorForm] = useState<Record<string, string>>({})
   const [savingVendor, setSavingVendor] = useState(false)
@@ -637,10 +266,15 @@ export function ModuleDetailPage() {
         if (Array.isArray(opts)) {
           merged[mod] = { ...(merged[mod] || {}), [field]: ['--None--', ...opts] }
         }
-      }
-    }
+      }    }
     return merged
   }, [picklistData, mod])
+
+  const { data: orgSettingsData } = useQuery({
+    queryKey: ['org-settings'],
+    queryFn: () => api.getOrgSettings(),
+  })
+  const stageProbability = (orgSettingsData?.stageProbability || {}) as Record<string, number>
 
   function formatRecordForForm(data: any) {
     const result: Record<string, any> = {}
@@ -668,7 +302,10 @@ export function ModuleDetailPage() {
         try { setFormData(JSON.parse(saved)); return } catch {}
       }
       const preseed: Record<string, any> = {}
-      if (searchParams.get('projectId')) preseed.projectId = searchParams.get('projectId')
+      for (const f of fieldConfigs[mod] || []) {
+        const qv = searchParams.get(f.name)
+        if (qv) preseed[f.name] = qv
+      }
       setFormData(preseed)
     } else if (record) {
       setFormData(formatRecordForForm(record))
@@ -738,7 +375,16 @@ export function ModuleDetailPage() {
   }
 
   const handleChange = (name: string, value: any) => {
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData(prev => {
+      const next = { ...prev, [name]: value }
+      if (mod === 'potentials' && name === 'stage' && value && value !== '--None--') {
+        const prob = stageProbability[value]
+        if (prob != null && (next.probability === '' || next.probability == null)) {
+          next.probability = prob
+        }
+      }
+      return next
+    })
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }))
   }
 
@@ -784,12 +430,28 @@ export function ModuleDetailPage() {
               <Button variant="outline" onClick={() => navigate(`/${mod}/${id}?edit=true`)}>
                 <Pencil size={16} className="mr-2" /> <span className="hidden sm:inline">Edit</span>
               </Button>
+              {MERGEABLE_MODULES.includes(mod) && (
+                <Button variant="outline" onClick={() => setMergeOpen(true)}>
+                  <GitMerge size={16} className="mr-2" /> <span className="hidden sm:inline">Merge</span>
+                </Button>
+              )}
               <Button variant="destructive" onClick={() => setShowDelete(true)}>
                 <Trash2 size={16} className="mr-2" /> <span className="hidden sm:inline">Delete</span>
               </Button>
             </div>
           </div>
         </div>
+        <MergeRecordsDialog
+          module={mod}
+          currentId={id!}
+          currentRecord={record}
+          open={mergeOpen}
+          onOpenChange={setMergeOpen}
+          onMerged={(targetId) => {
+            queryClient.invalidateQueries({ queryKey: [mod] })
+            navigate(`/${mod}/${targetId}`)
+          }}
+        />
         <Card>
           <CardContent className="p-0">
             <TabsRoot value={activeTab} onValueChange={setActiveTab}>
@@ -813,12 +475,26 @@ export function ModuleDetailPage() {
                             {(field as any).label || getFieldLabel(field.name)}
                           </label>
                           {field.name === 'image' && record?.image ? (
-                            <img src={record.image} alt={record.productName || 'Product'} className="mt-1.5 h-20 w-20 rounded-lg border object-cover" />
+                            <img src={record.image} alt={record.productName || record.firstName || 'Image'} className="mt-1.5 h-20 w-20 rounded-lg border object-cover" />
                           ) : (
                           <p className="text-sm mt-1.5 font-medium text-foreground">
                             {field.name === 'projectId'
                               ? (projects.find(p => p.id === record?.projectId)?.projectName || '-')
-                              : field.name === 'assignedTo'
+                              : field.name === 'accountId'
+                                ? (accounts.find(a => a.id === record?.accountId)?.accountName || '-')
+                                : field.name === 'reportsTo'
+                                  ? ((() => {
+                                      const c = allContacts.find((x: any) => x.id === record?.reportsTo)
+                                      return c ? [c.firstName, c.lastName].filter(Boolean).join(' ') : '-'
+                                    })())
+                                  : field.name === 'contactId'
+                                    ? ((() => {
+                                        const c = allContacts.find((x: any) => x.id === record?.contactId)
+                                        return c ? [c.firstName, c.lastName].filter(Boolean).join(' ') : '-'
+                                      })())
+                                  : field.name === 'productId'
+                                    ? (products.find((p: any) => p.id === record?.productId)?.productName || '-')
+                                    : field.name === 'assignedTo'
                                 ? ((() => {
                                     const assignedId = record?.assignedTo
                                     if (assignedId) {
@@ -844,6 +520,7 @@ export function ModuleDetailPage() {
           </CardContent>
         </Card>
         {mod === 'potentials' && !isNew && <PotentialExtras potentialId={id!} />}
+        {['accounts', 'contacts', 'campaigns', 'servicecontracts'].includes(mod) && !isNew && <RelatedRecords mod={mod} id={id!} />}
         {mod === 'projects' && !isNew && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
@@ -962,6 +639,10 @@ export function ModuleDetailPage() {
               users={users}
               roles={roles}
               vendors={vendors}
+              accounts={accounts}
+              allContacts={allContacts}
+              products={products}
+              currencies={currencies}
               uploadingImage={uploadingImage}
               onUploadImage={async (file: File) => {
                 setUploadingImage(true)
@@ -976,6 +657,7 @@ export function ModuleDetailPage() {
               }}
               onAddVendor={() => setVendorModalOpen(true)}
               onOpenVendorFullForm={() => navigate('/vendors/new')}
+              onOpenAccountFullForm={() => navigate('/accounts/new')}
               customFields={customFields}
             />
           </CardContent>
@@ -1056,8 +738,8 @@ export function ModuleDetailPage() {
   )
 }
 
-function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIONS: options, projects, users = [], roles = [], vendors = [], uploadingImage = false, onUploadImage, onAddVendor, onOpenVendorFullForm, customFields = [] }: {
-  module: string; fields: any[]; formData: any; errors: any; handleChange: any; SELECT_OPTIONS: any; projects: any[]; users?: any[]; roles?: any[]; vendors?: any[]; uploadingImage?: boolean; onUploadImage?: (file: File) => void; onAddVendor?: () => void; onOpenVendorFullForm?: () => void; customFields?: any[]
+function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIONS: options, projects, users = [], roles = [], vendors = [], accounts = [], allContacts = [], products = [], currencies = [], uploadingImage = false, onUploadImage, onAddVendor, onOpenVendorFullForm, onOpenAccountFullForm, customFields = [] }: {
+  module: string; fields: any[]; formData: any; errors: any; handleChange: any; SELECT_OPTIONS: any; projects: any[]; users?: any[]; roles?: any[]; vendors?: any[]; accounts?: any[]; allContacts?: any[]; products?: any[]; currencies?: any[]; uploadingImage?: boolean; onUploadImage?: (file: File) => void; onAddVendor?: () => void; onOpenVendorFullForm?: () => void; onOpenAccountFullForm?: () => void; customFields?: any[]
 }) {
   const tabs = [
     ...getFieldTabs(module, fields),
@@ -1094,6 +776,26 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                       value={formData[field.name] ?? ''}
                       onChange={e => handleChange(field.name, e.target.value)}
                     />
+                  ) : field.type === 'currency-select' ? (
+                    <Select
+                      value={formData[field.name] || '_none_'}
+                      onValueChange={(v: string) => {
+                        const code = v === '_none_' ? '' : v
+                        handleChange(field.name, code)
+                        const cur = currencies.find((c: any) => (c.code || c.name) === code)
+                        const rate = cur && Number(cur.rate) > 0 ? Number(cur.rate) : 1
+                        handleChange('conversionRate', rate)
+                      }}
+                    >
+                      <SelectTrigger className={cn(errors[field.name] ? 'border-destructive' : '', 'h-9')}>
+                        <SelectValue placeholder="--None--" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(['--None--', ...currencies.map((c: any) => c.code || c.name)]).map((o: string) => (
+                          <SelectItem key={o} value={o === '--None--' ? '_none_' : o}>{o}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   ) : field.type === 'select' && selOptions ? (
                     <Select
                       value={formData[field.name] || '_none_'}
@@ -1137,6 +839,33 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                       onAddNew={onAddVendor || (() => {})}
                       onOpenFullForm={onOpenVendorFullForm || (() => {})}
                     />
+                  ) : field.type === 'account-select' ? (
+                    <AccountSearchSelect
+                      value={formData[field.name] || ''}
+                      accounts={accounts}
+                      onSelect={v => handleChange(field.name, v)}
+                      onOpenFullForm={onOpenAccountFullForm || (() => {})}
+                    />
+                  ) : field.type === 'contact-select' ? (
+                    <ContactSearchSelect
+                      value={formData[field.name] || ''}
+                      contacts={allContacts}
+                      onSelect={v => handleChange(field.name, v)}
+                    />
+                  ) : field.type === 'product-select' ? (
+                    <div>
+                      <ProductSearchSelect
+                        value={formData[field.name] || ''}
+                        products={products}
+                        onSelect={(id: string) => handleChange(field.name, id)}
+                        placeholder="Search product..."
+                      />
+                      {formData[field.name] && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {products.find((p: any) => p.id === formData[field.name])?.productName || 'Product selected'}
+                        </p>
+                      )}
+                    </div>
                   ) : field.type === 'search-select' && selOptions ? (
                     <SearchSelect
                       value={formData[field.name] || ''}
@@ -1246,6 +975,82 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
         </TabsContent>
       ))}
     </TabsRoot>
+  )
+}
+
+function RelatedRecords({ mod, id }: { mod: string; id: string }) {
+  const navigate = useNavigate()
+  const defs: { module: string; filterKey: string; title: string; name: (r: any) => string; sub?: (r: any) => string; addPath: string }[] =
+    mod === 'accounts'
+      ? [
+          { module: 'contacts', filterKey: 'accountId', title: 'Related Contacts', name: r => [r.firstName, r.lastName].filter(Boolean).join(' '), sub: r => [r.email, r.phone].filter(Boolean).join(' · '), addPath: '/contacts/new' },
+          { module: 'potentials', filterKey: 'accountId', title: 'Related Opportunities', name: r => r.potentialName || r.id, sub: r => [r.amount != null ? `$${r.amount}` : '', r.stage].filter(Boolean).join(' · '), addPath: '/potentials/new' },
+          { module: 'projects', filterKey: 'accountId', title: 'Related Projects', name: r => r.projectName || r.id, sub: r => r.status, addPath: '/projects/new' },
+        ]
+        : mod === 'contacts'
+          ? [
+              { module: 'potentials', filterKey: 'contactId', title: 'Related Opportunities', name: r => r.potentialName || r.id, sub: r => [r.amount != null ? `$${r.amount}` : '', r.stage].filter(Boolean).join(' · '), addPath: '/potentials/new' },
+              { module: 'tickets', filterKey: 'contactId', title: 'Related Tickets', name: r => r.title || r.id, sub: r => [r.status, r.priority].filter(Boolean).join(' · '), addPath: '/tickets/new' },
+            ]
+          : mod === 'servicecontracts'
+            ? [
+                { module: 'tickets', filterKey: 'serviceContractId', title: 'Related Tickets', name: r => r.title || r.id, sub: r => [r.status, r.priority].filter(Boolean).join(' · '), addPath: '/tickets/new' },
+                { module: 'assets', filterKey: 'serviceContractId', title: 'Related Assets', name: r => r.assetName || r.id, sub: r => [r.serialNo, r.status].filter(Boolean).join(' · '), addPath: '/assets/new' },
+              ]
+            : [
+            { module: 'leads', filterKey: 'campaignId', title: 'Related Leads', name: r => [r.firstName, r.lastName].filter(Boolean).join(' '), sub: r => [r.company, r.leadStatus].filter(Boolean).join(' · '), addPath: '/leads/new' },
+            { module: 'potentials', filterKey: 'campaignId', title: 'Related Opportunities', name: r => r.potentialName || r.id, sub: r => [r.amount != null ? `$${r.amount}` : '', r.stage].filter(Boolean).join(' · '), addPath: '/potentials/new' },
+          ]
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {defs.map(d => (
+        <RelatedRecordsCard key={d.module} {...d} recordId={id} />
+      ))}
+    </div>
+  )
+}
+
+function RelatedRecordsCard({ module, filterKey, title, name, sub, addPath, recordId }: {
+  module: string; filterKey: string; title: string; name: (r: any) => string; sub?: (r: any) => string; addPath: string; recordId: string
+}) {
+  const navigate = useNavigate()
+  const { data, isLoading } = useQuery({
+    queryKey: [module, 'related', recordId, filterKey],
+    queryFn: () => api.listAll(module, { filter: JSON.stringify({ [filterKey]: recordId }) }),
+  })
+  const rows = data?.data || []
+
+  return (
+    <Card>
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold">{title}</h3>
+          <button type="button" onClick={() => navigate(`${addPath}?${filterKey}=${recordId}`)} className="text-xs font-medium text-primary hover:underline">
+            + Add
+          </button>
+        </div>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        ) : rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No related records yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {rows.map(r => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => navigate(`/${module}/${r.id}`)}
+                className="flex w-full items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2 text-left text-sm transition-colors hover:bg-accent/40"
+              >
+                <span className="truncate font-medium">{name(r)}</span>
+                {sub && (() => { const s = sub(r); return s ? <span className="truncate text-xs text-muted-foreground">{s}</span> : null })()}
+              </button>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

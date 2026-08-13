@@ -13,7 +13,7 @@ import { ProductSearchSelect } from '@/components/product-search-select'
 import { ServiceSearchSelect } from '@/components/service-search-select'
 import { UserRoleSelect } from '@/components/user-role-select'
 import { cn } from '@/lib/utils'
-import { formatDate, formatDateTime, useOrgSettings } from '@/lib/org-format'
+import { formatDate, formatDateTime, orgCurrency, useOrgSettings } from '@/lib/org-format'
 
 const EMPTY_LINE = { productId: '', serviceId: '', itemName: '', qty: 1, listPrice: 0, unitPrice: 0, discount: 0, discountPercent: 0, tax: 0, taxPercent: 0, netPrice: 0, lineTotal: 0, description: '', kind: 'product' }
 const STAGES = ['--None--', 'Created', 'Draft', 'Reviewed', 'Delivered', 'Accepted', 'Rejected']
@@ -62,6 +62,7 @@ export function QuotationsPage() {
     subject: '', quoteNo: '', validUntil: '', quoteStage: '', carrier: '', inventoryManager: '',
     taxType: '', total: 0, subTotal: 0, discount: 0, discountPercent: 0, adjustment: 0,
     shipping: 0, shippingHandling: 0, taxAmount: 0, grandTotal: 0,
+    currency: '', conversionRate: 1,
     accountId: '', contactId: '', potentialId: '',
     billingStreet: '', billingCity: '', billingState: '', billingCountry: '', billingPostalCode: '', billingPoBox: '',
     shippingStreet: '', shippingCity: '', shippingState: '', shippingCountry: '', shippingPostalCode: '', shippingPoBox: '',
@@ -76,6 +77,7 @@ export function QuotationsPage() {
   const [services, setServices] = useState<any[]>([])
   const [team, setTeam] = useState<any[]>([])
   const [roles, setRoles] = useState<any[]>([])
+  const [currencies, setCurrencies] = useState<any[]>([])
 
   const [related, setRelated] = useState<any>({ stageHistory: [], salesOrders: [], invoices: [], comments: [] })
   const [comment, setComment] = useState('')
@@ -88,6 +90,7 @@ export function QuotationsPage() {
       api.list('potentials').then(r => setPotentials(r.data || [])).catch(() => {}),
       api.list('products').then(r => setProducts(r.data || [])).catch(() => {}),
       api.list('services').then(r => setServices(r.data || [])).catch(() => {}),
+      api.listAll('currencies').then(r => setCurrencies(r.data || r || [])).catch(() => {}),
       api.request<any>('/quotations/users').then(r => { setTeam(r.data || []); setRoles(r.roles || []) }).catch(() => {}),
     ])
   }, [])
@@ -123,6 +126,7 @@ export function QuotationsPage() {
         shippingStreet: r.shippingStreet || '', shippingCity: r.shippingCity || '', shippingState: r.shippingState || '',
         shippingCountry: r.shippingCountry || '', shippingPostalCode: r.shippingPostalCode || '', shippingPoBox: r.shippingPoBox || '',
         terms: r.terms || '', description: r.description || '',
+        currency: r.currency || '', conversionRate: Number(r.conversionRate) || 1,
       })
       setLineItems((r.lineItems || []).map((i: any) => ({
         productId: i.productId || '', serviceId: i.serviceId || '', itemName: i.itemName || '',
@@ -152,11 +156,17 @@ export function QuotationsPage() {
 
   useEffect(() => {
     if (id && id !== 'new') loadRecord(id)
-    else if (id === 'new') { setMode('form'); setForm((prev: any) => ({ ...prev, quoteNo: 'QUO-' + Date.now() })) }
+    else if (id === 'new') { setMode('form'); setForm((prev: any) => ({ ...prev, quoteNo: 'QUO-' + Date.now(), currency: orgCurrency() })) }
   }, [id])
 
   function updateForm(field: string, value: any) {
     setForm((prev: any) => ({ ...prev, [field]: value }))
+  }
+
+  function handleCurrencyChange(code: string) {
+    const cur = currencies.find(c => (c.code || c.name) === code)
+    const rate = cur && Number(cur.rate) > 0 ? Number(cur.rate) : 1
+    setForm((prev: any) => ({ ...prev, currency: code, conversionRate: rate }))
   }
 
   function updateLineItem(idx: number, field: string, value: any) {
@@ -421,6 +431,8 @@ export function QuotationsPage() {
               <FormField {...fieldProps} field="carrier" type="text" />
               <FormField {...fieldProps} field="inventoryManager" type="text" />
               <FormField {...fieldProps} field="taxType" type="select" options={TAX_TYPES} />
+              <FormField {...fieldProps} field="currency" type="select" options={currencies.map((c: any) => c.code || c.name)} onSelect={handleCurrencyChange} />
+              <FormField {...fieldProps} field="conversionRate" type="number" />
               <FormField {...fieldProps} field="accountId" type="lookup" />
               <FormField {...fieldProps} field="contactId" type="lookup" />
               <FormField {...fieldProps} field="potentialId" type="lookup" />
@@ -656,13 +668,14 @@ export function QuotationsPage() {
               <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{Number(r.taxAmount || 0).toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{Number(r.shipping || 0).toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Adjustment</span><span>{Number(r.adjustment || 0).toFixed(2)}</span></div>
-              <div className="flex justify-between border-t pt-2 text-lg font-bold">Grand Total<span>{Number(r.grandTotal || 0).toFixed(2)}</span></div>
+              <div className="flex justify-between border-t pt-2 text-lg font-bold">Grand Total<span>{Number(r.grandTotal || 0).toFixed(2)} {r.currency || ''}</span></div>
             </div>
             <div className="rounded-xl border bg-card p-4 text-sm space-y-1">
               <h4 className="font-semibold mb-2">Details</h4>
               <p><span className="text-muted-foreground">Stage:</span> {r.quoteStage || 'N/A'}</p>
               <p><span className="text-muted-foreground">Valid Until:</span> {r.validUntil ? formatDate(r.validUntil) : 'N/A'}</p>
               <p><span className="text-muted-foreground">Carrier:</span> {r.carrier || 'N/A'}</p>
+              <p><span className="text-muted-foreground">Currency:</span> {r.currency || 'N/A'}{r.conversionRate && Number(r.conversionRate) !== 1 ? ` (rate ${r.conversionRate})` : ''}</p>
               <p><span className="text-muted-foreground">Tax Type:</span> {r.taxType || 'N/A'}</p>
             </div>
             {r.terms && <div className="rounded-xl border bg-card p-4 text-sm"><h4 className="font-semibold mb-1">Terms</h4><p className="text-muted-foreground">{r.terms}</p></div>}
@@ -764,7 +777,7 @@ export function QuotationsPage() {
   const listColumns = [
     { key: 'quoteNo', label: 'Quote No', render: (v: any) => <span className="font-medium">{v || '-'}</span> },
     { key: 'subject', label: 'Subject' },
-    { key: 'grandTotal', label: 'Amount', render: (v: any) => <span className="font-medium">${Number(v || 0).toFixed(2)}</span> },
+    { key: 'grandTotal', label: 'Amount', render: (v: any, row: any) => <span className="font-medium">{Number(v || 0).toFixed(2)} {row.currency || ''}</span> },
     { key: 'quoteStage', label: 'Stage', render: (v: any) => (
       <span className={`text-xs px-2 py-0.5 rounded-full ${v === 'Accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : v === 'Rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'}`}>
         {v || 'Draft'}

@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { writeAudit } from '../lib/audit'
+import { notifyFollowersAndAssignee, userName } from '../lib/notify'
 
 export const recordRouter = Router()
 
@@ -24,6 +25,22 @@ async function findParent(moduleName: string, id: string, companyId?: string) {
   const where: any = { id }
   if (companyId) where.companyId = companyId
   return prismaModel.findFirst({ where })
+}
+
+function moduleTitle(m: string): string {
+  const s = m.endsWith('s') ? m.slice(0, -1) : m
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+function recordLabel(moduleName: string, record: any): string {
+  if (!record) return 'record'
+  const r = record
+  const nameKey = ['firstName', 'name', 'accountName', 'contactName', 'potentialName', 'ticketNo', 'title', 'subject']
+    .find(k => r[k] != null && r[k] !== '')
+  if (nameKey === 'firstName') {
+    return `${r.firstName || ''} ${r.lastName || ''}`.trim() || r.company || 'record'
+  }
+  return nameKey ? r[nameKey] ?? r.id ?? 'record' : r.id || 'record'
 }
 
 async function assertParent(req: any, res: any, moduleName: string, id: string) {
@@ -392,6 +409,17 @@ recordRouter.post('/:module/:id/follow', async (req, res, next) => {
         data: { userId: req.user!.userId, moduleName: req.params.module, recordId: req.params.id, companyId: req.user!.companyId ?? null },
       }).catch(() => {})
     }
+    const parent = await findParent(req.params.module, req.params.id, req.user!.companyId)
+    notifyFollowersAndAssignee({
+      moduleName: req.params.module,
+      recordId: req.params.id,
+      assigneeId: parent?.assignedTo,
+      title: `${moduleTitle(req.params.module)} followed: ${recordLabel(req.params.module, parent)}`,
+      message: `${await userName(req.user!.userId)} started following this record`,
+      link: `/${req.params.module}/${req.params.id}`,
+      companyId: req.user!.companyId,
+      actorId: req.user!.userId,
+    }).catch(() => {})
     res.json({ success: true })
   } catch (err) { next(err) }
 })
@@ -401,6 +429,17 @@ recordRouter.delete('/:module/:id/follow', async (req, res, next) => {
     await prisma.follow.deleteMany({
       where: { userId: req.user!.userId, moduleName: req.params.module, recordId: req.params.id },
     })
+    const parent = await findParent(req.params.module, req.params.id, req.user!.companyId)
+    notifyFollowersAndAssignee({
+      moduleName: req.params.module,
+      recordId: req.params.id,
+      assigneeId: parent?.assignedTo,
+      title: `${moduleTitle(req.params.module)} unfollowed: ${recordLabel(req.params.module, parent)}`,
+      message: `${await userName(req.user!.userId)} unfollowed this record`,
+      link: `/${req.params.module}/${req.params.id}`,
+      companyId: req.user!.companyId,
+      actorId: req.user!.userId,
+    }).catch(() => {})
     res.json({ success: true })
   } catch (err) { next(err) }
 })

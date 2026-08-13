@@ -36,12 +36,14 @@ function labelFromName(name: string): string {
     actualCost: 'Actual Cost', expectedResponse: 'Expected Response', targetSize: 'Target Size',
     targetAudience: 'Target Audience', expectedROI: 'Expected ROI', actualROI: 'Actual ROI',
     expectedCount: 'Expected Count', actualCount: 'Actual Count',
+    expectedResponseCount: 'Expected Response Count', expectedSalesCount: 'Expected Sales Count',
+    actualResponseCount: 'Actual Response Count', actualSalesCount: 'Actual Sales Count',
     productName: 'Product Name', productNo: 'Product No', productCategory: 'Category', isActive: 'Active',
     unitPrice: 'Unit Price', costPrice: 'Cost Price', commissionRate: 'Commission Rate',
     commissionMethod: 'Commission Method', qtyInStock: 'Qty In Stock', qtyOnOrder: 'Qty On Order',
     qtyInDemand: 'Qty In Demand', reorderLevel: 'Reorder Level', usageUnit: 'Usage Unit',
     qtyPerUnit: 'Qty/Unit', markupPercent: 'Markup %', pricingFormula: 'Pricing Formula',
-    image: 'Product Image',
+    image: 'Image',
     packSize: 'Pack Size', salesStartDate: 'Sales Start Date', salesEndDate: 'Sales End Date',
     startDate: 'Start Date', endDate: 'End Date', expiryDate: 'Expiry Date',
     serialNo: 'Serial No', mfrPartNo: 'Mfr PartNo', vendorPartNo: 'Vendor PartNo',
@@ -68,7 +70,8 @@ function labelFromName(name: string): string {
     projectTaskType: 'Task Type', projectTaskNo: 'Task Number', assignedTo: 'Assigned To',
     milestoneDate: 'Milestone Date', milestoneType: 'Milestone Type',
     milestoneNo: 'Milestone No', plannedHours: 'Planned Hours', actualHours: 'Actual Hours', sequence: 'Sequence',
-    assetName: 'Asset Name', tagNumber: 'Tag Number', dateSold: 'Date Sold',
+    assetName: 'Asset Name', tagNumber: 'Tag Number', dateSold: 'Date Sold', datesInService: 'Date In Service',
+    dateOutOfService: 'Date Out Of Service', faqNo: 'FAQ Number',
     shippingMethod: 'Shipping Method', shippingTrackingNumber: 'Tracking Number', invoiceId: 'Invoice',
     contractName: 'Contract Name', contractNo: 'Contract Number', contractType: 'Contract Type',
     trackingUnit: 'Tracking Unit', totalUnits: 'Total Units', usedUnits: 'Used Units',
@@ -83,6 +86,7 @@ function labelFromName(name: string): string {
     doNotCall: 'Do Not Call', portal: 'Portal',
     discountPercent: 'Discount (%)', taxAmount: 'Tax Amount', contactId: 'Contact',
     potentialId: 'Potential', accountId: 'Account', quoteId: 'Quote', salesOrderId: 'Sales Order',
+    currency: 'Currency', conversionRate: 'Conversion Rate',
   }
   return labels[name] || name.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
 }
@@ -111,12 +115,12 @@ function isFinancialField(name: string): boolean {
 
 const moduleTabs: Record<string, FieldTab[]> = {
   accounts: [
-    { label: 'Details', fields: ['accountName', 'accountNo', 'parentId', 'website', 'phone', 'otherPhone', 'fax', 'email', 'email2', 'emailOptOut', 'notifyOwner', 'industry', 'accountType', 'ownership', 'rating', 'sicCode', 'tickerSymbol', 'annualRevenue', 'employees'] },
+    { label: 'Details', fields: ['accountName', 'accountNo', 'parentId', 'website', 'phone', 'otherPhone', 'fax', 'email', 'email2', 'emailOptOut', 'notifyOwner', 'industry', 'accountType', 'ownership', 'rating', 'sicCode', 'tickerSymbol', 'glAccount', 'annualRevenue', 'employees'] },
     { label: 'Address', fields: ['billingStreet', 'billingCity', 'billingState', 'billingCountry', 'billingPostalCode', 'billingPoBox', 'shippingStreet', 'shippingCity', 'shippingState', 'shippingCountry', 'shippingPostalCode', 'shippingPoBox'] },
     { label: 'Description', fields: ['description'] },
   ],
   contacts: [
-    { label: 'Details', fields: ['firstName', 'lastName', 'email', 'secondaryEmail', 'phone', 'mobile', 'homePhone', 'otherPhone', 'fax', 'title', 'department', 'assistant', 'assistantPhone', 'dob', 'reportsTo', 'leadSource', 'doNotCall', 'portal', 'supportStartDate', 'supportEndDate'] },
+    { label: 'Details', fields: ['image', 'firstName', 'lastName', 'email', 'secondaryEmail', 'phone', 'mobile', 'homePhone', 'otherPhone', 'fax', 'title', 'department', 'assistant', 'assistantPhone', 'dob', 'reportsTo', 'leadSource', 'doNotCall', 'notifyOwner', 'portal', 'supportStartDate', 'supportEndDate'] },
     { label: 'Address', fields: ['mailingStreet', 'mailingCity', 'mailingState', 'mailingCountry', 'mailingPostalCode', 'mailingPoBox', 'otherStreet', 'otherCity', 'otherState', 'otherCountry', 'otherPostalCode', 'otherPoBox'] },
     { label: 'Description', fields: ['description'] },
   ],
@@ -126,11 +130,11 @@ const moduleTabs: Record<string, FieldTab[]> = {
     { label: 'Description', fields: ['description'] },
   ],
   potentials: [
-    { label: 'Details', fields: ['potentialName', 'amount', 'closingDate', 'stage', 'probability', 'type', 'leadSource', 'forecastCategory', 'outcomeAnalysis', 'nextStep'] },
+    { label: 'Details', fields: ['potentialName', 'amount', 'currency', 'closingDate', 'stage', 'probability', 'type', 'leadSource', 'forecastCategory', 'outcomeAnalysis', 'nextStep'] },
     { label: 'Description', fields: ['description'] },
   ],
   campaigns: [
-    { label: 'Details', fields: ['campaignName', 'campaignType', 'status', 'startDate', 'endDate', 'closingDate', 'expectedRevenue', 'budget', 'actualCost', 'expectedResponse', 'targetSize', 'sponsor', 'targetAudience', 'expectedROI', 'actualROI', 'expectedCount', 'actualCount'] },
+    { label: 'Details', fields: ['campaignName', 'campaignType', 'status', 'startDate', 'endDate', 'closingDate', 'expectedRevenue', 'budget', 'actualCost', 'expectedResponse', 'targetSize', 'sponsor', 'targetAudience', 'expectedROI', 'actualROI', 'expectedResponseCount', 'expectedSalesCount', 'actualResponseCount', 'actualSalesCount'] },
     { label: 'Description', fields: ['description'] },
   ],
   products: [
@@ -142,7 +146,7 @@ const moduleTabs: Record<string, FieldTab[]> = {
     { label: 'Description', fields: ['description'] },
   ],
   services: [
-    { label: 'Details', fields: ['serviceName', 'serviceNo', 'serviceCategory', 'usageUnit', 'website', 'serialNo', 'glAccount', 'taxClass', 'reorderLevel', 'qtyInStock', 'qtyInDemand'] },
+    { label: 'Details', fields: ['serviceName', 'serviceNo', 'serviceCategory', 'usageUnit', 'website', 'serialNo', 'glAccount', 'taxClass', 'reorderLevel', 'qtyInStock', 'qtyInDemand', 'discontinued'] },
     { label: 'Pricing', fields: ['unitPrice', 'costPrice', 'commissionRate', 'commissionMethod'] },
     { label: 'Description', fields: ['description'] },
   ],
@@ -156,35 +160,35 @@ const moduleTabs: Record<string, FieldTab[]> = {
     { label: 'Description', fields: ['description'] },
   ],
   quotes: [
-    { label: 'Details', fields: ['subject', 'quoteNo', 'validUntil', 'quoteStage', 'carrier', 'inventoryManager', 'taxType'] },
+    { label: 'Details', fields: ['subject', 'quoteNo', 'validUntil', 'quoteStage', 'carrier', 'inventoryManager', 'taxType', 'currency', 'conversionRate'] },
     { label: 'Financial', fields: ['grandTotal', 'subTotal', 'discount', 'discountPercent', 'adjustment', 'shipping', 'shippingHandling', 'taxAmount', 'total'] },
     { label: 'Address', fields: ['billingStreet', 'billingCity', 'billingState', 'billingCountry', 'billingPostalCode', 'billingPoBox', 'shippingStreet', 'shippingCity', 'shippingState', 'shippingCountry', 'shippingPostalCode', 'shippingPoBox'] },
     { label: 'Terms', fields: ['terms', 'description'] },
   ],
   salesorders: [
-    { label: 'Details', fields: ['subject', 'salesOrderNo', 'validUntil', 'soStatus', 'carrier', 'customerNo', 'purchaseOrderNo', 'taxType', 'pending', 'enableRecurring'] },
+    { label: 'Details', fields: ['subject', 'salesOrderNo', 'validUntil', 'soStatus', 'carrier', 'customerNo', 'purchaseOrderNo', 'taxType', 'pending', 'enableRecurring', 'currency', 'conversionRate'] },
     { label: 'Financial', fields: ['grandTotal', 'subTotal', 'discount', 'discountPercent', 'adjustment', 'shipping', 'shippingHandling', 'salesCommission', 'exciseDuty', 'taxAmount', 'total'] },
     { label: 'Address', fields: ['billingStreet', 'billingCity', 'billingState', 'billingCountry', 'billingPostalCode', 'billingPoBox', 'shippingStreet', 'shippingCity', 'shippingState', 'shippingCountry', 'shippingPostalCode', 'shippingPoBox'] },
     { label: 'Terms', fields: ['terms', 'description'] },
   ],
   purchaseorders: [
-    { label: 'Details', fields: ['subject', 'purchaseOrderNo', 'validUntil', 'poStatus', 'carrier', 'taxType', 'vendorId', 'contactId'] },
+    { label: 'Details', fields: ['subject', 'purchaseOrderNo', 'validUntil', 'poStatus', 'carrier', 'taxType', 'currency', 'conversionRate', 'vendorId', 'contactId'] },
     { label: 'Financial', fields: ['grandTotal', 'subTotal', 'discount', 'discountPercent', 'adjustment', 'shipping', 'shippingHandling', 'salesCommission', 'exciseDuty', 'taxAmount', 'total'] },
     { label: 'Address', fields: ['billingStreet', 'billingCity', 'billingState', 'billingCountry', 'billingPostalCode', 'billingPoBox', 'shippingStreet', 'shippingCity', 'shippingState', 'shippingCountry', 'shippingPostalCode', 'shippingPoBox'] },
     { label: 'Terms', fields: ['terms', 'description'] },
   ],
   invoices: [
-    { label: 'Details', fields: ['subject', 'invoiceNo', 'invoiceDate', 'dueDate', 'invoiceStatus', 'customerNo', 'purchaseOrderNo', 'taxType'] },
+    { label: 'Details', fields: ['subject', 'invoiceNo', 'invoiceDate', 'dueDate', 'invoiceStatus', 'customerNo', 'purchaseOrderNo', 'taxType', 'currency', 'conversionRate'] },
     { label: 'Financial', fields: ['grandTotal', 'subTotal', 'discount', 'discountPercent', 'adjustment', 'shipping', 'shippingHandling', 'salesCommission', 'exciseDuty', 'taxAmount', 'total'] },
     { label: 'Address', fields: ['billingStreet', 'billingCity', 'billingState', 'billingCountry', 'billingPostalCode', 'billingPoBox', 'shippingStreet', 'shippingCity', 'shippingState', 'shippingCountry', 'shippingPostalCode', 'shippingPoBox'] },
     { label: 'Terms', fields: ['notes', 'terms', 'description'] },
   ],
   tickets: [
-    { label: 'Details', fields: ['title', 'ticketNo', 'status', 'priority', 'severity', 'category', 'hours', 'days', 'fromMail', 'versionId'] },
+    { label: 'Details', fields: ['title', 'ticketNo', 'contactId', 'accountId', 'productId', 'status', 'priority', 'severity', 'category', 'hours', 'days', 'fromMail', 'versionId'] },
     { label: 'Description', fields: ['description', 'solution', 'updateLog'] },
   ],
   faq: [
-    { label: 'Details', fields: ['title', 'category', 'status'] },
+    { label: 'Details', fields: ['title', 'faqNo', 'category', 'status', 'assignedTo'] },
     { label: 'Content', fields: ['description', 'answer'] },
   ],
   documents: [
@@ -200,7 +204,7 @@ const moduleTabs: Record<string, FieldTab[]> = {
     { label: 'Content', fields: ['body'] },
   ],
   projects: [
-    { label: 'Information', fields: ['projectName', 'projectNo', 'projectType', 'status', 'priority', 'progress', 'url', 'assignedTo'] },
+    { label: 'Information', fields: ['projectName', 'projectNo', 'projectType', 'status', 'priority', 'progress', 'accountId', 'contactId', 'url', 'assignedTo'] },
     { label: 'Schedule', fields: ['startDate', 'endDate', 'actualEndDate'] },
     { label: 'Financial', fields: ['targetBudget', 'actualBudget'] },
     { label: 'Description', fields: ['description'] },
@@ -214,11 +218,11 @@ const moduleTabs: Record<string, FieldTab[]> = {
     { label: 'Description', fields: ['description'] },
   ],
   assets: [
-    { label: 'Details', fields: ['assetName', 'serialNo', 'tagNumber', 'status', 'dateSold', 'shippingMethod', 'shippingTrackingNumber', 'invoiceId'] },
+    { label: 'Details', fields: ['assetName', 'assetNo', 'serialNo', 'tagNumber', 'productId', 'accountId', 'contactId', 'datesInService', 'dateOutOfService', 'dateSold', 'status', 'shippingMethod', 'shippingTrackingNumber', 'invoiceId'] },
     { label: 'Description', fields: ['description'] },
   ],
   servicecontracts: [
-    { label: 'Details', fields: ['contractName', 'contractNo', 'contractType', 'status', 'priority', 'startDate', 'endDate', 'dueDate', 'renewalDate', 'trackingUnit', 'totalUnits', 'usedUnits', 'costPrice', 'relatedTo', 'relatedModule'] },
+    { label: 'Details', fields: ['contractName', 'contractNo', 'contractType', 'status', 'priority', 'accountId', 'contactId', 'startDate', 'endDate', 'dueDate', 'renewalDate', 'progress', 'trackingUnit', 'totalUnits', 'usedUnits', 'unitPrice', 'costPrice', 'relatedTo', 'relatedModule'] },
     { label: 'Description', fields: ['description'] },
   ],
   smsnotifier: [

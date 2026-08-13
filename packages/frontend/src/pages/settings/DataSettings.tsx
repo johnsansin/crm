@@ -3,10 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Database, Loader2, Download, Upload, FileJson, FileText } from 'lucide-react'
+import { Database, Loader2, Download, FileJson, FileText, Wand2 } from 'lucide-react'
 import { formatDateTime, useOrgSettings } from '@/lib/org-format'
+import { ImportWizardDialog } from '@/components/import-wizard-dialog'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
@@ -34,21 +34,13 @@ export function DataSettings() {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const [moduleName, setModuleName] = useState('accounts')
+  const [importOpen, setImportOpen] = useState(false)
 
   const { data: backupsData } = useQuery({ queryKey: ['backups'], queryFn: () => api.listBackups() })
 
   const backupMutation = useMutation({
     mutationFn: () => api.createBackup(),
     onSuccess: (res: any) => { queryClient.invalidateQueries({ queryKey: ['backups'] }); addToast({ title: 'Backup created', description: res.fileName, variant: 'success' }) },
-    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
-  })
-
-  const importMutation = useMutation({
-    mutationFn: (file: File) => api.importModule(moduleName, file),
-    onSuccess: (res: any) => {
-      queryClient.invalidateQueries({ queryKey: [moduleName] })
-      addToast({ title: `Import finished: ${res.created} created, ${res.failed} failed`, description: `${res.total} rows processed`, variant: res.failed > 0 ? 'default' : 'success' })
-    },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
@@ -109,25 +101,22 @@ export function DataSettings() {
           </div>
           <div className="border-t pt-4">
             <div className="text-xs font-medium text-muted-foreground uppercase mb-2">Import CSV</div>
-            <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                accept=".csv,text/csv"
-                className="max-w-sm"
-                onChange={e => {
-                  const file = e.target.files?.[0]
-                  if (file) importMutation.mutate(file)
-                  e.target.value = ''
-                }}
-              />
-              {importMutation.isPending && <Loader2 size={16} className="animate-spin" />}
-            </div>
+            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+              <Wand2 size={14} className="mr-1.5" /> Import Wizard
+            </Button>
             <p className="text-xs text-muted-foreground mt-2">
-              Use the exported CSV as a template. Date columns use YYYY-MM-DD, numbers and booleans are parsed automatically. Unassigned records are assigned to you.
+              Upload a CSV, map columns to fields, review validation, then import. Date columns use YYYY-MM-DD; numbers and booleans are parsed automatically. Unassigned records are assigned to you.
             </p>
           </div>
         </CardContent>
       </Card>
+
+      <ImportWizardDialog
+        module={moduleName}
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={() => queryClient.invalidateQueries({ queryKey: [moduleName] })}
+      />
     </div>
   )
 }

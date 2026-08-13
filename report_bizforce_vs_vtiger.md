@@ -44,12 +44,12 @@ _Generated from source inspection of ~/crm (bizforce-crm) and ~/vtiger (vtigercr
 | Record comments (ModComments) | Yes | Yes | Same |
 | Calendar / Events | Yes | Yes | CRM adds shared + recurring |
 | Users | Yes | Yes | Same |
-| Merge / Duplicate handling | **No** | Yes | **MISSING** |
+| Merge / Duplicate handling | **Yes** | Yes | `MergeRecordsDialog` in detail page + `/duplicates` + `/merge` (entity.routes.ts:668,693) |
 | Mobile app | **No** | Yes | **MISSING** |
 | Extension Store / Marketplace | **No** | Yes | **MISSING** |
-| Tags UI | **No (model only)** | Yes | **MISSING** |
-| Menu editor | **No** | Yes | **MISSING** |
-| Multi-language packs | **No (i18n scaffold, EN only)** | Yes (15+) | **MISSING** |
+| Tags UI | **Yes** | Yes | Same |
+| Menu editor | **Yes** | Yes | Same |
+| Multi-language packs | **Yes (EN fallback + 15 packs)** | Yes (15+) | Same |
 
 ## B. Feature Comparison
 
@@ -57,7 +57,7 @@ _Generated from source inspection of ~/crm (bizforce-crm) and ~/vtiger (vtigercr
 |---|---|---|
 | Lead conversion | Yes | Yes |
 | Opportunity forecasting | Yes | Yes |
-| Merge records / duplicate detection | **No** | Yes |
+| Merge records / duplicate detection | **Yes** | Yes |
 | Recurring invoices | Yes | Yes |
 | Invoice payment tracking | Yes | Yes |
 | Product images | Yes | Yes |
@@ -69,13 +69,13 @@ _Generated from source inspection of ~/crm (bizforce-crm) and ~/vtiger (vtigercr
 | Customer portal | Yes (tickets/invoices) | Yes (full) |
 | PBX / click-to-call | Yes (CallLog) | Yes (PBXManager) |
 | Google OAuth sync | Yes | Yes |
-| Ad-hoc report builder | Partial (tabular/summary, client-side) | Yes (tabular/summary/matrix/chart) |
+| Ad-hoc report builder | **Yes** (tabular/summary/matrix/chart, folders, scheduling, CSV/HTML export) | Yes (tabular/summary/matrix/chart) |
 | Recurring + shared calendar | Yes | Yes |
 | Dedicated recycle bin | Yes | Yes |
 | Webforms | Yes | Yes |
 | Mobile app | **No** | Yes |
 | Extension/marketplace | **No** | Yes |
-| Multi-language | **No** | Yes |
+| Multi-language | Yes (EN fallback + 15 packs) | Yes |
 | External REST API | Yes (/rest/* + API keys) | Yes (webservice.php) |
 | Layout editor (field order/visibility) | Yes | Yes |
 | Picklist dependency | Yes | Yes |
@@ -86,10 +86,10 @@ _Generated from source inspection of ~/crm (bizforce-crm) and ~/vtiger (vtigercr
 | Kanban board | Yes | No |
 | Personalizable dashboard | Yes | No |
 | PDF quote/invoice/order documents | Yes | Yes |
-| Sales stage history (Potentials) | **No** | Yes |
-| Lead conversion mapping UI | **No** | Yes |
-| Tags UI | **No** | Yes |
-| Menu editor | **No** | Yes |
+| Sales stage history (Potentials) | Yes | Yes |
+| Lead conversion mapping UI | Yes | Yes |
+| Tags UI | Yes | Yes |
+| Menu editor | Yes | Yes |
 
 ## C. Field-Level Comparison (key modules)
 
@@ -103,7 +103,7 @@ _Generated from source inspection of ~/crm (bizforce-crm) and ~/vtiger (vtigercr
 | Billing + Shipping addresses (full) | Yes | Yes |
 | Notify Owner / Email Opt-out / Description | Yes | Yes |
 | Portal flag | **No** | Yes |
-| GL Account | Partial | Yes |
+| GL Account | Yes | Yes |
 
 ### Contacts
 | Field | bizforce-crm | vtiger |
@@ -131,8 +131,8 @@ _Generated from source inspection of ~/crm (bizforce-crm) and ~/vtiger (vtigercr
 | No / Name / Amount / Closing / Type / Stage / Probability | Yes | Yes |
 | Next Step / Lead Source / Campaign / Account / Contact | Yes | Yes |
 | Forecast Amount / Category / Outcome Analysis | Yes | Yes |
-| Multiple products | Partial (single productId) | Yes |
-| Sales stage history | **No** | Yes |
+| Multiple products | Yes (PotentialProduct line items) | Yes |
+| Sales stage history | Yes (PotentialStageHistory) | Yes |
 
 ### Products
 | Field | bizforce-crm | vtiger |
@@ -183,31 +183,25 @@ _Generated from source inspection of ~/crm (bizforce-crm) and ~/vtiger (vtigercr
 | Login history / Audit log | Yes | Yes |
 | Cron task manager | Yes | Yes |
 | Module manager (enable/disable) | Yes | Yes |
-| Tags settings | **No** | Yes |
-| Menu editor | **No** | Yes |
-| Lead conversion mapping | **No** | Yes |
-| Sales stage probability mapping | Partial | Yes |
+| Tags settings | **Yes** | Yes |
+| Menu editor | **Yes** | Yes |
+| Lead conversion mapping | **Yes** | Yes |
+| Sales stage probability mapping | Yes (auto-fills probability) | Yes |
 | Announcements / Notifications / Holidays | Yes | No |
 | Super-admin (orgs/users/history/settings) | Yes | No |
 | Backups / API keys | Yes | No |
 | Integration settings (Google/PBX) | Yes | No |
 | Extension store | **No** | Yes |
-| Language packs | **No** | Yes |
+| Language packs | **Yes (EN fallback + 15 packs)** | Yes |
 
 ## E. Missing in bizforce-crm (priority-ordered)
 
 | # | Missing | vtiger reference | Priority |
 |---|---|---|---|
 | 1 | Mobile app | Mobile package | High |
-| 2 | Merge / duplicate handling | MergeRecords | High |
-| 3 | Multi-language packs | languages/ | Medium |
-| 4 | Extension / marketplace store | ExtensionStore | Medium |
-| 5 | Menu editor | Settings > MenuEditor | Medium |
-| 6 | Full report designer (matrix/chart/scheduled/PDF) | Reports | Medium |
-| 7 | Tags UI | Settings > Tags | Low |
-| 8 | Sales stage history (Potentials) | Potentials | Low |
-| 9 | Lead conversion mapping UI | Settings > Leads | Low |
-| 10 | Potential multi-product | Potentials | Low |
+| 2 | Extension / marketplace store | ExtensionStore | Medium |
+
+_Items closed since the last report (verified live 2026-08-13): merge/duplicate UI, import wizard (mapping + validation), full report designer (matrix/folders/scheduling/export), per-record currency on Potentials, multi-language (EN fallback + 15 packs), menu editor, tags UI, lead-conversion mapping UI, sales-stage probability mapping UI, potential multi-product, sales-stage history, and account/contact field parity (glAccount / image / notifyOwner)._
 
 ## F. In bizforce-crm but NOT in vtiger
 

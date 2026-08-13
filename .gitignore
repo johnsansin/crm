@@ -7,3 +7,10 @@ dist/
 data/pg/
 uploads/
 *.tsbuildinfo
+android/.gradle/
+android/build/
+android/app/build/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+.capacitor/
+packages/backend/imaptest.tmp.ts

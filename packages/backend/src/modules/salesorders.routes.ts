@@ -18,13 +18,15 @@ function fixDates(data: any) {
   for (const k of Object.keys(data)) {
     if (data[k] === '') data[k] = null
   }
+  if (data.conversionRate == null || data.conversionRate === '') data.conversionRate = 1
 }
 
 const SO_FIELDS = [
   'salesOrderNo', 'subject', 'validUntil', 'total', 'subTotal', 'discount', 'discountPercent',
   'adjustment', 'shipping', 'shippingHandling', 'taxAmount', 'taxType', 'grandTotal', 'carrier',
   'soStatus', 'customerNo', 'purchaseOrderNo', 'salesCommission', 'exciseDuty', 'pending',
-  'enableRecurring', 'recurringFrequency', 'startPeriod', 'endPeriod', 'terms', 'description',
+  'enableRecurring', 'recurringFrequency', 'startPeriod', 'endPeriod', 'currency', 'conversionRate',
+  'terms', 'description',
   'companyId', 'isActive', 'accountId', 'contactId', 'potentialId', 'quoteId', 'vendorId',
   'billingStreet', 'billingCity', 'billingState', 'billingCountry', 'billingPostalCode', 'billingPoBox',
   'shippingStreet', 'shippingCity', 'shippingState', 'shippingCountry', 'shippingPostalCode', 'shippingPoBox',
@@ -265,6 +267,8 @@ salesOrdersRouter.post('/:id/convert-invoice', async (req, res, next) => {
         purchaseOrderNo: so.purchaseOrderNo,
         salesCommission: so.salesCommission,
         exciseDuty: so.exciseDuty,
+        currency: so.currency,
+        conversionRate: so.conversionRate || 1,
         terms: so.terms,
         description: so.description,
         companyId: so.companyId,
@@ -334,6 +338,7 @@ salesOrdersRouter.get('/:id/pdf', async (req, res, next) => {
     const preparedBy = user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.userName || user.email : req.user!.email
 
     const billTo = buildAddressHtml(so)
+    const cur = so.currency ? ` (${so.currency})` : ''
     const html = renderReport({
       title: 'SALES ORDER',
       docNo: so.salesOrderNo || '',
@@ -345,6 +350,7 @@ salesOrdersRouter.get('/:id/pdf', async (req, res, next) => {
       metaLines: [
         `<span class="label">Valid Until:</span> ${so.validUntil ? escapeHtml(new Date(so.validUntil).toLocaleDateString()) : 'N/A'}`,
         `<span class="label">Status:</span> ${escapeHtml(so.soStatus || 'N/A')}`,
+        `<span class="label">Currency:</span> ${escapeHtml(so.currency || 'N/A')}${so.conversionRate && Number(so.conversionRate) !== 1 ? ` <span class="item-desc">(rate ${escapeHtml(String(so.conversionRate))})</span>` : ''}`,
         `<span class="label">Prepared By:</span> ${escapeHtml(preparedBy)}`,
       ],
       items: so.lineItems.map((item: any) => ({
@@ -357,12 +363,12 @@ salesOrdersRouter.get('/:id/pdf', async (req, res, next) => {
         total: item.lineTotal,
       })),
       totals: [
-        { label: 'Sub Total', value: so.subTotal },
+        { label: `Sub Total${cur}`, value: so.subTotal },
         { label: 'Discount', value: so.discount },
         { label: 'Tax', value: so.taxAmount },
         { label: 'Shipping', value: so.shipping },
         { label: 'Adjustment', value: so.adjustment },
-        { label: 'Grand Total', value: so.grandTotal, grand: true },
+        { label: `Grand Total${cur}`, value: so.grandTotal, grand: true },
       ],
       sections: [
         so.terms ? `<div class="section"><span class="label">Terms &amp; Conditions:</span><p>${escapeHtml(so.terms)}</p></div>` : '',
@@ -389,7 +395,7 @@ salesOrdersRouter.post('/:id/email', async (req, res, next) => {
     const to = req.body.to || ''
     const subject = `Sales Order: ${so.salesOrderNo || so.subject}`
     const pdfLink = `/api/salesorders/${so.id}/pdf`
-    const text = `Dear Customer,\n\nPlease find attached sales order ${so.salesOrderNo || ''} for ${so.subject}.\n\nTotal Amount: ${Number(so.grandTotal || 0).toFixed(2)}\n\nYou can view the sales order PDF at: ${pdfLink}\n\nThank you,\n${companyName}`
+    const text = `Dear Customer,\n\nPlease find attached sales order ${so.salesOrderNo || ''} for ${so.subject}.\n\nTotal Amount: ${Number(so.grandTotal || 0).toFixed(2)} ${so.currency || ''}\n\nYou can view the sales order PDF at: ${pdfLink}\n\nThank you,\n${companyName}`
 
     console.log(`[EMAIL] To: ${to}, Subject: ${subject}, Body: ${text}`)
     console.log(`[EMAIL] PDF attachment ready: ${pdfLink}`)

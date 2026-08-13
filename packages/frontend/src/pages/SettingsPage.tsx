@@ -11,13 +11,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, type LucideIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, Target, type LucideIcon } from 'lucide-react'
 import { useTheme } from '@/lib/theme'
 import { useAuthStore } from '@/lib/auth'
 import { TIMEZONES, DATE_FORMATS, COUNTRIES, SOCIAL_FIELDS } from '@/lib/constants'
 import { OrgSettings } from '@/pages/settings/OrgSettings'
 import { AccessSettings } from '@/pages/settings/AccessSettings'
 import { PicklistSettings } from '@/pages/settings/PicklistSettings'
+import { LeadSettings } from '@/pages/settings/LeadSettings'
+import { PotentialSettings } from '@/pages/settings/PotentialSettings'
 import { EmailSettings } from '@/pages/settings/EmailSettings'
 import { AuditSettings } from '@/pages/settings/AuditSettings'
 import { AutomationSettings } from '@/pages/settings/AutomationSettings'
@@ -43,6 +45,8 @@ const TINTS: Record<string, string> = {
   email: 'from-orange-500 to-amber-600',
   audit: 'from-slate-500 to-slate-700',
   automation: 'from-purple-500 to-violet-700',
+  leads: 'from-blue-500 to-cyan-600',
+  potentials: 'from-emerald-500 to-teal-700',
   data: 'from-teal-500 to-emerald-700',
   announcements: 'from-pink-500 to-rose-600',
   integrations: 'from-cyan-500 to-teal-600',
@@ -60,7 +64,7 @@ const CATEGORIES = [
   {
     label: 'Organization',
     blurb: 'Company branding, regional, financial and document defaults',
-    keys: ['company', 'org', 'currencies', 'tax', 'terms'],
+    keys: ['company', 'org', 'currencies', 'tax', 'terms', 'leads', 'potentials'],
   },
   {
     label: 'Data & Automation',
@@ -91,6 +95,8 @@ const settingSections = [
   { key: 'sharing', label: 'Sharing Access', icon: Share2, desc: 'Record visibility rules and permission profiles' },
   { key: 'company', label: 'Company', icon: Building2, desc: 'Organization details and branding' },
   { key: 'org', label: 'Organization', icon: Settings2, desc: 'Password policy, login security, lead config, regional, inventory' },
+  { key: 'leads', label: 'Leads', icon: Target, desc: 'Lead conversion mapping and defaults' },
+  { key: 'potentials', label: 'Potentials', icon: Target, desc: 'Sales stage probability mapping' },
   { key: 'currencies', label: 'Currencies', icon: Banknote, desc: 'Manage currencies and exchange rates' },
   { key: 'tax', label: 'Tax', icon: Percent, desc: 'Configure tax rates' },
   { key: 'terms', label: 'Document Terms', icon: FileText, desc: 'Default terms for quotes, orders, and invoices' },
@@ -149,6 +155,8 @@ export function SettingsPage() {
         {activeSection === 'tax' && <TaxSettings />}
         {activeSection === 'company' && <CompanySettings />}
         {activeSection === 'org' && <OrgSettings />}
+        {activeSection === 'leads' && <LeadSettings />}
+        {activeSection === 'potentials' && <PotentialSettings />}
         {activeSection === 'sharing' && <AccessSettings />}
         {activeSection === 'picklists' && <PicklistSettings />}
         {activeSection === 'email' && <EmailSettings />}

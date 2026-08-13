@@ -25,6 +25,7 @@ import { ForecastPage } from '@/pages/ForecastPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { MailboxesPage } from '@/pages/MailboxesPage'
 import { RssPage } from '@/pages/RssPage'
+import { ChatPage } from '@/pages/ChatPage'
 import { RecycleBinPage } from '@/pages/RecycleBinPage'
 import { LeadDetailPage } from '@/pages/LeadDetailPage'
 import { QuotationsPage } from '@/pages/QuotationsPage'
@@ -113,6 +114,7 @@ export default function App() {
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/mailboxes" element={<MailboxesPage />} />
             <Route path="/rssfeeds" element={<RssPage />} />
+            <Route path="/chat" element={<ChatPage />} />
             <Route path="/trash" element={<RecycleBinPage />} />
             <Route path="/leads/new" element={<ModuleDetailPage />} />
             <Route path="/leads/:id" element={<LeadDetailPage />} />

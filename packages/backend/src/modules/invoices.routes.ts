@@ -18,12 +18,14 @@ function fixDates(data: any) {
   for (const k of Object.keys(data)) {
     if (data[k] === '') data[k] = null
   }
+  if (data.conversionRate == null || data.conversionRate === '') data.conversionRate = 1
 }
 
 const INV_FIELDS = [
   'invoiceNo', 'subject', 'invoiceDate', 'dueDate', 'total', 'subTotal', 'discount', 'discountPercent',
   'adjustment', 'shipping', 'shippingHandling', 'taxAmount', 'taxType', 'grandTotal',
   'customerNo', 'purchaseOrderNo', 'salesCommission', 'exciseDuty', 'invoiceStatus', 'terms', 'notes',
+  'currency', 'conversionRate',
   'description', 'companyId', 'isActive', 'accountId', 'contactId', 'salesOrderId', 'quoteId',
   'billingStreet', 'billingCity', 'billingState', 'billingCountry', 'billingPostalCode', 'billingPoBox',
   'shippingStreet', 'shippingCity', 'shippingState', 'shippingCountry', 'shippingPostalCode', 'shippingPoBox',
@@ -313,6 +315,7 @@ invoicesRouter.get('/:id/pdf', async (req, res, next) => {
     const preparedBy = user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.userName || user.email : req.user!.email
 
     const billTo = buildAddressHtml(inv)
+    const cur = inv.currency ? ` (${inv.currency})` : ''
     const html = renderReport({
       title: 'INVOICE',
       docNo: inv.invoiceNo || '',
@@ -325,6 +328,7 @@ invoicesRouter.get('/:id/pdf', async (req, res, next) => {
         `<span class="label">Invoice Date:</span> ${inv.invoiceDate ? escapeHtml(new Date(inv.invoiceDate).toLocaleDateString()) : 'N/A'}`,
         `<span class="label">Due Date:</span> ${inv.dueDate ? escapeHtml(new Date(inv.dueDate).toLocaleDateString()) : 'N/A'}`,
         `<span class="label">Status:</span> ${escapeHtml(inv.invoiceStatus || 'N/A')}`,
+        `<span class="label">Currency:</span> ${escapeHtml(inv.currency || 'N/A')}${inv.conversionRate && Number(inv.conversionRate) !== 1 ? ` <span class="item-desc">(rate ${escapeHtml(String(inv.conversionRate))})</span>` : ''}`,
         `<span class="label">Prepared By:</span> ${escapeHtml(preparedBy)}`,
       ],
       items: inv.lineItems.map((item: any) => ({
@@ -337,12 +341,12 @@ invoicesRouter.get('/:id/pdf', async (req, res, next) => {
         total: item.lineTotal,
       })),
       totals: [
-        { label: 'Sub Total', value: inv.subTotal },
+        { label: `Sub Total${cur}`, value: inv.subTotal },
         { label: 'Discount', value: inv.discount },
         { label: 'Tax', value: inv.taxAmount },
         { label: 'Shipping', value: inv.shipping },
         { label: 'Adjustment', value: inv.adjustment },
-        { label: 'Grand Total', value: inv.grandTotal, grand: true },
+        { label: `Grand Total${cur}`, value: inv.grandTotal, grand: true },
       ],
       sections: [
         inv.notes ? `<div class="section"><span class="label">Notes:</span><p>${escapeHtml(inv.notes)}</p></div>` : '',
@@ -370,7 +374,7 @@ invoicesRouter.post('/:id/email', async (req, res, next) => {
     const to = req.body.to || ''
     const subject = `Invoice: ${inv.invoiceNo || inv.subject}`
     const pdfLink = `/api/invoices/${inv.id}/pdf`
-    const text = `Dear Customer,\n\nPlease find attached invoice ${inv.invoiceNo || ''} for ${inv.subject}.\n\nTotal Amount: ${Number(inv.grandTotal || 0).toFixed(2)}\n\nYou can view the invoice PDF at: ${pdfLink}\n\nThank you,\n${companyName}`
+    const text = `Dear Customer,\n\nPlease find attached invoice ${inv.invoiceNo || ''} for ${inv.subject}.\n\nTotal Amount: ${Number(inv.grandTotal || 0).toFixed(2)} ${inv.currency || ''}\n\nYou can view the invoice PDF at: ${pdfLink}\n\nThank you,\n${companyName}`
 
     console.log(`[EMAIL] To: ${to}, Subject: ${subject}, Body: ${text}`)
     console.log(`[EMAIL] PDF attachment ready: ${pdfLink}`)

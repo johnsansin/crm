@@ -751,6 +751,74 @@ settingsRouter.post('/import/:module', requireAdmin, upload.single('file'), asyn
   } catch (err) { next(err) }
 })
 
+function coerceCell(v: any): any {
+  if (v == null || v === '') return null
+  const s = String(v)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s + 'T12:00:00').toISOString()
+  if (s === 'true' || s === 'false') return s === 'true'
+  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s)
+  return v
+}
+
+const IMPORT_BOOLEANS = new Set(['emailOptOut', 'notifyOwner', 'doNotCall', 'portal', 'vat', 'isService', 'isSales', 'active', 'discontinued'])
+
+settingsRouter.post('/import/:module/rows', requireAdmin, async (req, res, next) => {
+  try {
+    const moduleName = req.params.module
+    const config = getModuleConfig(moduleName)
+    if (!config) return res.status(404).json({ error: 'Unknown module' })
+    const model = (prisma as any)[config.modelName]
+    if (!model) return res.status(404).json({ error: 'Unknown model' })
+    const rows = Array.isArray(req.body?.rows) ? req.body.rows : []
+    const options = req.body?.options || {}
+    const matchField = options.matchField as string | undefined
+    const updateExisting = !!options.updateExisting && !!matchField
+    if (!rows.length) return res.status(400).json({ error: 'No rows to import' })
+    const limit = (await getOrgSetting(req.user!.companyId, 'importExport')).maxRows || 1000
+    const skipKeys = new Set(['id', 'companyId', 'createdAt', 'updatedAt', 'password', 'createdBy'])
+    const errors: { row: number; error: string }[] = []
+    let created = 0
+    let updated = 0
+    for (let i = 0; i < rows.length && i < limit; i++) {
+      const row = rows[i]
+      if (!row || typeof row !== 'object') { errors.push({ row: i + 1, error: 'Invalid row' }); continue }
+      const data: any = {}
+      let hadData = false
+      for (const [k, raw] of Object.entries(row)) {
+        if (!k || skipKeys.has(k)) continue
+        let v: any = coerceCell(raw)
+        if (IMPORT_BOOLEANS.has(k) && typeof raw === 'string' && v === null) {
+          const low = String(raw).trim().toLowerCase()
+          if (['yes', 'no', '1', '0', 'y', 'n'].includes(low)) v = ['yes', '1', 'y'].includes(low)
+        }
+        data[k] = v
+        if (v != null && v !== '') hadData = true
+      }
+      if (!hadData) { errors.push({ row: i + 1, error: 'Row is empty' }); continue }
+      if (req.user!.companyId) data.companyId = req.user!.companyId
+      data.createdBy = req.user!.userId
+      if (!data.assignedTo) data.assignedTo = req.user!.userId
+      if (config.modelName === 'purchaseOrder' && (data.conversionRate == null || data.conversionRate === '')) data.conversionRate = 1
+      try {
+        if (updateExisting && matchField && data[matchField] != null) {
+          const existing = await model.findFirst({ where: { [matchField]: data[matchField], companyId: data.companyId } })
+          if (existing) {
+            await model.update({ where: { id: existing.id }, data })
+            updated++
+            continue
+          }
+        }
+        await model.create({ data })
+        created++
+      } catch (e: any) {
+        errors.push({ row: i + 1, error: e?.message || 'Failed to save record' })
+      }
+    }
+    await writeAudit({ moduleName, action: 'IMPORT', newValue: `created=${created} updated=${updated} failed=${errors.length}`, userId: req.user!.userId, req })
+    res.json({ success: true, created, updated, failed: errors.length, total: Math.min(rows.length, limit), errors: errors.slice(0, 50) })
+  } catch (err) { next(err) }
+})
+
 settingsRouter.post('/smtp/test', requireAdmin, async (req, res, next) => {
   try {
     const cfg = req.body

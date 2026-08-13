@@ -1,3 +1,13 @@
+import './loadEnv'
+import dns from 'node:dns'
+import net from 'node:net'
+// Prefer IPv4 and disable happy-eyeballs: on hosts without a working IPv6 route,
+// Node 20's autoSelectFamily can abort otherwise-good IPv4 connects (observed as
+// "connect ETIMEDOUT ... ; connect ENETUNREACH ..." to imap.gmail.com:993).
+try {
+  dns.setDefaultResultOrder('ipv4first')
+  ;(net as any).setDefaultAutoSelectFamily?.(false)
+} catch { /* older runtime */ }
 import express from 'express'
 import cors from 'cors'
 import path from 'path'
@@ -19,6 +29,7 @@ import { leadRouter } from './modules/lead.routes'
 import { extrasRouter } from './modules/extras.routes'
 import { pbxRouter } from './modules/pbx.routes'
 import { presenceRouter } from './modules/presence.routes'
+import { chatRouter } from './modules/chat.routes'
 import { errorHandler } from './middleware/errorHandler'
 import { setupModules, getModuleConfig } from './modules/moduleSetup'
 import { startCron } from './lib/cron'
@@ -62,6 +73,7 @@ app.use('/api/calendar', calendarRouter)
 app.use('/api/records', recordRouter)
 app.use('/api/leads', leadRouter)
 app.use('/api/presence', presenceRouter)
+app.use('/api/chat', chatRouter)
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')))
 
 async function seedModules() {

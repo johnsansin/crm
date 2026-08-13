@@ -47,7 +47,7 @@ const modules: Record<string, ModuleConfig> = {
     icon: 'TrendingUp',
     sequence: 40,
     searchFields: ['potentialName', 'potentialNo'],
-    listFields: ['potentialName', 'amount', 'stage', 'closingDate', 'probability'],
+    listFields: ['potentialName', 'amount', 'currency', 'stage', 'closingDate', 'probability'],
     relatedModules: ['accounts', 'contacts', 'campaigns']
   },
   campaigns: {

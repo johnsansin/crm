@@ -35,7 +35,7 @@ const displayFields: Record<string, string[]> = {
   accounts: ['accountName', 'email', 'phone', 'industry'],
   contacts: ['firstName', 'lastName', 'email', 'phone'],
   leads: ['firstName', 'lastName', 'company', 'email', 'leadStatus'],
-  potentials: ['potentialName', 'amount', 'stage', 'closingDate'],
+  potentials: ['potentialName', 'amount', 'currency', 'stage', 'closingDate'],
   campaigns: ['campaignName', 'campaignType', 'status', 'startDate'],
   products: ['productName', 'productCategory', 'unitPrice', 'qtyInStock'],
   services: ['serviceName', 'serviceCategory', 'unitPrice'],

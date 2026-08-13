@@ -8,6 +8,7 @@ import { Loader2, Mail, Building2, User, Sparkles, ShieldCheck, ArrowLeft } from
 import { SiteLayout } from '@/components/SiteLayout'
 
 const CODE_RESEND_COOLDOWN = 30
+const CODE_LENGTH = 6
 
 export function SignUpPage() {
   const navigate = useNavigate()
@@ -26,6 +27,7 @@ export function SignUpPage() {
   const [cooldown, setCooldown] = useState(0)
   const [delivered, setDelivered] = useState(true)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
     return () => {
@@ -157,17 +159,47 @@ export function SignUpPage() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Verification Code</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={6}
-                    placeholder="••••••"
-                    value={code}
-                    onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
-                    autoFocus
-                    className="flex h-12 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 text-center text-lg tracking-[0.5em] font-mono text-slate-900 dark:text-white shadow-sm placeholder:text-slate-300 dark:placeholder:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
-                  />
+                  <div className="flex justify-between gap-2 sm:gap-3">
+                    {Array.from({ length: CODE_LENGTH }).map((_, i) => (
+                      <input
+                        key={i}
+                        ref={el => { otpRefs.current[i] = el }}
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete={i === 0 ? 'one-time-code' : 'off'}
+                        maxLength={1}
+                        aria-label={`Digit ${i + 1}`}
+                        value={code[i] ?? ''}
+                        autoFocus={i === 0}
+                        onChange={e => {
+                          const digit = e.target.value.replace(/\D/g, '').slice(-1)
+                          setCode(code.slice(0, i) + digit + code.slice(i + 1))
+                          if (digit && i < CODE_LENGTH - 1) otpRefs.current[i + 1]?.focus()
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Backspace') {
+                            if (code[i]) {
+                              setCode(code.slice(0, i) + code.slice(i + 1))
+                            } else if (i > 0) {
+                              otpRefs.current[i - 1]?.focus()
+                            }
+                          } else if (e.key === 'ArrowLeft' && i > 0) {
+                            otpRefs.current[i - 1]?.focus()
+                          } else if (e.key === 'ArrowRight' && i < CODE_LENGTH - 1) {
+                            otpRefs.current[i + 1]?.focus()
+                          }
+                        }}
+                        onPaste={e => {
+                          e.preventDefault()
+                          const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, CODE_LENGTH)
+                          if (!pasted) return
+                          setCode(pasted)
+                          otpRefs.current[Math.min(pasted.length, CODE_LENGTH - 1)]?.focus()
+                        }}
+                        className="flex h-14 sm:h-16 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-center text-xl sm:text-2xl font-bold font-mono text-slate-900 dark:text-white shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-400"
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 <Button

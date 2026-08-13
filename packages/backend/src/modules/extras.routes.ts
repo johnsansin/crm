@@ -8,6 +8,7 @@ import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { writeAudit } from '../lib/audit'
 import { syncMailbox, generateRecurringInvoice, fetchRssFeed, applyEmailToTicketRule } from '../lib/automation'
 import { renderReport, escapeHtml } from './report'
+import { renderReportHtml, renderReportCsv } from '../lib/report-runner'
 import { dialViaPbx } from './pbx.routes'
 
 export const extrasRouter = Router()
@@ -239,14 +240,25 @@ extrasRouter.put('/mailboxes/:id/rule', authMiddleware, async (req, res, next) =
 })
 
 extrasRouter.post('/mailboxes/:id/sync', authMiddleware, async (req, res, next) => {
+  let mailbox: any = null
   try {
-    const mailbox = await prisma.mailbox.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId || undefined } })
+    mailbox = await prisma.mailbox.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId || undefined } })
     if (!mailbox) return res.status(404).json({ error: 'Not found' })
     const result = await syncMailbox(mailbox)
     await writeAudit({ moduleName: 'mailboxes', recordId: mailbox.id, action: 'ACTIVITY', newValue: `Synced ${result.fetched} emails, ${result.ticketsCreated} tickets`, userId: req.user!.userId, req })
     res.json({ success: true, ...result })
   } catch (err: any) {
-    res.status(502).json({ error: err?.message || 'Mailbox sync failed' })
+    let msg = err?.message || ''
+    if (err?.responseText) msg = err.responseText
+    if (!msg && Array.isArray(err?.errors)) {
+      msg = err.errors.map((e: any) => e?.message).filter(Boolean).join('; ')
+    }
+    if (err?.authenticationFailed && msg) msg = `Authentication failed: ${msg}`
+    if (!msg) msg = 'Mailbox sync failed'
+    if (mailbox && /ETIMEDOUT|ENETUNREACH|ECONNREFUSED|ENOTFOUND|EAI_AGAIN/.test(msg)) {
+      msg += ` (cannot reach IMAP server ${mailbox.host}:${mailbox.port || 993} — verify the host/port and that this server has outbound access)`
+    }
+    res.status(502).json({ error: msg })
   }
 })
 
@@ -853,6 +865,7 @@ extrasRouter.get('/portal/invoices/:id/pdf', async (req: any, res, next) => {
     if (!inv) return res.status(404).json({ error: 'Invoice not found' })
     const company = req.portal.companyId ? await prisma.company.findUnique({ where: { id: req.portal.companyId } }) : null
     const companyName = company?.name || 'BizForce CRM'
+    const cur = inv.currency ? ` (${inv.currency})` : ''
     const billTo = [inv.billingStreet, inv.billingCity, inv.billingState, inv.billingPostalCode, inv.billingCountry].filter(Boolean).map(escapeHtml).join('<br>')
     const html = renderReport({
       title: 'INVOICE',
@@ -866,15 +879,16 @@ extrasRouter.get('/portal/invoices/:id/pdf', async (req: any, res, next) => {
         `<span class="label">Invoice Date:</span> ${inv.invoiceDate ? escapeHtml(new Date(inv.invoiceDate).toLocaleDateString()) : 'N/A'}`,
         `<span class="label">Due Date:</span> ${inv.dueDate ? escapeHtml(new Date(inv.dueDate).toLocaleDateString()) : 'N/A'}`,
         `<span class="label">Status:</span> ${escapeHtml(inv.invoiceStatus || 'N/A')}`,
+        `<span class="label">Currency:</span> ${escapeHtml(inv.currency || 'N/A')}${inv.conversionRate && Number(inv.conversionRate) !== 1 ? ` <span class="item-desc">(rate ${escapeHtml(String(inv.conversionRate))})</span>` : ''}`,
       ],
       items: inv.lineItems.map((item: any) => ({ name: item.itemName, description: item.description, qty: item.qty, rate: item.unitPrice, discount: item.discount, tax: item.tax, total: item.lineTotal })),
       totals: [
-        { label: 'Sub Total', value: inv.subTotal },
+        { label: `Sub Total${cur}`, value: inv.subTotal },
         { label: 'Discount', value: inv.discount },
         { label: 'Tax', value: inv.taxAmount },
         { label: 'Shipping', value: inv.shipping },
         { label: 'Adjustment', value: inv.adjustment },
-        { label: 'Grand Total', value: inv.grandTotal, grand: true },
+        { label: `Grand Total${cur}`, value: inv.grandTotal, grand: true },
       ],
       sections: [],
     })
@@ -889,80 +903,19 @@ extrasRouter.get('/portal/invoices/:id/pdf', async (req: any, res, next) => {
 // =====================================================================
 extrasRouter.post('/reports/export', authMiddleware, async (req: any, res, next) => {
   try {
-    const { name, moduleName, reportType, columns, grouping, filters, rows } = req.body || {}
+    const { name, moduleName, reportType, columns, grouping, filters, rows, format } = req.body || {}
+    const report = { name, moduleName, reportType: reportType || 'tabular', columns, grouping, filters, rows }
     const list = Array.isArray(rows) ? rows : []
-    const cols = Array.isArray(columns) && columns.length ? columns : Object.keys(list[0] || {}).filter((k) => !['id', 'companyId', 'isActive'].includes(k))
     const company = req.user?.companyId ? await prisma.company.findUnique({ where: { id: req.user.companyId } }) : null
-    const companyName = company?.name || 'BizForce CRM'
 
-    const isNumeric = (c: string) => ['amount', 'grandTotal', 'subTotal', 'annualRevenue', 'unitPrice', 'costPrice', 'commissionRate', 'qtyInStock', 'expectedRevenue', 'actualCost', 'budget', 'targetBudget', 'actualBudget', 'forecastAmount', 'qtyPerUnit', 'expectedCount', 'actualCount', 'progress'].includes(c)
-    const total = (c: string) => isNumeric(c) ? list.reduce((s, r) => s + Number(r[c] || 0), 0) : null
-
-    const esc = escapeHtml
-    const cells = (r: any) => cols.map((c: string) => {
-      const v = r[c]
-      if (v == null) return '<td></td>'
-      if (isNumeric(c)) return `<td class="num">${esc(Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</td>`
-      if (typeof v === 'boolean') return `<td>${v ? 'Yes' : 'No'}</td>`
-      if (v instanceof Date || /^\d{4}-\d{2}-\d{2}T/.test(String(v))) {
-        try { return `<td>${esc(new Date(v).toLocaleDateString())}</td>` } catch { /* fallthrough */ }
-      }
-      return `<td>${esc(String(v))}</td>`
-    }).join('')
-
-    const groupField = reportType === 'summary' ? grouping?.field : null
-
-    let body = ''
-    if (groupField && cols.includes(groupField)) {
-      const groups: Record<string, any[]> = {}
-      for (const r of list) {
-        const key = String(r[groupField] ?? '(blank)')
-        if (!groups[key]) groups[key] = []
-        groups[key].push(r)
-      }
-      const rest = cols.filter((c: string) => c !== groupField)
-      body = Object.entries(groups).map(([key, items]) => {
-        const rowsHtml = rest.map((c: string) => {
-          const t = total(c)
-          return `<tr><td>${esc(String(key))}</td><td>${esc(c)}</td><td class="num">${t != null ? esc(Number(t).toLocaleString()) : '—'}</td><td>${items.length}</td></tr>`
-        }).join('')
-        return rowsHtml
-      }).join('')
-      if (rest.length === 0) {
-        body = Object.entries(groups).map(([key, items]) => `<tr><td>${esc(String(key))}</td><td>—</td><td class="num">—</td><td>${items.length}</td></tr>`).join('')
-      }
-      body = `<table><thead><tr><th>${esc(groupField)}</th><th>Metric</th><th>Total</th><th>Count</th></tr></thead><tbody>${body}</tbody></table>`
-    } else {
-      body = `<table><thead><tr>${cols.map((c: string) => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${list.map((r: any) => `<tr>${cells(r)}</tr>`).join('')}</tbody></table>`
-      const totalsRow = cols.some((c: string) => total(c) != null)
-      if (totalsRow) {
-        body += `<table class="totals"><tbody><tr>${cols.map((c: string) => {
-          const t = total(c)
-          return `<td>${t != null ? esc(Number(t).toLocaleString()) : ''}</td>`
-        }).join('')}</tr></tbody></table>`
-      }
+    if (format === 'csv') {
+      const csv = renderReportCsv(report, list)
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+      res.setHeader('Content-Disposition', `attachment; filename="${(name || 'report').replace(/[^a-zA-Z0-9-_]/g, '_')}.csv"`)
+      return res.send('\uFEFF' + csv)
     }
 
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(name || 'Report')}</title>
-<style>
-  * { box-sizing: border-box; }
-  body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #1e293b; margin: 0; padding: 32px; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .meta { color: #64748b; font-size: 12px; margin-bottom: 20px; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
-  th { background: #f1f5f9; font-weight: 600; }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  table.totals { margin-top: 8px; }
-  table.totals td { border: none; background: #f8fafc; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
-  @media print { body { padding: 8px; } }
-</style></head><body>
-<h1>${esc(name || 'Report')}</h1>
-<div class="meta">Module: ${esc(moduleName || '')} · Type: ${esc(reportType || 'tabular')} · Generated: ${esc(new Date().toLocaleString())} · By: ${esc(companyName)}</div>
-${body || '<p>No matching records.</p>'}
-<p style="margin-top:24px;color:#94a3b8;font-size:11px;">Generated by BizForce CRM</p>
-</body></html>`
-
+    const html = renderReportHtml(report, list, company?.name || 'BizForce CRM')
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
     res.setHeader('Content-Disposition', `inline; filename="${(name || 'report').replace(/[^a-zA-Z0-9-_]/g, '_')}.html"`)
     res.send(html)

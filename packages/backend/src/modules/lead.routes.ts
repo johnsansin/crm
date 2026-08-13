@@ -27,6 +27,7 @@ leadRouter.get('/:id/conversion-info', async (req, res, next) => {
     const lead = await prisma.lead.findFirst({ where })
     if (!lead) return res.status(404).json({ error: 'Lead not found' })
     if (lead.isConverted) return res.status(400).json({ error: 'Lead already converted' })
+    const mapping = (await getOrgSetting(req.user!.companyId, 'leadConversionMapping').catch(() => ({}))) || {}
     res.json({
       lead,
       potentialInfo: {
@@ -38,6 +39,7 @@ leadRouter.get('/:id/conversion-info', async (req, res, next) => {
         nextStep: null,
         leadSource: lead.leadSource || null,
       },
+      mapping,
     })
   } catch (err) { next(err) }
 })
@@ -54,6 +56,13 @@ leadRouter.post('/:id/convert', async (req, res, next) => {
     const accountName = pi.accountName || lead.company
     const assignedTo = req.body.assignedTo || lead.assignedTo || req.user!.userId
     const companyId = req.user!.companyId || null
+    const mods = req.body.modules || {}
+    const createAccount = mods.account !== false
+    const createContact = mods.contact !== false
+    const createPotential = mods.potential !== false
+    if (createPotential && !createAccount && !createContact) {
+      return res.status(400).json({ error: 'Opportunity conversion requires at least Account or Contact to be created' })
+    }
 
     // Org-level field mapping (SaaS: each organisation defines its own mapping)
     const mapping = (await getOrgSetting(companyId, 'leadConversionMapping').catch(() => ({}))) || {}
@@ -67,7 +76,10 @@ leadRouter.post('/:id/convert', async (req, res, next) => {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      const account = await tx.account.create({
+      let account: any = null
+      let contact: any = null
+      if (createAccount) {
+        account = await tx.account.create({
         data: applyMap('account', {
           accountNo: await nextSequenceNumber('Account', companyId),
           accountName,
@@ -97,68 +109,78 @@ leadRouter.post('/:id/convert', async (req, res, next) => {
           assignedTo,
         }),
       })
+      }
 
-      const contact = await tx.contact.create({
-        data: applyMap('contact', {
-          contactNo: await nextSequenceNumber('Contact', companyId),
-          salutation: lead.salutation,
-          firstName: lead.firstName,
-          lastName: lead.lastName,
-          title: lead.title,
-          email: lead.email,
-          secondaryEmail: lead.secondaryEmail,
-          phone: lead.phone,
-          mobile: lead.mobile,
-          fax: lead.fax,
-          leadSource: lead.leadSource,
-          isConvertedFromLead: true,
-          mailingStreet: lead.street,
-          mailingCity: lead.city,
-          mailingState: lead.state,
-          mailingCountry: lead.country,
-          mailingPostalCode: lead.postalCode,
-          mailingPoBox: lead.poBox,
-          description: lead.description,
-          accountId: account.id,
-          companyId,
-          createdBy: req.user!.userId,
-          assignedTo,
-        }),
-      })
+      if (createContact) {
+        contact = await tx.contact.create({
+          data: applyMap('contact', {
+            contactNo: await nextSequenceNumber('Contact', companyId),
+            salutation: lead.salutation,
+            firstName: lead.firstName,
+            lastName: lead.lastName,
+            title: lead.title,
+            email: lead.email,
+            secondaryEmail: lead.secondaryEmail,
+            phone: lead.phone,
+            mobile: lead.mobile,
+            fax: lead.fax,
+            leadSource: lead.leadSource,
+            isConvertedFromLead: true,
+            mailingStreet: lead.street,
+            mailingCity: lead.city,
+            mailingState: lead.state,
+            mailingCountry: lead.country,
+            mailingPostalCode: lead.postalCode,
+            mailingPoBox: lead.poBox,
+            description: lead.description,
+            accountId: account ? account.id : null,
+            companyId,
+            createdBy: req.user!.userId,
+            assignedTo,
+          }),
+        })
+      }
 
-      const potential = await tx.potential.create({
-        data: applyMap('potential', {
-          potentialNo: await nextSequenceNumber('Potential', companyId),
-          potentialName: pi.potentialName || lead.company,
-          amount: pi.amount != null ? pi.amount : lead.annualRevenue,
-          closingDate: pi.closingDate ? new Date(pi.closingDate) : null,
-          stage: pi.stage || null,
-          probability: pi.probability != null ? Number(pi.probability) : null,
-          nextStep: pi.nextStep || null,
-          leadSource: pi.leadSource || lead.leadSource,
-          campaignId: lead.campaignId,
-          accountId: account.id,
-          contactId: contact.id,
-          companyId,
-          createdBy: req.user!.userId,
-          assignedTo,
-        }),
-      })
+      let potential: any = null
+      if (createPotential) {
+        potential = await tx.potential.create({
+          data: applyMap('potential', {
+            potentialNo: await nextSequenceNumber('Potential', companyId),
+            potentialName: pi.potentialName || lead.company,
+            amount: pi.amount != null ? pi.amount : lead.annualRevenue,
+            closingDate: pi.closingDate ? new Date(pi.closingDate) : null,
+            stage: pi.stage || null,
+            probability: pi.probability != null ? Number(pi.probability) : null,
+            nextStep: pi.nextStep || null,
+            leadSource: pi.leadSource || lead.leadSource,
+            campaignId: lead.campaignId,
+            accountId: account ? account.id : null,
+            contactId: contact ? contact.id : null,
+            companyId,
+            createdBy: req.user!.userId,
+            assignedTo,
+          }),
+        })
+      }
 
       const converted = await tx.lead.update({
         where: { id: lead.id },
         data: {
           isConverted: true,
-          convertedAccountId: account.id,
-          convertedContactId: contact.id,
-          convertedPotentialId: potential.id,
+          convertedAccountId: account ? account.id : null,
+          convertedContactId: contact ? contact.id : null,
+          convertedPotentialId: potential ? potential.id : null,
         },
       })
 
       return { account, contact, potential, converted }
     })
 
-    await writeAudit({ moduleName: 'leads', recordId: lead.id, action: 'CONVERT', newValue: `Lead converted to Account "${result.account.accountName}"`, userId: req.user!.userId, req })
+      const newValue = `Lead converted${result.account ? ` to Account "${result.account.accountName}"` : ''}${result.contact ? ` and Contact "${result.contact.firstName} ${result.contact.lastName}"` : ''}`
+      await writeAudit({
+        moduleName: 'leads', recordId: lead.id, action: 'CONVERT', newValue,
+        userId: req.user!.userId, req,
+      })
     res.json(result)
   } catch (err) { next(err) }
 })

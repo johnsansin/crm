@@ -14,6 +14,29 @@ import { formatDateTime } from '@/lib/org-format'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
+const IMAP_HOSTS: Record<string, string> = {
+  'gmail.com': 'imap.gmail.com',
+  'googlemail.com': 'imap.gmail.com',
+  'outlook.com': 'outlook.office365.com',
+  'hotmail.com': 'outlook.office365.com',
+  'live.com': 'outlook.office365.com',
+  'msn.com': 'outlook.office365.com',
+  'yahoo.com': 'imap.mail.yahoo.com',
+  'yahoo.co.uk': 'imap.mail.yahoo.com',
+  'ymail.com': 'imap.mail.yahoo.com',
+  'icloud.com': 'imap.mail.me.com',
+  'me.com': 'imap.mail.me.com',
+  'aol.com': 'imap.aol.com',
+  'zoho.com': 'imap.zoho.com',
+  'yandex.com': 'imap.yandex.com',
+  'yandex.ru': 'imap.yandex.com',
+  'gmx.com': 'imap.gmx.com',
+}
+function suggestImapHost(user: string): string {
+  const domain = (user.includes('@') ? user.split('@')[1] : '').toLowerCase()
+  return IMAP_HOSTS[domain] || ''
+}
+
 export function MailboxesPage() {
   const [tab, setTab] = useState('mailboxes')
   return (
@@ -109,11 +132,18 @@ function MailboxesTab({ onSelect }: { onSelect: () => void }) {
           <form onSubmit={(e) => { e.preventDefault(); submit() }} className="space-y-3">
             <Input placeholder="Name (e.g. Support Inbox)" value={form.name} onChange={(e) => setForm((f: any) => ({ ...f, name: e.target.value }))} required />
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="IMAP Host (e.g. imap.gmail.com)" value={form.host} onChange={(e) => setForm((f: any) => ({ ...f, host: e.target.value }))} required />
+              <Input placeholder="IMAP Host (auto-filled from email, e.g. imap.gmail.com)" value={form.host} onChange={(e) => setForm((f: any) => ({ ...f, host: e.target.value }))} required />
               <Input type="number" placeholder="Port" value={form.port} onChange={(e) => setForm((f: any) => ({ ...f, port: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Username / Email" value={form.user} onChange={(e) => setForm((f: any) => ({ ...f, user: e.target.value }))} required />
+              <Input placeholder="Username / Email" value={form.user} onChange={(e) => {
+                const u = e.target.value
+                setForm((f: any) => {
+                  const suggested = suggestImapHost(u)
+                  if (suggested && (!f.host || f.host === suggestImapHost(f.user))) return { ...f, user: u, host: suggested }
+                  return { ...f, user: u }
+                })
+              }} required />
               <PasswordInput placeholder="Password / App password" value={form.pass} onChange={(e) => setForm((f: any) => ({ ...f, pass: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-2">

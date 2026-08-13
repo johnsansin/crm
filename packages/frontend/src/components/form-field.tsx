@@ -3,10 +3,11 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { DateField } from '@/components/ui/date-field'
 import { getFieldLabel } from '@/lib/field-utils'
 
-export function FormField({ field, type = 'text', options, label, form, updateForm, accounts, contacts, potentials, products }: {
+export function FormField({ field, type = 'text', options, label, form, updateForm, accounts, contacts, potentials, products, onSelect }: {
   field: string; type?: string; options?: string[]; label?: string;
   form: any; updateForm: (field: string, value: any) => void;
   accounts?: any[]; contacts?: any[]; potentials?: any[]; products?: any[];
+  onSelect?: (value: string) => void;
 }) {
   const value = form[field] ?? ''
   const lbl = label || getFieldLabel(field)
@@ -15,7 +16,7 @@ export function FormField({ field, type = 'text', options, label, form, updateFo
     return (
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{lbl}</label>
-        <Select value={value} onValueChange={(v) => updateForm(field, v)}>
+        <Select value={value} onValueChange={(v) => onSelect ? onSelect(v) : updateForm(field, v)}>
           <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>{(options || []).map(o => <SelectItem key={o} value={o === '--None--' ? '' : o}>{o}</SelectItem>)}</SelectContent>
         </Select>

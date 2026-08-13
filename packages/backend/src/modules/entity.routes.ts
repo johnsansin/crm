@@ -1,10 +1,12 @@
 import { Router } from 'express'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { getModuleConfig } from './moduleSetup'
 import { runWorkflows, nextSequenceNumber } from '../lib/settings'
 import { writeAudit, writeAuditFields, auditSummary } from '../lib/audit'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
+import { notifyFollowersAndAssignee } from '../lib/notify'
 
 const moduleActiveCache = new Map<string, { active: boolean; at: number }>()
 async function isModuleActive(moduleName: string): Promise<boolean | null> {
@@ -61,7 +63,7 @@ const NO_ASSIGNED_TO = new Set([
 // matching vtiger (an inactive product stays visible in the list).
 const TRASH_BY_IS_DELETED = new Set(['product', 'service'])
 
-const modelMap: Record<string, string> = {
+export const modelMap: Record<string, string> = {
   accounts: 'account',
   contacts: 'contact',
   leads: 'lead',
@@ -103,7 +105,7 @@ const modelPrismaName: Record<string, string> = {
   rolepermissions: 'rolePermission'
 }
 
-const scopedModels = new Set([
+export const scopedModels = new Set([
   'account', 'contact', 'lead', 'potential', 'campaign',
   'product', 'service', 'vendor', 'priceBook',
   'quote', 'salesOrder', 'purchaseOrder', 'invoice',
@@ -112,7 +114,7 @@ const scopedModels = new Set([
   'asset', 'serviceContract', 'smsNotifier', 'role',
   'userGroup', 'userGroupMember',
   'currency', 'taxInfo', 'tag', 'customView',
-  'potentialProduct', 'potentialStageHistory', 'callLog'
+  'potentialProduct', 'potentialStageHistory', 'callLog', 'report'
 ])
 
 const permissionModules = new Set([
@@ -165,6 +167,21 @@ function fixDecimals(data: any) {
   for (const k of Object.keys(data)) {
     if (decimalFields.has(k) && (data[k] == null || data[k] === '')) data[k] = 0
   }
+}
+
+const dmmfModels = () => Prisma.dmmf?.datamodel?.models || []
+function requiredModelFields(modelName: string): string[] {
+  const model = dmmfModels().find((m) => m.name.toLowerCase() === modelName.toLowerCase())
+  if (!model) return []
+  return model.fields
+    .filter((f) => f.kind === 'scalar' && f.isRequired && !f.isId && !f.hasDefaultValue && !f.isUpdatedAt)
+    .map((f) => f.name)
+}
+function missingRequiredFields(modelName: string, data: any): string[] {
+  return requiredModelFields(modelName).filter((f) => data[f] == null || data[f] === '')
+}
+function emptyRequiredFields(modelName: string, data: any): string[] {
+  return requiredModelFields(modelName).filter((f) => f in data && (data[f] == null || data[f] === ''))
 }
 
 async function getCustomFieldDefs(companyId: string | undefined, moduleName: string) {
@@ -454,6 +471,7 @@ export function entityRouter(moduleName: string): Router {
         }
         if (data[k] === '') data[k] = null
       }
+      if (modelName === 'purchaseOrder' && (data.conversionRate == null || data.conversionRate === '')) data.conversionRate = 1
       if (modelName !== 'role' && modelName !== 'currency' && modelName !== 'taxInfo') {
         data.createdBy = req.user!.userId
         if (!NO_ASSIGNED_TO.has(modelName)) data.assignedTo = req.body.assignedTo || req.user!.userId
@@ -470,6 +488,10 @@ export function entityRouter(moduleName: string): Router {
       delete data.products
       delete data.stageHistory
       delete data.images
+      const missing = missingRequiredFields(modelName, data)
+      if (missing.length) {
+        return res.status(400).json({ error: `Missing required field(s): ${missing.join(', ')}` })
+      }
       if (modelName === 'currency' && data.isDefault) {
         await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
       }
@@ -526,11 +548,16 @@ export function entityRouter(moduleName: string): Router {
         }
         if (data[k] === '') data[k] = null
       }
+      if (modelName === 'purchaseOrder' && (data.conversionRate == null || data.conversionRate === '')) data.conversionRate = 1
       fixBooleans(data)
       fixDecimals(data)
       delete data.products
       delete data.stageHistory
       delete data.images
+      const emptyReq = emptyRequiredFields(modelName, data)
+      if (emptyReq.length) {
+        return res.status(400).json({ error: `Field(s) cannot be empty: ${emptyReq.join(', ')}` })
+      }
       if (modelName === 'currency' && data.isDefault) {
         await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
       }
@@ -551,6 +578,22 @@ export function entityRouter(moduleName: string): Router {
       }
       await writeAuditFields({ moduleName, recordId: record.id, before, after: { ...before, ...data }, userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onUpdate', record, prevRecord: before, req })
+      if (modelName === 'lead') {
+        const changedFields = Object.keys(data).filter(k => JSON.stringify((before as any)[k]) !== JSON.stringify((record as any)[k]))
+        if (changedFields.length) {
+          const label = `${record.firstName || ''} ${record.lastName || ''}`.trim() || record.company || record.id
+          notifyFollowersAndAssignee({
+            moduleName,
+            recordId: record.id,
+            assigneeId: record.assignedTo,
+            title: `Lead updated: ${label}`,
+            message: `A lead you follow was updated — changed: ${changedFields.slice(0, 4).join(', ')}${changedFields.length > 4 ? '...' : ''}`,
+            link: `/leads/${record.id}`,
+            companyId: req.user!.companyId,
+            actorId: req.user!.userId,
+          }).catch(() => {})
+        }
+      }
       const merged = await mergeCustomValues(moduleName, [record])
       res.json(merged[0])
     } catch (err) { next(err) }

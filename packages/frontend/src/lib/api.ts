@@ -1,4 +1,11 @@
-const API_BASE = '/api'
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, '') ?? '/api'
+
+const origin = API_BASE === '/api' ? '' : API_BASE.replace(/\/api\/?$/, '')
+export function publicUrl(path: string): string {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `${origin}${path.startsWith('/') ? '' : '/'}${path}`
+}
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('token')
@@ -256,6 +263,23 @@ export const api = {
   markAllNotificationsRead: () =>
     request<any>('/settings/notifications/read-all', { method: 'PUT' }),
 
+  getChatUsers: () => request<{ data: any[] }>('/chat/users'),
+  getChatConversations: () => request<{ data: any[] }>('/chat/conversations'),
+  createChatConversation: (data: any) =>
+    request<any>('/chat/conversations', { method: 'POST', body: JSON.stringify(data) }),
+  getChatMessages: (id: string, after?: string) =>
+    request<{ data: any[] }>(`/chat/conversations/${id}/messages${after ? `?after=${after}` : ''}`),
+  sendChatMessage: (id: string, body: string) =>
+    request<any>(`/chat/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ body }) }),
+  markChatRead: (id: string) =>
+    request<any>(`/chat/conversations/${id}/read`, { method: 'POST' }),
+  addChatMembers: (id: string, userIds: string[]) =>
+    request<any>(`/chat/conversations/${id}/members`, { method: 'POST', body: JSON.stringify({ participantIds: userIds }) }),
+  removeChatMember: (id: string, userId: string) =>
+    request<any>(`/chat/conversations/${id}/members/${userId}`, { method: 'DELETE' }),
+  leaveChatConversation: (id: string) =>
+    request<any>(`/chat/conversations/${id}`, { method: 'DELETE' }),
+
   getActiveAnnouncements: () => request<{ data: any[] }>('/settings/announcements/active'),
   getAnnouncements: () => request<{ data: any[] }>('/settings/announcements'),
   createAnnouncement: (data: any) =>
@@ -334,6 +358,10 @@ export const api = {
       method: 'POST', body: formData
     })
   },
+  importModuleRows: (moduleName: string, rows: any[], options: { matchField?: string; updateExisting?: boolean }) =>
+    request<{ success: boolean; created: number; updated: number; failed: number; total: number; errors: { row: number; error: string }[] }>(`/settings/import/${moduleName}/rows`, {
+      method: 'POST', body: JSON.stringify({ rows, options }),
+    }),
 
   testSmtp: (cfg: any) =>
     request<any>('/settings/smtp/test', { method: 'POST', body: JSON.stringify(cfg) }),
@@ -387,6 +415,33 @@ export const api = {
       const url = URL.createObjectURL(blob)
       const w = window.open()
       if (w) { w.document.open(); w.document.write('Loading report…'); w.location.href = url }
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+      return { ok: true }
+    } catch (e: any) {
+      return { ok: false, error: e.message || 'Export failed' }
+    }
+  },
+  exportReportCsv: async (report: any, rows: any[]): Promise<{ ok: boolean; error?: string }> => {
+    const token = localStorage.getItem('token')
+    try {
+      const res = await fetch(`${API_BASE}/reports/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ ...report, rows, format: 'csv' }),
+      })
+      if (!res.ok) {
+        let msg = `Export failed (${res.status})`
+        try { const b = await res.json(); msg = b.error || msg } catch {}
+        throw new Error(msg)
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${(report.name || 'report').replace(/[^a-zA-Z0-9-_]/g, '_')}.csv`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
       setTimeout(() => URL.revokeObjectURL(url), 60000)
       return { ok: true }
     } catch (e: any) {

@@ -4,11 +4,12 @@ import { api } from '@/lib/api'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
 import { DataTable } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { Plus, Pencil, Trash2, Loader2, BarChart3, Play, Printer, Table2, ChartPie } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2, BarChart3, Play, Printer, Table2, ChartPie, Download, Folder, Clock } from 'lucide-react'
 import { getFieldLabel, formatFieldValue } from '@/lib/field-utils'
 import { formatDate } from '@/lib/org-format'
 
@@ -20,7 +21,7 @@ const moduleFields: Record<string, string[]> = {
   accounts: ['accountName', 'accountNo', 'accountType', 'industry', 'annualRevenue', 'phone', 'email', 'website', 'billingCity', 'billingState', 'billingCountry', 'employees', 'description'],
   contacts: ['firstName', 'lastName', 'title', 'department', 'email', 'secondaryEmail', 'phone', 'mobile', 'leadSource', 'assignedTo', 'description'],
   leads: ['firstName', 'lastName', 'company', 'title', 'email', 'phone', 'mobile', 'website', 'leadStatus', 'leadSource', 'industry', 'annualRevenue', 'description'],
-  potentials: ['potentialName', 'potentialNo', 'amount', 'forecastAmount', 'closingDate', 'stage', 'probability', 'type', 'leadSource', 'nextStep', 'assignedTo', 'description'],
+  potentials: ['potentialName', 'potentialNo', 'amount', 'currency', 'forecastAmount', 'closingDate', 'stage', 'probability', 'type', 'leadSource', 'nextStep', 'assignedTo', 'description'],
   campaigns: ['campaignName', 'campaignType', 'status', 'startDate', 'endDate', 'expectedRevenue', 'actualCost', 'budget', 'expectedResponse', 'actualCount', 'description'],
   products: ['productName', 'productNo', 'productCategory', 'unitPrice', 'costPrice', 'commissionRate', 'qtyInStock', 'qtyPerUnit', 'usageUnit', 'isService', 'isSales', 'vat', 'description'],
   services: ['serviceName', 'serviceNo', 'serviceCategory', 'unitPrice', 'commissionRate', 'description'],
@@ -41,7 +42,15 @@ const moduleFields: Record<string, string[]> = {
   servicecontracts: ['contractName', 'contractNo', 'contractType', 'status', 'startDate', 'endDate', 'trackingUnit', 'description'],
 }
 
-const NUMERIC_FIELDS = ['amount', 'grandTotal', 'subTotal', 'annualRevenue', 'unitPrice', 'costPrice', 'commissionRate', 'qtyInStock', 'expectedRevenue', 'actualCost', 'budget', 'targetBudget', 'actualBudget', 'forecastAmount', 'qtyPerUnit', 'expectedCount', 'actualCount', 'progress']
+const NUMERIC_FIELDS = ['amount', 'grandTotal', 'subTotal', 'annualRevenue', 'unitPrice', 'costPrice', 'commissionRate', 'qtyInStock', 'expectedRevenue', 'actualCost', 'budget', 'targetBudget', 'actualBudget', 'forecastAmount', 'qtyPerUnit', 'expectedCount', 'actualCount', 'progress', 'probability', 'rate', 'discount', 'tax']
+
+const DEFAULT_SCHEDULE = { enabled: false, frequency: 'daily', hour: 8, minute: 0, dayOfWeek: 1, dayOfMonth: 1, emailTo: '' }
+
+function fmtNum(v: any): string {
+  if (v == null || v === '') return '0.00'
+  const n = Number(v)
+  return Number.isFinite(n) ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : String(v)
+}
 
 export function ReportsPage() {
   const queryClient = useQueryClient()
@@ -50,8 +59,13 @@ export function ReportsPage() {
   const [showForm, setShowForm] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [running, setRunning] = useState<any | null>(null)
+  const [folderFilter, setFolderFilter] = useState('')
 
   const { data, isLoading } = useQuery({ queryKey: ['reports'], queryFn: () => api.list('reports', { limit: '100' }) })
+
+  const reports = data?.data || []
+  const folders = useMemo(() => [...new Set(reports.map((r: any) => r.folder).filter(Boolean) as string[])].sort(), [reports])
+  const visible = folderFilter ? reports.filter((r: any) => r.folder === folderFilter) : reports
 
   const deleteMutation = useMutation({
     mutationFn: () => api.delete('reports', deleteId!),
@@ -74,19 +88,32 @@ export function ReportsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><BarChart3 className="text-primary" /> Reports</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Build tabular and summary reports over CRM modules (report module).</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Tabular, summary, matrix and chart reports with folders and scheduling.</p>
         </div>
-        <Button size="sm" onClick={() => { setEditing(null); setShowForm(true) }}><Plus size={15} className="mr-1.5" /> New Report</Button>
+        <div className="flex items-center gap-2">
+          {folders.length > 0 && (
+            <Select value={folderFilter} onValueChange={setFolderFilter}>
+              <SelectTrigger className="w-44"><span className="flex items-center gap-1.5"><Folder size={13} /> <SelectValue /></span></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All folders</SelectItem>
+                {folders.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+          <Button size="sm" onClick={() => { setEditing(null); setShowForm(true) }}><Plus size={15} className="mr-1.5" /> New Report</Button>
+        </div>
       </div>
 
       <DataTable
         columns={[
-          { key: 'name', label: 'Name', render: (v, r) => <span className="font-medium">{v}</span> },
+          { key: 'name', label: 'Name', render: (v, r) => <span className="font-medium">{v}{r.schedule?.enabled ? <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 text-[11px]"><Clock size={11} /> Scheduled</span> : null}</span> },
+          { key: 'folder', label: 'Folder', render: (v) => v ? <span className="inline-flex items-center gap-1 text-muted-foreground"><Folder size={12} /> {v}</span> : <span className="text-muted-foreground">—</span> },
           { key: 'moduleName', label: 'Module', render: (v) => <span className="text-muted-foreground capitalize">{v}</span> },
           { key: 'reportType', label: 'Type', render: (v) => <span className="capitalize">{v}</span> },
+          { key: 'lastRunAt', label: 'Last Run', render: (v) => <span className="text-muted-foreground">{v ? formatDate(v) : '—'}</span> },
           { key: 'createdAt', label: 'Created', render: (v) => <span className="text-muted-foreground">{v ? formatDate(v) : '—'}</span> },
         ]}
-        data={data?.data || []}
+        data={visible}
         loading={isLoading}
         emptyMessage="No reports yet. Create your first report."
         pageSize={10}
@@ -100,7 +127,7 @@ export function ReportsPage() {
       />
 
       <Dialog open={showForm} onOpenChange={(o) => { if (!o) setEditing(null); setShowForm(o) }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? 'Edit Report' : 'New Report'}</DialogTitle></DialogHeader>
           <ReportForm
             initial={editing}
@@ -131,19 +158,24 @@ export function ReportsPage() {
 }
 
 function ReportForm({ initial, onSave, saving, onCancel }: { initial: any; onSave: (d: any) => void; saving: boolean; onCancel: () => void }) {
+  const matrix = initial?.grouping?.matrix || {}
   const [form, setForm] = useState<any>({
     name: initial?.name || '',
     moduleName: initial?.moduleName || 'accounts',
     reportType: initial?.reportType || 'tabular',
     chartType: initial?.chartType || 'bar',
+    folder: initial?.folder || '',
     columns: initial?.columns || [],
     grouping: initial?.grouping || {},
+    matrix: { rowField: matrix.rowField || '', columnField: matrix.columnField || '', valueField: matrix.valueField || '', aggregate: matrix.aggregate || 'sum' },
     filters: initial?.filters || [],
     sort: initial?.sort || [],
+    schedule: initial?.schedule || { ...DEFAULT_SCHEDULE },
   })
   const [filterField, setFilterField] = useState('')
   const fields = moduleFields[form.moduleName] || []
   const available = fields.filter((f) => !form.columns.includes(f))
+  const set = (patch: any) => setForm((p: any) => ({ ...p, ...patch }))
 
   const toggleColumn = (f: string) => {
     setForm((prev: any) => ({
@@ -164,19 +196,45 @@ function ReportForm({ initial, onSave, saving, onCancel }: { initial: any; onSav
 
   const submit = () => {
     if (!form.name.trim()) return
-    onSave({ ...form, columns: form.columns, filters: form.filters, sort: form.sort })
+    const grouping = form.reportType === 'matrix'
+      ? { matrix: { rowField: form.matrix.rowField, columnField: form.matrix.columnField, valueField: form.matrix.valueField, aggregate: form.matrix.aggregate } }
+      : form.grouping
+    const schedule = form.schedule?.enabled ? form.schedule : null
+    onSave({
+      name: form.name,
+      moduleName: form.moduleName,
+      reportType: form.reportType,
+      chartType: form.reportType === 'chart' ? form.chartType : null,
+      folder: form.folder || null,
+      columns: form.columns,
+      grouping,
+      filters: form.filters,
+      sort: form.sort,
+      schedule,
+    })
   }
+
+  const hourOptions = Array.from({ length: 24 }, (_, i) => i)
+  const minuteOptions = Array.from({ length: 12 }, (_, i) => i * 5)
+  const dowOptions = [
+    { v: '1', l: 'Monday' }, { v: '2', l: 'Tuesday' }, { v: '3', l: 'Wednesday' },
+    { v: '4', l: 'Thursday' }, { v: '5', l: 'Friday' }, { v: '6', l: 'Saturday' }, { v: '0', l: 'Sunday' },
+  ]
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium block mb-1.5">Report Name</label>
-          <Input placeholder="e.g. Open Opportunities" value={form.name} onChange={(e) => setForm((f: any) => ({ ...f, name: e.target.value }))} />
+          <Input placeholder="e.g. Open Opportunities" value={form.name} onChange={(e) => set({ name: e.target.value })} />
+        </div>
+        <div>
+          <label className="text-sm font-medium block mb-1.5">Folder</label>
+          <Input placeholder="e.g. Sales" value={form.folder} onChange={(e) => set({ folder: e.target.value })} />
         </div>
         <div>
           <label className="text-sm font-medium block mb-1.5">Module</label>
-          <Select value={form.moduleName} onValueChange={(v) => setForm((f: any) => ({ ...f, moduleName: v, columns: [], grouping: {}, filters: [] }))}>
+          <Select value={form.moduleName} onValueChange={(v) => setForm((f: any) => ({ ...f, moduleName: v, columns: [], grouping: {}, matrix: { rowField: '', columnField: '', valueField: '', aggregate: 'sum' }, filters: [] }))}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {MODULES.map((m) => <SelectItem key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</SelectItem>)}
@@ -185,11 +243,12 @@ function ReportForm({ initial, onSave, saving, onCancel }: { initial: any; onSav
         </div>
         <div>
           <label className="text-sm font-medium block mb-1.5">Type</label>
-          <Select value={form.reportType} onValueChange={(v) => setForm((f: any) => ({ ...f, reportType: v }))}>
+          <Select value={form.reportType} onValueChange={(v) => set({ reportType: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="tabular">Tabular</SelectItem>
               <SelectItem value="summary">Summary (grouped)</SelectItem>
+              <SelectItem value="matrix">Matrix (pivot)</SelectItem>
               <SelectItem value="chart">Chart</SelectItem>
             </SelectContent>
           </Select>
@@ -197,7 +256,7 @@ function ReportForm({ initial, onSave, saving, onCancel }: { initial: any; onSav
         {form.reportType === 'chart' && (
           <div>
             <label className="text-sm font-medium block mb-1.5">Chart Type</label>
-            <Select value={form.chartType || 'bar'} onValueChange={(v) => setForm((f: any) => ({ ...f, chartType: v }))}>
+            <Select value={form.chartType || 'bar'} onValueChange={(v) => set({ chartType: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="bar">Bar</SelectItem>
@@ -208,25 +267,71 @@ function ReportForm({ initial, onSave, saving, onCancel }: { initial: any; onSav
         )}
       </div>
 
-      <div>
-        <label className="text-sm font-medium block mb-1.5">Columns</label>
-        <div className="flex flex-wrap gap-1.5 rounded-lg border p-2.5 min-h-[42px]">
-          {form.columns.map((c: string) => (
-            <span key={c} className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium">
-              {getFieldLabel(c)}
-              <button type="button" onClick={() => toggleColumn(c)} className="hover:text-destructive"><XIcon size={12} /></button>
-            </span>
-          ))}
-          {form.columns.length === 0 && <span className="text-sm text-muted-foreground">No columns selected — pick from the list</span>}
+      {form.reportType === 'matrix' && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-lg border p-3">
+          <div>
+            <label className="text-sm font-medium block mb-1.5">Row Field</label>
+            <Select value={form.matrix.rowField} onValueChange={(v) => setForm((f: any) => ({ ...f, matrix: { ...f.matrix, rowField: v } }))}>
+              <SelectTrigger><SelectValue placeholder="Field for rows" /></SelectTrigger>
+              <SelectContent>
+                {fields.map((f) => <SelectItem key={f} value={f}>{getFieldLabel(f)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1.5">Column Field</label>
+            <Select value={form.matrix.columnField} onValueChange={(v) => setForm((f: any) => ({ ...f, matrix: { ...f.matrix, columnField: v } }))}>
+              <SelectTrigger><SelectValue placeholder="Field for columns" /></SelectTrigger>
+              <SelectContent>
+                {fields.map((f) => <SelectItem key={f} value={f}>{getFieldLabel(f)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium block mb-1.5">Value Field</label>
+              <Select value={form.matrix.valueField} onValueChange={(v) => setForm((f: any) => ({ ...f, matrix: { ...f.matrix, valueField: v } }))}>
+                <SelectTrigger><SelectValue placeholder="Numeric field" /></SelectTrigger>
+                <SelectContent>
+                  {fields.filter((f) => NUMERIC_FIELDS.includes(f)).map((f) => <SelectItem key={f} value={f}>{getFieldLabel(f)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium block mb-1.5">Aggregate</label>
+              <Select value={form.matrix.aggregate} onValueChange={(v) => setForm((f: any) => ({ ...f, matrix: { ...f.matrix, aggregate: v } }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sum">Sum</SelectItem>
+                  <SelectItem value="count">Count</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {available.map((f) => (
-            <button key={f} type="button" onClick={() => toggleColumn(f)} className="rounded-full border px-2.5 py-1 text-xs hover:bg-muted transition-colors">
-              {getFieldLabel(f)}
-            </button>
-          ))}
+      )}
+
+      {form.reportType !== 'matrix' && (
+        <div>
+          <label className="text-sm font-medium block mb-1.5">Columns</label>
+          <div className="flex flex-wrap gap-1.5 rounded-lg border p-2.5 min-h-[42px]">
+            {form.columns.map((c: string) => (
+              <span key={c} className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium">
+                {getFieldLabel(c)}
+                <button type="button" onClick={() => toggleColumn(c)} className="hover:text-destructive"><XIcon size={12} /></button>
+              </span>
+            ))}
+            {form.columns.length === 0 && <span className="text-sm text-muted-foreground">No columns selected — pick from the list</span>}
+          </div>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {available.map((f) => (
+              <button key={f} type="button" onClick={() => toggleColumn(f)} className="rounded-full border px-2.5 py-1 text-xs hover:bg-muted transition-colors">
+                {getFieldLabel(f)}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {form.reportType === 'summary' && (
         <div>
@@ -235,6 +340,18 @@ function ReportForm({ initial, onSave, saving, onCancel }: { initial: any; onSav
             <SelectTrigger><SelectValue placeholder="Select a field" /></SelectTrigger>
             <SelectContent>
               {form.columns.map((c: string) => <SelectItem key={c} value={c}>{getFieldLabel(c)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {form.reportType === 'chart' && (
+        <div>
+          <label className="text-sm font-medium block mb-1.5">Chart Group By</label>
+          <Select value={form.grouping?.field || ''} onValueChange={setGroupBy}>
+            <SelectTrigger><SelectValue placeholder="Select a field" /></SelectTrigger>
+            <SelectContent>
+              {fields.map((f) => <SelectItem key={f} value={f}>{getFieldLabel(f)}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -252,7 +369,9 @@ function ReportForm({ initial, onSave, saving, onCancel }: { initial: any; onSav
                 <SelectItem value="neq">Not equals</SelectItem>
                 <SelectItem value="contains">Contains</SelectItem>
                 <SelectItem value="gt">Greater than</SelectItem>
+                <SelectItem value="gte">Greater or equal</SelectItem>
                 <SelectItem value="lt">Less than</SelectItem>
+                <SelectItem value="lte">Less or equal</SelectItem>
                 <SelectItem value="is_empty">Is empty</SelectItem>
                 <SelectItem value="is_not_empty">Is not empty</SelectItem>
               </SelectContent>
@@ -270,6 +389,75 @@ function ReportForm({ initial, onSave, saving, onCancel }: { initial: any; onSav
           </Select>
           <Button type="button" variant="outline" size="sm" onClick={addFilter} disabled={!filterField}>Add Filter</Button>
         </div>
+      </div>
+
+      <div className="rounded-lg border p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm font-medium">Schedule &amp; Email</div>
+            <div className="text-xs text-muted-foreground">Run this report periodically and email the results</div>
+          </div>
+          <Switch checked={form.schedule?.enabled} onCheckedChange={(v) => setForm((f: any) => ({ ...f, schedule: { ...f.schedule, enabled: v } }))} />
+        </div>
+        {form.schedule?.enabled && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs font-medium block mb-1">Frequency</label>
+              <Select value={form.schedule.frequency} onValueChange={(v) => setForm((f: any) => ({ ...f, schedule: { ...f.schedule, frequency: v } }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="hourly">Hourly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {form.schedule.frequency === 'weekly' && (
+              <div>
+                <label className="text-xs font-medium block mb-1">Day of week</label>
+                <Select value={String(form.schedule.dayOfWeek)} onValueChange={(v) => setForm((f: any) => ({ ...f, schedule: { ...f.schedule, dayOfWeek: Number(v) } }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {dowOptions.map(o => <SelectItem key={o.v} value={o.v}>{o.l}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {form.schedule.frequency === 'monthly' && (
+              <div>
+                <label className="text-xs font-medium block mb-1">Day of month</label>
+                <Select value={String(form.schedule.dayOfMonth)} onValueChange={(v) => setForm((f: any) => ({ ...f, schedule: { ...f.schedule, dayOfMonth: Number(v) } }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <SelectItem key={d} value={String(d)}>{d}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div>
+              <label className="text-xs font-medium block mb-1">Time</label>
+              <div className="flex gap-1.5">
+                <Select value={String(form.schedule.hour)} onValueChange={(v) => setForm((f: any) => ({ ...f, schedule: { ...f.schedule, hour: Number(v) } }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {hourOptions.map(h => <SelectItem key={h} value={String(h)}>{String(h).padStart(2, '0')}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={String(form.schedule.minute)} onValueChange={(v) => setForm((f: any) => ({ ...f, schedule: { ...f.schedule, minute: Number(v) } }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {minuteOptions.map(m => <SelectItem key={m} value={String(m)}>{String(m).padStart(2, '0')}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="col-span-2 sm:col-span-3">
+              <label className="text-xs font-medium block mb-1">Email to (comma separated)</label>
+              <Input placeholder="reports@example.com, mgr@example.com" value={form.schedule.emailTo || ''} onChange={(e) => setForm((f: any) => ({ ...f, schedule: { ...f.schedule, emailTo: e.target.value } }))} />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end gap-2 pt-2 border-t">
@@ -300,7 +488,9 @@ function ReportRunner({ report }: { report: any }) {
           case 'neq': return String(rv ?? '') !== String(val ?? '')
           case 'contains': return String(rv ?? '').toLowerCase().includes(String(val ?? '').toLowerCase())
           case 'gt': return Number(rv) > Number(val)
+          case 'gte': return Number(rv) >= Number(val)
           case 'lt': return Number(rv) < Number(val)
+          case 'lte': return Number(rv) <= Number(val)
           case 'is_empty': return rv == null || rv === ''
           case 'is_not_empty': return rv != null && rv !== ''
           default: return true
@@ -314,26 +504,98 @@ function ReportRunner({ report }: { report: any }) {
 
   const totals = (key: string) => NUMERIC_FIELDS.includes(key) ? rows.reduce((s, r) => s + Number(r[key] || 0), 0) : null
 
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<'pdf' | 'csv' | null>(null)
   const { addToast } = useToast()
 
   const exportPdf = () => {
-    setBusy(true)
+    setBusy('pdf')
     api.exportReport(report, rows)
       .then((res: any) => {
         if (!res.ok) addToast({ title: 'Export failed', description: res.error, variant: 'destructive' })
       })
-      .finally(() => setBusy(false))
+      .finally(() => setBusy(null))
+  }
+
+  const exportCsv = () => {
+    setBusy('csv')
+    api.exportReportCsv(report, rows)
+      .then((res: any) => {
+        if (!res.ok) addToast({ title: 'Export failed', description: res.error, variant: 'destructive' })
+      })
+      .finally(() => setBusy(null))
   }
 
   if (isLoading) return <div className="flex justify-center py-10"><Loader2 className="animate-spin text-muted-foreground" /></div>
 
-  const exportBtn = (
-    <Button variant="outline" size="sm" onClick={exportPdf} disabled={busy}>
-      {busy ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Printer size={14} className="mr-1.5" />}
-      Print / PDF
-    </Button>
+  const exportBtns = (
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm" onClick={exportCsv} disabled={busy !== null}>
+        {busy === 'csv' ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
+        CSV
+      </Button>
+      <Button variant="outline" size="sm" onClick={exportPdf} disabled={busy !== null}>
+        {busy === 'pdf' ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Printer size={14} className="mr-1.5" />}
+        Print / PDF
+      </Button>
+    </div>
   )
+
+  if (report.reportType === 'matrix') {
+    const mc = report.grouping?.matrix || {}
+    const { rowField, columnField, valueField, aggregate } = mc
+    const rowVals = [...new Set(rows.map((r: any) => String(r[rowField] ?? '(blank)')))]
+    const colVals = [...new Set(rows.map((r: any) => String(r[columnField] ?? '(blank)')))]
+    const cell = (rv: string, cv: string): number => {
+      const recs = rows.filter((r: any) => String(r[rowField] ?? '(blank)') === rv && String(r[columnField] ?? '(blank)') === cv)
+      if (aggregate === 'count') return recs.length
+      return recs.reduce((s, r: any) => s + Number(r[valueField] || 0), 0)
+    }
+    const rowTotals = rowVals.map(rv => colVals.reduce((s, cv) => s + cell(rv, cv), 0))
+    const colTotals = colVals.map(cv => rowVals.reduce((s, rv) => s + cell(rv, cv), 0))
+    const grand = rowTotals.reduce((s, v) => s + v, 0)
+    if (!rowField || !columnField) {
+      return <div className="space-y-3"><div className="flex justify-end">{exportBtns}</div><p className="text-sm text-muted-foreground py-6 text-center">Matrix requires row and column fields. Edit the report to configure them.</p></div>
+    }
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-end">{exportBtns}</div>
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">No matching records.</p>
+        ) : (
+          <div className="max-h-[60vh] overflow-auto">
+            <div className="text-xs text-muted-foreground mb-2">
+              {getFieldLabel(rowField)} × {getFieldLabel(columnField)} — {aggregate === 'count' ? 'Count' : `Sum of ${getFieldLabel(valueField)}`}
+            </div>
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr>
+                  <th className="border bg-muted/50 px-2 py-1.5 text-left font-semibold">{getFieldLabel(rowField)}</th>
+                  {colVals.map((cv: string) => <th key={cv} className="border bg-muted/50 px-2 py-1.5 font-semibold whitespace-nowrap">{cv}</th>)}
+                  <th className="border bg-muted/60 px-2 py-1.5 font-semibold">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rowVals.map((rv: string, i: number) => (
+                  <tr key={rv}>
+                    <th className="border px-2 py-1.5 text-left font-medium whitespace-nowrap">{rv}</th>
+                    {colVals.map((cv: string) => <td key={cv} className="border px-2 py-1.5 text-right font-mono tabular-nums">{fmtNum(cell(rv, cv))}</td>)}
+                    <td className="border bg-muted/40 px-2 py-1.5 text-right font-semibold font-mono tabular-nums">{fmtNum(rowTotals[i])}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th className="border bg-muted/60 px-2 py-1.5 text-left font-semibold">Total</th>
+                  {colTotals.map((t: number, i: number) => <td key={i} className="border bg-muted/40 px-2 py-1.5 text-right font-semibold font-mono tabular-nums">{fmtNum(t)}</td>)}
+                  <td className="border bg-primary/10 px-2 py-1.5 text-right font-bold font-mono tabular-nums">{fmtNum(grand)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   if (report.reportType === 'chart') {
     const groupField = report.grouping?.field || columns.find((c: string) => !NUMERIC_FIELDS.includes(c)) || columns[0]
@@ -347,7 +609,7 @@ function ReportRunner({ report }: { report: any }) {
     const entries = Object.entries(groups)
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-end">{exportBtn}</div>
+        <div className="flex items-center justify-end">{exportBtns}</div>
         {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground py-6 text-center">No matching records.</p>
         ) : (
@@ -367,7 +629,7 @@ function ReportRunner({ report }: { report: any }) {
     const groupField = report.grouping.field
     return (
       <div className="space-y-3">
-        <div className="flex items-center justify-end">{exportBtn}</div>
+        <div className="flex items-center justify-end">{exportBtns}</div>
         <div className="space-y-3 max-h-[60vh] overflow-y-auto">
         {Object.entries(groups).map(([key, items]) => (
           <div key={key} className="rounded-lg border">
@@ -396,7 +658,7 @@ function ReportRunner({ report }: { report: any }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-end">{exportBtn}</div>
+      <div className="flex items-center justify-end">{exportBtns}</div>
       <div className="max-h-[60vh] overflow-auto">
         <DataTable
           columns={columns.map((c: string) => ({ key: c, label: getFieldLabel(c), render: (v: any) => <span>{formatFieldValue(v, c)}</span> }))}
@@ -455,7 +717,7 @@ function BarChart({ data, label, valueLabel }: { data: [string, number][]; label
             <g key={key}>
               <rect x={x} y={y} width={barW} height={h} rx={4} fill={colors[i % colors.length]} />
               <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize="10" fontWeight="600" fill="currentColor">{fmt(v)}</text>
-              <text x={x + barW / 2} y={height - padB + 16} textAnchor="middle" fontSize="9" fill="currentColor" fillOpacity="0.65" style={{ transform: data.length > 6 ? `translateX(0)` : undefined }}>{data.length > 6 ? String(key).slice(0, 8) + (String(key).length > 8 ? '…' : '') : String(key).slice(0, 16)}</text>
+              <text x={x + barW / 2} y={height - padB + 16} textAnchor="middle" fontSize="9" fill="currentColor" fillOpacity="0.65">{data.length > 6 ? String(key).slice(0, 8) + (String(key).length > 8 ? '…' : '') : String(key).slice(0, 16)}</text>
             </g>
           )
         })}

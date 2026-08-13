@@ -7,9 +7,11 @@ import { cn } from '@/lib/utils'
 import { useTheme } from '@/lib/theme'
 import { usePresence } from '@/hooks/usePresence'
 import { UserAvatar } from '@/components/UserAvatar'
-import { LogOut, User, Search, Sun, Moon, Loader2, Menu, Bell, Building2, Megaphone, CheckCheck, X } from 'lucide-react'
+import { LogOut, User, Search, Sun, Moon, Loader2, Menu, Bell, Building2, Megaphone, CheckCheck, X, Languages, Check, ChevronDown, Command, MessageSquare } from 'lucide-react'
 import { api } from '@/lib/api'
-import { setOrgSettings, orgLocale, formatDateTime, useOrgSettings } from '@/lib/org-format'
+import { setOrgSettings, orgLocale, orgLanguage, formatDateTime, useOrgSettings } from '@/lib/org-format'
+import { LANGUAGES } from '@/lib/constants'
+import { useToast } from '@/lib/toast'
 import { t } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +26,7 @@ export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
+  const { addToast } = useToast()
   const { theme, toggleTheme } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
@@ -31,6 +34,7 @@ export function AppLayout() {
   const [showSearch, setShowSearch] = useState(false)
   const [dismissedAnnouncements, setDismissedAnnouncements] = useState<string[]>([])
   const searchRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
   useOrgSettings()
   usePresence()
@@ -39,6 +43,12 @@ export function AppLayout() {
     queryKey: ['notifications'],
     queryFn: () => api.getNotifications().catch(() => ({ data: [] })),
     refetchInterval: 30000,
+  })
+
+  const { data: chatConvosData } = useQuery({
+    queryKey: ['header-chat'],
+    queryFn: () => api.getChatConversations().catch(() => ({ data: [] })),
+    refetchInterval: 15000,
   })
 
   const { data: orgSettingsData } = useQuery({
@@ -59,6 +69,25 @@ export function AppLayout() {
     document.documentElement.dir = ['ar', 'he', 'fa'].includes(lang) ? 'rtl' : 'ltr'
   }, [orgSettingsData])
 
+  const [langSaving, setLangSaving] = useState(false)
+  const currentLang = orgLanguage()
+  const saveLanguage = async (code: string) => {
+    if (code === currentLang) return
+    setLangSaving(true)
+    try {
+      await api.updateOrgSettings({ language: code })
+      setOrgSettings({ language: code })
+      document.documentElement.lang = orgLocale()
+      document.documentElement.dir = ['ar', 'he', 'fa'].includes(code) ? 'rtl' : 'ltr'
+      queryClient.invalidateQueries({ queryKey: ['org-settings'] })
+      addToast({ title: t('Language updated'), description: LANGUAGES.find(l => l.value === code)?.label, variant: 'success' })
+    } catch (e: any) {
+      addToast({ title: t('Error'), description: e?.message || String(e), variant: 'destructive' })
+    } finally {
+      setLangSaving(false)
+    }
+  }
+
   const { data: announcementsData } = useQuery({
     queryKey: ['announcements-active'],
     queryFn: () => api.getActiveAnnouncements().catch(() => ({ data: [] })),
@@ -66,6 +95,7 @@ export function AppLayout() {
 
   const notifications = notificationsData?.data || []
   const unreadCount = notifications.filter((n: any) => !n.isRead).length
+  const chatUnread = (chatConvosData?.data || []).reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0)
   const activeAnnouncements = (announcementsData?.data || []).filter((a: any) => !dismissedAnnouncements.includes(a.id))
 
   const markAllRead = async () => {
@@ -123,6 +153,18 @@ export function AppLayout() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+        setShowSearch(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar
@@ -145,34 +187,47 @@ export function AppLayout() {
             </button>
           </div>
         ))}
-        <header className="sticky top-0 z-30 h-14 border-b bg-background/95 backdrop-blur flex items-center justify-between px-4 md:px-6 gap-2 md:gap-4">
+        <header className="sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-xl border-b border-border/60 shadow-sm flex items-center justify-between px-4 md:px-6 gap-2 md:gap-4">
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
           <button
-            className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-md"
+            className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-lg transition-colors"
             onClick={() => setMobileOpen(true)}
           >
             <Menu size={20} />
           </button>
 
-          <div className="flex items-center gap-2 shrink-0 mr-3 min-w-0">
+          <div className="flex items-center gap-3 shrink-0 mr-3 min-w-0">
             {user?.company?.logo ? (
-              <img src={user.company.logo} alt={user.company.name} className="h-9 w-9 object-contain shrink-0" />
+              <img src={user.company.logo} alt={user.company.name} className="h-9 w-9 rounded-lg object-contain p-0.5 bg-white dark:bg-white/10 ring-1 ring-border shrink-0" />
             ) : (
-              <Building2 size={22} className="text-primary shrink-0" />
+              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground flex items-center justify-center shadow-sm shrink-0">
+                <Building2 size={18} />
+              </div>
             )}
-            <span className="text-sm font-semibold text-foreground truncate max-w-[160px]">{user?.company?.name || 'BizForce'}</span>
+            <div className="hidden sm:block min-w-0 leading-tight">
+              <p className="text-sm font-bold text-foreground truncate max-w-[160px]">{user?.company?.name || 'BizForce'}</p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                {user?.isAdmin ? t('Organization Admin') : t('Workspace')}
+              </p>
+            </div>
           </div>
 
           <div className="relative flex-1 max-w-md" ref={searchRef}>
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder={t('Global search...')}
+              ref={searchInputRef}
+              placeholder={t('Search records...')}
               value={searchQuery}
               onChange={e => { setSearchQuery(e.target.value); setShowSearch(true) }}
               onFocus={() => setShowSearch(true)}
-              className="pl-9 h-9"
+              className="h-9 pl-9 pr-14 rounded-full border-border/70 bg-muted/40 shadow-none focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-ring/40 transition-all"
             />
+            <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground rounded border border-border bg-background shadow-sm">
+              <Command size={10} />K
+            </kbd>
             {showSearch && (searchResults.length > 0 || searching) && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border/60 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
                 {searching ? (
                   <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
                     <Loader2 size={14} className="animate-spin mr-2" /> {t('Searching...')}
@@ -186,7 +241,7 @@ export function AppLayout() {
                       {group.data.map((record: any) => (
                         <button
                           key={record.id}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors"
                           onClick={() => { navigate(`/${group.module}/${record.id}`); setShowSearch(false); setSearchQuery('') }}
                         >
                           {record[Object.keys(record).find(k => k.endsWith('Name') || k.endsWith('name') || k === 'title' || k === 'subject') || 'id']}
@@ -199,13 +254,21 @@ export function AppLayout() {
             )}
           </div>
 
-          <div className="flex items-center gap-1 md:gap-2 shrink-0">
+          <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
+            <Button variant="ghost" size="icon" title={t('Chat')} className="relative rounded-full h-9 w-9" onClick={() => navigate('/chat')}>
+              <MessageSquare size={17} />
+              {chatUnread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center ring-2 ring-background">
+                  {chatUnread > 9 ? '9+' : chatUnread}
+                </span>
+              )}
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" title={t('Notifications')} className="relative">
-                  <Bell size={16} />
+                <Button variant="ghost" size="icon" title={t('Notifications')} className="relative rounded-full h-9 w-9">
+                  <Bell size={17} />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center ring-2 ring-background">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -241,22 +304,48 @@ export function AppLayout() {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="ghost" size="icon" onClick={toggleTheme} title={t('Toggle theme')}>
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            <Button variant="ghost" size="icon" onClick={toggleTheme} title={t('Toggle theme')} className="rounded-full h-9 w-9">
+              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2 px-1.5">
-                  <UserAvatar user={user} size={28} />
-                  <span className="hidden sm:inline max-w-[130px] truncate">{user?.firstName} {user?.lastName}</span>
+                <Button variant="ghost" size="sm" className="gap-1.5 px-2 rounded-full h-9" title={t('Language')} disabled={langSaving}>
+                  {langSaving ? <Loader2 size={15} className="animate-spin" /> : <Languages size={15} />}
+                  <span className="hidden md:inline text-xs font-semibold uppercase">{currentLang.split('_')[0]}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto">
+                {LANGUAGES.map(l => (
+                  <DropdownMenuItem key={l.value} onClick={() => saveLanguage(l.value)} className="justify-between gap-3">
+                    <span>{l.label}</span>
+                    {l.value === currentLang && <Check size={14} className="text-primary" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <div className="hidden md:block w-px h-6 bg-border mx-1" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="gap-2 pl-1.5 pr-2.5 h-11 rounded-full">
+                  <UserAvatar user={user} size={30} className="ring-2 ring-primary/20" />
+                  <span className="hidden md:block text-left leading-tight">
+                    <span className="block text-xs font-semibold max-w-[110px] truncate">{user?.firstName} {user?.lastName}</span>
+                    <span className="block text-[10px] text-muted-foreground">{user?.isAdmin ? t('Admin') : t('Member')}</span>
+                  </span>
+                  <ChevronDown size={14} className="hidden md:block text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
-                <div className="flex items-center gap-3 px-3 py-2.5">
-                  <UserAvatar user={user} size={40} />
+                <div className="flex items-center gap-3 px-3 py-3">
+                  <UserAvatar user={user} size={40} className="ring-2 ring-primary/20" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold truncate">{user?.firstName} {user?.lastName}</p>
                     <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                    <p className="mt-0.5">
+                      <span className="inline-block text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {user?.isAdmin ? t('Organization Admin') : t('Member')}
+                      </span>
+                    </p>
                   </div>
                 </div>
                 <DropdownMenuSeparator />

@@ -102,6 +102,7 @@ function fixDates(data: any) {
   for (const k of Object.keys(data)) {
     if (data[k] === '') data[k] = null
   }
+  if (data.conversionRate == null || data.conversionRate === '') data.conversionRate = 1
 }
 
 quotationsRouter.post('/', async (req, res, next) => {
@@ -235,6 +236,8 @@ quotationsRouter.post('/:id/convert-salesorder', async (req, res, next) => {
         taxAmount: quote.taxAmount,
         taxType: quote.taxType,
         grandTotal: quote.grandTotal,
+        currency: quote.currency,
+        conversionRate: quote.conversionRate || 1,
         carrier: quote.carrier,
         soStatus: 'Created',
         terms: quote.terms,
@@ -320,6 +323,8 @@ quotationsRouter.post('/:id/convert-invoice', async (req, res, next) => {
         taxAmount: quote.taxAmount,
         taxType: quote.taxType,
         grandTotal: quote.grandTotal,
+        currency: quote.currency,
+        conversionRate: quote.conversionRate || 1,
         terms: quote.terms,
         description: quote.description,
         companyId: quote.companyId,
@@ -396,6 +401,7 @@ quotationsRouter.get('/:id/pdf', async (req, res, next) => {
     const preparedBy = user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.userName || user.email : req.user!.email
 
     const billTo = buildAddressHtml(quote)
+    const cur = quote.currency ? ` (${quote.currency})` : ''
     const html = renderReport({
       title: 'QUOTATION',
       docNo: quote.quoteNo || '',
@@ -407,6 +413,7 @@ quotationsRouter.get('/:id/pdf', async (req, res, next) => {
       metaLines: [
         `<span class="label">Valid Until:</span> ${quote.validUntil ? escapeHtml(new Date(quote.validUntil).toLocaleDateString()) : 'N/A'}`,
         `<span class="label">Stage:</span> ${escapeHtml(quote.quoteStage || 'N/A')}`,
+        `<span class="label">Currency:</span> ${escapeHtml(quote.currency || 'N/A')}${quote.conversionRate && Number(quote.conversionRate) !== 1 ? ` <span class="item-desc">(rate ${escapeHtml(String(quote.conversionRate))})</span>` : ''}`,
         `<span class="label">Prepared By:</span> ${escapeHtml(preparedBy)}`,
       ],
       items: quote.lineItems.map((item: any) => ({
@@ -419,12 +426,12 @@ quotationsRouter.get('/:id/pdf', async (req, res, next) => {
         total: item.lineTotal,
       })),
       totals: [
-        { label: 'Sub Total', value: quote.subTotal },
+        { label: `Sub Total${cur}`, value: quote.subTotal },
         { label: 'Discount', value: quote.discount },
         { label: 'Tax', value: quote.taxAmount },
         { label: 'Shipping', value: quote.shipping },
         { label: 'Adjustment', value: quote.adjustment },
-        { label: 'Grand Total', value: quote.grandTotal, grand: true },
+        { label: `Grand Total${cur}`, value: quote.grandTotal, grand: true },
       ],
       sections: [
         quote.terms ? `<div class="section"><span class="label">Terms &amp; Conditions:</span><p>${escapeHtml(quote.terms)}</p></div>` : '',
@@ -451,7 +458,7 @@ quotationsRouter.post('/:id/email', async (req, res, next) => {
     const to = req.body.to || ''
     const subject = `Quotation: ${quote.quoteNo || quote.subject}`
     const pdfLink = `/api/quotations/${quote.id}/pdf`
-    const text = `Dear Customer,\n\nPlease find attached quotation ${quote.quoteNo || ''} for ${quote.subject}.\n\nTotal Amount: ${Number(quote.grandTotal || 0).toFixed(2)}\n\nYou can view the quotation PDF at: ${pdfLink}\n\nThank you,\n${companyName}`
+    const text = `Dear Customer,\n\nPlease find attached quotation ${quote.quoteNo || ''} for ${quote.subject}.\n\nTotal Amount: ${Number(quote.grandTotal || 0).toFixed(2)} ${quote.currency || ''}\n\nYou can view the quotation PDF at: ${pdfLink}\n\nThank you,\n${companyName}`
 
     // Email sending placeholder — logs to console with the PDF attachment link
     console.log(`[EMAIL] To: ${to}, Subject: ${subject}, Body: ${text}`)

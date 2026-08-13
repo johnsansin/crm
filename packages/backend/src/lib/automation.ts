@@ -47,6 +47,7 @@ export async function generateRecurringInvoice(rec: any): Promise<any> {
       subTotal: template.subTotal, discount: template.discount, discountPercent: template.discountPercent,
       taxAmount: template.taxAmount, taxType: template.taxType, shipping: template.shipping,
       adjustment: template.adjustment, grandTotal: template.grandTotal,
+      currency: template.currency, conversionRate: template.conversionRate || 1,
       accountId: template.accountId, contactId: template.contactId, salesOrderId: template.salesOrderId,
       quoteId: template.quoteId, invoiceStatus: 'Created',
       terms: template.terms, notes: template.notes, description: template.description,
@@ -142,13 +143,6 @@ export async function fetchAllRssFeeds(): Promise<number> {
 // ---------------- Mailbox sync / Email-to-Ticket ----------------
 
 export async function syncMailbox(mailbox: any): Promise<{ fetched: number; ticketsCreated: number }> {
-  const client = new ImapFlow({
-    host: mailbox.host,
-    port: Number(mailbox.port || 993),
-    secure: mailbox.secure !== false,
-    auth: { user: mailbox.user, pass: mailbox.pass || '' },
-    logger: false,
-  })
   const result = { fetched: 0, ticketsCreated: 0 }
   const since = mailbox.lastSyncAt || new Date(Date.now() - 30 * 24 * 3600 * 1000)
 
@@ -156,7 +150,32 @@ export async function syncMailbox(mailbox: any): Promise<{ fetched: number; tick
     where: { mailboxId: mailbox.id, isActive: true },
   })
 
-  await client.connect()
+  const isTransient = (err: any) => {
+    const text = `${err?.code || ''} ${err?.message || ''} ${(err?.errors || []).map((e: any) => e?.message || '').join(' ')}`
+    return /ETIMEDOUT|ENETUNREACH|ECONNRESET|ECONNREFUSED|EAI_AGAIN|EPIPE|ECONNABORTED/.test(text)
+  }
+
+  let client: any = null
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    client = new ImapFlow({
+      host: mailbox.host,
+      port: Number(mailbox.port || 993),
+      secure: mailbox.secure !== false,
+      auth: { user: mailbox.user, pass: mailbox.pass || '' },
+      logger: false,
+    })
+    try {
+      await client.connect()
+      break
+    } catch (err) {
+      try { await client.close() } catch { /* already closed */ }
+      client = null
+      if (!isTransient(err) || attempt === 3) throw err
+      await new Promise(r => setTimeout(r, 2000 * attempt))
+    }
+  }
+  if (!client) throw new Error('Mailbox sync failed')
+
   try {
     const lock = await client.getMailboxLock(mailbox.folder || 'INBOX')
     try {

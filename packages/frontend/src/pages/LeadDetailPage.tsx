@@ -1,11 +1,12 @@
 import { useState, useMemo, type ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { api, publicUrl } from '@/lib/api'
 import { useToast } from '@/lib/toast'
 import { useAuthStore } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
 import { DateField, DateTimeField } from '@/components/ui/date-field'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -470,6 +471,15 @@ export function LeadDetailPage() {
     return null
   }, [convInfo])
 
+  const [convModules, setConvModules] = useState({ account: true, contact: true, potential: true })
+  const convAnySelected = convModules.account || convModules.contact || convModules.potential
+
+  const { data: convSettings } = useQuery({
+    queryKey: ['org-settings'],
+    queryFn: () => api.getOrgSettings(),
+  })
+  const stageProbability = (convSettings?.stageProbability || {}) as Record<string, number>
+
   const [actForm, setActForm] = useState<any>(emptyActivity())
   const [emailForm, setEmailForm] = useState<any>({ to: '', cc: '', bcc: '', subject: '', body: '' })
   const [docForm, setDocForm] = useState<any>({ title: '', noteContent: '', file: null as File | null })
@@ -733,6 +743,7 @@ export function LeadDetailPage() {
     mutationFn: () =>
       api.convertLead(id!, {
         assignedTo: lead?.assignedTo || null,
+        modules: convModules,
         potentialInfo: {
           potentialName: convForm?.potentialName,
           amount: convForm?.amount || null,
@@ -745,7 +756,11 @@ export function LeadDetailPage() {
     onSuccess: (data) => {
       setConvertOpen(false)
       invalidate('leads', 'followers')
-      addToast({ title: 'Lead converted', description: `Created ${data.account.accountName}`, variant: 'success' })
+      addToast({
+        title: 'Lead converted',
+        description: data.account ? `Created ${data.account.accountName}` : 'Converted successfully',
+        variant: 'success',
+      })
     },
     onError: toastErr,
   })
@@ -848,7 +863,7 @@ export function LeadDetailPage() {
       key: 'fileName', label: 'File', sortable: true,
       render: (_: any, d: any) => (
         d.filePath ? (
-          <a className="inline-flex items-center gap-1 text-primary underline underline-offset-2" href={d.filePath.startsWith('/') ? d.filePath : `/uploads/${d.filePath}`} target="_blank" rel="noreferrer">
+          <a className="inline-flex items-center gap-1 text-primary underline underline-offset-2" href={publicUrl(d.filePath.startsWith('/') ? d.filePath : `/uploads/${d.filePath}`)} target="_blank" rel="noreferrer">
             <Paperclip size={12} /> {d.fileName || 'Open'}
           </a>
         ) : (d.fileName || '-')
@@ -1542,48 +1557,75 @@ export function LeadDetailPage() {
           <DialogHeader>
             <DialogTitle>Convert Lead</DialogTitle>
             <DialogDescription>
-              This will create an Account, Contact and Opportunity from "{fullName}" ({lead.company}).
+              This will create records from "{fullName}" ({lead.company}) according to your conversion mapping.
             </DialogDescription>
           </DialogHeader>
           {convInfo ? (
             <div className="space-y-4">
               <div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
                 <p className="mb-1 font-semibold text-foreground">Will be created:</p>
-                <p>• Account: {convInfo.potentialInfo.potentialName || lead.company}</p>
-                <p>• Contact: {fullName}</p>
-                <p>• Opportunity: {convForm?.potentialName || lead.company}</p>
+                {convModules.account && <p>• Account: {convInfo.potentialInfo.potentialName || lead.company}</p>}
+                {convModules.contact && <p>• Contact: {fullName}</p>}
+                {convModules.potential && <p>• Opportunity: {convForm?.potentialName || lead.company}</p>}
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Opportunity Name *</label>
-                <Input value={convForm?.potentialName || ''} onChange={e => setConvForm({ ...convForm, potentialName: e.target.value })} />
+              <div className="grid grid-cols-1 gap-2">
+                {([
+                  { key: 'account' as const, label: 'Account', hint: 'Convert to an Account' },
+                  { key: 'contact' as const, label: 'Contact', hint: 'Convert to a Contact' },
+                  { key: 'potential' as const, label: 'Opportunity', hint: 'Convert to an Opportunity' },
+                ]).map(opt => (
+                  <div key={opt.key} className="flex items-center justify-between rounded-md border px-3 py-2">
+                    <div>
+                      <p className="text-sm font-medium">{opt.label}</p>
+                      <p className="text-xs text-muted-foreground">{opt.hint}</p>
+                    </div>
+                    <Switch checked={convModules[opt.key]} onCheckedChange={v => setConvModules(m => ({ ...m, [opt.key]: v }))} />
+                  </div>
+                ))}
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Amount</label>
-                  <Input type="number" value={convForm?.amount ?? ''} onChange={e => setConvForm({ ...convForm, amount: e.target.value })} />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Closing Date</label>
-                  <DateField value={convForm?.closingDate ? String(convForm.closingDate).slice(0, 10) : ''} onChange={v => setConvForm({ ...convForm, closingDate: v })} className="[color-scheme:light] dark:[color-scheme:dark]" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Stage</label>
-                  <Select value={convForm?.stage || '-- None --'} onValueChange={v => setConvForm({ ...convForm, stage: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{STAGES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Probability (%)</label>
-                  <Input type="number" min={0} max={100} value={convForm?.probability ?? ''} onChange={e => setConvForm({ ...convForm, probability: e.target.value })} />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Next Step</label>
-                <Input value={convForm?.nextStep || ''} onChange={e => setConvForm({ ...convForm, nextStep: e.target.value })} />
-              </div>
+              {!convAnySelected && <p className="text-xs text-destructive">Select at least one record type to create.</p>}
+              {convModules.potential && (
+                <>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Opportunity Name *</label>
+                    <Input value={convForm?.potentialName || ''} onChange={e => setConvForm({ ...convForm, potentialName: e.target.value })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Amount</label>
+                      <Input type="number" value={convForm?.amount ?? ''} onChange={e => setConvForm({ ...convForm, amount: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Closing Date</label>
+                      <DateField value={convForm?.closingDate ? String(convForm.closingDate).slice(0, 10) : ''} onChange={v => setConvForm({ ...convForm, closingDate: v })} className="[color-scheme:light] dark:[color-scheme:dark]" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Stage</label>
+                      <Select
+                        value={convForm?.stage || '-- None --'}
+                        onValueChange={v => {
+                          const stage = v === '-- None --' ? null : v
+                          const prob = stage && stageProbability[stage] != null ? stageProbability[stage] : convForm?.probability
+                          setConvForm({ ...convForm, stage: v, probability: convForm?.probability == null || convForm?.probability === '' ? prob : convForm?.probability })
+                        }}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{STAGES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Probability (%)</label>
+                      <Input type="number" min={0} max={100} value={convForm?.probability ?? ''} onChange={e => setConvForm({ ...convForm, probability: e.target.value })} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Next Step</label>
+                    <Input value={convForm?.nextStep || ''} onChange={e => setConvForm({ ...convForm, nextStep: e.target.value })} />
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="flex justify-center py-8"><Loader2 className="animate-spin text-muted-foreground" size={24} /></div>
@@ -1591,7 +1633,7 @@ export function LeadDetailPage() {
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setConvertOpen(false)}>Cancel</Button>
             <Button
-              disabled={!convForm?.potentialName?.trim() || convertMutation.isPending}
+              disabled={!convAnySelected || (convModules.potential && !convForm?.potentialName?.trim()) || convertMutation.isPending}
               onClick={() => convertMutation.mutate()}
             >
               {convertMutation.isPending ? <Loader2 size={15} className="animate-spin" /> : <TrendingUp size={15} />} Convert
@@ -1996,7 +2038,7 @@ function buildViewRows(v: { type: 'activity' | 'email' | 'document' | 'comment' 
     const d = v.row
     return [
       { label: 'Title', value: d.title || '-' },
-      { label: 'File', value: d.filePath ? <a className="text-primary underline underline-offset-2" href={d.filePath.startsWith('/') ? d.filePath : `/uploads/${d.filePath}`} target="_blank" rel="noreferrer"><Paperclip size={12} className="inline mr-1" />{d.fileName || 'Open'}</a> : (d.fileName || '-') },
+      { label: 'File', value: d.filePath ? <a className="text-primary underline underline-offset-2" href={publicUrl(d.filePath.startsWith('/') ? d.filePath : `/uploads/${d.filePath}`)} target="_blank" rel="noreferrer"><Paperclip size={12} className="inline mr-1" />{d.fileName || 'Open'}</a> : (d.fileName || '-') },
       { label: 'Type', value: d.fileType || '-' },
       { label: 'Status', value: d.fileStatus || 'Active' },
       { label: 'Owner', value: d.userName || '-' },

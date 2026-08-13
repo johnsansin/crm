@@ -10,7 +10,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ArrowLeft, Save, Loader2, Trash2, Plus, FileDown, Mail, Search, Copy, Building2, Users, ShoppingCart, MessageSquare, FileText, Receipt, CreditCard } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { formatDate, formatDateTime, useOrgSettings } from '@/lib/org-format'
+import { formatDate, formatDateTime, orgCurrency, useOrgSettings } from '@/lib/org-format'
 import { ProductSearchSelect } from '@/components/product-search-select'
 import { ServiceSearchSelect } from '@/components/service-search-select'
 import { UserRoleSelect } from '@/components/user-role-select'
@@ -53,6 +53,8 @@ const CONFIGS: Record<DocModule, DocConfig> = {
       { name: 'purchaseOrderNo', type: 'text', label: 'Purchase Order No' },
       { name: 'salesCommission', type: 'number', label: 'Sales Commission' },
       { name: 'exciseDuty', type: 'number', label: 'Excise Duty' },
+      { name: 'currency', type: 'select', label: 'Currency' },
+      { name: 'conversionRate', type: 'number', label: 'Conversion Rate' },
       { name: 'taxType', type: 'select', label: 'Tax Type' },
       { name: 'accountId', type: 'lookup', label: 'Account' },
       { name: 'contactId', type: 'lookup', label: 'Contact' },
@@ -62,7 +64,7 @@ const CONFIGS: Record<DocModule, DocConfig> = {
     listColumns: [
       { key: 'salesOrderNo', label: 'SO No', render: (v: any) => <span className="font-medium">{v || '-'}</span> },
       { key: 'subject', label: 'Subject' },
-      { key: 'grandTotal', label: 'Amount', render: (v: any) => <span className="font-medium">${Number(v || 0).toFixed(2)}</span> },
+      { key: 'grandTotal', label: 'Amount', render: (v: any, row: any) => <span className="font-medium">{Number(v || 0).toFixed(2)} {row.currency || ''}</span> },
       { key: 'soStatus', label: 'Status', render: (v: any) => (
         <span className={`text-xs px-2 py-0.5 rounded-full ${v === 'Approved' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : v === 'Cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'}`}>
           {v || 'Created'}
@@ -90,6 +92,8 @@ const CONFIGS: Record<DocModule, DocConfig> = {
       { name: 'purchaseOrderNo', type: 'text', label: 'Purchase Order No' },
       { name: 'salesCommission', type: 'number', label: 'Sales Commission' },
       { name: 'exciseDuty', type: 'number', label: 'Excise Duty' },
+      { name: 'currency', type: 'select', label: 'Currency' },
+      { name: 'conversionRate', type: 'number', label: 'Conversion Rate' },
       { name: 'taxType', type: 'select', label: 'Tax Type' },
       { name: 'accountId', type: 'lookup', label: 'Account' },
       { name: 'contactId', type: 'lookup', label: 'Contact' },
@@ -105,7 +109,7 @@ const CONFIGS: Record<DocModule, DocConfig> = {
         </span>
       )},
       { key: 'invoiceDate', label: 'Invoice Date', render: (v: any) => <span className="text-muted-foreground">{v ? formatDate(v) : '-'}</span> },
-      { key: 'grandTotal', label: 'Amount', render: (v: any) => <span className="font-medium">${Number(v || 0).toFixed(2)}</span> },
+      { key: 'grandTotal', label: 'Amount', render: (v: any, row: any) => <span className="font-medium">{Number(v || 0).toFixed(2)} {row.currency || ''}</span> },
       { key: 'createdAt', label: 'Created', render: (v: any) => <span className="text-muted-foreground">{formatDate(v)}</span> },
     ],
   },
@@ -169,6 +173,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
   const [roles, setRoles] = useState<any[]>([])
   const [quotes, setQuotes] = useState<any[]>([])
   const [salesOrders, setSalesOrders] = useState<any[]>([])
+  const [currencies, setCurrencies] = useState<any[]>([])
 
   const [related, setRelated] = useState<any>({ invoices: [], comments: [] })
   const [comment, setComment] = useState('')
@@ -181,6 +186,13 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
   const [recordingPayment, setRecordingPayment] = useState(false)
 
   const [defaultTerms, setDefaultTerms] = useState('')
+
+  function handleCurrencyChange(code: string) {
+    const cur = currencies.find(c => (c.code || c.name) === code)
+    const rate = cur && Number(cur.rate) > 0 ? Number(cur.rate) : 1
+    updateForm('currency', code)
+    updateForm('conversionRate', rate)
+  }
 
   useEffect(() => {
     api.getOrgSettings().then((s: any) => {
@@ -200,6 +212,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
       api.request<any>(`/${module}/users`).then(r => { setTeam(r.data || []); setRoles(r.roles || []) }).catch(() => {}),
       api.list('quotes', { limit: '200' }).then(r => setQuotes(r.data || [])).catch(() => {}),
       api.list('salesorders', { limit: '200' }).then(r => setSalesOrders(r.data || [])).catch(() => {}),
+      api.listAll('currencies').then(r => setCurrencies(r.data || r || [])).catch(() => {}),
     ])
   }, [module])
 
@@ -225,6 +238,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
     }
     f.total = 0; f.subTotal = 0; f.discount = 0; f.discountPercent = 0; f.adjustment = 0
     f.shipping = 0; f.shippingHandling = 0; f.taxAmount = 0; f.grandTotal = 0
+    f.currency = ''; f.conversionRate = 1
     if (cfg.showRecurring) {
       f.enableRecurring = false; f.recurringFrequency = ''; f.startPeriod = ''; f.endPeriod = ''
     }
@@ -246,6 +260,8 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
         else f[fld.name] = r[fld.name] ?? ''
       }
       ;(['total','subTotal','discount','discountPercent','adjustment','shipping','shippingHandling','taxAmount','grandTotal']).forEach(k => { f[k] = r[k] || 0 })
+      f.currency = r.currency || ''
+      f.conversionRate = Number(r.conversionRate) || 1
       if (cfg.showRecurring) {
         f.enableRecurring = !!r.enableRecurring
         f.recurringFrequency = r.recurringFrequency || ''
@@ -310,6 +326,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
         if (Object.keys(prev).length) return prev
         const f = emptyForm()
         f[cfg.noField] = cfg.noPrefix + Date.now()
+        f.currency = orgCurrency()
         return f
       })
     }
@@ -522,11 +539,12 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
   const renderField = (fld: any) => {
     const label = fld.label || fld.name
     if (fld.type === 'select') {
-      const options = fld.name === 'taxType' ? TAX_TYPES : cfg.stages
+      const options = fld.name === 'taxType' ? TAX_TYPES : fld.name === 'currency' ? currencies.map((c: any) => c.code || c.name) : cfg.stages
+      const onSelect = fld.name === 'currency' ? handleCurrencyChange : (v: string) => updateForm(fld.name, v)
       return (
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">{label}</label>
-          <Select value={form[fld.name] || ''} onValueChange={(v) => updateForm(fld.name, v)}>
+          <Select value={form[fld.name] || ''} onValueChange={onSelect}>
             <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="--None--" /></SelectTrigger>
             <SelectContent>
               {options.map(o => <SelectItem key={o} value={o === '--None--' ? '' : o}>{o === '--None--' ? '--None--' : o}</SelectItem>)}
@@ -765,7 +783,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
                   <span>Adjustment:</span>
                   <Input type="number" step="0.01" className="h-7 w-24 text-xs text-right inline-block" value={form.adjustment} onChange={e => handleTotalsField('adjustment', parseFloat(e.target.value) || 0)} />
                 </div>
-                <div className="flex justify-between py-2 border-t text-lg font-bold">{'Grand Total:'}<span>{grandTotal.toFixed(2)}</span></div>
+                <div className="flex justify-between py-2 border-t text-lg font-bold">{'Grand Total:'}<span>{grandTotal.toFixed(2)} {form.currency || ''}</span></div>
               </div>
             </div>
           </TabsContent>
@@ -933,7 +951,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
               <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{Number(r.taxAmount || 0).toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{Number(r.shipping || 0).toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Adjustment</span><span>{Number(r.adjustment || 0).toFixed(2)}</span></div>
-              <div className="flex justify-between border-t pt-2 text-lg font-bold">Grand Total<span>{Number(r.grandTotal || 0).toFixed(2)}</span></div>
+              <div className="flex justify-between border-t pt-2 text-lg font-bold">Grand Total<span>{Number(r.grandTotal || 0).toFixed(2)} {r.currency || ''}</span></div>
             </div>
             <div className="rounded-xl border bg-card p-4 text-sm space-y-1">
               <h4 className="font-semibold mb-2">Details</h4>
@@ -945,6 +963,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
               {module === 'invoices' && r.dueDate && <p><span className="text-muted-foreground">Due Date:</span> {formatDate(r.dueDate)}</p>}
               {module === 'salesorders' && r.validUntil && <p><span className="text-muted-foreground">Valid Till:</span> {formatDate(r.validUntil)}</p>}
               <p><span className="text-muted-foreground">Status:</span> {r[cfg.stageField] || 'N/A'}</p>
+              <p><span className="text-muted-foreground">Currency:</span> {r.currency || 'N/A'}{r.conversionRate && Number(r.conversionRate) !== 1 ? ` (rate ${r.conversionRate})` : ''}</p>
               <p><span className="text-muted-foreground">Tax Type:</span> {r.taxType || 'N/A'}</p>
               {module === 'salesorders' && r.recurringFrequency && <p><span className="text-muted-foreground">Recurring:</span> {r.recurringFrequency}</p>}
               {r.customerNo && <p><span className="text-muted-foreground">Customer No:</span> {r.customerNo}</p>}
