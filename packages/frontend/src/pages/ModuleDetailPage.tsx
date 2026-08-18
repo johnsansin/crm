@@ -1364,7 +1364,8 @@ function PotentialExtras({ potentialId }: { potentialId: string }) {
   const isClosedWon = rec?.stage === 'Closed Won'
   const isClosedLost = rec?.stage === 'Closed Lost'
 
-  const allStages = stages.filter(s => s !== '--None--')
+  const stages = SELECT_OPTIONS.potentials?.stage?.filter(s => s !== '--None--') || []
+  const allStages = stages
   const currentStageIdx = allStages.indexOf(rec?.stage || '')
 
   const stageColorMap: Record<string, string> = {
