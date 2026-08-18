@@ -59,3 +59,106 @@ export async function notifyFollowersAndAssignee(opts: {
     }).catch(() => {})
   }
 }
+
+export async function notifyEscalation(ticketId: string, fromLevel: number, toLevel: number, reason: string): Promise<void> {
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { title: true, ticketNo: true, companyId: true, assignedTo: true } })
+  if (!ticket) return
+
+  await prisma.escalationHistory.create({
+    data: {
+      ticketId,
+      fromLevel,
+      toLevel,
+      reason,
+      companyId: ticket.companyId,
+    },
+  }).catch(() => {})
+
+  if (ticket.assignedTo) {
+    await prisma.notification.create({
+      data: {
+        userId: ticket.assignedTo,
+        title: `Ticket Escalated: ${ticket.ticketNo || ticket.title}`,
+        message: `Ticket "${ticket.title}" has been escalated from level ${fromLevel} to ${toLevel}. Reason: ${reason}`,
+        link: `/tickets/${ticketId}`,
+        companyId: ticket.companyId,
+      },
+    }).catch(() => {})
+  }
+
+  const managers = await prisma.user.findMany({
+    where: { companyId: ticket.companyId, isAdmin: true, isActive: true },
+    select: { id: true },
+  })
+  for (const mgr of managers) {
+    if (mgr.id === ticket.assignedTo) continue
+    await prisma.notification.create({
+      data: {
+        userId: mgr.id,
+        title: `Ticket Escalated: ${ticket.ticketNo || ticket.title}`,
+        message: `Ticket "${ticket.title}" has been escalated from level ${fromLevel} to ${toLevel}. Reason: ${reason}`,
+        link: `/tickets/${ticketId}`,
+        companyId: ticket.companyId,
+      },
+    }).catch(() => {})
+  }
+}
+
+export async function notifySLABreach(ticketId: string): Promise<void> {
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { title: true, ticketNo: true, companyId: true, assignedTo: true } })
+  if (!ticket) return
+
+  if (ticket.assignedTo) {
+    await prisma.notification.create({
+      data: {
+        userId: ticket.assignedTo,
+        title: `SLA Breach: ${ticket.ticketNo || ticket.title}`,
+        message: `Ticket "${ticket.title}" has breached its SLA deadline. Immediate action required.`,
+        link: `/tickets/${ticketId}`,
+        companyId: ticket.companyId,
+      },
+    }).catch(() => {})
+
+    const assignee = await prisma.user.findUnique({ where: { id: ticket.assignedTo }, select: { roleId: true } })
+    if (assignee?.roleId) {
+      const managers = await prisma.user.findMany({
+        where: { roleId: assignee.roleId, companyId: ticket.companyId, isActive: true, id: { not: ticket.assignedTo } },
+        select: { id: true },
+      })
+      for (const mgr of managers) {
+        await prisma.notification.create({
+          data: {
+            userId: mgr.id,
+            title: `SLA Breach: ${ticket.ticketNo || ticket.title}`,
+            message: `Ticket "${ticket.title}" assigned to your team has breached its SLA deadline.`,
+            link: `/tickets/${ticketId}`,
+            companyId: ticket.companyId,
+          },
+        }).catch(() => {})
+      }
+    }
+  }
+}
+
+export async function createBulkNotifications(
+  userIds: string[],
+  title: string,
+  message: string,
+  link: string | null,
+  companyId: string | null,
+): Promise<number> {
+  let count = 0
+  for (const userId of userIds) {
+    await prisma.notification.create({
+      data: {
+        userId,
+        title,
+        message,
+        link: link || null,
+        companyId: companyId || undefined,
+      },
+    }).catch(() => { count++ })
+    count++
+  }
+  return count
+}

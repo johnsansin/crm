@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -11,7 +11,8 @@ import { RowActions } from '@/components/ui/row-actions'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { getFieldLabel } from '@/lib/field-utils'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
-import { Plus, Search, RefreshCw, LayoutGrid, List, Download, Upload, Columns3, Loader2 } from 'lucide-react'
+import { Plus, Search, RefreshCw, LayoutGrid, List, Download, Upload, Columns3, Loader2, Mail, FileDown, Copy, GitMerge, Trash2 } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 const kanbanModules = ['potentials', 'tickets', 'projects']
 
@@ -78,6 +79,7 @@ export function ModuleListPage() {
   const [hiddenCols, setHiddenCols] = useState<string[]>([])
   const [importing, setImporting] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const mod = module || ''
@@ -93,10 +95,10 @@ export function ModuleListPage() {
     mutationFn: (id: string) => api.delete(mod, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [mod] })
-      addToast({ title: 'Deleted', description: 'Record has been deleted', variant: 'success' })
+      addToast({ title: t('Deleted'), description: t('Record has been deleted'), variant: 'success' })
     },
     onError: (err: Error) => {
-      addToast({ title: 'Error', description: err.message, variant: 'destructive' })
+      addToast({ title: t('Error'), description: err.message, variant: 'destructive' })
     },
   })
 
@@ -107,8 +109,94 @@ export function ModuleListPage() {
     }
   }
 
+  const handleBulkDelete = () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+    Promise.all(ids.map(id => api.delete(mod, id).catch(() => null)))
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: [mod] })
+        addToast({ title: t('Deleted'), description: `${ids.length} ${t('record(s) deleted')}`, variant: 'success' })
+        setSelectedIds(new Set())
+      })
+  }
+
+  const handleBulkEmail = async () => {
+    const to = prompt('Send to email (comma-separated for multiple):')
+    if (!to) return
+    const ids = Array.from(selectedIds)
+    try {
+      for (const id of ids) {
+        await api.request(`/${mod}/${id}/email`, { method: 'POST', body: JSON.stringify({ to }) }).catch(() => null)
+      }
+      addToast({ title: 'Sent', description: `Email sent to ${to}`, variant: 'success' })
+      setSelectedIds(new Set())
+    } catch {
+      addToast({ title: 'Error', description: 'Failed to send emails', variant: 'destructive' })
+    }
+  }
+
+  const handleBulkPdf = () => {
+    const ids = Array.from(selectedIds)
+    ids.forEach(id => {
+      const token = localStorage.getItem('token')
+      window.open(`/api/${mod}/${id}/pdf?token=${encodeURIComponent(token || '')}`, '_blank')
+    })
+  }
+
+  const handleRowEmail = (record: any) => {
+    const to = prompt('Send to email:')
+    if (!to) return
+    api.request(`/${mod}/${record.id}/email`, { method: 'POST', body: JSON.stringify({ to }) })
+      .then(() => addToast({ title: 'Sent', description: `Email sent to ${to}`, variant: 'success' }))
+      .catch(() => addToast({ title: 'Error', description: 'Failed to send email', variant: 'destructive' }))
+  }
+
+  const handleRowPdf = (record: any) => {
+    const token = localStorage.getItem('token')
+    window.open(`/api/${mod}/${record.id}/pdf?token=${encodeURIComponent(token || '')}`, '_blank')
+  }
+
+  const handleRowDuplicate = (record: any) => {
+    const { id, createdAt, updatedAt, ...rest } = record
+    const payload = { ...rest, [fields[0]]: `${record[fields[0]] || 'Record'} (Copy)` }
+    api.create(mod, payload)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: [mod] })
+        addToast({ title: 'Duplicated', description: 'Record duplicated successfully', variant: 'success' })
+      })
+      .catch(() => addToast({ title: 'Error', description: 'Failed to duplicate record', variant: 'destructive' }))
+  }
+
+  const handleRowMerge = (record: any) => {
+    const targetId = prompt('Enter the ID of the record to merge into:')
+    if (!targetId || targetId === record.id) return
+    api.request(`/${mod}/${record.id}/merge`, { method: 'POST', body: JSON.stringify({ targetId }) })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: [mod] })
+        addToast({ title: 'Merged', description: 'Records merged successfully', variant: 'success' })
+      })
+      .catch(() => addToast({ title: 'Error', description: 'Failed to merge records', variant: 'destructive' }))
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === (data?.data || []).length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set((data?.data || []).map((r: any) => r.id)))
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   const fields = displayFields[mod] || ['id']
-  const label = labelMap[mod] || mod
+  const label = t(labelMap[mod] || mod)
 
   const monetaryColumns = ['amount', 'grandTotal', 'subTotal', 'unitPrice', 'costPrice', 'annualRevenue', 'expectedRevenue', 'budget', 'actualCost', 'shipping', 'shippingHandling', 'discount', 'adjustment', 'salesCommission', 'exciseDuty', 'targetBudget', 'actualBudget']
   const columns = fields
@@ -138,13 +226,13 @@ export function ModuleListPage() {
               onClick={() => setViewMode(v => v === 'list' ? 'kanban' : 'list')}
             >
               {viewMode === 'list' ? <LayoutGrid size={14} className="mr-1.5" /> : <List size={14} className="mr-1.5" />}
-              {viewMode === 'list' ? 'Kanban' : 'List'}
+              {viewMode === 'list' ? t('Kanban') : t('List')}
             </Button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <Columns3 size={14} className="mr-1.5" /> Columns
+                <Columns3 size={14} className="mr-1.5" /> {t('Columns')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto w-52">
@@ -167,7 +255,7 @@ export function ModuleListPage() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" disabled={exporting}>
                 {exporting ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
-                Export
+                {t('Export')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -191,7 +279,7 @@ export function ModuleListPage() {
           </DropdownMenu>
           <Button variant="outline" size="sm" disabled={importing} onClick={() => fileInputRef.current?.click()}>
             {importing ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Upload size={14} className="mr-1.5" />}
-            Import
+            {t('Import')}
           </Button>
           <input
             ref={fileInputRef}
@@ -214,7 +302,7 @@ export function ModuleListPage() {
             }}
           />
           <Button onClick={() => navigate(`/${mod}/new`)} className="whitespace-nowrap">
-            <Plus size={16} className="mr-1 md:mr-2" /> <span className="hidden sm:inline">New {label.slice(0, -1)}</span><span className="sm:hidden">New</span>
+            <Plus size={16} className="mr-1 md:mr-2" /> <span className="hidden sm:inline">{t('New')} {label.slice(0, -1)}</span><span className="sm:hidden">{t('New')}</span>
           </Button>
         </div>
       </div>
@@ -227,7 +315,7 @@ export function ModuleListPage() {
             <div className="relative flex-1 max-w-sm">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search..."
+                placeholder={t('Search...')}
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1) }}
                 className="pl-9 rounded-lg"
@@ -248,12 +336,40 @@ export function ModuleListPage() {
             sortOrder={sortOrder}
             loading={isLoading}
             onRowClick={(record: any) => navigate(`/${mod}/${record.id}`)}
+            selectedCount={selectedIds.size}
+            bulkActions={
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={handleBulkEmail}>
+                  <Mail size={14} className="mr-1" /> Email ({selectedIds.size})
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleBulkPdf}>
+                  <FileDown size={14} className="mr-1" /> PDF ({selectedIds.size})
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleBulkDelete} className="text-red-500">
+                  <Trash2 size={14} className="mr-1" /> Delete ({selectedIds.size})
+                </Button>
+              </div>
+            }
             actions={(record: any) => (
-              <RowActions
-                onView={() => navigate(`/${mod}/${record.id}`)}
-                onEdit={() => navigate(`/${mod}/${record.id}?edit=true`)}
-                onDelete={() => setDeleteTarget({ id: record.id, name: record[fields[0]] || record.id })}
-              />
+              <div className="flex items-center gap-1">
+                <label className="flex items-center" onClick={e => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    className="h-3.5 w-3.5 rounded border-input cursor-pointer"
+                    checked={selectedIds.has(record.id)}
+                    onChange={() => toggleSelect(record.id)}
+                  />
+                </label>
+                <RowActions
+                  onView={() => navigate(`/${mod}/${record.id}`)}
+                  onEdit={() => navigate(`/${mod}/${record.id}?edit=true`)}
+                  onDelete={() => setDeleteTarget({ id: record.id, name: record[fields[0]] || record.id })}
+                  onEmail={() => handleRowEmail(record)}
+                  onPdf={() => handleRowPdf(record)}
+                  onDuplicate={() => handleRowDuplicate(record)}
+                  onMerge={() => handleRowMerge(record)}
+                />
+              </div>
             )}
           />
         </>
@@ -263,9 +379,9 @@ export function ModuleListPage() {
         open={!!deleteTarget}
         onOpenChange={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title="Delete Record"
-        description={`Are you sure you want to delete "${deleteTarget?.name || 'this record'}"? This action can be undone from the Recycle Bin.`}
-        confirmLabel="Delete"
+        title={t('Delete Record')}
+        description={t('Are you sure you want to delete "{name}"? This action can be undone from the Recycle Bin.', { name: deleteTarget?.name || 'this record' })}
+        confirmLabel={t('Delete')}
         variant="destructive"
       />
     </div>

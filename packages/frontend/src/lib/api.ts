@@ -72,6 +72,21 @@ export const api = {
 
   getMe: () => request<any>('/auth/me'),
 
+  updateMe: (data: any) =>
+    request<any>('/auth/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  completeOnboarding: () =>
+    request<any>('/auth/me/onboarding', { method: 'PUT', body: JSON.stringify({}) }),
+
+  resetOnboarding: () =>
+    request<any>('/auth/me/onboarding/reset', { method: 'PUT', body: JSON.stringify({}) }),
+
+  completeQuickStart: (prefs: { language?: string; timezone?: string; dateFormat?: string }) =>
+    request<any>('/auth/me/quickstart', { method: 'PUT', body: JSON.stringify(prefs) }),
+
   logout: (token: string) =>
     request<any>('/auth/logout', {
       method: 'POST',
@@ -168,10 +183,24 @@ export const api = {
   request: <T = any>(endpoint: string, options: RequestInit = {}) => request<T>(endpoint, options),
 
   // Super admin
+  adminSearch: (q: string) => request<{ data: { companies: any[]; users: any[] } }>(`/admin/search?q=${encodeURIComponent(q)}`),
   adminListCompanies: () => request<{ data: any[] }>('/admin/companies'),
+  adminRecentCompanies: (limit = 10, since?: string) => {
+    const qs = new URLSearchParams({ limit: String(limit) })
+    if (since) qs.set('since', since)
+    return request<{ data: any[] }>(`/admin/companies/recent?${qs}`)
+  },
   adminGetCompany: (id: string) => request<any>(`/admin/companies/${id}`),
   adminListUsers: () => request<{ data: any[] }>('/admin/users'),
   adminToggleCompany: (id: string) => request<any>(`/admin/companies/${id}/toggle`, { method: 'PUT' }),
+  adminCreateUser: (data: { userName: string; email: string; firstName: string; lastName: string; password: string; companyId: string; isAdmin?: boolean; roleId?: string; phone?: string; department?: string; title?: string }) =>
+    request<any>('/admin/users', { method: 'POST', body: JSON.stringify(data) }),
+  adminCompanyRoles: (companyId: string) => request<{ data: any[] }>(`/admin/companies/${companyId}/roles`),
+
+  listAgents: () => request<{ data: any[] }>('/agents'),
+  createAgent: (data: any) => request<any>('/agents', { method: 'POST', body: JSON.stringify(data) }),
+  updateAgent: (id: string, data: any) => request<any>(`/agents/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAgent: (id: string) => request<any>(`/agents/${id}`, { method: 'DELETE' }),
   adminLoginHistory: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : ''
     return request<{ data: any[]; pagination: any }>(`/admin/login-history${qs}`)
@@ -232,12 +261,17 @@ export const api = {
   applyProfile: (id: string) =>
     request<any>(`/settings/profiles/${id}/apply`, { method: 'POST' }),
 
+  getAutomationStats: () => request<{ data: any }>('/automation/stats'),
   getWorkflows: () => request<{ data: any[] }>('/settings/workflows'),
   createWorkflow: (data: any) =>
     request<any>('/settings/workflows', { method: 'POST', body: JSON.stringify(data) }),
   updateWorkflow: (id: string, data: any) =>
     request<any>(`/settings/workflows/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteWorkflow: (id: string) => request<any>(`/settings/workflows/${id}`, { method: 'DELETE' }),
+  testWorkflow: (id: string) =>
+    request<any>(`/workflows/${id}/test`, { method: 'POST' }),
+  getWorkflowLogs: (id: string) =>
+    request<{ data: any[] }>(`/workflows/${id}/logs`),
 
   getScheduledTasks: () => request<{ data: any[] }>('/settings/cron'),
   createScheduledTask: (data: any) =>
@@ -269,8 +303,20 @@ export const api = {
     request<any>('/chat/conversations', { method: 'POST', body: JSON.stringify(data) }),
   getChatMessages: (id: string, after?: string) =>
     request<{ data: any[] }>(`/chat/conversations/${id}/messages${after ? `?after=${after}` : ''}`),
-  sendChatMessage: (id: string, body: string) =>
-    request<any>(`/chat/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ body }) }),
+  sendChatMessage: (id: string, body: string, files?: File[]) => {
+    if (files && files.length > 0) {
+      const fd = new FormData()
+      fd.append('body', body)
+      files.forEach(f => fd.append('files', f))
+      const token = localStorage.getItem('token')
+      return fetch(`${API_BASE}/chat/conversations/${id}/messages`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() })
+    }
+    return request<any>(`/chat/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ body }) })
+  },
   markChatRead: (id: string) =>
     request<any>(`/chat/conversations/${id}/read`, { method: 'POST' }),
   addChatMembers: (id: string, userIds: string[]) =>
@@ -612,4 +658,21 @@ export const api = {
     request<any>('/portal/register', { method: 'POST', body: JSON.stringify({ contactId, accessCode }) }),
   unregisterPortal: (contactId: string) =>
     request<any>('/portal/unregister', { method: 'POST', body: JSON.stringify({ contactId }) }),
+
+  // ---- AI ----
+  getAiPrompts: () => request<{ data: any[] }>('/ai/prompts'),
+  saveAiPrompt: (data: any) => request<any>('/ai/prompts', { method: 'POST', body: JSON.stringify(data) }),
+  getAiLogs: () => request<{ data: any[] }>('/ai/logs'),
+  aiChat: (message: string) => request<{ data: any }>('/ai/chat', { method: 'POST', body: JSON.stringify({ message }) }),
+  aiGenerate: (data: any) => request<{ data: any }>('/ai/generate', { method: 'POST', body: JSON.stringify(data) }),
+  aiSuggest: (module: string, fieldName: string) => request<{ data: any }>('/ai/suggest', { method: 'POST', body: JSON.stringify({ module, fieldName }) }),
+  aiDraftEmail: (data: any) => request<{ data: any }>('/ai/draft-email', { method: 'POST', body: JSON.stringify(data) }),
+  aiMeetingSummary: (data: any) => request<{ data: any }>('/ai/meeting-summary', { method: 'POST', body: JSON.stringify(data) }),
+  aiCustomerSummary: (recordId: string) => request<{ data: any }>('/ai/customer-summary', { method: 'POST', body: JSON.stringify({ recordId }) }),
+  aiLeadScore: (leadId: string) => request<{ data: any }>('/ai/lead-score', { method: 'POST', body: JSON.stringify({ leadId }) }),
+  aiLeadScoreBatch: (data?: any) => request<{ data: any[] }>('/ai/lead-score/batch', { method: 'POST', body: JSON.stringify(data || {}) }),
+  aiOppPrediction: (potentialId: string) => request<{ data: any }>('/ai/opportunity-prediction', { method: 'POST', body: JSON.stringify({ potentialId }) }),
+  aiSuggestActions: (recordId: string) => request<{ data: any }>('/ai/suggest-actions', { method: 'POST', body: JSON.stringify({ recordId }) }),
+  aiGenerateEmail: (data: any) => request<{ data: any }>('/ai/generate-email', { method: 'POST', body: JSON.stringify(data) }),
+  aiInsights: () => request<{ data: any }>('/ai/insights'),
 }

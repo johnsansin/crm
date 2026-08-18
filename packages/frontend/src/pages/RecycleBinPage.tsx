@@ -5,7 +5,7 @@ import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Trash2, RotateCcw, Loader2, FolderOpen } from 'lucide-react'
+import { Trash2, RotateCcw, Loader2, FolderOpen, User } from 'lucide-react'
 import { getFieldLabel } from '@/lib/field-utils'
 
 export function RecycleBinPage() {
@@ -80,7 +80,11 @@ export function RecycleBinPage() {
               key={selected}
               columns={[
                 { key: 'id', label: 'Summary', render: (_, r) => <NameCell record={r} /> },
-                { key: 'updatedAt', label: 'Deleted', render: (v) => <span className="text-muted-foreground whitespace-nowrap">{v ? new Date(v).toLocaleString() : '—'}</span> },
+                { key: 'deletedBy', label: 'Deleted By', render: (v, r) => {
+                  if (v) return <span className="flex items-center gap-1.5 text-sm"><User size={13} className="text-muted-foreground" /> {v}</span>
+                  return <span className="text-muted-foreground">—</span>
+                }},
+                { key: 'deletedAt', label: 'Deleted', render: (v) => <span className="text-muted-foreground whitespace-nowrap">{v ? new Date(v).toLocaleString() : '—'}</span> },
               ]}
               data={records?.data || []}
               loading={loadingRecords}

@@ -35,7 +35,7 @@ export function TermsSettings() {
         </Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        These terms are pre-filled as the default <em>Terms &amp; Conditions</em> when creating new quotes, sales orders, and invoices.
+        These terms are pre-filled as the default <em>Terms &amp; Conditions</em> when creating new quotes, sales orders, purchase orders, and invoices.
       </p>
       <Card>
         <CardHeader><CardTitle className="text-sm">Default Terms &amp; Conditions</CardTitle></CardHeader>
@@ -44,6 +44,7 @@ export function TermsSettings() {
             { key: 'quote', label: 'Quotes' },
             { key: 'salesOrder', label: 'Sales Orders' },
             { key: 'invoice', label: 'Invoices' },
+            { key: 'purchaseOrder', label: 'Purchase Orders' },
           ].map(t => (
             <div key={t.key}>
               <label className="text-sm font-medium block mb-1.5">{t.label}</label>

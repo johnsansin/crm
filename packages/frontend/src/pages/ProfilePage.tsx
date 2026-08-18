@@ -11,6 +11,7 @@ import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/ta
 import { ArrowLeft, Save, Loader2, Mail, Phone, MapPin, Shield, KeyRound, Camera, Smartphone, Unlink } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { TIMEZONES, LANGUAGES, COUNTRIES } from '@/lib/constants'
+import { t } from '@/lib/i18n'
 
 const DATE_FORMATS = ['MM/dd/yyyy', 'dd-MM-yyyy', 'yyyy-MM-dd']
 const HOUR_FORMATS = ['12h', '24h']
@@ -18,32 +19,32 @@ const WEEK_STARTS = ['Sunday', 'Monday']
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD']
 
 const sectionMeta = {
-  personal: { label: 'Personal', icon: Shield, fields: [
-    { label: 'First Name', field: 'firstName', type: 'text' },
-    { label: 'Last Name', field: 'lastName', type: 'text' },
-    { label: 'Title', field: 'title', type: 'text' },
-    { label: 'Department', field: 'department', type: 'text' },
+  personal: { label: t('Personal'), icon: Shield, fields: [
+    { label: t('First Name'), field: 'firstName', type: 'text' },
+    { label: t('Last Name'), field: 'lastName', type: 'text' },
+    { label: t('Title'), field: 'title', type: 'text' },
+    { label: t('Department'), field: 'department', type: 'text' },
   ]},
-  contact: { label: 'Contact', icon: Mail, fields: [
-    { label: 'Email', field: 'email', type: 'email' },
-    { label: 'Phone', field: 'phone', type: 'text' },
-    { label: 'Mobile', field: 'mobile', type: 'text' },
+  contact: { label: t('Contact'), icon: Mail, fields: [
+    { label: t('Email'), field: 'email', type: 'email' },
+    { label: t('Phone'), field: 'phone', type: 'text' },
+    { label: t('Mobile'), field: 'mobile', type: 'text' },
   ]},
-  address: { label: 'Address', icon: MapPin, fields: [
-    { label: 'Street', field: 'addressStreet', type: 'text' },
-    { label: 'City', field: 'addressCity', type: 'text' },
-    { label: 'State', field: 'addressState', type: 'text' },
-    { label: 'Country', field: 'addressCountry', type: 'select', options: COUNTRIES },
-    { label: 'Postal Code', field: 'addressPostalCode', type: 'text' },
+  address: { label: t('Address'), icon: MapPin, fields: [
+    { label: t('Street'), field: 'addressStreet', type: 'text' },
+    { label: t('City'), field: 'addressCity', type: 'text' },
+    { label: t('State'), field: 'addressState', type: 'text' },
+    { label: t('Country'), field: 'addressCountry', type: 'select', options: COUNTRIES },
+    { label: t('Postal Code'), field: 'addressPostalCode', type: 'text' },
   ]},
-  preferences: { label: 'Preferences', icon: KeyRound, fields: [
-    { label: 'Timezone', field: 'timezone', type: 'select', options: TIMEZONES },
-    { label: 'Language', field: 'language', type: 'select', options: LANGUAGES },
-    { label: 'Date Format', field: 'dateFormat', type: 'select', options: DATE_FORMATS },
-    { label: 'Hour Format', field: 'hourFormat', type: 'select', options: HOUR_FORMATS },
-    { label: 'Start of Week', field: 'startOfWeek', type: 'select', options: WEEK_STARTS },
-    { label: 'Default Module', field: 'defaultModule', type: 'text' },
-    { label: 'Currency', field: 'currencyCode', type: 'select', options: CURRENCIES },
+  preferences: { label: t('Preferences'), icon: KeyRound, fields: [
+    { label: t('Timezone'), field: 'timezone', type: 'select', options: TIMEZONES },
+    { label: t('Language'), field: 'language', type: 'select', options: LANGUAGES },
+    { label: t('Date Format'), field: 'dateFormat', type: 'select', options: DATE_FORMATS },
+    { label: t('Hour Format'), field: 'hourFormat', type: 'select', options: HOUR_FORMATS },
+    { label: t('Start of Week'), field: 'startOfWeek', type: 'select', options: WEEK_STARTS },
+    { label: t('Default Module'), field: 'defaultModule', type: 'text' },
+    { label: t('Currency'), field: 'currencyCode', type: 'select', options: CURRENCIES },
   ]},
 }
 
@@ -176,7 +177,7 @@ export function ProfilePage() {
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft size={20} />
         </Button>
-        <h1 className="text-2xl font-bold tracking-tight">My Profile</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('My Profile')}</h1>
       </div>
 
       <div className="p-5 rounded-xl border bg-card flex flex-col sm:flex-row items-start sm:items-center gap-5">
@@ -222,7 +223,7 @@ export function ProfilePage() {
                     </TabsTrigger>
                   ))}
                   <TabsTrigger value="security" className="gap-2">
-                    <Shield size={15} /> Security
+                    <Shield size={15} /> {t('Security')}
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -265,21 +266,21 @@ export function ProfilePage() {
                   <div>
                     <div className="flex items-center gap-2 mb-3">
                       <KeyRound size={16} className="text-primary" />
-                      <h3 className="text-sm font-semibold">Change Password</h3>
+                      <h3 className="text-sm font-semibold">{t('Change Password')}</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-medium block mb-1.5">Current Password</label>
+                        <label className="text-sm font-medium block mb-1.5">{t('Current Password')}</label>
                         <PasswordInput value={pwd.current} onChange={e => setPwd(p => ({ ...p, current: e.target.value }))} className="rounded-lg" />
                       </div>
                       <div>
-                        <label className="text-sm font-medium block mb-1.5">New Password</label>
+                        <label className="text-sm font-medium block mb-1.5">{t('New Password')}</label>
                         <PasswordInput value={pwd.next} onChange={e => setPwd(p => ({ ...p, next: e.target.value }))} className="rounded-lg" />
                       </div>
                       <div className="md:col-span-2 flex justify-end">
                         <Button type="button" onClick={handleChangePassword} disabled={pwdBusy}>
                           {pwdBusy ? <Loader2 size={16} className="mr-2 animate-spin" /> : <KeyRound size={16} className="mr-2" />}
-                          Update Password
+                           {t('Update Password')}
                         </Button>
                       </div>
                     </div>
@@ -289,10 +290,10 @@ export function ProfilePage() {
                     <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                       <div className="flex items-center gap-2">
                         <Smartphone size={18} className="text-primary" />
-                        <h3 className="text-sm font-semibold">Two-Factor Authentication</h3>
+                        <h3 className="text-sm font-semibold">{t('Two-Factor Authentication')}</h3>
                       </div>
                       <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${twoFa.enabled ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
-                        {twoFa.enabled ? 'Enabled' : 'Disabled'}
+                        {twoFa.enabled ? t('Enabled') : t('Disabled')}
                       </span>
                     </div>
 
@@ -303,10 +304,10 @@ export function ProfilePage() {
                         <p className="text-xs text-muted-foreground">Secret: <code className="font-mono">{twoFa.secret}</code></p>
                         <div className="flex flex-wrap items-end gap-2">
                           <div className="flex-1 min-w-[200px]">
-                            <label className="text-sm font-medium block mb-1.5">Verification Code</label>
+                            <label className="text-sm font-medium block mb-1.5">{t('Verification Code')}</label>
                             <Input value={twoFa.code} onChange={e => setTwoFa(t => ({ ...t, code: e.target.value }))} placeholder="6-digit code" className="rounded-lg" />
                           </div>
-                          <Button type="button" onClick={confirmEnable2fa}>Enable 2FA</Button>
+                           <Button type="button" onClick={confirmEnable2fa}>{t('Enable 2FA')}</Button>
                         </div>
                       </div>
                     )}
@@ -314,17 +315,17 @@ export function ProfilePage() {
                     {twoFa.enabled ? (
                       <div className="flex flex-wrap items-end gap-2">
                         <div className="flex-1 min-w-[200px]">
-                          <label className="text-sm font-medium block mb-1.5">Password to disable</label>
+                           <label className="text-sm font-medium block mb-1.5">{t('Password to disable')}</label>
                           <PasswordInput value={twoFa.disableCode} onChange={e => setTwoFa(t => ({ ...t, disableCode: e.target.value }))} placeholder="Enter your password" className="rounded-lg" />
                         </div>
                         <Button type="button" variant="destructive" onClick={confirmDisable2fa}>
-                          <Unlink size={16} className="mr-2" /> Disable 2FA
+                           <Unlink size={16} className="mr-2" /> {t('Disable 2FA')}
                         </Button>
                       </div>
                     ) : (
                       <Button type="button" variant="outline" onClick={open2faSetup} disabled={twoFa.loading}>
                         {twoFa.loading ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Smartphone size={16} className="mr-2" />}
-                        Set up 2FA
+                           {t('Set up 2FA')}
                       </Button>
                     )}
                   </div>
@@ -335,13 +336,31 @@ export function ProfilePage() {
         </Card>
 
         <div className="flex justify-end gap-2 mt-4">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => navigate(-1)}>{t('Cancel')}</Button>
           <Button type="submit" disabled={saving}>
             {saving ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Save size={16} className="mr-2" />}
-            Save Changes
+            {t('Save Changes')}
           </Button>
         </div>
       </form>
+
+      <div className="mt-6 pt-6 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={async () => {
+            try {
+              await api.resetOnboarding()
+              useAuthStore.setState({ user: { ...user, hasCompletedOnboarding: false } })
+              addToast({ title: t('Tour restarted'), description: t('The onboarding tour will appear on your next page load.'), variant: 'success' })
+            } catch (e: any) {
+              addToast({ title: 'Error', description: e.message, variant: 'destructive' })
+            }
+          }}
+        >
+          {t('Replay Onboarding Tour')}
+        </Button>
+      </div>
     </div>
   )
 }

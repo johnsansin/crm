@@ -29,12 +29,15 @@ model User {
   pbxExtension  String?  @db.VarChar(50)
   isActive            Boolean   @default(true)
   isAdmin             Boolean   @default(false)
+  isAgent             Boolean   @default(false)
   lastLogin           DateTime?
   lastActiveAt        DateTime?
   resetToken    String?  @unique @db.VarChar(255)
   resetTokenExpires DateTime?
   twoFactorSecret String?  @db.VarChar(500)
   twoFactorEnabled Boolean @default(false)
+   hasCompletedOnboarding Boolean @default(false)
+   hasCompletedQuickStart Boolean @default(false)
   failedLoginAttempts Int  @default(0)
   lockedUntil     DateTime?
   dateFormat     String?  @db.VarChar(20)
@@ -42,6 +45,7 @@ model User {
   startOfWeek    String?  @db.VarChar(10)
   defaultModule  String?  @db.VarChar(100)
   currencyCode   String?  @db.VarChar(3)
+  dashboardEnabled Boolean @default(true)
   dashboardConfig Json?
   roleId        String?
   companyId     String?
@@ -343,8 +347,15 @@ model Potential {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  products     PotentialProduct[]
-  stageHistory PotentialStageHistory[]
+  lossReason       String?  @db.VarChar(500)
+  nextFollowUp     DateTime?
+  sourceCampaign   String?  @db.VarChar(100)
+  contactRole      String?  @db.VarChar(100)
+  decisionMaker    Boolean  @default(false)
+
+  products        PotentialProduct[]
+  stageHistory    PotentialStageHistory[]
+  competitors     PotentialCompetitor[]
 }
 
 model PotentialProduct {
@@ -467,6 +478,13 @@ model Product {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  minimumOrderQty   Decimal? @default(1) @db.Decimal(12,2)
+  maximumOrderQty   Decimal? @db.Decimal(12,2)
+  qtyDiscountEnabled Boolean  @default(false)
+  hsnCode           String?  @db.VarChar(20)
+  sacCode           String?  @db.VarChar(20)
+  warrantyMonths    Int?
+
   images          ProductImage[]
 
   priceBookProducts PriceBookProduct[]
@@ -549,6 +567,15 @@ model Service {
   createdBy       String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  status            String?  @default("Active") @db.VarChar(50)
+  billingCycle      String?  @db.VarChar(50)
+  slaResponseHours  Int?
+  slaResolutionHours Int?
+  setupFee          Decimal? @db.Decimal(16,2)
+  minContractMonths Int?
+  trialAvailable    Boolean  @default(false)
+  version           String?  @db.VarChar(50)
 }
 
 model Vendor {
@@ -573,6 +600,18 @@ model Vendor {
   createdBy  String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  rating          String?  @db.VarChar(10)
+  taxId           String?  @db.VarChar(100)
+  paymentTerms    String?  @db.VarChar(100)
+  annualRevenue   Decimal? @db.Decimal(16,2)
+  employees       Int?
+  yearEstablished Int?
+  logo            String?  @db.VarChar(500)
+  linkedin        String?  @db.VarChar(500)
+  contactPerson   String?  @db.VarChar(200)
+  contactEmail    String?  @db.VarChar(100)
+  contactPhone    String?  @db.VarChar(30)
 }
 
 model PriceBook {
@@ -587,6 +626,14 @@ model PriceBook {
   createdBy    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  currency           String?  @default("USD") @db.VarChar(3)
+  conversionRate     Decimal  @default(1) @db.Decimal(10,5)
+  discountAllowed    Boolean  @default(false)
+  maxDiscountPercent Decimal? @db.Decimal(5,2)
+  validFrom          DateTime?
+  validUntil         DateTime?
+  targetSegment      String?  @db.VarChar(100)
 
   products PriceBookProduct[]
 }
@@ -648,6 +695,14 @@ model Quote {
   createdBy       String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  approvalStatus String?  @default("Draft") @db.VarChar(50)
+  approvedBy      String?
+  approvedAt      DateTime?
+  rejectionReason String?  @db.Text
+  quoteType       String?  @db.VarChar(50)
+  paymentTerms    String?  @db.VarChar(100)
+  deliveryTerms   String?  @db.VarChar(200)
 
   lineItems QuoteLineItem[]
   stageHistory QuoteStageHistory[]
@@ -883,6 +938,13 @@ model Invoice {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  paymentTerms     String?  @db.VarChar(100)
+  lateFeePercent   Decimal? @db.Decimal(5,2)
+  discountDays     Int?
+  reminderSentAt   DateTime?
+  lastReminderAt   DateTime?
+  collectionStatus String?  @default("Active") @db.VarChar(50)
+
   lineItems InvoiceLineItem[]
   salesOrder SalesOrder? @relation(fields: [salesOrderId], references: [id])
 }
@@ -935,7 +997,19 @@ model Ticket {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  slaDeadline          DateTime?
+  firstResponseAt      DateTime?
+  resolutionTime       Int?
+  escalationLevel      Int      @default(0)
+  parentTicketId       String?
+  satisfactionRating   Int?
+  satisfactionComment  String?  @db.Text
+  autoAssigned         Boolean  @default(false)
+  tags                 String?  @db.VarChar(500)
+
   serviceContract ServiceContract? @relation(fields: [serviceContractId], references: [id])
+  ticketComments  TicketComment[]
+  escalationHistories EscalationHistory[]
 }
 
 model Faq {
@@ -1042,8 +1116,18 @@ model Project {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  estimatedHours Decimal? @db.Decimal(10,2)
+  actualHours    Decimal? @db.Decimal(10,2)
+  budgetType     String?  @default("Fixed") @db.VarChar(50)
+  billingRate    Decimal? @db.Decimal(10,2)
+  resourceCount  Int?
+  healthStatus   String?  @default("On Track") @db.VarChar(50)
+  department     String?  @db.VarChar(100)
+  tags           String?  @db.VarChar(500)
+
   tasks      ProjectTask[]
   milestones ProjectMilestone[]
+  resources  ProjectResource[]
 }
 
 model ProjectTask {
@@ -1066,6 +1150,12 @@ model ProjectTask {
   createdBy     String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  estimatedHours Decimal? @db.Decimal(10,2)
+  loggedHours    Decimal? @db.Decimal(10,2)
+  completedAt    DateTime?
+  blockedBy      String?  @db.VarChar(500)
+  tags           String?  @db.VarChar(500)
 }
 
 model ProjectMilestone {
@@ -1116,6 +1206,20 @@ model Asset {
   createdBy         String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  purchaseDate        DateTime?
+  purchasePrice       Decimal? @db.Decimal(16,2)
+  warrantyEndDate     DateTime?
+  warrantyType        String?  @db.VarChar(50)
+  condition           String?  @db.VarChar(50)
+  location            String?  @db.VarChar(200)
+  department          String?  @db.VarChar(100)
+  lastMaintenanceDate DateTime?
+  nextMaintenanceDate DateTime?
+  vendorId            String?
+  costCenter          String?  @db.VarChar(100)
+  depreciationMethod  String?  @db.VarChar(50)
+  salvageValue        Decimal? @db.Decimal(16,2)
 
   serviceContract ServiceContract? @relation(fields: [serviceContractId], references: [id])
 }
@@ -1306,6 +1410,7 @@ model ChatMessage {
   conversationId String   @db.VarChar(100)
   senderId       String   @db.VarChar(100)
   body           String   @db.Text
+  attachments    Json?
   createdAt      DateTime @default(now())
 
   conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -1475,11 +1580,15 @@ model PermissionProfile {
 model Workflow {
   id          String   @id @default(uuid())
   name        String   @db.VarChar(200)
+  description String?  @db.VarChar(500)
   moduleName  String   @db.VarChar(100)
   triggerType String   @db.VarChar(50)
   conditions  Json     @default("{}")
   actions     Json     @default("[]")
   isActive    Boolean  @default(true)
+  runCount    Int      @default(0)
+  lastRunAt   DateTime?
+  lastError   String?  @db.Text
   companyId   String?
   createdBy   String?
   createdAt   DateTime @default(now())
@@ -1487,17 +1596,20 @@ model Workflow {
 }
 
 model ScheduledTask {
-  id         String   @id @default(uuid())
-  name       String   @db.VarChar(200)
-  moduleName String?  @db.VarChar(100)
-  frequency  String   @db.VarChar(50)
-  actions    Json     @default("[]")
-  isActive   Boolean  @default(true)
-  lastRun    DateTime?
-  nextRun    DateTime?
-  companyId  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(200)
+  description String?  @db.VarChar(500)
+  moduleName  String?  @db.VarChar(100)
+  frequency   String   @db.VarChar(50)
+  actions     Json     @default("[]")
+  isActive    Boolean  @default(true)
+  lastRun     DateTime?
+  nextRun     DateTime?
+  lastError   String?  @db.Text
+  runCount    Int      @default(0)
+  companyId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Webform {
@@ -1634,15 +1746,67 @@ model RecurringInvoice {
 }
 
 model PortalUser {
-  id            String   @id @default(uuid())
-  userId        String   @unique
-  companyId     String?
-  accessCode    String?
-  isActive      Boolean  @default(true)
-  lastLoginAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(uuid())
+  userId      String?
+  contactId   String?
+  email       String   @unique @default("") @db.VarChar(200)
+  password    String   @default("") @db.VarChar(255)
+  name        String   @default("") @db.VarChar(200)
+  company     String?  @db.VarChar(200)
+  phone       String?  @db.VarChar(30)
+  isActive    Boolean  @default(true)
+  lastLogin   DateTime?
+  companyId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  @@index([companyId])
+}
+
+model AiPrompt {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(200)
+  prompt      String   @db.Text
+  module      String?  @db.VarChar(100)
+  isActive    Boolean  @default(true)
+  companyId   String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model AiLog {
+  id          String   @id @default(uuid())
+  promptId    String?
+  moduleName  String?  @db.VarChar(100)
+  recordId    String?
+  input       String   @db.Text
+  output      String   @db.Text
+  model       String?  @db.VarChar(50)
+  tokens      Int?
+  duration    Int?
+  companyId   String?
+  userId      String?
+  createdAt   DateTime @default(now())
+
+  @@index([companyId])
+  @@index([createdAt])
+}
+
+model Translation {
+  id          String   @id @default(uuid())
+  locale      String   @db.VarChar(10)
+  key         String   @db.VarChar(200)
+  value       String   @db.Text
+  namespace   String   @default("common") @db.VarChar(50)
+  companyId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([locale, key, namespace])
+  @@index([locale])
   @@index([companyId])
 }
 
@@ -1826,4 +1990,483 @@ model ApiKey {
   updatedAt  DateTime @updatedAt
 
   @@index([companyId])
+}
+
+model Competitor {
+  id             String   @id @default(uuid())
+  competitorName String   @db.VarChar(200)
+  website        String?  @db.VarChar(200)
+  strengths     String?  @db.Text
+  weaknesses    String?  @db.Text
+  products      String?  @db.Text
+  marketShare   Decimal? @db.Decimal(5,2)
+  rating        String?  @db.VarChar(10)
+  description   String?  @db.Text
+  companyId     String?
+  isActive      Boolean  @default(true)
+  assignedTo    String?
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  potentials PotentialCompetitor[]
+}
+
+model PotentialCompetitor {
+  id             String   @id @default(uuid())
+  potentialId    String
+  competitorId   String
+  threatLevel    String?  @db.VarChar(50)
+  notes          String?  @db.Text
+  companyId      String?
+  createdAt      DateTime @default(now())
+
+  potential   Potential   @relation(fields: [potentialId], references: [id])
+  competitor  Competitor  @relation(fields: [competitorId], references: [id])
+
+  @@unique([potentialId, competitorId])
+  @@index([potentialId])
+  @@index([competitorId])
+}
+
+model TimeEntry {
+  id          String   @id @default(uuid())
+  projectId   String
+  taskId      String?
+  userId      String
+  date        DateTime
+  hours       Decimal  @db.Decimal(5,2)
+  description String?  @db.Text
+  billable    Boolean  @default(true)
+  approved    Boolean  @default(false)
+  approvedBy  String?
+  companyId   String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([companyId])
+}
+
+model StageProbability {
+  id          String   @id @default(uuid())
+  stageName   String   @db.VarChar(100)
+  probability Int
+  sequence    Int      @default(0)
+  color       String?  @db.VarChar(20)
+  isActive    Boolean  @default(true)
+  companyId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, stageName])
+  @@index([companyId])
+}
+
+model QuantityDiscount {
+  id              String   @id @default(uuid())
+  productId       String
+  minQty          Decimal  @db.Decimal(12,2)
+  maxQty          Decimal? @db.Decimal(12,2)
+  discountPercent Decimal  @db.Decimal(5,2)
+  companyId       String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([productId])
+  @@index([companyId])
+}
+
+model TicketComment {
+  id          String   @id @default(uuid())
+  ticketId    String
+  userId      String?
+  comment     String   @db.Text
+  isInternal  Boolean  @default(false)
+  isSystem    Boolean  @default(false)
+  timeSpent   Int?
+  companyId   String?
+  createdAt   DateTime @default(now())
+
+  ticket Ticket? @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+  @@index([companyId])
+}
+
+model EscalationHistory {
+  id          String   @id @default(uuid())
+  ticketId    String
+  fromLevel   Int
+  toLevel     Int
+  reason      String?  @db.VarChar(500)
+  escalatedBy String?
+  companyId   String?
+  createdAt   DateTime @default(now())
+
+  ticket Ticket? @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+}
+
+model ProjectResource {
+  id                  String   @id @default(uuid())
+  projectId           String
+  userId              String
+  role                String?  @db.VarChar(100)
+  allocationPercent   Int?     @default(100)
+  hourlyRate          Decimal? @db.Decimal(10,2)
+  startDate           DateTime?
+  endDate             DateTime?
+  isActive            Boolean  @default(true)
+  companyId           String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  project Project? @relation(fields: [projectId], references: [id])
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+}
+
+model WorkflowLog {
+  id              String   @id @default(uuid())
+  workflowId      String
+  workflowName    String   @db.VarChar(200)
+  moduleName      String   @db.VarChar(100)
+  recordId        String?
+  triggerType     String   @db.VarChar(50)
+  conditionsMet   Boolean  @default(false)
+  actionsExecuted Int      @default(0)
+  error           String?  @db.Text
+  duration        Int?
+  companyId       String?
+  createdAt       DateTime @default(now())
+
+  @@index([companyId])
+  @@index([workflowId])
+  @@index([createdAt])
+}
+
+model DashboardWidget {
+  id          String   @id @default(uuid())
+  widgetName  String   @db.VarChar(200)
+  widgetType  String   @db.VarChar(50)
+  moduleName  String   @db.VarChar(100)
+  config      Json     @default("{}")
+  position    Int      @default(0)
+  size        String   @default("medium") @db.VarChar(20)
+  isActive    Boolean  @default(true)
+  companyId   String?
+  userId      String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([userId])
+}
+
+model ReportSchedule {
+  id          String   @id @default(uuid())
+  reportId    String?
+  reportName  String   @db.VarChar(200)
+  moduleName  String   @db.VarChar(100)
+  reportType  String   @db.VarChar(50)
+  config      Json     @default("{}")
+  frequency   String   @db.VarChar(50)
+  recipients  Json     @default("[]")
+  lastRun     DateTime?
+  nextRun     DateTime?
+  isActive    Boolean  @default(true)
+  companyId   String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model Scorecard {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(200)
+  moduleName  String   @db.VarChar(100)
+  metrics     Json     @default("[]")
+  period      String   @db.VarChar(50)
+  target      Decimal? @db.Decimal(16,2)
+  actual      Decimal? @db.Decimal(16,2)
+  status      String   @default("On Track") @db.VarChar(50)
+  companyId   String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model EmailCampaign {
+  id             String   @id @default(uuid())
+  campaignName   String   @db.VarChar(200)
+  subject        String   @db.VarChar(500)
+  body           String   @db.Text
+  plainBody      String?  @db.Text
+  fromEmail      String?  @db.VarChar(200)
+  fromName       String?  @db.VarChar(200)
+  replyTo        String?  @db.VarChar(200)
+  status         String   @default("Draft") @db.VarChar(50)
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+  recipientCount Int      @default(0)
+  openCount      Int      @default(0)
+  clickCount     Int      @default(0)
+  bounceCount    Int      @default(0)
+  unsubscribeCount Int   @default(0)
+  recipientType  String?  @db.VarChar(50)
+  recipientFilter Json?   @default("{}")
+  templateId     String?
+  companyId      String?
+  isActive       Boolean  @default(true)
+  assignedTo     String?
+  createdBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  recipients EmailCampaignRecipient[]
+
+  @@index([companyId])
+  @@index([status])
+}
+
+model EmailCampaignRecipient {
+  id          String   @id @default(uuid())
+  campaignId  String
+  campaign    EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  email       String   @db.VarChar(200)
+  contactId   String?
+  name        String?  @db.VarChar(200)
+  status      String   @default("Pending") @db.VarChar(50)
+  sentAt      DateTime?
+  openedAt    DateTime?
+  clickedAt   DateTime?
+  bouncedAt   DateTime?
+  bounceReason String? @db.VarChar(500)
+  unsubscribedAt DateTime?
+  companyId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([campaignId])
+  @@index([email])
+  @@index([companyId])
+}
+
+model SmsTemplate {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(200)
+  body        String   @db.Text
+  module      String?  @db.VarChar(100)
+  variables   Json     @default("[]")
+  isActive    Boolean  @default(true)
+  companyId   String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model ChatWidget {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(200)
+  color       String   @default("#0B1F3A") @db.VarChar(20)
+  welcomeMsg  String?  @db.VarChar(500)
+  offlineMsg  String?  @db.VarChar(500)
+  position    String   @default("bottom-right") @db.VarChar(20)
+  isActive    Boolean  @default(true)
+  companyId   String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sessions ChatSession[]
+
+  @@index([companyId])
+}
+
+model ChatSession {
+  id          String   @id @default(uuid())
+  widgetId    String?
+  visitorName String?  @db.VarChar(200)
+  visitorEmail String? @db.VarChar(200)
+  visitorIp   String?  @db.VarChar(45)
+  userAgent   String?  @db.Text
+  status      String   @default("active") @db.VarChar(50)
+  assignedTo  String?
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  companyId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  widget   ChatWidget?          @relation(fields: [widgetId], references: [id])
+  messages ChatSessionMessage[]
+
+  @@index([companyId])
+  @@index([status])
+}
+
+model ChatSessionMessage {
+  id          String   @id @default(uuid())
+  sessionId   String
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  senderType  String   @db.VarChar(20)
+  senderId    String?
+  body        String   @db.Text
+  createdAt   DateTime @default(now())
+
+  @@index([sessionId])
+}
+
+model LandingPage {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(200)
+  slug        String   @unique @db.VarChar(200)
+  title       String   @db.VarChar(200)
+  subtitle    String?  @db.VarChar(500)
+  description String?  @db.Text
+  content     Json     @default("{}")
+  formConfig  Json     @default("{}")
+  theme       String   @default("default") @db.VarChar(50)
+  primaryColor String  @default("#0B1F3A") @db.VarChar(20)
+  imageUrl    String?  @db.VarChar(500)
+  faviconUrl  String?  @db.VarChar(500)
+  metaTitle   String?  @db.VarChar(200)
+  metaDescription String? @db.VarChar(500)
+  thankYouMsg String?  @db.VarChar(500)
+  redirectUrl String?  @db.VarChar(500)
+  submitAction String  @default("thankYou") @db.VarChar(50)
+  isActive    Boolean  @default(true)
+  isPublished Boolean  @default(false)
+  viewCount   Int      @default(0)
+  submitCount Int      @default(0)
+  campaignId  String?
+  companyId   String?
+  assignedTo  String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, slug])
+  @@index([companyId])
+
+  submissions LandingPageSubmission[]
+}
+
+model LandingPageSubmission {
+  id          String   @id @default(uuid())
+  pageId      String
+  page        LandingPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  formData    Json     @default("{}")
+  contactId   String?
+  leadId      String?
+  ipAddress   String?  @db.VarChar(45)
+  userAgent   String?  @db.Text
+  referrer    String?  @db.VarChar(1000)
+  utmSource   String?  @db.VarChar(100)
+  utmMedium   String?  @db.VarChar(100)
+  utmCampaign String?  @db.VarChar(100)
+  companyId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([pageId])
+  @@index([companyId])
+}
+
+model SocialMediaProfile {
+  id          String   @id @default(uuid())
+  platform    String   @db.VarChar(50)
+  profileId   String   @db.VarChar(200)
+  profileName String?  @db.VarChar(200)
+  profileUrl  String?  @db.VarChar(500)
+  accessToken String?  @db.VarChar(1000)
+  refreshToken String? @db.VarChar(1000)
+  tokenExpiresAt DateTime?
+  isActive    Boolean  @default(true)
+  companyId   String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, platform, profileId])
+  @@index([companyId])
+
+  posts SocialMediaPost[]
+}
+
+model SocialMediaPost {
+  id          String   @id @default(uuid())
+  profileId   String
+  profile     SocialMediaProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  content     String   @db.Text
+  mediaUrls   Json     @default("[]")
+  platformPostId String? @db.VarChar(200)
+  status      String   @default("draft") @db.VarChar(50)
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  likes       Int      @default(0)
+  comments    Int      @default(0)
+  shares      Int      @default(0)
+  reach       Int      @default(0)
+  impressions Int      @default(0)
+  campaignId  String?
+  companyId   String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([profileId])
+  @@index([status])
+}
+
+model WebhookEndpoint {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(200)
+  url         String   @db.VarChar(1000)
+  secret      String?  @db.VarChar(200)
+  events      Json     @default("[]")
+  headers     Json     @default("{}")
+  isActive    Boolean  @default(true)
+  lastTriggeredAt DateTime?
+  failureCount Int     @default(0)
+  companyId   String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+
+  logs WebhookLog[]
+}
+
+model WebhookLog {
+  id          String   @id @default(uuid())
+  endpointId  String
+  endpoint    WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  event       String   @db.VarChar(100)
+  payload     Json
+  responseStatus Int?
+  responseBody String? @db.Text
+  duration    Int?
+  success     Boolean  @default(false)
+  error       String?  @db.Text
+  companyId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([endpointId])
+  @@index([companyId])
+  @@index([createdAt])
 }

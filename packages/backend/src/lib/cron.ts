@@ -1,6 +1,6 @@
 import { prisma } from './prisma'
 import { runScheduledTaskActions } from './settings'
-import { runRecurringInvoices, fetchAllRssFeeds, syncAllMailboxes, sendPaymentReminders } from './automation'
+import { runRecurringInvoices, fetchAllRssFeeds, syncAllMailboxes, sendPaymentReminders, checkSLADeadlines, checkFollowUpReminders, checkOverdueInvoices, checkAssetMaintenance, checkProjectHealth } from './automation'
 import { runScheduledReports } from './report-runner'
 
 function nextRunFor(frequency: string): Date {
@@ -17,6 +17,12 @@ function nextRunFor(frequency: string): Date {
 
 let running = false
 
+let lastSlaCheck = 0
+let lastFollowUpCheck = 0
+let lastOverdueInvoiceCheck = 0
+let lastAssetMaintenanceCheck = 0
+let lastProjectHealthCheck = 0
+
 export async function runDueTasks(): Promise<void> {
   if (running) return
   running = true
@@ -27,15 +33,20 @@ export async function runDueTasks(): Promise<void> {
       take: 50,
     })
     for (const task of tasks) {
+      const taskStart = Date.now()
       try {
         await runScheduledTaskActions(task)
-      } catch (err) {
+        await prisma.scheduledTask.update({
+          where: { id: task.id },
+          data: { lastRun: now, nextRun: nextRunFor(task.frequency), runCount: { increment: 1 }, lastError: null },
+        })
+      } catch (err: any) {
         console.error('[CRON] task failed:', task.name, err)
+        await prisma.scheduledTask.update({
+          where: { id: task.id },
+          data: { lastRun: now, nextRun: nextRunFor(task.frequency), lastError: err?.message || String(err) },
+        }).catch(() => {})
       }
-      await prisma.scheduledTask.update({
-        where: { id: task.id },
-        data: { lastRun: now, nextRun: nextRunFor(task.frequency) },
-      })
     }
   } catch (err) {
     console.error('[CRON] scan failed:', err)
@@ -49,6 +60,29 @@ export async function runDueTasks(): Promise<void> {
   syncAllMailboxes().catch(() => {})
   sendPaymentReminders().catch(() => {})
   runScheduledReports().catch(() => {})
+
+  // Automated monitoring tasks
+  const now = Date.now()
+  if (now - lastSlaCheck >= 5 * 60 * 1000) {
+    lastSlaCheck = now
+    checkSLADeadlines().catch(() => {})
+  }
+  if (now - lastFollowUpCheck >= 60 * 60 * 1000) {
+    lastFollowUpCheck = now
+    checkFollowUpReminders().catch(() => {})
+  }
+  if (now - lastOverdueInvoiceCheck >= 24 * 60 * 60 * 1000) {
+    lastOverdueInvoiceCheck = now
+    checkOverdueInvoices().catch(() => {})
+  }
+  if (now - lastAssetMaintenanceCheck >= 24 * 60 * 60 * 1000) {
+    lastAssetMaintenanceCheck = now
+    checkAssetMaintenance().catch(() => {})
+  }
+  if (now - lastProjectHealthCheck >= 24 * 60 * 60 * 1000) {
+    lastProjectHealthCheck = now
+    checkProjectHealth().catch(() => {})
+  }
 }
 
 export function startCron(): NodeJS.Timeout {

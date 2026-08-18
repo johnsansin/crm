@@ -359,6 +359,76 @@ const modules: Record<string, ModuleConfig> = {
     searchFields: ['moduleName'],
     listFields: ['moduleName', 'view', 'create', 'edit', 'delete'],
     relatedModules: []
+  },
+  competitors: {
+    modelName: 'competitor',
+    label: 'Competitors',
+    parent: 'Sales',
+    icon: 'Swords',
+    sequence: 45,
+    searchFields: ['competitorName', 'website'],
+    listFields: ['competitorName', 'website', 'marketShare', 'rating'],
+    relatedModules: ['potentials']
+  },
+  timeentries: {
+    modelName: 'timeEntry',
+    label: 'Time Entries',
+    parent: 'Projects',
+    icon: 'Clock',
+    sequence: 152,
+    searchFields: ['description'],
+    listFields: ['date', 'hours', 'description', 'billable', 'approved'],
+    relatedModules: ['projects', 'projecttasks']
+  },
+  stageprobability: {
+    modelName: 'stageProbability',
+    label: 'Stage Probabilities',
+    parent: 'Sales',
+    icon: 'Percent',
+    sequence: 42,
+    searchFields: ['stageName'],
+    listFields: ['stageName', 'probability', 'sequence', 'color'],
+    relatedModules: []
+  },
+  quantitydiscounts: {
+    modelName: 'quantityDiscount',
+    label: 'Quantity Discounts',
+    parent: 'Inventory',
+    icon: 'BadgePercent',
+    sequence: 52,
+    searchFields: ['productId'],
+    listFields: ['minQty', 'maxQty', 'discountPercent'],
+    relatedModules: ['products']
+  },
+  ticketcomments: {
+    modelName: 'ticketComment',
+    label: 'Ticket Comments',
+    parent: 'Support',
+    icon: 'MessageCircle',
+    sequence: 105,
+    searchFields: ['comment'],
+    listFields: ['comment', 'isInternal', 'isSystem', 'timeSpent'],
+    relatedModules: ['tickets']
+  },
+  escalationhistory: {
+    modelName: 'escalationHistory',
+    label: 'Escalation History',
+    parent: 'Support',
+    icon: 'AlertTriangle',
+    sequence: 106,
+    searchFields: ['reason'],
+    listFields: ['fromLevel', 'toLevel', 'reason', 'escalatedBy'],
+    relatedModules: ['tickets']
+  },
+  projectresources: {
+    modelName: 'projectResource',
+    label: 'Project Resources',
+    parent: 'Projects',
+    icon: 'Users',
+    sequence: 153,
+    searchFields: ['role'],
+    listFields: ['role', 'allocationPercent', 'hourlyRate', 'startDate'],
+    relatedModules: ['projects']
   }
 }
 

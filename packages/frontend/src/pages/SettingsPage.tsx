@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, Target, type LucideIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, Target, Languages, type LucideIcon } from 'lucide-react'
 import { useTheme } from '@/lib/theme'
 import { useAuthStore } from '@/lib/auth'
 import { TIMEZONES, DATE_FORMATS, COUNTRIES, SOCIAL_FIELDS } from '@/lib/constants'
@@ -29,6 +29,7 @@ import { TermsSettings } from '@/pages/settings/TermsSettings'
 import { IntegrationSettings } from '@/pages/settings/IntegrationSettings'
 import { TagsSettings } from '@/pages/settings/TagsSettings'
 import { MenuSettings } from '@/pages/settings/MenuSettings'
+import { LanguageSettings } from '@/pages/settings/LanguageSettings'
 import { RecycleBinPage } from '@/pages/RecycleBinPage'
 
 const TINTS: Record<string, string> = {
@@ -53,6 +54,7 @@ const TINTS: Record<string, string> = {
   tags: 'from-amber-400 to-orange-600',
   menu: 'from-violet-500 to-indigo-700',
   trash: 'from-red-500 to-rose-700',
+  language: 'from-cyan-500 to-blue-600',
 }
 
 const CATEGORIES = [
@@ -84,7 +86,7 @@ const CATEGORIES = [
   {
     label: 'System',
     blurb: 'Recover deleted records',
-    keys: ['trash'],
+    keys: ['trash', 'language'],
   },
 ]
 
@@ -110,6 +112,7 @@ const settingSections = [
   { key: 'tags', label: 'Tags', icon: Tag, desc: 'Manage organisation-wide tags for records' },
   { key: 'menu', label: 'Menu Editor', icon: LayoutDashboard, desc: 'Reorder modules, group under parents, and hide modules in the sidebar' },
   { key: 'trash', label: 'Recycle Bin', icon: TrashIcon, desc: 'Restore or permanently delete soft-deleted records' },
+  { key: 'language', label: 'Language & i18n', icon: Languages, desc: 'Manage interface languages and translations' },
 ]
 
 const sectionMap = Object.fromEntries(settingSections.map(s => [s.key, s]))
@@ -169,6 +172,7 @@ export function SettingsPage() {
         {activeSection === 'tags' && <TagsSettings />}
         {activeSection === 'menu' && <MenuSettings />}
         {activeSection === 'trash' && <RecycleBinPage />}
+        {activeSection === 'language' && <LanguageSettings onBack={() => setActiveSection(null)} />}
       </div>
     )
   }
@@ -525,7 +529,7 @@ function UsersSettings() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
-  const [form, setForm] = useState({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '' })
+  const [form, setForm] = useState({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '', dashboardEnabled: true })
 
   const { data: usersData } = useQuery({
     queryKey: ['all-users'],
@@ -542,7 +546,7 @@ function UsersSettings() {
       fetch('/api/users', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data),
       }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User created', variant: 'success' }); setShowForm(false); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '' }) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User created', variant: 'success' }); setShowForm(false); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '', dashboardEnabled: true }) },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
@@ -596,7 +600,7 @@ function UsersSettings() {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-          <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '' }) }}>
+          <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '', dashboardEnabled: true }) }}>
             <Plus size={16} className="mr-2" /> New User
           </Button>
         </div>
@@ -624,6 +628,7 @@ function UsersSettings() {
               { key: 'online', label: 'Online', sortable: true, render: (v: any) => v ? <span className="inline-flex items-center gap-1.5 text-xs"><span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />Online</span> : <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600 inline-block" />Offline</span> },
               { key: 'isAdmin', label: 'Admin', sortable: true, render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium">Yes</span> : <span className="text-muted-foreground text-xs">No</span> },
               { key: 'status', label: 'Status', sortable: true, render: (_: any, u: any) => u.isActive === false ? <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">Inactive</span> : <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs">Active</span> },
+              { key: 'dashboardEnabled', label: 'Dashboard', sortable: true, render: (v: any) => v === false ? <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 px-2 py-0.5 text-xs">Off</span> : <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs">On</span> },
             ]}
             data={filteredUsers}
             loading={!usersData}
@@ -631,7 +636,7 @@ function UsersSettings() {
             pageSize={10}
             actions={(u: any) => (
               <div className="flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(u.id); setForm({ userName: u.userName, email: u.email, firstName: u.firstName, lastName: u.lastName, password: '', isAdmin: u.isAdmin, roleId: u.roleId || '', pbxExtension: u.pbxExtension || '' }); setShowForm(true) }} title="Edit">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(u.id); setForm({ userName: u.userName, email: u.email, firstName: u.firstName, lastName: u.lastName, password: '', isAdmin: u.isAdmin, roleId: u.roleId || '', pbxExtension: u.pbxExtension || '', dashboardEnabled: u.dashboardEnabled !== false }); setShowForm(true) }} title="Edit">
                   <Pencil size={14} />
                 </Button>
                 {u.isActive === false ? (
@@ -694,6 +699,10 @@ function UsersSettings() {
             <div className="flex items-center gap-2">
               <input type="checkbox" id="isAdmin" checked={form.isAdmin} onChange={e => setForm(f => ({ ...f, isAdmin: e.target.checked }))} />
               <label htmlFor="isAdmin" className="text-sm">Admin</label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="dashboardEnabled" checked={form.dashboardEnabled} onChange={e => setForm(f => ({ ...f, dashboardEnabled: e.target.checked }))} />
+              <label htmlFor="dashboardEnabled" className="text-sm">Dashboard Enabled</label>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>

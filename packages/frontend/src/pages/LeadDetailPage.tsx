@@ -23,7 +23,7 @@ import {
   ArrowLeft, Star, Pencil, Mail, RefreshCcw, Loader2, Plus, Trash2, Check, X, Clock,
   Paperclip, MessageSquare, Phone, Globe, AlertCircle, FileText, TrendingUp, ChevronRight,
   CalendarDays, Send, Users, Activity as ActivityIcon, CheckCircle2, Search,
-  History, LayoutGrid, List, Package, Megaphone, Wrench, type LucideIcon,
+  History, LayoutGrid, List, Package, Megaphone, Wrench, Sparkles, Target, type LucideIcon,
 } from 'lucide-react'
 
 const inputCls = 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
@@ -359,6 +359,8 @@ export function LeadDetailPage() {
   const [deleteDocLinkId, setDeleteDocLinkId] = useState<string | null>(null)
   const [activityFilter, setActivityFilter] = useState<'Events' | 'Tasks'>('Events')
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
+  const [aiScore, setAiScore] = useState<any>(null)
+  const [showAiScore, setShowAiScore] = useState(false)
 
   const { data: lead, isLoading } = useQuery({
     queryKey: ['leads', id],
@@ -730,6 +732,16 @@ export function LeadDetailPage() {
     onError: toastErr,
   })
 
+  const aiLeadScoreMutation = useMutation({
+    mutationFn: () => api.aiLeadScore(id!),
+    onSuccess: (data) => {
+      setAiScore(data.data)
+      setShowAiScore(true)
+      addToast({ title: 'Lead scored', variant: 'success' })
+    },
+    onError: toastErr,
+  })
+
   const toggleDocSelection = (did: string) => {
     setSelectedDocIds(prev => {
       const next = new Set(prev)
@@ -936,6 +948,16 @@ export function LeadDetailPage() {
             {isFollowing ? <Check size={15} /> : <Star size={15} />}
             {isFollowing ? `Following${followerCount > 1 ? ` (${followerCount})` : ''}` : 'Follow'}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => aiLeadScoreMutation.mutate()}
+            disabled={aiLeadScoreMutation.isPending}
+            className="bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 border-violet-200 dark:border-violet-800 hover:from-violet-100 hover:to-indigo-100"
+          >
+            {aiLeadScoreMutation.isPending ? <Loader2 size={15} className="mr-1 animate-spin" /> : <Sparkles size={15} className="mr-1 text-violet-500" />}
+            Score Lead
+          </Button>
           <Button size="sm" onClick={() => navigate(`/leads/${id}/edit`)}>
             <Pencil size={15} /> Edit
           </Button>
@@ -966,6 +988,32 @@ export function LeadDetailPage() {
           {lead.convertedPotentialId && (
             <Button variant="link" size="sm" className="px-1" onClick={() => navigate(`/potentials/${lead.convertedPotentialId}`)}>View Opportunity</Button>
           )}
+        </div>
+      )}
+
+      {showAiScore && aiScore && (
+        <div className="rounded-xl border bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/20 dark:to-indigo-950/20 p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold flex items-center gap-2"><Target size={15} className="text-violet-500" /> AI Lead Score</h3>
+            <button onClick={() => setShowAiScore(false)} className="text-xs text-muted-foreground hover:text-foreground">Dismiss</button>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <p className="text-3xl font-bold tabular-nums">{aiScore.score}</p>
+              <p className={cn('text-xs font-medium mt-1', aiScore.score <= 30 ? 'text-red-600' : aiScore.score <= 70 ? 'text-yellow-600' : 'text-emerald-600')}>{aiScore.label}</p>
+            </div>
+            <div className="flex-1">
+              <div className="h-2 overflow-hidden rounded-full bg-muted/60">
+                <div className={cn('h-full rounded-full transition-all', aiScore.score <= 30 ? 'bg-red-500' : aiScore.score <= 70 ? 'bg-yellow-500' : 'bg-emerald-500')} style={{ width: `${aiScore.score}%` }} />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {(aiScore.factors || []).slice(0, 4).map((f: any, i: number) => (
+                  <span key={i} className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', f.value > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400')}>{f.name}</span>
+                ))}
+              </div>
+              {aiScore.recommendation && <p className="text-xs text-muted-foreground mt-2">{aiScore.recommendation}</p>}
+            </div>
+          </div>
         </div>
       )}
 

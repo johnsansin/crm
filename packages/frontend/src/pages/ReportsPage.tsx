@@ -9,7 +9,7 @@ import { DataTable } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { Plus, Pencil, Trash2, Loader2, BarChart3, Play, Printer, Table2, ChartPie, Download, Folder, Clock } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2, BarChart3, Play, Printer, Table2, ChartPie, Download, Folder, Clock, TrendingUp, DollarSign, UserPlus, CalendarDays, LifeBuoy, Receipt, Users, Megaphone } from 'lucide-react'
 import { getFieldLabel, formatFieldValue } from '@/lib/field-utils'
 import { formatDate } from '@/lib/org-format'
 
@@ -67,6 +67,45 @@ export function ReportsPage() {
   const folders = useMemo(() => [...new Set(reports.map((r: any) => r.folder).filter(Boolean) as string[])].sort(), [reports])
   const visible = folderFilter ? reports.filter((r: any) => r.folder === folderFilter) : reports
 
+  const [showPrebuilt, setShowPrebuilt] = useState(false)
+  const [selectedPrebuilt, setSelectedPrebuilt] = useState<any>(null)
+  const [prebuiltDateFrom, setPrebuiltDateFrom] = useState('')
+  const [prebuiltDateTo, setPrebuiltDateTo] = useState('')
+  const [generatingPrebuilt, setGeneratingPrebuilt] = useState(false)
+  const [prebuiltResult, setPrebuiltResult] = useState<any>(null)
+
+  const PREBUILT_REPORTS = [
+    { id: 'sales-pipeline', name: 'Sales Pipeline Report', icon: TrendingUp, description: 'Opportunities grouped by stage', color: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' },
+    { id: 'revenue', name: 'Revenue Report', icon: DollarSign, description: 'Revenue breakdown by period', color: 'bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400' },
+    { id: 'lead-source', name: 'Lead Source Report', icon: UserPlus, description: 'Leads grouped by source', color: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400' },
+    { id: 'activity', name: 'Activity Report', icon: CalendarDays, description: 'Activities by type and status', color: 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400' },
+    { id: 'ticket-performance', name: 'Ticket Performance', icon: LifeBuoy, description: 'Resolution times and SLA', color: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400' },
+    { id: 'invoice-aging', name: 'Invoice Aging', icon: Receipt, description: 'Outstanding invoices by age', color: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400' },
+    { id: 'user-performance', name: 'User Performance', icon: Users, description: 'Deals and revenue per user', color: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' },
+    { id: 'campaign-roi', name: 'Campaign ROI', icon: Megaphone, description: 'Campaign costs vs. revenue', color: 'bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400' },
+  ]
+
+  const generatePrebuilt = async (reportId: string) => {
+    setGeneratingPrebuilt(true)
+    try {
+      const res = await fetch('/api/reports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ reportType: reportId, dateFrom: prebuiltDateFrom || undefined, dateTo: prebuiltDateTo || undefined }),
+      })
+      const data = await res.json()
+      setPrebuiltResult(data.data)
+    } catch {
+      addToast({ title: 'Error generating report', variant: 'destructive' })
+    } finally {
+      setGeneratingPrebuilt(false)
+    }
+  }
+
+  const exportPrebuiltCsv = (reportId: string) => {
+    window.open(`/api/reports/export/${reportId}`, '_blank')
+  }
+
   const deleteMutation = useMutation({
     mutationFn: () => api.delete('reports', deleteId!),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['reports'] }); addToast({ title: 'Report deleted', variant: 'success' }); setDeleteId(null) },
@@ -88,7 +127,7 @@ export function ReportsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><BarChart3 className="text-primary" /> Reports</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Tabular, summary, matrix and chart reports with folders and scheduling.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Pre-built analytics reports and custom report builder with folders and scheduling.</p>
         </div>
         <div className="flex items-center gap-2">
           {folders.length > 0 && (
@@ -103,6 +142,98 @@ export function ReportsPage() {
           <Button size="sm" onClick={() => { setEditing(null); setShowForm(true) }}><Plus size={15} className="mr-1.5" /> New Report</Button>
         </div>
       </div>
+
+      <div className="rounded-xl border bg-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-semibold flex items-center gap-2"><BarChart3 size={16} className="text-primary" /> Quick Analytics Reports</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Generate pre-built reports with a single click. Add date filters for specific periods.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {PREBUILT_REPORTS.map((report) => (
+            <button
+              key={report.id}
+              onClick={() => { setSelectedPrebuilt(report); generatePrebuilt(report.id) }}
+              className="group rounded-lg border p-3 text-left transition-all hover:border-primary hover:shadow-sm"
+            >
+              <div className={`grid h-8 w-8 place-items-center rounded-md mb-2 ${report.color}`}>
+                <report.icon size={15} />
+              </div>
+              <p className="text-xs font-semibold group-hover:text-primary transition-colors">{report.name}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{report.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Dialog open={!!selectedPrebuilt && !prebuiltResult} onOpenChange={() => { setSelectedPrebuilt(null); setPrebuiltResult(null) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{selectedPrebuilt?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Generating report...</p>
+            {generatingPrebuilt && <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary" size={24} /></div>}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!prebuiltResult} onOpenChange={() => setPrebuiltResult(null)}>
+        <DialogContent className="max-w-4xl max-h-[88vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {prebuiltResult?.title}
+              <span className="text-xs font-normal text-muted-foreground ml-2">{prebuiltResult?.rows?.length ?? 0} rows</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-medium block mb-1">From</label>
+                  <Input type="date" value={prebuiltDateFrom} onChange={(e) => setPrebuiltDateFrom(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium block mb-1">To</label>
+                  <Input type="date" value={prebuiltDateTo} onChange={(e) => setPrebuiltDateTo(e.target.value)} />
+                </div>
+              </div>
+              <Button size="sm" onClick={() => { if (selectedPrebuilt) generatePrebuilt(selectedPrebuilt.id) }} disabled={generatingPrebuilt} className="mt-5">
+                {generatingPrebuilt ? <Loader2 size={14} className="animate-spin" /> : 'Refresh'}
+              </Button>
+            </div>
+            {prebuiltResult?.rows?.length > 0 ? (
+              <div className="max-h-[50vh] overflow-auto border rounded-lg">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      {prebuiltResult.columns?.map((col: string) => (
+                        <th key={col} className="px-3 py-2 text-left text-xs font-semibold whitespace-nowrap">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {prebuiltResult.rows.map((row: any, idx: number) => (
+                      <tr key={idx} className="border-b last:border-0 hover:bg-muted/30">
+                        {prebuiltResult.columns?.map((col: string) => (
+                          <td key={col} className="px-3 py-2 text-xs">{typeof row[col] === 'number' ? row[col].toLocaleString() : (row[col] ?? '—')}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-6">No data found for the selected period.</p>
+            )}
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button variant="outline" size="sm" onClick={() => exportPrebuiltCsv(selectedPrebuilt?.id || '')}>
+                <Download size={14} className="mr-1.5" /> Export CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setPrebuiltResult(null)}>Close</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <DataTable
         columns={[

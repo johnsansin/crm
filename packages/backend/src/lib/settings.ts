@@ -13,7 +13,7 @@ export const DEFAULT_ORG_SETTINGS: Record<string, any> = {
   loginSecurity: { maxAttempts: 5, lockMinutes: 15, twoFactorRequired: false },
   leadConfig: { enableLeadConversion: true, defaultLeadStatus: 'New', defaultLeadSource: '', createOnContact: true },
   leadConversionMapping: { account: {}, contact: {}, potential: {} },
-  terms: { quote: '', salesOrder: '', invoice: '' },
+  terms: { quote: '', salesOrder: '', invoice: '', purchaseOrder: '' },
   language: 'en_us',
   timezone: 'Asia/Karachi',
   dateFormat: 'mm-dd-yyyy',
@@ -202,28 +202,83 @@ export async function runWorkflows(opts: {
 }): Promise<void> {
   const { companyId, moduleName, triggerType, record, prevRecord, req } = opts
   if (!companyId) return
+
+  const shouldTrigger = (wf: any, trigger: string, rec: any, prev: any): boolean => {
+    if (wf.triggerType !== trigger) return false
+    switch (trigger) {
+      case 'onAssign':
+        return prev && rec?.assignedTo !== prev.assignedTo
+      case 'onStageChange':
+        return prev && (rec?.stage !== prev.stage || rec?.status !== prev.status)
+      case 'onConditionMet':
+        return !prev || evaluateConditions(wf.conditions, rec)
+      default:
+        return true
+    }
+  }
+
   const workflows = await prisma.workflow.findMany({
-    where: { companyId, moduleName, triggerType, isActive: true },
-  }).catch(() => [])
+    where: { companyId, moduleName, isActive: true },
+  }).catch(() => [] as any[])
+
   for (const wf of workflows) {
+    if (!shouldTrigger(wf, triggerType, record, prevRecord)) continue
+    const startTime = Date.now()
+    let conditionsMet = false
+    let actionsExecuted = 0
+    let error: string | null = null
     try {
-      if (!evaluateConditions(wf.conditions, record)) continue
+      if (!evaluateConditions(wf.conditions, record)) {
+        conditionsMet = false
+        continue
+      }
+      conditionsMet = true
       const actions: any[] = (wf.actions as any[]) || []
       for (const action of actions) {
         await executeWorkflowAction(action, { companyId, moduleName, record, prevRecord, req })
+        actionsExecuted++
       }
-    } catch (err) {
+    } catch (err: any) {
+      error = err?.message || String(err)
       console.error('[WORKFLOW] error running', wf.name, err)
+    } finally {
+      const duration = Date.now() - startTime
+      prisma.workflowLog.create({
+        data: {
+          workflowId: wf.id,
+          workflowName: wf.name,
+          moduleName,
+          recordId: record?.id || null,
+          triggerType,
+          conditionsMet,
+          actionsExecuted,
+          error,
+          duration,
+          companyId,
+        },
+      }).catch(() => {})
+
+      prisma.workflow.update({
+        where: { id: wf.id },
+        data: {
+          runCount: { increment: 1 },
+          lastRunAt: new Date(),
+          lastError: error || undefined,
+        },
+      }).catch(() => {})
     }
   }
 }
 
 async function executeWorkflowAction(action: any, ctx: { companyId: string; moduleName: string; record: any; prevRecord?: any; req?: any }): Promise<void> {
   const prismaModel = prismaModelFor(ctx.moduleName)
+  const tpl = (s: string) => (s || '').replace(/\{([a-zA-Z0-9_]+)\}/g, (_: string, f: string) => ctx.record?.[f] ?? '')
+  const resolveVal = (v: any) => typeof v === 'string' && v.startsWith('$') ? ctx.record[v.slice(1)] : v
+
   switch (action.type) {
     case 'updateField': {
       if (!action.field) break
-      const val = typeof action.value === 'string' && action.value.startsWith('$') ? ctx.record[action.value.slice(1)] : action.value
+      const val = resolveVal(action.value)
       if (prismaModel && ctx.record?.id) {
         await prismaModel.update({ where: { id: ctx.record.id }, data: { [action.field]: val } }).catch(() => {})
       }
@@ -240,11 +295,9 @@ async function executeWorkflowAction(action: any, ctx: { companyId: string; modu
       break
     }
     case 'sendEmail': {
-      const to = action.to && action.to.startsWith('$') ? ctx.record[action.to.slice(1)] : action.to
+      const to = resolveVal(action.to)
       if (to) {
-        const subject = (action.subject || '').replace(/\{([a-zA-Z0-9_]+)\}/g, (_: string, f: string) => ctx.record?.[f] ?? '')
-        const body = (action.body || '').replace(/\{([a-zA-Z0-9_]+)\}/g, (_: string, f: string) => ctx.record?.[f] ?? '')
-        await sendMail({ to, subject, html: body, companyId: ctx.companyId })
+        await sendMail({ to, subject: tpl(action.subject || ''), html: tpl(action.body || ''), companyId: ctx.companyId })
       }
       break
     }
@@ -252,10 +305,81 @@ async function executeWorkflowAction(action: any, ctx: { companyId: string; modu
       const users = await prisma.user.findMany({ where: { companyId: ctx.companyId, isActive: true } })
       const targetUserId = action.userId && action.userId.startsWith('$') ? ctx.record[action.userId.slice(1)] : action.userId
       const targets = targetUserId ? users.filter(u => u.id === targetUserId) : users
-      const title = (action.title || 'Workflow notification').replace(/\{([a-zA-Z0-9_]+)\}/g, (_: string, f: string) => ctx.record?.[f] ?? '')
-      const message = (action.message || '').replace(/\{([a-zA-Z0-9_]+)\}/g, (_: string, f: string) => ctx.record?.[f] ?? '')
+      const title = tpl(action.title || 'Workflow notification')
+      const message = tpl(action.message || '')
       for (const u of targets) {
         await prisma.notification.create({ data: { userId: u.id, title, message, companyId: ctx.companyId } }).catch(() => {})
+      }
+      break
+    }
+    case 'updateRelatedField': {
+      if (!action.relatedModule || !action.relatedIdField || !action.field) break
+      const relatedModel = prismaModelFor(action.relatedModule)
+      const relatedId = resolveVal(action.relatedIdField)
+      if (relatedModel && relatedId) {
+        const val = resolveVal(action.value)
+        await relatedModel.update({ where: { id: relatedId }, data: { [action.field]: val } }).catch(() => {})
+      }
+      break
+    }
+    case 'sendNotification': {
+      const targetUserId = action.userId && action.userId.startsWith('$') ? ctx.record[action.userId.slice(1)] : action.userId
+      const targetUserIds: string[] = action.userIds || (targetUserId ? [targetUserId] : [])
+      if (action.role) {
+        const roleUsers = await prisma.user.findMany({ where: { roleId: action.role, isActive: true }, select: { id: true } })
+        targetUserIds.push(...roleUsers.map(u => u.id))
+      }
+      const title = tpl(action.title || 'Notification')
+      const message = tpl(action.message || '')
+      const link = action.link ? tpl(action.link) : null
+      for (const uid of [...new Set(targetUserIds)]) {
+        await prisma.notification.create({ data: { userId: uid, title, message, link, companyId: ctx.companyId } }).catch(() => {})
+      }
+      break
+    }
+    case 'createActivity': {
+      const subject = tpl(action.subject || 'Follow-up')
+      const description = tpl(action.description || '')
+      const assignedTo = resolveVal(action.assignedTo) || ctx.record?.assignedTo || ctx.req?.user?.userId
+      const dueAt = action.dueInMinutes ? new Date(Date.now() + Number(action.dueInMinutes) * 60000) : action.dueAt ? new Date(action.dueAt) : null
+      await prisma.activity.create({
+        data: {
+          subject: subject.slice(0, 255),
+          description: description || null,
+          activityType: action.activityType || 'Task',
+          status: 'Planned',
+          priority: action.priority || 'Normal',
+          dueAt,
+          parentModule: ctx.moduleName,
+          parentId: ctx.record?.id || null,
+          assignedTo,
+          createdBy: ctx.req?.user?.userId || null,
+          companyId: ctx.companyId,
+        },
+      }).catch(() => {})
+      break
+    }
+    case 'webhook': {
+      const url = tpl(action.url || '')
+      if (!url) break
+      const payload = {
+        moduleName: ctx.moduleName,
+        record: ctx.record,
+        triggerType: action.triggerType || 'workflow',
+        timestamp: new Date().toISOString(),
+        ...(action.payload || {}),
+      }
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(action.headers || {}) },
+        body: JSON.stringify(payload),
+      }).catch(() => {})
+      break
+    }
+    case 'changeOwner': {
+      const newOwner = resolveVal(action.assignedTo) || action.assignedTo
+      if (prismaModel && ctx.record?.id && newOwner) {
+        await prismaModel.update({ where: { id: ctx.record.id }, data: { assignedTo: newOwner } }).catch(() => {})
       }
       break
     }

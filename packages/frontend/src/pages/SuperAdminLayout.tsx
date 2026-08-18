@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/lib/auth'
 import { useTheme } from '@/lib/theme'
-import { Building2, LayoutDashboard, Users, History, Settings, LogOut, Sun, Moon, Menu, X, Shield, Bell, User } from 'lucide-react'
+import { api } from '@/lib/api'
+import { Building2, LayoutDashboard, Users, History, Settings, LogOut, Sun, Moon, Menu, X, Shield, Bell, Search, Loader2, Mail, Phone, Globe, Headphones } from 'lucide-react'
 
 const navItems = [
   { path: '/superadmin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { path: '/superadmin/organizations', label: 'Organizations', icon: Building2 },
   { path: '/superadmin/users', label: 'Users', icon: Users },
+  { path: '/superadmin/agents', label: 'Agents', icon: Headphones },
   { path: '/superadmin/login-history', label: 'Login History', icon: History },
   { path: '/superadmin/settings', label: 'Settings', icon: Settings },
 ]
@@ -19,33 +21,76 @@ export function SuperAdminLayout() {
   const { theme, toggleTheme } = useTheme()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<{ companies: any[]; users: any[] }>({ companies: [], users: [] })
+  const [searching, setSearching] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!user?.isSuperAdmin) navigate('/login')
   }, [user])
+
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults({ companies: [], users: [] })
+      setSearching(false)
+      setShowSearch(false)
+      return
+    }
+    const timer = setTimeout(() => {
+      setSearching(true)
+      setShowSearch(true)
+      api.adminSearch(searchQuery).then(res => {
+        setSearchResults(res.data || { companies: [], users: [] })
+        setSearching(false)
+      }).catch(() => setSearching(false))
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowSearch(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+        setShowSearch(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const isActive = (path: string, exact?: boolean) =>
     exact ? location.pathname === path : location.pathname.startsWith(path)
 
   const handleLogout = () => { logout(); navigate('/login') }
 
+  const hasResults = searchResults.companies.length > 0 || searchResults.users.length > 0
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 flex">
-      {/* Mobile overlay */}
+    <div className="h-screen overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 flex">
       {mobileOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 flex flex-col
+        fixed inset-y-0 left-0 z-50 flex flex-col
         transition-all duration-300 ease-in-out
         ${collapsed ? 'w-[72px]' : 'w-64'}
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800
         shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50
       `}>
-        {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 overflow-hidden">
@@ -64,7 +109,6 @@ export function SuperAdminLayout() {
           </button>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {navItems.map(item => {
             const Icon = item.icon
@@ -89,7 +133,6 @@ export function SuperAdminLayout() {
           })}
         </nav>
 
-        {/* Bottom */}
         <div className="border-t border-slate-200 dark:border-slate-800 p-3 space-y-2">
           {!collapsed && user && (
             <div className="px-3 py-2 flex items-center gap-3">
@@ -111,7 +154,6 @@ export function SuperAdminLayout() {
         </div>
       </aside>
 
-      {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
         className="fixed top-4 left-4 z-30 lg:hidden p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md"
@@ -119,41 +161,132 @@ export function SuperAdminLayout() {
         <Menu size={20} className="text-slate-600 dark:text-slate-400" />
       </button>
 
-      {/* Main content */}
-      <main className="flex-1 min-h-screen overflow-auto">
-        <header className="sticky top-0 z-30 h-14 border-b bg-background/95 backdrop-blur flex items-center justify-between px-4 md:px-6 gap-2 md:gap-4">
-          <div className="flex items-center gap-2 shrink-0">
-            {user?.company?.logo ? (
-              <img src={user.company.logo} alt={user.company.name} className="h-7 w-7 rounded object-cover" />
-            ) : (
-              <Building2 size={20} className="text-primary" />
-            )}
-            <span className="text-sm font-semibold text-foreground hidden sm:inline">{user?.company?.name || 'BizForce'}</span>
+      <main className={`flex-1 h-screen flex flex-col overflow-hidden transition-all duration-300 ${collapsed ? 'lg:ml-[72px]' : 'lg:ml-64'}`}>
+        <header className="shrink-0 h-14 border-b bg-background/95 backdrop-blur flex items-center px-4 md:px-6 gap-3 relative z-30">
+          <div className="flex items-center gap-2 shrink-0 mr-2">
+            <Shield size={20} className="text-primary" />
+            <span className="text-sm font-bold text-foreground hidden sm:inline">SuperAdmin</span>
           </div>
-          <div className="flex-1" />
-          <div className="flex items-center gap-1 md:gap-2 shrink-0">
-            <button className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500" title="Notifications">
-              <Bell size={16} />
+
+          <div className="flex-1 max-w-xl relative" ref={searchRef}>
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search organizations, users, emails..."
+              value={searchQuery}
+              onChange={e => { setSearchQuery(e.target.value); setShowSearch(true) }}
+              onFocus={() => { if (searchQuery.length >= 2) setShowSearch(true) }}
+              className="w-full h-9 pl-9 pr-10 rounded-full bg-muted/50 border border-border/60 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+            />
+            <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground rounded border border-border bg-background shadow-sm">
+              Ctrl K
+            </kbd>
+
+            {showSearch && (searchQuery.length >= 2) && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 max-h-[70vh] overflow-y-auto">
+                {searching ? (
+                  <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+                    <Loader2 size={14} className="animate-spin mr-2" /> Searching...
+                  </div>
+                ) : !hasResults ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">No results found</p>
+                ) : (
+                  <>
+                    {searchResults.companies.length > 0 && (
+                      <div>
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-muted/50 flex items-center gap-1.5">
+                          <Building2 size={11} /> Organizations ({searchResults.companies.length})
+                        </div>
+                        {searchResults.companies.map(c => (
+                          <button
+                            key={c.id}
+                            onClick={() => { navigate('/superadmin/organizations'); setShowSearch(false); setSearchQuery('') }}
+                            className="w-full text-left px-4 py-3 hover:bg-accent transition-colors flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 last:border-0"
+                          >
+                            {c.logo ? (
+                              <img src={c.logo} alt={c.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white shrink-0">
+                                <Building2 size={14} />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">{c.name}</p>
+                              <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                                <Mail size={10} />{c.email || 'No email'}
+                                {c.phone && <><span className="mx-1">·</span><Phone size={10} />{c.phone}</>}
+                              </p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <span className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full ${c.isActive !== false ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
+                                {c.isActive !== false ? 'Active' : 'Inactive'}
+                              </span>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">{c._count?.users || 0} users</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {searchResults.users.length > 0 && (
+                      <div>
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-muted/50 flex items-center gap-1.5">
+                          <Users size={11} /> Users ({searchResults.users.length})
+                        </div>
+                        {searchResults.users.map(u => (
+                          <button
+                            key={u.id}
+                            onClick={() => { navigate('/superadmin/users'); setShowSearch(false); setSearchQuery('') }}
+                            className="w-full text-left px-4 py-3 hover:bg-accent transition-colors flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 last:border-0"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                              {((u.firstName?.[0] || '') + (u.lastName?.[0] || '')).toUpperCase() || '?'}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">{u.firstName} {u.lastName}</p>
+                              <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                                <Mail size={10} />{u.email}
+                                {u.company?.name && <><span className="mx-1">·</span>{u.company.name}</>}
+                              </p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              {u.isAdmin && <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">Admin</span>}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 relative" title="Notifications">
+              <Bell size={17} />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
             </button>
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
               title="Toggle theme"
             >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </button>
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700 ml-1">
+            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1" />
+            <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-md">
                 {(user?.firstName?.[0] || 'S') + (user?.lastName?.[0] || 'A')}
               </div>
-              <span className="hidden sm:inline text-sm text-slate-600 dark:text-slate-400">{user?.email}</span>
-              <button onClick={handleLogout} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 text-red-500" title="Logout">
-                <LogOut size={16} />
-              </button>
+              <span className="hidden lg:inline text-xs font-medium text-slate-600 dark:text-slate-400 max-w-[100px] truncate">{user?.firstName} {user?.lastName}</span>
             </div>
+            <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 text-red-500 ml-1" title="Logout">
+              <LogOut size={17} />
+            </button>
           </div>
         </header>
-        <div className="p-4 md:p-6 lg:p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <Outlet />
         </div>
       </main>

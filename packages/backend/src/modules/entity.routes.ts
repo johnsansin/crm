@@ -57,6 +57,8 @@ const NO_ASSIGNED_TO = new Set([
   'recurringInvoice', 'payment', 'mailbox', 'rssFeed', 'rssEntry', 'report',
   'apiKey', 'moduleLayout', 'picklistDependency', 'emailToTicketRule',
   'portalUser', 'googleAccount',
+  'ticketComment', 'escalationHistory', 'stageProbability',
+  'quantityDiscount', 'timeEntry', 'projectResource', 'potentialCompetitor',
 ])
 
 // Products/Services keep their "active" flag independent of soft-delete,
@@ -97,7 +99,14 @@ export const modelMap: Record<string, string> = {
   rssentries: 'rssEntry',
   currencies: 'currency',
   taxinfo: 'taxInfo',
-  roles: 'role'
+  roles: 'role',
+  competitors: 'competitor',
+  timeentries: 'timeEntry',
+  stageprobability: 'stageProbability',
+  quantitydiscounts: 'quantityDiscount',
+  ticketcomments: 'ticketComment',
+  escalationhistory: 'escalationHistory',
+  projectresources: 'projectResource',
 }
 
 const modelPrismaName: Record<string, string> = {
@@ -114,7 +123,9 @@ export const scopedModels = new Set([
   'asset', 'serviceContract', 'smsNotifier', 'role',
   'userGroup', 'userGroupMember',
   'currency', 'taxInfo', 'tag', 'customView',
-  'potentialProduct', 'potentialStageHistory', 'callLog', 'report'
+  'potentialProduct', 'potentialStageHistory', 'callLog', 'report',
+  'competitor', 'potentialCompetitor', 'timeEntry', 'stageProbability',
+  'quantityDiscount', 'ticketComment', 'escalationHistory', 'projectResource',
 ])
 
 const permissionModules = new Set([
@@ -125,7 +136,9 @@ const permissionModules = new Set([
   'projects', 'projecttasks', 'projectmilestones',
   'assets', 'servicecontracts', 'smsnotifier',
   'payments', 'recurringinvoices', 'calllogs', 'reports',
-  'mailboxes', 'rssfeeds'
+  'mailboxes', 'rssfeeds',
+  'competitors', 'timeentries', 'stageprobability',
+  'quantitydiscounts', 'ticketcomments', 'escalationhistory', 'projectresources',
 ])
 
 const settingsModules = new Set([
@@ -138,6 +151,8 @@ const booleanFields = new Set([
   'enableRecurring', 'pending', 'isRead', 'shared',
   'syncCalendar', 'syncContacts', 'createContactIfMissing',
   'vat', 'isService', 'isSales',
+  'decisionMaker', 'autoAssigned', 'trialAvailable', 'discountAllowed',
+  'qtyDiscountEnabled', 'billable', 'approved',
 ])
 
 const decimalFields = new Set([
@@ -155,6 +170,11 @@ const decimalFields = new Set([
   'plannedHours', 'actualHours', 'sequence',
   'amount', 'markupPercent', 'paidAmount',
   'vatPercentage', 'servicePercentage', 'salesPercentage',
+  'setupFee', 'purchasePrice', 'salvageValue', 'billingRate',
+  'estimatedHours', 'loggedHours', 'lateFeePercent',
+  'minimumOrderQty', 'maximumOrderQty', 'marketShare',
+  'hourlyRate', 'maxDiscountPercent', 'conversionRate',
+  'taxPercent', 'discountPercent',
 ])
 
 function fixBooleans(data: any) {
@@ -261,10 +281,14 @@ function buildInclude(moduleName: string): Record<string, any> {
     return {
       products: { include: { product: { select: { id: true, productName: true, productNo: true, unitPrice: true } } } },
       stageHistory: { include: { changedByUser: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: 'asc' } },
+      competitors: { include: { competitor: true } },
     }
   }
   if (moduleName === 'products') {
     return { images: { orderBy: { sortOrder: 'asc' as const } } }
+  }
+  if (moduleName === 'purchaseorders') {
+    return { lineItems: { orderBy: { sequence: 'asc' as const } } }
   }
   return {}
 }
@@ -297,6 +321,34 @@ async function replaceProductImages(productId: string, images: any[]) {
         imageUrl: String(list[i].url).trim(),
         isDefault: hasDefault ? !!list[i].isDefault : i === 0,
         sortOrder: i,
+      },
+    }).catch(() => {})
+  }
+}
+
+async function replacePurchaseOrderLineItems(purchaseOrderId: string, items: any[]) {
+  const list = Array.isArray(items) ? items : []
+  await prisma.purchaseOrderLineItem.deleteMany({ where: { purchaseOrderId } }).catch(() => {})
+  for (let i = 0; i < list.length; i++) {
+    const item = list[i]
+    if (!item) continue
+    await prisma.purchaseOrderLineItem.create({
+      data: {
+        purchaseOrderId,
+        productId: item.productId || null,
+        serviceId: item.serviceId || null,
+        itemName: item.itemName || '',
+        qty: Number(item.qty) || 1,
+        listPrice: Number(item.listPrice) || 0,
+        unitPrice: Number(item.unitPrice) || 0,
+        discount: Number(item.discount) || 0,
+        discountPercent: Number(item.discountPercent) || 0,
+        tax: Number(item.tax) || 0,
+        taxPercent: Number(item.taxPercent) || 0,
+        netPrice: Number(item.netPrice) || 0,
+        lineTotal: Number(item.lineTotal) || 0,
+        sequence: i,
+        description: item.description || null,
       },
     }).catch(() => {})
   }
@@ -488,6 +540,8 @@ export function entityRouter(moduleName: string): Router {
       delete data.products
       delete data.stageHistory
       delete data.images
+      const poLineItems = data.lineItems
+      delete data.lineItems
       const missing = missingRequiredFields(modelName, data)
       if (missing.length) {
         return res.status(400).json({ error: `Missing required field(s): ${missing.join(', ')}` })
@@ -503,6 +557,9 @@ export function entityRouter(moduleName: string): Router {
       if (modelName === 'potential' && Array.isArray(req.body.products)) {
         await replacePotentialProducts(record.id, req.body.products, req.user!.companyId)
       }
+      if (modelName === 'purchaseOrder' && Array.isArray(poLineItems)) {
+        await replacePurchaseOrderLineItems(record.id, poLineItems)
+      }
       if (modelName === 'potential' && record.stage) {
         await prisma.potentialStageHistory.create({
           data: { potentialId: record.id, stage: record.stage, changedBy: req.user!.userId, companyId: req.user!.companyId },
@@ -510,6 +567,15 @@ export function entityRouter(moduleName: string): Router {
       }
       await writeAudit({ moduleName, recordId: record.id, action: 'CREATE', newValue: auditSummary(record), userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onCreate', record, req })
+      if (modelName === 'lead') {
+        const label = `${record.firstName || ''} ${record.lastName || ''}`.trim() || record.company || record.id
+        notifyFollowersAndAssignee({
+          moduleName, recordId: record.id, assigneeId: record.assignedTo,
+          title: `New lead: ${label}`,
+          message: `A new lead "${label}" has been assigned to you.`,
+          link: `/leads/${record.id}`, companyId: req.user!.companyId, actorId: req.user!.userId,
+        }).catch(() => {})
+      }
 
       if (moduleName === 'emails' && record.toEmails && record.subject) {
         const smtp = await getSmtpConfig(req.user!.companyId)
@@ -554,6 +620,8 @@ export function entityRouter(moduleName: string): Router {
       delete data.products
       delete data.stageHistory
       delete data.images
+      const poLineItems = data.lineItems
+      delete data.lineItems
       const emptyReq = emptyRequiredFields(modelName, data)
       if (emptyReq.length) {
         return res.status(400).json({ error: `Field(s) cannot be empty: ${emptyReq.join(', ')}` })
@@ -566,6 +634,9 @@ export function entityRouter(moduleName: string): Router {
       if (modelName === 'product' && Array.isArray(req.body.images)) {
         await replaceProductImages(record.id, req.body.images)
       }
+      if (modelName === 'purchaseOrder' && Array.isArray(poLineItems)) {
+        await replacePurchaseOrderLineItems(record.id, poLineItems)
+      }
       if (modelName === 'potential') {
         if (Array.isArray(req.body.products)) {
           await replacePotentialProducts(record.id, req.body.products, req.user!.companyId)
@@ -573,6 +644,15 @@ export function entityRouter(moduleName: string): Router {
         if (data.stage && data.stage !== before.stage) {
           await prisma.potentialStageHistory.create({
             data: { potentialId: record.id, stage: data.stage, changedBy: req.user!.userId, companyId: req.user!.companyId },
+          }).catch(() => {})
+          const isClosedStage = data.stage === 'Closed Won' || data.stage === 'Closed Lost'
+          notifyFollowersAndAssignee({
+            moduleName, recordId: record.id, assigneeId: record.assignedTo,
+            title: isClosedStage ? `Opportunity ${data.stage}: ${record.potentialName || record.id}` : `Stage changed: ${record.potentialName || record.id}`,
+            message: isClosedStage
+              ? `Opportunity "${record.potentialName}" has been marked as ${data.stage}. Amount: ${record.amount != null ? Number(record.amount).toLocaleString(undefined, { style: 'currency', currency: 'USD' }) : 'N/A'}.`
+              : `Opportunity "${record.potentialName}" moved from "${before.stage || 'N/A'}" to "${data.stage}".`,
+            link: `/potentials/${record.id}`, companyId: req.user!.companyId, actorId: req.user!.userId,
           }).catch(() => {})
         }
       }

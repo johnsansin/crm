@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { writeAudit } from '../lib/audit'
 import { nextSequenceNumber, getOrgSetting } from '../lib/settings'
+import { notifyFollowersAndAssignee } from '../lib/notify'
 
 export const leadRouter = Router()
 
@@ -176,11 +177,18 @@ leadRouter.post('/:id/convert', async (req, res, next) => {
       return { account, contact, potential, converted }
     })
 
-      const newValue = `Lead converted${result.account ? ` to Account "${result.account.accountName}"` : ''}${result.contact ? ` and Contact "${result.contact.firstName} ${result.contact.lastName}"` : ''}`
+      const newValue = `Lead converted${result.account ? ` to Account "${result.account.accountName}"` : ''}${result.contact ? ` and Contact "${result.contact.firstName} ${result.contact.lastName}"` : ''}${result.potential ? ` and Opportunity "${result.potential.potentialName}"` : ''}`
       await writeAudit({
         moduleName: 'leads', recordId: lead.id, action: 'CONVERT', newValue,
         userId: req.user!.userId, req,
       })
+      notifyFollowersAndAssignee({
+        moduleName: 'leads', recordId: lead.id, assigneeId: lead.assignedTo,
+        title: `Lead converted: ${lead.firstName || ''} ${lead.lastName || ''}`.trim() || lead.company,
+        message: newValue,
+        link: result.potential ? `/potentials/${result.potential.id}` : `/leads/${lead.id}`,
+        companyId: req.user!.companyId, actorId: req.user!.userId,
+      }).catch(() => {})
     res.json(result)
   } catch (err) { next(err) }
 })

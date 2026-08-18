@@ -9,17 +9,20 @@ import {
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, Menu, X,
   ChevronDown, LogOut, Shield, CalendarDays, CreditCard, Repeat, Phone,
-  BarChart3, Inbox, Rss, Trash2, LineChart, Zap
+  BarChart3, Inbox, Rss, Trash2, LineChart, Zap, Send, MessageCircle,
+  Globe, Share2, Webhook, Sparkles, UserCog
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { t } from '@/lib/i18n'
+import { api } from '@/lib/api'
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard, Building2, Users, UserPlus, TrendingUp, Megaphone,
   Package, Wrench, Truck, BookOpen, FileText, ShoppingCart, ClipboardList,
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, CalendarDays,
-  CreditCard, Repeat, Phone, BarChart3, Inbox, Rss, Trash2, LineChart, Zap
+  CreditCard, Repeat, Phone, BarChart3, Inbox, Rss, Trash2, LineChart, Zap,
+  Send, MessageCircle, Globe, Share2, Webhook, Sparkles, UserCog
 }
 
 const GROUP_ORDER = ['Marketing', 'Sales', 'Inventory', 'Support', 'Projects', 'Tools']
@@ -32,6 +35,8 @@ const fallbackGroups = [
       { module: 'leads', label: 'Leads', icon: 'UserPlus' },
       { module: 'accounts', label: 'Accounts', icon: 'Building2' },
       { module: 'contacts', label: 'Contacts', icon: 'Users' },
+      { module: 'landing-pages', label: 'Landing Pages', icon: 'Globe' },
+      { module: 'social-media', label: 'Social Media', icon: 'Share2' },
     ]
   },
   {
@@ -77,6 +82,10 @@ const fallbackGroups = [
       { module: 'documents', label: 'Documents', icon: 'File' },
       { module: 'emailtemplates', label: 'Email Templates', icon: 'FileText' },
       { module: 'emails', label: 'Emails', icon: 'Mail' },
+      { module: 'email-campaigns', label: 'Email Campaigns', icon: 'Send' },
+      { module: 'sms', label: 'SMS', icon: 'MessageSquare' },
+      { module: 'chat-admin', label: 'Chat Admin', icon: 'MessageCircle' },
+      { module: 'webhooks', label: 'Webhooks', icon: 'Webhook' },
     ]
   }
 ]
@@ -148,9 +157,9 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
           'md:translate-x-0 md:z-40'
         )}
       >
-        <div className="flex items-center justify-between h-14 px-4 border-b border-sidebar-hover shrink-0">
-          <span className={cn('font-bold text-lg text-white tracking-tight', collapsed && 'md:hidden')}>BizForce</span>
-          <span className={cn('font-bold text-lg text-white tracking-tight hidden', collapsed && 'md:block')}>BF</span>
+        <div className="flex items-center justify-between h-16 px-5 border-b border-sidebar-hover/50 shrink-0" data-tour="sidebar-logo">
+          <span className={cn('font-extrabold text-xl text-white tracking-tight', collapsed && 'md:hidden')}>BizForce</span>
+          <span className={cn('font-extrabold text-xl text-white tracking-tight hidden', collapsed && 'md:block')}>BF</span>
           <button
             onClick={() => {
               if (window.innerWidth < 768) { onMobileClose() } else { onToggle() }
@@ -162,31 +171,42 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-2 px-2 space-y-1 scrollbar-thin">
-          <NavItem module="" label={t('Dashboard')} icon="LayoutDashboard" collapsed={collapsed} />
-          <NavItem module="calendar" label={t('Calendar')} icon="CalendarDays" collapsed={collapsed} />
+        <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5 scrollbar-hidden">
+          <NavItem module="" label={t('Dashboard')} icon="LayoutDashboard" collapsed={collapsed} dataTour="dashboard" />
+          <NavItem module="calendar" label={t('Calendar')} icon="CalendarDays" collapsed={collapsed} dataTour="calendar" />
           <NavItem module="chat" label={t('Chat')} icon="MessageSquare" collapsed={collapsed} />
           <NavItem module="forecast" label={t('Forecasting')} icon="LineChart" collapsed={collapsed} />
+          <NavItem module="ai-assistant" label={t('AI Assistant')} icon="Sparkles" collapsed={collapsed} dataTour="ai-assistant" />
 
+          <div className="pt-2 pb-1">
+            <div className="h-px bg-gradient-to-r from-transparent via-sidebar-hover to-transparent mx-1" />
+          </div>
+
+          <div data-tour="modules">
           {menuGroups.map((group) => {
             const isExpanded = collapsed ? false : expandedGroup === group.label
             return (
               <div key={group.label}>
                 <button
                   onClick={() => setExpandedGroup(isExpanded ? '' : group.label)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-hover transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-hover/50 transition-colors"
                 >
                   <span className={cn(collapsed && 'md:hidden')}>{t(group.label)}</span>
                   <ChevronDown
                     size={14}
                     className={cn(
-                      'transition-transform',
+                      'transition-transform duration-200 shrink-0',
                       collapsed && 'md:hidden',
                       isExpanded && 'rotate-180'
                     )}
                   />
                 </button>
-                {(isExpanded || collapsed) && (
+                <div
+                  className={cn(
+                    'overflow-hidden transition-all duration-200',
+                    isExpanded || collapsed ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                  )}
+                >
                   <div className="space-y-0.5 mt-0.5">
                     {group.items.map((item) => (
                       <NavItem
@@ -198,19 +218,36 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
                       />
                     ))}
                   </div>
-                )}
+                </div>
               </div>
             )
           })}
+          </div>
         </div>
 
-        <div className={cn('shrink-0 border-t border-sidebar-hover p-3 space-y-0.5', collapsed && 'md:p-2')}>
+        <div className={cn('shrink-0 border-t border-sidebar-hover/50 p-3 space-y-1', collapsed && 'md:p-2')}>
           {(user?.isAdmin || user?.isSuperAdmin) && (
             <NavItem module="settings" label={t('Settings')} icon="Settings" collapsed={collapsed} />
           )}
           {user?.isSuperAdmin && (
             <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" collapsed={collapsed} />
           )}
+          <button
+            onClick={async () => {
+              try {
+                await api.resetOnboarding()
+                useAuthStore.setState({ user: { ...user, hasCompletedOnboarding: false } })
+              } catch {}
+            }}
+            className={cn(
+              'w-full flex items-center gap-3 rounded-lg transition-all duration-150 text-sidebar-foreground/60 hover:bg-sidebar-hover hover:text-white',
+              collapsed && 'md:justify-center md:px-2',
+              'px-3 py-2.5 text-[13px] font-medium'
+            )}
+          >
+            <Sparkles size={19} strokeWidth={1.8} className="shrink-0" />
+            <span className={cn('truncate leading-tight', collapsed && 'md:hidden')}>{t('Replay Tour')}</span>
+          </button>
           <NavLink
             to="/profile"
             className={({ isActive }) =>
@@ -243,25 +280,26 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
   )
 }
 
-function NavItem({ module, label, icon, collapsed }: { module: string; label: string; icon: string; collapsed: boolean }) {
+function NavItem({ module, label, icon, collapsed, dataTour }: { module: string; label: string; icon: string; collapsed: boolean; dataTour?: string }) {
   const Icon = iconMap[icon] || FileText
   const href = module === '' ? '/dashboard' : `/${module}`
   return (
     <NavLink
       to={href}
       end
+      data-tour={dataTour}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150',
           isActive
-            ? 'bg-sidebar-active text-white'
-            : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-white',
+            ? 'bg-sidebar-active text-white shadow-sm shadow-sidebar-active/30'
+            : 'text-sidebar-foreground/80 hover:bg-sidebar-hover hover:text-white',
           collapsed && 'md:justify-center md:px-2'
         )
       }
     >
-      <Icon size={20} />
-      <span className={cn('truncate', collapsed && 'md:hidden')}>{label}</span>
+      <Icon size={19} strokeWidth={isActive => isActive ? 2.2 : 1.8} className="shrink-0" />
+      <span className={cn('truncate leading-tight', collapsed && 'md:hidden')}>{label}</span>
     </NavLink>
   )
 }

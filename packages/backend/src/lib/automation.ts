@@ -315,3 +315,202 @@ export async function sendPaymentReminders(): Promise<number> {
   }
   return sent
 }
+
+// ---------------- SLA Deadline Checker ----------------
+
+export async function checkSLADeadlines(): Promise<number> {
+  const now = new Date()
+  const warningWindow = new Date(now.getTime() + 30 * 60 * 1000)
+  const tickets = await prisma.ticket.findMany({
+    where: {
+      isActive: true,
+      status: { notIn: ['Closed', 'Resolved', 'Cancelled'] },
+      slaDeadline: { not: null },
+      OR: [
+        { slaDeadline: { lte: warningWindow } },
+      ],
+    },
+    take: 100,
+  })
+
+  let notified = 0
+  for (const ticket of tickets) {
+    if (!ticket.slaDeadline) continue
+    const isOverdue = ticket.slaDeadline.getTime() < now.getTime()
+    const title = isOverdue
+      ? `SLA Breach: Ticket ${ticket.ticketNo || ticket.title}`
+      : `SLA Warning: Ticket ${ticket.ticketNo || ticket.title} — ${Math.round((ticket.slaDeadline.getTime() - now.getTime()) / 60000)} min remaining`
+    const message = isOverdue
+      ? `Ticket "${ticket.title}" has breached its SLA deadline.`
+      : `Ticket "${ticket.title}" SLA deadline approaching: ${ticket.slaDeadline.toISOString()}`
+
+    if (ticket.assignedTo) {
+      await prisma.notification.create({
+        data: {
+          userId: ticket.assignedTo,
+          title,
+          message,
+          link: `/tickets/${ticket.id}`,
+          companyId: ticket.companyId,
+        },
+      }).catch(() => {})
+      notified++
+    }
+
+    if (isOverdue && ticket.escalationLevel < 1) {
+      await prisma.ticket.update({
+        where: { id: ticket.id },
+        data: { escalationLevel: { increment: 1 } },
+      }).catch(() => {})
+    }
+  }
+  return notified
+}
+
+// ---------------- Follow-up Reminders ----------------
+
+export async function checkFollowUpReminders(): Promise<number> {
+  const now = new Date()
+  const potentials = await prisma.potential.findMany({
+    where: {
+      isActive: true,
+      nextFollowUp: { not: null, lte: now },
+    },
+    take: 100,
+  })
+
+  let notified = 0
+  for (const pot of potentials) {
+    if (!pot.assignedTo) continue
+    await prisma.notification.create({
+      data: {
+        userId: pot.assignedTo,
+        title: `Follow-up Reminder: ${pot.potentialName}`,
+        message: `Scheduled follow-up for opportunity "${pot.potentialName}" was due at ${pot.nextFollowUp?.toISOString()}. Please update the opportunity.`,
+        link: `/potentials/${pot.id}`,
+        companyId: pot.companyId,
+      },
+    }).catch(() => {})
+    notified++
+  }
+  return notified
+}
+
+// ---------------- Overdue Invoice Alerts ----------------
+
+export async function checkOverdueInvoices(): Promise<number> {
+  const now = new Date()
+  const invoices = await prisma.invoice.findMany({
+    where: {
+      isActive: true,
+      dueDate: { lt: now },
+      NOT: [
+        { invoiceStatus: { in: ['Paid', 'Cancelled'] } },
+      ],
+    },
+    take: 100,
+  })
+
+  let notified = 0
+  for (const inv of invoices) {
+    const payments = await prisma.payment.findMany({ where: { invoiceId: inv.id } })
+    const paidTotal = payments.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0)
+    const balance = Number(inv.grandTotal || 0) - paidTotal
+    if (balance <= 0) continue
+
+    const targetUser = inv.assignedTo || inv.createdBy
+    if (!targetUser) continue
+
+    await prisma.notification.create({
+      data: {
+        userId: targetUser,
+        title: `Overdue Invoice: ${inv.invoiceNo || inv.subject}`,
+        message: `Invoice "${inv.subject}" (${inv.invoiceNo || 'N/A'}) was due on ${inv.dueDate?.toISOString().slice(0, 10)}. Outstanding balance: ${Number(balance).toFixed(2)}.`,
+        link: `/invoices/${inv.id}`,
+        companyId: inv.companyId,
+      },
+    }).catch(() => {})
+    notified++
+  }
+  return notified
+}
+
+// ---------------- Asset Maintenance Reminders ----------------
+
+export async function checkAssetMaintenance(): Promise<number> {
+  const now = new Date()
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const assets = await prisma.asset.findMany({
+    where: {
+      isActive: true,
+      nextMaintenanceDate: { not: null, gte: now, lte: sevenDaysFromNow },
+    },
+    take: 100,
+  })
+
+  let notified = 0
+  for (const asset of assets) {
+    if (!asset.assignedTo) continue
+    const daysUntil = Math.round((Number(asset.nextMaintenanceDate) - now.getTime()) / (24 * 60 * 60 * 1000))
+    await prisma.notification.create({
+      data: {
+        userId: asset.assignedTo,
+        title: `Maintenance Due: ${asset.assetName}`,
+        message: `Asset "${asset.assetName}" has scheduled maintenance in ${daysUntil} day(s) on ${asset.nextMaintenanceDate?.toISOString().slice(0, 10)}.`,
+        link: `/assets/${asset.id}`,
+        companyId: asset.companyId,
+      },
+    }).catch(() => {})
+    notified++
+  }
+  return notified
+}
+
+// ---------------- Project Health Check ----------------
+
+export async function checkProjectHealth(): Promise<number> {
+  const projects = await prisma.project.findMany({
+    where: {
+      isActive: true,
+      estimatedHours: { not: null },
+      actualHours: { not: null },
+    },
+    take: 100,
+  })
+
+  let updated = 0
+  for (const project of projects) {
+    const estimated = Number(project.estimatedHours || 0)
+    const actual = Number(project.actualHours || 0)
+    if (estimated <= 0) continue
+
+    const ratio = actual / estimated
+    let newStatus: string | null = null
+    if (ratio > 1.2) {
+      newStatus = 'At Risk'
+    } else if (ratio > 1.0) {
+      newStatus = 'Over Budget'
+    }
+
+    if (newStatus && project.healthStatus !== newStatus) {
+      await prisma.project.update({
+        where: { id: project.id },
+        data: { healthStatus: newStatus },
+      }).catch(() => {})
+      updated++
+
+      if (project.assignedTo && newStatus === 'At Risk') {
+        await prisma.notification.create({
+          data: {
+            userId: project.assignedTo,
+            title: `Project At Risk: ${project.projectName}`,
+            message: `Project "${project.projectName}" has used ${actual}h out of ${estimated}h estimated (${Math.round(ratio * 100)}% budget consumed).`,
+            link: `/projects/${project.id}`,
+            companyId: project.companyId,
+          },
+        }).catch(() => {})
+      }
+    }
+  }
+  return updated
+}

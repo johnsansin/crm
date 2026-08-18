@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, ChevronsUpDown, Hash } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
@@ -28,6 +28,8 @@ interface DataTableProps<T> {
   pageSize?: number
   showPageSize?: boolean
   hidePagination?: boolean
+  selectedCount?: number
+  bulkActions?: React.ReactNode
 }
 
 const PAGE_SIZES = [10, 25, 50, 100]
@@ -35,7 +37,8 @@ const PAGE_SIZES = [10, 25, 50, 100]
 export function DataTable<T extends Record<string, any>>({
   columns, data, pagination, onPageChange, onSort,
   sortKey, sortOrder, loading, onRowClick, actions, emptyMessage,
-  pageSize = 25, showPageSize = true, hidePagination = false
+  pageSize = 25, showPageSize = true, hidePagination = false,
+  selectedCount = 0, bulkActions
 }: DataTableProps<T>) {
   useOrgSettings()
   const [localPage, setLocalPage] = useState(1)
@@ -103,6 +106,24 @@ export function DataTable<T extends Record<string, any>>({
 
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900/40 shadow-sm overflow-hidden">
+      {total > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/20">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+            <Hash size={12} />
+            {total.toLocaleString()} {total === 1 ? 'record' : 'records'}
+          </span>
+          {selectedCount > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+              {selectedCount} selected
+            </span>
+          )}
+          {bulkActions && selectedCount > 0 && (
+            <div className="ml-auto flex items-center gap-2">
+              {bulkActions}
+            </div>
+          )}
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -117,7 +138,7 @@ export function DataTable<T extends Record<string, any>>({
                   )}
                   onClick={() => col.sortable && handleSort(col.key)}
                 >
-                  <span className={cn('inline-flex items-center gap-1', col.className === 'text-right' && 'flex-row-reverse')}>
+                  <span className={cn('inline-flex items-center gap-1.5', col.className === 'text-right' && 'flex-row-reverse')}>
                     {col.label}
                     {col.sortable && (
                       activeKey === col.key
@@ -155,9 +176,11 @@ export function DataTable<T extends Record<string, any>>({
                 <tr
                   key={record.id || i}
                   className={cn(
-                    'border-b border-slate-200/70 last:border-0 transition-colors dark:border-slate-800',
-                    i % 2 === 1 ? 'bg-slate-100/60 dark:bg-slate-900/40' : 'bg-slate-50 dark:bg-slate-950/40',
-                    onRowClick ? 'cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60' : 'hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                    'border-b border-slate-200/70 last:border-0 transition-all duration-150 dark:border-slate-800',
+                    i % 2 === 1
+                      ? 'bg-slate-50/80 dark:bg-slate-900/30'
+                      : 'bg-white dark:bg-slate-950/60',
+                    onRowClick ? 'cursor-pointer hover:bg-blue-50/60 hover:shadow-sm dark:hover:bg-blue-950/20' : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/40'
                   )}
                   onClick={() => onRowClick?.(record)}
                 >

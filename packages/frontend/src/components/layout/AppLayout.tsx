@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils'
 import { useTheme } from '@/lib/theme'
 import { usePresence } from '@/hooks/usePresence'
 import { UserAvatar } from '@/components/UserAvatar'
+import { OnboardingTour } from '@/components/OnboardingTour'
+import { QuickStartModal } from '@/components/QuickStartModal'
 import { LogOut, User, Search, Sun, Moon, Loader2, Menu, Bell, Building2, Megaphone, CheckCheck, X, Languages, Check, ChevronDown, Command, MessageSquare } from 'lucide-react'
 import { api } from '@/lib/api'
 import { setOrgSettings, orgLocale, orgLanguage, formatDateTime, useOrgSettings } from '@/lib/org-format'
@@ -56,6 +58,13 @@ export function AppLayout() {
     queryFn: () => api.getOrgSettings().catch(() => ({})),
   })
 
+  const { data: recentOrgsData } = useQuery({
+    queryKey: ['admin-recent-orgs'],
+    queryFn: () => api.adminRecentCompanies(5).catch(() => ({ data: [] })),
+    enabled: !!user?.isSuperAdmin,
+    refetchInterval: 60000,
+  })
+
   useEffect(() => {
     if (!orgSettingsData) return
     setOrgSettings({
@@ -64,20 +73,21 @@ export function AppLayout() {
       dateFormat: orgSettingsData.dateFormat || 'mm-dd-yyyy',
       calendar: orgSettingsData.calendar || {},
     })
-    const lang = orgSettingsData.language || 'en_us'
-    document.documentElement.lang = orgLocale()
+    const lang = user?.language || orgSettingsData.language || 'en_us'
+    document.documentElement.lang = lang
     document.documentElement.dir = ['ar', 'he', 'fa'].includes(lang) ? 'rtl' : 'ltr'
-  }, [orgSettingsData])
+  }, [orgSettingsData, user?.language])
 
   const [langSaving, setLangSaving] = useState(false)
-  const currentLang = orgLanguage()
+  const currentLang = user?.language || orgLanguage()
   const saveLanguage = async (code: string) => {
     if (code === currentLang) return
     setLangSaving(true)
     try {
-      await api.updateOrgSettings({ language: code })
+      await api.updateMe({ language: code })
+      useAuthStore.setState({ user: { ...user, language: code } })
       setOrgSettings({ language: code })
-      document.documentElement.lang = orgLocale()
+      document.documentElement.lang = code
       document.documentElement.dir = ['ar', 'he', 'fa'].includes(code) ? 'rtl' : 'ltr'
       queryClient.invalidateQueries({ queryKey: ['org-settings'] })
       addToast({ title: t('Language updated'), description: LANGUAGES.find(l => l.value === code)?.label, variant: 'success' })
@@ -97,6 +107,7 @@ export function AppLayout() {
   const unreadCount = notifications.filter((n: any) => !n.isRead).length
   const chatUnread = (chatConvosData?.data || []).reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0)
   const activeAnnouncements = (announcementsData?.data || []).filter((a: any) => !dismissedAnnouncements.includes(a.id))
+  const recentOrgs = recentOrgsData?.data || []
 
   const markAllRead = async () => {
     try {
@@ -166,7 +177,7 @@ export function AppLayout() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen overflow-hidden bg-background">
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -174,9 +185,9 @@ export function AppLayout() {
         onMobileClose={() => setMobileOpen(false)}
       />
 
-      <div className={cn('transition-all duration-300', 'ml-0 md:ml-64', sidebarCollapsed && 'md:ml-16')}>
+      <div className={cn('h-screen flex flex-col overflow-hidden transition-all duration-300', 'ml-0 md:ml-64', sidebarCollapsed && 'md:ml-16')}>
         {activeAnnouncements.map(a => (
-          <div key={a.id} className="flex items-center gap-3 px-4 md:px-6 py-2 bg-primary text-primary-foreground text-sm">
+          <div key={a.id} className="flex items-center gap-3 px-4 md:px-6 py-2 bg-primary text-primary-foreground text-sm shrink-0">
             <Megaphone size={15} className="shrink-0" />
             <div className="min-w-0 flex-1">
               <span className="font-semibold">{a.title}</span>
@@ -187,7 +198,7 @@ export function AppLayout() {
             </button>
           </div>
         ))}
-        <header className="sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-xl border-b border-border/60 shadow-sm flex items-center justify-between px-4 md:px-6 gap-2 md:gap-4">
+        <header data-tour="header" className="shrink-0 h-16 bg-background/80 backdrop-blur-xl border-b border-border/60 shadow-sm flex items-center justify-between px-4 md:px-6 gap-2 md:gap-4 relative z-30">
           <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
           <button
@@ -285,6 +296,24 @@ export function AppLayout() {
                 </div>
                 <DropdownMenuSeparator />
                 <div className="max-h-80 overflow-y-auto">
+                  {user?.isSuperAdmin && recentOrgs.length > 0 && (
+                    <>
+                      <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-muted/50 flex items-center gap-1.5">
+                        <Building2 size={11} /> New Organizations
+                      </div>
+                      {recentOrgs.map((c: any) => (
+                        <div
+                          key={c.id}
+                          className="px-3 py-2.5 hover:bg-accent transition-colors cursor-pointer"
+                          onClick={() => navigate('/superadmin/organizations')}
+                        >
+                          <p className="text-sm font-medium">{c.name}</p>
+                          <p className="text-xs text-muted-foreground">{c._count?.users || 0} users · {formatDateTime(c.createdAt)}</p>
+                        </div>
+                      ))}
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   {notifications.length === 0 && (
                     <p className="text-sm text-muted-foreground px-3 py-6 text-center">{t('No notifications')}</p>
                   )}
@@ -326,7 +355,7 @@ export function AppLayout() {
             <div className="hidden md:block w-px h-6 bg-border mx-1" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2 pl-1.5 pr-2.5 h-11 rounded-full">
+                <Button variant="ghost" className="gap-2 pl-1.5 pr-2.5 h-11 rounded-full" data-tour="profile">
                   <UserAvatar user={user} size={30} className="ring-2 ring-primary/20" />
                   <span className="hidden md:block text-left leading-tight">
                     <span className="block text-xs font-semibold max-w-[110px] truncate">{user?.firstName} {user?.lastName}</span>
@@ -363,10 +392,12 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
         </main>
       </div>
+      {user && !user.hasCompletedQuickStart && <QuickStartModal />}
+      {user && user.hasCompletedQuickStart && !user.hasCompletedOnboarding && <OnboardingTour />}
     </div>
   )
 }

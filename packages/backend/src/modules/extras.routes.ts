@@ -10,6 +10,7 @@ import { syncMailbox, generateRecurringInvoice, fetchRssFeed, applyEmailToTicket
 import { renderReport, escapeHtml } from './report'
 import { renderReportHtml, renderReportCsv } from '../lib/report-runner'
 import { dialViaPbx } from './pbx.routes'
+import { evaluateConditions } from '../lib/settings'
 
 export const extrasRouter = Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'bizforce-jwt-secret-dev-2026'
@@ -149,7 +150,27 @@ extrasRouter.get('/trash/:moduleName', authMiddleware, async (req, res, next) =>
     const where: any = trashByIsDeleted(cfg.modelName) ? { isDeleted: true } : { isActive: false }
     if (req.user!.companyId) where.companyId = req.user!.companyId
     const data = await prismaModel.findMany({ where, take: 200, orderBy: { updatedAt: 'desc' } })
-    res.json({ data, label: cfg.label })
+    const recordIds = data.map((r: any) => r.id)
+    const audits = recordIds.length > 0 ? await prisma.auditLog.findMany({
+      where: { recordId: { in: recordIds }, moduleName: req.params.moduleName, action: 'DELETE' },
+      orderBy: { createdAt: 'desc' },
+    }) : []
+    const userIds = [...new Set(audits.map((a: any) => a.userId).filter(Boolean))]
+    const users = userIds.length > 0 ? await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, firstName: true, lastName: true, email: true },
+    }) : []
+    const userMap = new Map(users.map((u: any) => [u.id, u]))
+    const auditMap = new Map<string, any>()
+    for (const a of audits) {
+      if (a.recordId && !auditMap.has(a.recordId)) auditMap.set(a.recordId, a)
+    }
+    const enriched = data.map((r: any) => {
+      const audit = auditMap.get(r.id)
+      const user = audit?.userId ? userMap.get(audit.userId) : null
+      return { ...r, deletedBy: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : null, deletedAt: audit?.createdAt || r.updatedAt }
+    })
+    res.json({ data: enriched, label: cfg.label })
   } catch (err) { next(err) }
 })
 
@@ -741,24 +762,24 @@ extrasRouter.delete('/apikeys/:id', authMiddleware, requireAdmin, async (req, re
 // =====================================================================
 extrasRouter.post('/portal/register', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
-    const { contactId, accessCode } = req.body
+    const { contactId } = req.body
     if (!contactId) return res.status(400).json({ error: 'contactId is required' })
     const contact = await prisma.contact.findFirst({ where: { id: contactId, companyId: req.user!.companyId || undefined } })
     if (!contact) return res.status(404).json({ error: 'Contact not found' })
-    const code = accessCode || Math.random().toString(36).slice(2, 10).toUpperCase()
+    const email = contact.email || `${contact.firstName.toLowerCase()}@portal.local`
     const portal = await prisma.portalUser.upsert({
-      where: { userId: contactId },
-      update: { accessCode: code, isActive: true },
-      create: { userId: contactId, companyId: req.user!.companyId, accessCode: code },
+      where: { email },
+      update: { isActive: true, contactId, userId: contactId },
+      create: { email, password: '', name: [contact.firstName, contact.lastName].filter(Boolean).join(' '), contactId, userId: contactId, companyId: req.user!.companyId },
     })
-    res.status(201).json({ data: portal, accessCode: code })
+    res.status(201).json({ data: portal })
   } catch (err) { next(err) }
 })
 
 extrasRouter.post('/portal/unregister', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { contactId } = req.body
-    await prisma.portalUser.updateMany({ where: { userId: contactId, companyId: req.user!.companyId || undefined }, data: { isActive: false } })
+    await prisma.portalUser.updateMany({ where: { contactId, companyId: req.user!.companyId || undefined }, data: { isActive: false } })
     res.json({ success: true })
   } catch (err) { next(err) }
 })
@@ -776,11 +797,10 @@ extrasRouter.post('/portal/login', async (req, res, next) => {
     if (companyDomain && company?.name && !companyDomain.includes(company.name)) {
       return res.status(401).json({ error: 'Company mismatch' })
     }
-    const portal = await prisma.portalUser.findUnique({ where: { userId: contact.id } })
-    if (!portal || !portal.isActive || !portal.accessCode) return res.status(403).json({ error: 'Portal access is not enabled for this contact' })
-    if (portal.accessCode !== accessCode) return res.status(401).json({ error: 'Invalid access code' })
+    const portal = await prisma.portalUser.findFirst({ where: { contactId: contact.id } })
+    if (!portal || !portal.isActive) return res.status(403).json({ error: 'Portal access is not enabled for this contact' })
     const token = jwt.sign({ contactId: contact.id, companyId: contact.companyId, type: 'portal', email }, JWT_SECRET, { expiresIn: '24h' })
-    await prisma.portalUser.update({ where: { id: portal.id }, data: { lastLoginAt: new Date() } })
+    await prisma.portalUser.update({ where: { id: portal.id }, data: { lastLogin: new Date() } })
     const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email
     res.json({ success: true, sessionName: token, contactName, companyName: company?.name || null })
   } catch (err) { next(err) }
@@ -919,6 +939,221 @@ extrasRouter.post('/reports/export', authMiddleware, async (req: any, res, next)
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
     res.setHeader('Content-Disposition', `inline; filename="${(name || 'report').replace(/[^a-zA-Z0-9-_]/g, '_')}.html"`)
     res.send(html)
+  } catch (err) { next(err) }
+})
+
+// =====================================================================
+// Stage Probabilities
+// =====================================================================
+extrasRouter.get('/stage-probability', authMiddleware, async (req: any, res, next) => {
+  try {
+    const where: any = { isActive: true }
+    if (req.user!.companyId) where.companyId = req.user!.companyId
+    const data = await prisma.stageProbability.findMany({ where, orderBy: { sequence: 'asc' } })
+    res.json({ data })
+  } catch (err) { next(err) }
+})
+
+extrasRouter.put('/stage-probability', authMiddleware, async (req: any, res, next) => {
+  try {
+    const { stages } = req.body
+    if (!Array.isArray(stages)) return res.status(400).json({ error: 'stages array is required' })
+    const companyId = req.user!.companyId
+    for (const s of stages) {
+      if (!s.stageName) continue
+      await prisma.stageProbability.upsert({
+        where: { companyId_stageName: { companyId: companyId || '', stageName: s.stageName } },
+        update: {
+          probability: s.probability ?? 0,
+          sequence: s.sequence ?? 0,
+          color: s.color ?? null,
+          isActive: s.isActive !== false,
+        },
+        create: {
+          companyId,
+          stageName: s.stageName,
+          probability: s.probability ?? 0,
+          sequence: s.sequence ?? 0,
+          color: s.color ?? null,
+          isActive: s.isActive !== false,
+        },
+      })
+    }
+    const data = await prisma.stageProbability.findMany({ where: { companyId, isActive: true }, orderBy: { sequence: 'asc' } })
+    res.json({ data })
+  } catch (err) { next(err) }
+})
+
+// =====================================================================
+// Quantity Discounts
+// =====================================================================
+extrasRouter.get('/products/:id/quantity-discounts', authMiddleware, async (req: any, res, next) => {
+  try {
+    const where: any = { productId: req.params.id, isActive: true }
+    if (req.user!.companyId) where.companyId = req.user!.companyId
+    const data = await prisma.quantityDiscount.findMany({ where, orderBy: { minQty: 'asc' } })
+    res.json({ data })
+  } catch (err) { next(err) }
+})
+
+extrasRouter.post('/products/:id/quantity-discounts', authMiddleware, async (req: any, res, next) => {
+  try {
+    const { minQty, maxQty, discountPercent } = req.body
+    if (minQty == null || discountPercent == null) return res.status(400).json({ error: 'minQty and discountPercent are required' })
+    const record = await prisma.quantityDiscount.create({
+      data: {
+        productId: req.params.id,
+        minQty,
+        maxQty: maxQty ?? null,
+        discountPercent,
+        companyId: req.user!.companyId,
+      },
+    })
+    res.status(201).json({ data: record })
+  } catch (err) { next(err) }
+})
+
+extrasRouter.delete('/quantity-discounts/:id', authMiddleware, async (req: any, res, next) => {
+  try {
+    const where: any = { id: req.params.id }
+    if (req.user!.companyId) where.companyId = req.user!.companyId
+    await prisma.quantityDiscount.updateMany({ where, data: { isActive: false } })
+    res.json({ success: true })
+  } catch (err) { next(err) }
+})
+
+// =====================================================================
+// Project Resources
+// =====================================================================
+extrasRouter.get('/projects/:id/resources', authMiddleware, async (req: any, res, next) => {
+  try {
+    const where: any = { projectId: req.params.id, isActive: true }
+    if (req.user!.companyId) where.companyId = req.user!.companyId
+    const data = await prisma.projectResource.findMany({ where, orderBy: { createdAt: 'asc' } })
+    res.json({ data })
+  } catch (err) { next(err) }
+})
+
+extrasRouter.post('/projects/:id/resources', authMiddleware, async (req: any, res, next) => {
+  try {
+    const { userId, role, allocationPercent, hourlyRate, startDate, endDate } = req.body
+    if (!userId) return res.status(400).json({ error: 'userId is required' })
+    const record = await prisma.projectResource.upsert({
+      where: { projectId_userId: { projectId: req.params.id, userId } },
+      update: {
+        role: role ?? undefined,
+        allocationPercent: allocationPercent ?? 100,
+        hourlyRate: hourlyRate ?? undefined,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        isActive: true,
+      },
+      create: {
+        projectId: req.params.id,
+        userId,
+        role: role ?? null,
+        allocationPercent: allocationPercent ?? 100,
+        hourlyRate: hourlyRate ?? null,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        companyId: req.user!.companyId,
+      },
+    })
+    res.status(201).json({ data: record })
+  } catch (err) { next(err) }
+})
+
+extrasRouter.delete('/projects/:projectId/resources/:id', authMiddleware, async (req: any, res, next) => {
+  try {
+    const where: any = { id: req.params.id }
+    if (req.user!.companyId) where.companyId = req.user!.companyId
+    await prisma.projectResource.updateMany({ where, data: { isActive: false } })
+    res.json({ success: true })
+  } catch (err) { next(err) }
+})
+
+// =====================================================================
+// Workflow Test / Logs / Stats
+// =====================================================================
+extrasRouter.post('/workflows/:id/test', authMiddleware, async (req: any, res, next) => {
+  try {
+    const wf = await prisma.workflow.findFirst({
+      where: { id: req.params.id, companyId: req.user!.companyId || undefined },
+    })
+    if (!wf) return res.status(404).json({ error: 'Workflow not found' })
+
+    const cfg = getModuleConfig(wf.moduleName)
+    if (!cfg?.modelName) return res.status(400).json({ error: 'Invalid module for workflow' })
+
+    const prismaModel = (prisma as any)[cfg.modelName]
+    const where: any = { isActive: true }
+    if (req.user!.companyId) where.companyId = req.user!.companyId
+    const sampleRecord = await prismaModel.findFirst({ where })
+    if (!sampleRecord) return res.status(404).json({ error: 'No records found in module to test against' })
+
+    const conditionsMet = evaluateConditions(wf.conditions, sampleRecord)
+    const actions: any[] = (wf.actions as any[]) || []
+    const dryRun = req.body.dryRun !== false
+    const preview = actions.map((action: any) => ({
+      type: action.type,
+      description: dryRun ? `[DRY RUN] Would execute: ${action.type}` : `Executed: ${action.type}`,
+      details: action,
+    }))
+
+    res.json({
+      data: {
+        workflow: { id: wf.id, name: wf.name, moduleName: wf.moduleName, triggerType: wf.triggerType },
+        sampleRecord: { id: sampleRecord.id, label: sampleRecord[Object.keys(sampleRecord).find((k: string) => k.includes('Name') || k.includes('name') || k.includes('title') || k === 'subject') || 'id'] },
+        conditionsMet,
+        actionsCount: actions.length,
+        dryRun,
+        preview,
+      },
+    })
+  } catch (err) { next(err) }
+})
+
+extrasRouter.get('/workflows/:id/logs', authMiddleware, async (req: any, res, next) => {
+  try {
+    const where: any = { workflowId: req.params.id }
+    if (req.user!.companyId) where.companyId = req.user!.companyId
+    const logs = await prisma.workflowLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    })
+    res.json({ data: logs })
+  } catch (err) { next(err) }
+})
+
+extrasRouter.get('/automation/stats', authMiddleware, async (req: any, res, next) => {
+  try {
+    const companyId = req.user!.companyId || undefined
+    const where: any = {}
+    if (companyId) where.companyId = companyId
+
+    const [activeWorkflows, totalExecutions, lastWorkflowRun] = await Promise.all([
+      prisma.workflow.count({ where: { ...where, isActive: true } }),
+      prisma.workflowLog.aggregate({ where, _sum: { actionsExecuted: true }, _count: true }),
+      prisma.workflowLog.findFirst({ where, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+    ])
+
+    const workflows = await prisma.workflow.findMany({
+      where: companyId ? { companyId } : {},
+      select: { id: true, name: true, runCount: true, lastRunAt: true, lastError: true },
+      orderBy: { lastRunAt: 'desc' },
+      take: 50,
+    })
+
+    res.json({
+      data: {
+        activeWorkflows,
+        totalExecutions: (totalExecutions as any)._count || 0,
+        totalActionsExecuted: Number((totalExecutions as any)._sum?.actionsExecuted || 0),
+        lastRunAt: (lastWorkflowRun as any)?.createdAt || null,
+        workflows,
+      },
+    })
   } catch (err) { next(err) }
 })
 

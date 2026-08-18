@@ -1,6 +1,23 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import multer from 'multer'
+import path from 'path'
+import fs from 'fs'
+
+const UPLOAD_DIR = path.resolve(process.cwd(), 'uploads')
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+
+const chatUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname)
+      cb(null, `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`)
+    }
+  }),
+  limits: { fileSize: 25 * 1024 * 1024 },
+})
 
 export const chatRouter = Router()
 
@@ -43,6 +60,7 @@ function serializeMessage(m: any) {
     conversationId: m.conversationId,
     senderId: m.senderId,
     body: m.body,
+    attachments: m.attachments || null,
     createdAt: m.createdAt,
     sender: serializeUser(m.sender),
   }
@@ -179,8 +197,8 @@ chatRouter.get('/conversations/:id/messages', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-// POST /api/chat/conversations/:id/messages — { body: string }
-chatRouter.post('/conversations/:id/messages', async (req, res, next) => {
+// POST /api/chat/conversations/:id/messages — { body: string } or multipart with files
+chatRouter.post('/conversations/:id/messages', chatUpload.array('files', 10), async (req, res, next) => {
   try {
     const userId = req.user!.userId
     const conversationId = req.params.id
@@ -188,12 +206,29 @@ chatRouter.post('/conversations/:id/messages', async (req, res, next) => {
     if (!membership) return res.status(404).json(notFound())
 
     const body = String(req.body?.body || '').trim()
-    if (!body) return res.status(400).json({ error: 'Message body is required' })
+    const files = (req.files as Express.Multer.File[]) || []
+    if (!body && files.length === 0) return res.status(400).json({ error: 'Message body or attachments are required' })
     if (body.length > 4000) return res.status(400).json({ error: 'Message is too long (max 4000 characters)' })
+
+    let attachments: any[] = []
+    if (files.length > 0) {
+      attachments = files.map(f => ({
+        fileName: f.originalname,
+        storedName: f.filename,
+        filePath: `/uploads/${f.filename}`,
+        fileSize: f.size,
+        fileType: f.mimetype,
+      }))
+    }
 
     const now = new Date()
     const message = await prisma.chatMessage.create({
-      data: { conversationId, senderId: userId, body },
+      data: {
+        conversationId,
+        senderId: userId,
+        body: body || (attachments.length > 0 ? '' : ''),
+        attachments: attachments.length > 0 ? attachments : undefined,
+      },
       include: { sender: { select: USER_SELECT } },
     })
     await prisma.$transaction([

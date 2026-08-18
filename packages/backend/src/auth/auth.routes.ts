@@ -338,7 +338,7 @@ authRouter.get('/me', authMiddleware, async (req, res, next) => {
     })
     if (!user) return res.status(404).json({ error: 'User not found' })
     const { password: _, profile: p, ...userData } = user
-    res.json({ ...userData, isSuperAdmin: p?.isSuperAdmin || false })
+    res.json({ ...userData, isSuperAdmin: p?.isSuperAdmin || false, hasCompletedOnboarding: user.hasCompletedOnboarding || false, hasCompletedQuickStart: user.hasCompletedQuickStart || false })
   } catch (err) { next(err) }
 })
 
@@ -397,7 +397,29 @@ authRouter.post('/reset-password', async (req, res, next) => {
 authRouter.put('/me', authMiddleware, async (req, res, next) => {
   try {
     const { firstName, lastName, email, phone, mobile, title, department, timezone, language, password, avatar, addressStreet, addressCity, addressState, addressCountry, addressPostalCode, dateFormat, hourFormat, startOfWeek, defaultModule, currencyCode, pbxExtension } = req.body
-    const data: any = { firstName, lastName, email, phone, mobile, title, department, timezone, language, avatar, addressStreet, addressCity, addressState, addressCountry, addressPostalCode, dateFormat, hourFormat, startOfWeek, defaultModule, currencyCode, pbxExtension }
+    const data: any = {
+      ...(firstName !== undefined && { firstName }),
+      ...(lastName !== undefined && { lastName }),
+      ...(email !== undefined && { email }),
+      ...(phone !== undefined && { phone }),
+      ...(mobile !== undefined && { mobile }),
+      ...(title !== undefined && { title }),
+      ...(department !== undefined && { department }),
+      ...(timezone !== undefined && { timezone }),
+      ...(language !== undefined && { language }),
+      ...(avatar !== undefined && { avatar }),
+      ...(addressStreet !== undefined && { addressStreet }),
+      ...(addressCity !== undefined && { addressCity }),
+      ...(addressState !== undefined && { addressState }),
+      ...(addressCountry !== undefined && { addressCountry }),
+      ...(addressPostalCode !== undefined && { addressPostalCode }),
+      ...(dateFormat !== undefined && { dateFormat }),
+      ...(hourFormat !== undefined && { hourFormat }),
+      ...(startOfWeek !== undefined && { startOfWeek }),
+      ...(defaultModule !== undefined && { defaultModule }),
+      ...(currencyCode !== undefined && { currencyCode }),
+      ...(pbxExtension !== undefined && { pbxExtension }),
+    }
     if (password) {
       const policyError = await validatePassword(req.user!.companyId, password)
       if (policyError) return res.status(400).json({ error: policyError })
@@ -409,6 +431,43 @@ authRouter.put('/me', authMiddleware, async (req, res, next) => {
     })
     const { password: _, ...userData } = user
     res.json(userData)
+  } catch (err) { next(err) }
+})
+
+authRouter.put('/me/onboarding', authMiddleware, async (req, res, next) => {
+  try {
+    const user = await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { hasCompletedOnboarding: true },
+    })
+    res.json({ success: true, hasCompletedOnboarding: true })
+  } catch (err) { next(err) }
+})
+
+authRouter.put('/me/onboarding/reset', authMiddleware, async (req, res, next) => {
+  try {
+    await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { hasCompletedOnboarding: false },
+    })
+    res.json({ success: true, hasCompletedOnboarding: false })
+  } catch (err) { next(err) }
+})
+
+authRouter.put('/me/quickstart', authMiddleware, async (req, res, next) => {
+  try {
+    const { language, timezone, dateFormat } = req.body || {}
+    await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { hasCompletedQuickStart: true, ...(language ? { language } : {}) },
+    })
+    if (req.user!.companyId) {
+      const { setOrgSetting } = require('../lib/settings')
+      if (language) await setOrgSetting(req.user!.companyId, 'language', language)
+      if (timezone) await setOrgSetting(req.user!.companyId, 'timezone', timezone)
+      if (dateFormat) await setOrgSetting(req.user!.companyId, 'dateFormat', dateFormat)
+    }
+    res.json({ success: true, hasCompletedQuickStart: true })
   } catch (err) { next(err) }
 })
 

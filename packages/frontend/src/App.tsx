@@ -26,10 +26,17 @@ import { ReportsPage } from '@/pages/ReportsPage'
 import { MailboxesPage } from '@/pages/MailboxesPage'
 import { RssPage } from '@/pages/RssPage'
 import { ChatPage } from '@/pages/ChatPage'
+import { ChatAdminPage } from '@/pages/ChatAdminPage'
+import { EmailCampaignsPage } from '@/pages/EmailCampaignsPage'
+import { SmsPage } from '@/pages/SmsPage'
 import { RecycleBinPage } from '@/pages/RecycleBinPage'
+import { LandingPagesPage } from '@/pages/LandingPagesPage'
+import { SocialMediaPage } from '@/pages/SocialMediaPage'
+import { WebhooksPage } from '@/pages/WebhooksPage'
 import { LeadDetailPage } from '@/pages/LeadDetailPage'
 import { QuotationsPage } from '@/pages/QuotationsPage'
 import { SalesDocumentPage } from '@/pages/SalesDocumentPage'
+import { PurchaseOrderDetailPage } from '@/pages/PurchaseOrderDetailPage'
 import { ProductsPage } from '@/pages/ProductsPage'
 import { ProductDetailPage } from '@/pages/ProductDetailPage'
 import { SuperAdminLayout } from '@/pages/SuperAdminLayout'
@@ -38,7 +45,10 @@ import { SuperAdminOrgs } from '@/pages/SuperAdminOrgs'
 import { SuperAdminUsers } from '@/pages/SuperAdminUsers'
 import { SuperAdminLoginHistory } from '@/pages/SuperAdminLoginHistory'
 import { SuperAdminSettings } from '@/pages/SuperAdminSettings'
+import { AgentsPage } from '@/pages/AgentsPage'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { PortalPage } from '@/pages/PortalPage'
+import { AiAssistantPage } from '@/pages/AiAssistantPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token } = useAuthStore()
@@ -91,6 +101,7 @@ export default function App() {
 
           {/* Standalone protected route (no sidebar) */}
           <Route path="/org/setup" element={<ProtectedRoute><OrgProfilePage /></ProtectedRoute>} />
+          <Route path="/portal" element={<PortalPage />} />
 
           {/* CRM routes inside sidebar layout */}
           {/* Super Admin routes */}
@@ -99,6 +110,7 @@ export default function App() {
             <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
             <Route path="/superadmin/organizations" element={<SuperAdminOrgs />} />
             <Route path="/superadmin/users" element={<SuperAdminUsers />} />
+            <Route path="/superadmin/agents" element={<AgentsPage />} />
             <Route path="/superadmin/login-history" element={<SuperAdminLoginHistory />} />
             <Route path="/superadmin/settings" element={<SuperAdminSettings />} />
           </Route>
@@ -115,6 +127,13 @@ export default function App() {
             <Route path="/mailboxes" element={<MailboxesPage />} />
             <Route path="/rssfeeds" element={<RssPage />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/chat-admin" element={<ChatAdminPage />} />
+            <Route path="/email-campaigns" element={<EmailCampaignsPage />} />
+            <Route path="/sms" element={<SmsPage />} />
+            <Route path="/landing-pages" element={<LandingPagesPage />} />
+            <Route path="/social-media" element={<SocialMediaPage />} />
+            <Route path="/webhooks" element={<WebhooksPage />} />
+            <Route path="/ai-assistant" element={<AiAssistantPage />} />
             <Route path="/trash" element={<RecycleBinPage />} />
             <Route path="/leads/new" element={<ModuleDetailPage />} />
             <Route path="/leads/:id" element={<LeadDetailPage />} />
@@ -125,6 +144,9 @@ export default function App() {
             <Route path="/salesorders/:id" element={<SalesDocumentPage key="so-detail" module="salesorders" />} />
             <Route path="/invoices" element={<SalesDocumentPage key="inv-list" module="invoices" />} />
             <Route path="/invoices/:id" element={<SalesDocumentPage key="inv-detail" module="invoices" />} />
+            <Route path="/purchaseorders" element={<PurchaseOrderDetailPage key="po-list" />} />
+            <Route path="/purchaseorders/new" element={<PurchaseOrderDetailPage key="po-new" />} />
+            <Route path="/purchaseorders/:id" element={<PurchaseOrderDetailPage key="po-detail" />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/new" element={<ProductDetailPage />} />
             <Route path="/products/:id" element={<ProductDetailPage />} />

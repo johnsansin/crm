@@ -18,6 +18,7 @@ import { companyRouter } from './modules/company.routes'
 import { rbacRouter } from './modules/rbac.routes'
 import { uploadRouter } from './modules/upload.routes'
 import { adminRouter } from './modules/admin.routes'
+import { agentsRouter } from './modules/agents.routes'
 import { settingsRouter } from './modules/settings.routes'
 import { webformRouter } from './modules/webform.routes'
 import { quotationsRouter } from './modules/quotations.routes'
@@ -30,6 +31,17 @@ import { extrasRouter } from './modules/extras.routes'
 import { pbxRouter } from './modules/pbx.routes'
 import { presenceRouter } from './modules/presence.routes'
 import { chatRouter } from './modules/chat.routes'
+import { dashboardRouter } from './modules/dashboard.routes'
+import { reportEnhancedRouter } from './modules/report-enhanced.routes'
+import { emailCampaignsRouter } from './modules/email-campaigns.routes'
+import { smsRouter } from './modules/sms.routes'
+import { chatWidgetRouter, chatWidgetAdminRouter } from './modules/chat-widget.routes'
+import { landingPagesRouter } from './modules/landing-pages.routes'
+import { socialRouter } from './modules/social.routes'
+import { webhooksRouter, incomingWebhookRouter } from './modules/webhooks.routes'
+import { i18nRouter } from './modules/i18n.routes'
+import { portalRouter } from './modules/portal.routes'
+import { aiRouter } from './modules/ai.routes'
 import { errorHandler } from './middleware/errorHandler'
 import { setupModules, getModuleConfig } from './modules/moduleSetup'
 import { startCron } from './lib/cron'
@@ -64,6 +76,7 @@ app.use('/api/company', companyRouter)
 app.use('/api', rbacRouter)
 app.use('/api', uploadRouter)
 app.use('/api/admin', adminRouter)
+app.use('/api/agents', agentsRouter)
 app.use('/api/settings', settingsRouter)
 app.use('/api/webforms', webformRouter)
 app.use('/api/quotations', quotationsRouter)
@@ -74,6 +87,19 @@ app.use('/api/records', recordRouter)
 app.use('/api/leads', leadRouter)
 app.use('/api/presence', presenceRouter)
 app.use('/api/chat', chatRouter)
+app.use('/api/dashboard', dashboardRouter)
+app.use('/api/reports', reportEnhancedRouter)
+app.use('/api/email-campaigns', emailCampaignsRouter)
+app.use('/api/sms', smsRouter)
+app.use('/api/chat-widget', chatWidgetRouter)
+app.use('/api/chat-widget', chatWidgetAdminRouter)
+app.use('/api/landing-pages', landingPagesRouter)
+app.use('/api/social', socialRouter)
+app.use('/api/webhooks', webhooksRouter)
+app.use('/api/webhooks', incomingWebhookRouter)
+app.use('/api/i18n', i18nRouter)
+app.use('/api/portal', portalRouter)
+app.use('/api/ai', aiRouter)
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')))
 
 async function seedModules() {
