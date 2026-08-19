@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Loader2, Mail, Phone, MapPin, User, Send, MessageSquare, Building2, Sparkles } from 'lucide-react'
+import { Loader2, Mail, Phone, MapPin, User, Send, MessageSquare, Building2, Sparkles, CheckCircle } from 'lucide-react'
 import { useToast } from '@/lib/toast'
 import { SiteLayout } from '@/components/SiteLayout'
 
@@ -12,6 +12,7 @@ export function ContactUsPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,6 +30,7 @@ export function ContactUsPage() {
       })
       if (!res.ok) throw new Error('Failed to send message')
       addToast({ title: 'Message sent', description: 'Thank you for contacting us!', variant: 'success' })
+      setSent(true)
       setName(''); setEmail(''); setSubject(''); setMessage('')
     } catch (err: any) {
       addToast({ title: 'Error', description: err.message || 'Failed to send message', variant: 'destructive' })
@@ -61,18 +63,18 @@ export function ContactUsPage() {
             <div className="relative flex flex-col items-center text-center">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white/30 to-white/5 border border-white/40 flex items-center justify-center shadow-lg shadow-blue-900/30 mb-4 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-transparent" />
-                <MessageSquare size={22} className="relative text-white" />
+                {sent ? <CheckCircle size={22} className="relative text-white" /> : <MessageSquare size={22} className="relative text-white" />}
               </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight drop-shadow-sm">Contact Us</h1>
-              <p className="text-sm text-blue-100 mt-1">We'd love to hear from you. Send us a message!</p>
+              <h1 className="text-2xl font-bold text-white tracking-tight drop-shadow-sm">{sent ? 'Message Sent!' : 'Contact Us'}</h1>
+              <p className="text-sm text-blue-100 mt-1">{sent ? "We'll get back to you within 24 hours." : "We'd love to hear from you. Send us a message!"}</p>
             </div>
           </div>
 
           {/* Body */}
           <div className="p-6 md:p-8">
-            <div className="grid md:grid-cols-3 gap-3 mb-8">
+            <div className="grid md:grid-cols-3 gap-3 mb-8 stagger">
               {infoItems.map(item => (
-                <div key={item.label} className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3">
+                <div key={item.label} className="reveal reveal-up flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 hover:shadow-md hover:border-sky-300 dark:hover:border-sky-700 transition-all duration-200">
                   <div className="relative w-9 h-9 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 flex items-center justify-center">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent" />
                     <item.icon size={16} className="relative text-white" />
@@ -85,6 +87,24 @@ export function ContactUsPage() {
               ))}
             </div>
 
+            {sent ? (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
+                  <CheckCircle size={32} className="text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Thank you for reaching out!</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 max-w-sm mx-auto">
+                  We have received your message and will respond within 24 hours.
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-6"
+                  onClick={() => setSent(false)}
+                >
+                  Send another message
+                </Button>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900 px-3 py-2 rounded-lg">
@@ -152,7 +172,7 @@ export function ContactUsPage() {
               <Button
                 type="submit"
                 disabled={sending}
-                className="relative w-full h-12 overflow-hidden rounded-lg text-white font-semibold text-sm border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 hover:from-sky-400 hover:via-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/40 transition-all"
+                className="relative w-full h-12 overflow-hidden rounded-lg text-white font-semibold text-sm border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 hover:from-sky-400 hover:via-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/40 transition-all hover:shadow-xl"
               >
                 <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
                 {sending ? (
@@ -162,6 +182,7 @@ export function ContactUsPage() {
                 )}
               </Button>
             </form>
+            )}
           </div>
         </div>
         </div>
