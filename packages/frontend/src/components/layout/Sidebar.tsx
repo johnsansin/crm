@@ -4,7 +4,7 @@ import { useAuthStore } from '@/lib/auth'
 import { api } from '@/lib/api'
 import { UserAvatar } from '@/components/UserAvatar'
 import {
-  LayoutDashboard, Building2, Users, UserPlus, TrendingUp, Megaphone,
+  LayoutDashboard, Building2, Users, UserPlus, TrendingUp, Megaphone, Swords,
   Package, Wrench, Truck, BookOpen, FileText, ShoppingCart, ClipboardList,
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, Menu, X,
@@ -17,7 +17,7 @@ import { t } from '@/lib/i18n'
 import { api } from '@/lib/api'
 
 const iconMap: Record<string, React.ElementType> = {
-  LayoutDashboard, Building2, Users, UserPlus, TrendingUp, Megaphone,
+  LayoutDashboard, Building2, Users, UserPlus, TrendingUp, Megaphone, Swords,
   Package, Wrench, Truck, BookOpen, FileText, ShoppingCart, ClipboardList,
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, CalendarDays,

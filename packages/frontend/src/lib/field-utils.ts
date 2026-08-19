@@ -44,6 +44,8 @@ function labelFromName(name: string): string {
     qtyInDemand: 'Qty In Demand', reorderLevel: 'Reorder Level', usageUnit: 'Usage Unit',
     qtyPerUnit: 'Qty/Unit', markupPercent: 'Markup %', pricingFormula: 'Pricing Formula',
     image: 'Image',
+    competitorName: 'Competitor Name', marketShare: 'Market Share', strengths: 'Strengths',
+    weaknesses: 'Weaknesses',
     packSize: 'Pack Size', salesStartDate: 'Sales Start Date', salesEndDate: 'Sales End Date',
     startDate: 'Start Date', endDate: 'End Date', expiryDate: 'Expiry Date',
     serialNo: 'Serial No', mfrPartNo: 'Mfr PartNo', vendorPartNo: 'Vendor PartNo',
@@ -131,6 +133,11 @@ const moduleTabs: Record<string, FieldTab[]> = {
   ],
   potentials: [
     { label: 'Details', fields: ['potentialName', 'amount', 'currency', 'closingDate', 'stage', 'probability', 'type', 'leadSource', 'forecastCategory', 'outcomeAnalysis', 'nextStep'] },
+    { label: 'Description', fields: ['description'] },
+  ],
+  competitors: [
+    { label: 'Details', fields: ['competitorName', 'website', 'rating', 'marketShare', 'products'] },
+    { label: 'Analysis', fields: ['strengths', 'weaknesses'] },
     { label: 'Description', fields: ['description'] },
   ],
   campaigns: [

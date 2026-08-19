@@ -116,6 +116,16 @@ export const fieldConfigs: Record<string, ModuleField[]> = {
     { name: 'nextStep', type: 'text' },
     { name: 'description', type: 'textarea' },
   ],
+  competitors: [
+    { name: 'competitorName', type: 'text', required: true },
+    { name: 'website', type: 'url' },
+    { name: 'strengths', type: 'textarea' },
+    { name: 'weaknesses', type: 'textarea' },
+    { name: 'products', type: 'textarea' },
+    { name: 'marketShare', type: 'number' },
+    { name: 'rating', type: 'select' },
+    { name: 'description', type: 'textarea' },
+  ],
   tickets: [
     { name: 'title', type: 'text', required: true },
     { name: 'contactId', type: 'contact-select' },
