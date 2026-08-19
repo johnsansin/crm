@@ -15,6 +15,33 @@ const queryClient = new QueryClient({
   },
 })
 
+const revealObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed')
+        revealObserver.unobserve(entry.target)
+      }
+    })
+  },
+  { threshold: 0.1 }
+)
+
+const observeReveals = () => {
+  document.querySelectorAll('.reveal:not(.revealed)').forEach((el) => {
+    revealObserver.observe(el)
+  })
+}
+
+const mutationObserver = new MutationObserver(() => {
+  observeReveals()
+})
+
+document.addEventListener('DOMContentLoaded', () => {
+  observeReveals()
+  mutationObserver.observe(document.body, { childList: true, subtree: true })
+})
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
