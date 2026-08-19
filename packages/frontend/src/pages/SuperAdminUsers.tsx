@@ -215,10 +215,6 @@ export function SuperAdminUsers() {
           <p className="text-slate-500 dark:text-slate-400 mt-1">{filtered.length} users across all organizations</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 shadow-lg shadow-sky-500/20 transition-all">
-            <Plus size={16} /> Add Agent
-          </button>
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1">
             <button onClick={() => setView('cards')} className={`p-2 rounded-lg transition-all ${view === 'cards' ? 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`} title="Card view">
               <LayoutGrid size={18} />

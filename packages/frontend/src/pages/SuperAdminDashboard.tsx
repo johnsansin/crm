@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
-import { TrendingUp, Activity, ArrowRight, Mail, Phone, UserPlus, ChevronRight, Shield } from 'lucide-react'
+import { TrendingUp, Activity, ArrowRight, Mail, Phone, UserPlus, ChevronRight, Shield, CheckCircle, XCircle, Users, Building2 } from 'lucide-react'
 import { formatDate } from '@/lib/org-format'
 
 function Building3D({ className }: { className?: string }) {
@@ -297,10 +297,3 @@ export function SuperAdminDashboard() {
   )
 }
 
-function Shield(props: any) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
-  )
-}

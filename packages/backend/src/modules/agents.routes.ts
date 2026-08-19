@@ -3,6 +3,14 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import bcrypt from 'bcryptjs'
 
+const agentSelect = {
+  id: true, userName: true, email: true, firstName: true, lastName: true,
+  phone: true, mobile: true, title: true, department: true,
+  isActive: true, isAgent: true, lastLogin: true, lastActiveAt: true,
+  createdAt: true, companyId: true, avatar: true,
+  company: { select: { id: true, name: true } },
+} as const
+
 export const agentsRouter = Router()
 
 agentsRouter.use(authMiddleware)
@@ -20,13 +28,7 @@ agentsRouter.get('/', async (_req, res, next) => {
   try {
     const users = await prisma.user.findMany({
       where: { isAgent: true },
-      select: {
-        id: true, userName: true, email: true, firstName: true, lastName: true,
-        phone: true, mobile: true, title: true, department: true,
-        isActive: true, isAgent: true, lastLogin: true, lastActiveAt: true,
-        createdAt: true, companyId: true,
-        company: { select: { id: true, name: true } },
-      },
+      select: agentSelect,
       orderBy: { createdAt: 'desc' },
     })
     res.json({ data: users })
@@ -35,7 +37,7 @@ agentsRouter.get('/', async (_req, res, next) => {
 
 agentsRouter.post('/', async (req, res, next) => {
   try {
-    const { userName, email, firstName, lastName, password, phone, department, title, companyId } = req.body
+    const { userName, email, firstName, lastName, password, phone, department, title, companyId, avatar } = req.body
     if (!userName || !email || !firstName || !lastName || !password) {
       return res.status(400).json({ error: 'userName, email, firstName, lastName, password are required' })
     }
@@ -55,13 +57,9 @@ agentsRouter.post('/', async (req, res, next) => {
         department: department || null,
         title: title || null,
         companyId: companyId || null,
+        avatar: avatar || null,
       },
-      select: {
-        id: true, userName: true, email: true, firstName: true, lastName: true,
-        phone: true, title: true, department: true, isActive: true, isAgent: true,
-        createdAt: true, companyId: true,
-        company: { select: { id: true, name: true } },
-      },
+      select: agentSelect,
     })
     res.status(201).json(user)
   } catch (err) { next(err) }
@@ -69,7 +67,7 @@ agentsRouter.post('/', async (req, res, next) => {
 
 agentsRouter.put('/:id', async (req, res, next) => {
   try {
-    const { firstName, lastName, email, phone, department, title, isActive, companyId } = req.body
+    const { firstName, lastName, email, phone, department, title, isActive, companyId, avatar } = req.body
     const agent = await prisma.user.findUnique({ where: { id: req.params.id } })
     if (!agent || !agent.isAgent) return res.status(404).json({ error: 'Agent not found' })
     if (email && email !== agent.email) {
@@ -87,13 +85,22 @@ agentsRouter.put('/:id', async (req, res, next) => {
         ...(title !== undefined && { title }),
         ...(isActive !== undefined && { isActive }),
         ...(companyId !== undefined && { companyId: companyId || null }),
+        ...(avatar !== undefined && { avatar: avatar || null }),
       },
-      select: {
-        id: true, userName: true, email: true, firstName: true, lastName: true,
-        phone: true, title: true, department: true, isActive: true, isAgent: true,
-        createdAt: true, companyId: true,
-        company: { select: { id: true, name: true } },
-      },
+      select: agentSelect,
+    })
+    res.json(updated)
+  } catch (err) { next(err) }
+})
+
+agentsRouter.put('/:id/toggle', async (req, res, next) => {
+  try {
+    const agent = await prisma.user.findUnique({ where: { id: req.params.id } })
+    if (!agent || !agent.isAgent) return res.status(404).json({ error: 'Agent not found' })
+    const updated = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { isActive: !agent.isActive },
+      select: agentSelect,
     })
     res.json(updated)
   } catch (err) { next(err) }

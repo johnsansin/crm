@@ -201,6 +201,7 @@ export const api = {
   createAgent: (data: any) => request<any>('/agents', { method: 'POST', body: JSON.stringify(data) }),
   updateAgent: (id: string, data: any) => request<any>(`/agents/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteAgent: (id: string) => request<any>(`/agents/${id}`, { method: 'DELETE' }),
+  toggleAgent: (id: string) => request<any>(`/agents/${id}/toggle`, { method: 'PUT' }),
   adminLoginHistory: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : ''
     return request<{ data: any[]; pagination: any }>(`/admin/login-history${qs}`)
