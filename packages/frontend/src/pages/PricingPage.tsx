@@ -65,7 +65,7 @@ export function PricingPage() {
         <div className="absolute -bottom-32 -right-24 w-[28rem] h-[28rem] rounded-full bg-gradient-to-tl from-indigo-400/40 to-violet-300/40 blur-3xl pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto reveal reveal-up">
+          <div className="text-center max-w-2xl mx-auto">
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">Simple, transparent pricing</h1>
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">
               Start free and upgrade as you grow. No hidden fees, cancel anytime.

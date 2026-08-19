@@ -47,7 +47,7 @@ export function ContactUsPage() {
 
   return (
     <SiteLayout>
-      <section className="relative py-24 sm:py-32 overflow-hidden">
+      <section className="relative pt-24 sm:pt-28 pb-16 sm:pb-24 overflow-hidden">
         {/* Decorative glossy blobs */}
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-gradient-to-br from-sky-300/50 to-blue-400/40 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -right-24 w-[28rem] h-[28rem] rounded-full bg-gradient-to-tl from-indigo-400/40 to-violet-300/40 blur-3xl pointer-events-none" />
@@ -72,9 +72,9 @@ export function ContactUsPage() {
 
           {/* Body */}
           <div className="p-6 md:p-8">
-            <div className="grid md:grid-cols-3 gap-3 mb-8 stagger">
+            <div className="grid md:grid-cols-3 gap-3 mb-8">
               {infoItems.map(item => (
-                <div key={item.label} className="reveal reveal-up flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 hover:shadow-md hover:border-sky-300 dark:hover:border-sky-700 transition-all duration-200">
+                <div key={item.label} className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 hover:shadow-md hover:border-sky-300 dark:hover:border-sky-700 transition-all duration-200">
                   <div className="relative w-9 h-9 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 flex items-center justify-center">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent" />
                     <item.icon size={16} className="relative text-white" />
