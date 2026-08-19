@@ -9,7 +9,8 @@ import { useEffect } from 'react'
 import { SiteLayout } from '@/components/SiteLayout'
 
 const features = [
-  { icon: Building2, title: 'Account Management', description: 'Manage all your customer accounts with detailed profiles, activity logs, and relationship mapping.' },
+  { icon: Sparkles, title: 'AI Assistant', description: 'Get smart suggestions, automate data entry, and generate insights powered by artificial intelligence.' },
+  { icon: LayoutDashboard, title: 'Customized Dashboard', description: 'Build your own dashboard with drag-and-drop widgets, KPIs, and real-time data visualizations.' },
   { icon: TrendingUp, title: 'Sales Pipeline', description: 'Track deals from lead to close with visual pipeline management and revenue forecasting.' },
   { icon: Shield, title: 'Access Control', description: 'Role-based permissions ensure your data stays secure and accessible to the right people.' },
   { icon: Users, title: 'Team Collaboration', description: 'Share notes, assign tasks, and collaborate seamlessly across your organization.' },
@@ -20,7 +21,6 @@ const features = [
   { icon: Calendar, title: 'Calendar & Events', description: 'Schedule meetings, set reminders, and manage your team calendar in one place.' },
   { icon: Phone, title: 'SMS & Calls', description: 'Send SMS notifications and log call activities directly from the CRM.' },
   { icon: FileText, title: 'Documents & Quotes', description: 'Generate quotes, invoices, and purchase orders with professional templates.' },
-  { icon: Globe, title: 'Multi-Organization', description: 'Manage multiple organizations with isolated data and centralized superadmin control.' },
 ]
 
 const steps = [
