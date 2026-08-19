@@ -547,10 +547,57 @@ export function ModuleDetailPage() {
               </p>
             </DialogHeader>
             <div className="space-y-4 py-2">
-              <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 p-3 text-sm">
-                <p className="font-medium text-emerald-800 dark:text-emerald-200">Opportunity: {record?.potentialName}</p>
-                {record?.amount != null && (
-                  <p className="text-emerald-600 dark:text-emerald-400 mt-1">Amount: ${Number(record.amount).toLocaleString()}</p>
+              <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 p-4 space-y-2">
+                <p className="font-semibold text-emerald-800 dark:text-emerald-200 text-base">{record?.potentialName}</p>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {record?.amount != null && (
+                    <div>
+                      <p className="text-muted-foreground text-xs">Amount</p>
+                      <p className="font-medium text-emerald-700 dark:text-emerald-300">${Number(record.amount).toLocaleString()}</p>
+                    </div>
+                  )}
+                  {record?.stage && (
+                    <div>
+                      <p className="text-muted-foreground text-xs">Stage</p>
+                      <p className="font-medium">{record.stage}</p>
+                    </div>
+                  )}
+                  {record?.closingDate && (
+                    <div>
+                      <p className="text-muted-foreground text-xs">Closing Date</p>
+                      <p className="font-medium">{new Date(record.closingDate).toLocaleDateString()}</p>
+                    </div>
+                  )}
+                  {record?.probability != null && (
+                    <div>
+                      <p className="text-muted-foreground text-xs">Probability</p>
+                      <p className="font-medium">{record.probability}%</p>
+                    </div>
+                  )}
+                  {record?.type && (
+                    <div>
+                      <p className="text-muted-foreground text-xs">Type</p>
+                      <p className="font-medium">{record.type}</p>
+                    </div>
+                  )}
+                  {record?.leadSource && (
+                    <div>
+                      <p className="text-muted-foreground text-xs">Lead Source</p>
+                      <p className="font-medium">{record.leadSource}</p>
+                    </div>
+                  )}
+                </div>
+                {record?.customFields?.email && (
+                  <div className="text-sm">
+                    <p className="text-muted-foreground text-xs">Email</p>
+                    <p className="font-medium">{record.customFields.email}</p>
+                  </div>
+                )}
+                {record?.customFields?.phone && (
+                  <div className="text-sm">
+                    <p className="text-muted-foreground text-xs">Phone</p>
+                    <p className="font-medium">{record.customFields.phone}</p>
+                  </div>
                 )}
               </div>
               <p className="text-sm text-muted-foreground">Create the following records?</p>
@@ -563,7 +610,7 @@ export function ModuleDetailPage() {
                 />
                 <div>
                   <p className="text-sm font-medium">Create Account</p>
-                  <p className="text-xs text-muted-foreground">Create an account from this opportunity</p>
+                  <p className="text-xs text-muted-foreground">Create an account as "{record?.potentialName}"</p>
                 </div>
               </label>
               <label className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors">
@@ -575,7 +622,7 @@ export function ModuleDetailPage() {
                 />
                 <div>
                   <p className="text-sm font-medium">Create Contact</p>
-                  <p className="text-xs text-muted-foreground">Create a contact from this opportunity</p>
+                  <p className="text-xs text-muted-foreground">Create a contact linked to the new account</p>
                 </div>
               </label>
             </div>

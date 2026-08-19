@@ -477,7 +477,6 @@ export function entityRouter(moduleName: string): Router {
       res.json({ data: merged })
     } catch (err) { next(err) }
   })
-
   router.post('/:id/close-as-won', async (req, res, next) => {
     try {
       if (moduleName !== 'potential') return res.status(404).json({ error: 'Not found' })
@@ -488,6 +487,9 @@ export function entityRouter(moduleName: string): Router {
       const potential = await prismaModel.findFirst({ where })
       if (!potential) return res.status(404).json({ error: 'Opportunity not found' })
 
+      const merged = await mergeCustomValues(moduleName, [potential])
+      const pv = merged[0] || potential
+      const cf = pv.customFields || {}
       const companyId = req.user!.companyId || null
       const { createAccount = true, createContact = true } = req.body || {}
 
@@ -500,17 +502,18 @@ export function entityRouter(moduleName: string): Router {
             data: {
               accountNo: await nextSequenceNumber('Account', companyId),
               accountName: potential.potentialName || 'Untitled',
-              phone: (potential as any).phone || null,
-              website: (potential as any).website || null,
-              email: (potential as any).email || null,
-              industry: (potential as any).industry || null,
+              phone: cf.phone || cf.cPhone || null,
+              website: cf.website || null,
+              email: cf.email || cf.cEmail || null,
+              industry: cf.industry || null,
               annualRevenue: potential.amount,
-              rating: (potential as any).rating || null,
-              billingStreet: (potential as any).street || null,
-              billingCity: (potential as any).city || null,
-              billingState: (potential as any).state || null,
-              billingCountry: (potential as any).country || null,
-              billingPostalCode: (potential as any).postalCode || null,
+              rating: cf.rating || null,
+              employees: cf.employees || cf.noOfEmployees || null,
+              billingStreet: cf.street || cf.billingStreet || null,
+              billingCity: cf.city || cf.billingCity || null,
+              billingState: cf.state || cf.billingState || null,
+              billingCountry: cf.country || cf.billingCountry || null,
+              billingPostalCode: cf.postalCode || cf.billingPostalCode || null,
               description: potential.description || null,
               companyId,
               createdBy: req.user!.userId,
@@ -520,21 +523,23 @@ export function entityRouter(moduleName: string): Router {
         }
 
         if (createContact) {
+          const firstName = cf.contactFirstName || cf.firstName || cf.cFirstName || ''
+          const lastName = cf.contactLastName || cf.lastName || cf.cLastName || potential.potentialName || 'Contact'
           contact = await tx.contact.create({
             data: {
               contactNo: await nextSequenceNumber('Contact', companyId),
-              firstName: (potential as any).contactFirstName || (potential as any).firstName || '',
-              lastName: (potential as any).contactLastName || (potential as any).lastName || potential.potentialName || 'Contact',
-              email: (potential as any).email || (potential as any).contactEmail || null,
-              phone: (potential as any).phone || (potential as any).contactPhone || null,
-              mobile: (potential as any).mobile || null,
-              title: (potential as any).contactTitle || null,
+              firstName,
+              lastName,
+              title: cf.contactTitle || cf.title || null,
+              email: cf.email || cf.contactEmail || cf.cEmail || null,
+              phone: cf.phone || cf.contactPhone || cf.cPhone || null,
+              mobile: cf.mobile || cf.cMobile || null,
               accountId: account ? account.id : potential.accountId || null,
-              mailingStreet: (potential as any).street || null,
-              mailingCity: (potential as any).city || null,
-              mailingState: (potential as any).state || null,
-              mailingCountry: (potential as any).country || null,
-              mailingPostalCode: (potential as any).postalCode || null,
+              mailingStreet: cf.street || cf.mailingStreet || null,
+              mailingCity: cf.city || cf.mailingCity || null,
+              mailingState: cf.state || cf.mailingState || null,
+              mailingCountry: cf.country || cf.mailingCountry || null,
+              mailingPostalCode: cf.postalCode || cf.mailingPostalCode || null,
               description: potential.description || null,
               companyId,
               createdBy: req.user!.userId,
@@ -561,7 +566,8 @@ export function entityRouter(moduleName: string): Router {
       })
 
       await writeAudit({
-        moduleName: 'potentials', recordId: potential.id,         action: 'CONVERT',
+        moduleName: 'potentials', recordId: potential.id,
+        action: 'CONVERT',
         newValue: `Opportunity closed as won. Amount: ${potential.amount != null ? Number(potential.amount).toLocaleString(undefined, { style: 'currency', currency: 'USD' }) : 'N/A'}${result.account ? `. Account: ${result.account.accountName}` : ''}${result.contact ? `. Contact: ${result.contact.firstName} ${result.contact.lastName}` : ''}`,
         userId: req.user!.userId, req,
       }).catch(() => {})
