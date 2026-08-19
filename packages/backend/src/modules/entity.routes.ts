@@ -479,7 +479,7 @@ export function entityRouter(moduleName: string): Router {
   })
   router.post('/:id/close-as-won', async (req, res, next) => {
     try {
-      if (moduleName !== 'potential') return res.status(404).json({ error: 'Not found' })
+      if (moduleName !== 'potentials') return res.status(404).json({ error: 'Not found' })
       if (!(await checkPermission(req, 'edit'))) return res.status(403).json({ error: 'Access denied' })
 
       let where: any = { id: req.params.id, isActive: true }
