@@ -361,8 +361,7 @@ export function LandingPage() {
                 </Button>
                 <Button
                   size="lg"
-                  variant="outline"
-                  className="h-12 px-8 text-base rounded-xl border-white/30 text-white hover:bg-white/10"
+                  className="h-12 px-8 text-base rounded-xl font-semibold bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white border-none shadow-lg shadow-emerald-500/30 transition-all"
                   onClick={() => navigate('/contact')}
                 >
                   Talk to Sales <ArrowRight size={16} className="ml-2" />
