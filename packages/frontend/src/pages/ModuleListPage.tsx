@@ -18,7 +18,7 @@ const kanbanModules = ['potentials', 'tickets', 'projects']
 
 const labelMap: Record<string, string> = {
   accounts: 'Accounts', contacts: 'Contacts', leads: 'Leads',
-  potentials: 'Opportunities', campaigns: 'Campaigns',
+  potentials: 'Opportunities', campaigns: 'Campaigns', competitors: 'Competitors',
   products: 'Products', services: 'Services', vendors: 'Vendors',
   pricebooks: 'Price Books', quotes: 'Quotes',
   salesorders: 'Sales Orders', purchaseorders: 'Purchase Orders',
@@ -37,6 +37,7 @@ const displayFields: Record<string, string[]> = {
   contacts: ['firstName', 'lastName', 'email', 'phone'],
   leads: ['firstName', 'lastName', 'company', 'email', 'leadStatus'],
   potentials: ['potentialName', 'amount', 'currency', 'stage', 'closingDate'],
+  competitors: ['competitorName', 'website', 'marketShare', 'rating', 'products'],
   campaigns: ['campaignName', 'campaignType', 'status', 'startDate'],
   products: ['productName', 'productCategory', 'unitPrice', 'qtyInStock'],
   services: ['serviceName', 'serviceCategory', 'unitPrice'],
