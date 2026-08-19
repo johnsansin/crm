@@ -478,6 +478,105 @@ export function entityRouter(moduleName: string): Router {
     } catch (err) { next(err) }
   })
 
+  router.post('/:id/close-as-won', async (req, res, next) => {
+    try {
+      if (moduleName !== 'potential') return res.status(404).json({ error: 'Not found' })
+      if (!(await checkPermission(req, 'edit'))) return res.status(403).json({ error: 'Access denied' })
+
+      let where: any = { id: req.params.id, isActive: true }
+      if (isScoped) addScope(where, req.user!.companyId)
+      const potential = await prismaModel.findFirst({ where })
+      if (!potential) return res.status(404).json({ error: 'Opportunity not found' })
+
+      const companyId = req.user!.companyId || null
+      const { createAccount = true, createContact = true } = req.body || {}
+
+      const result = await prisma.$transaction(async (tx) => {
+        let account: any = null
+        let contact: any = null
+
+        if (createAccount) {
+          account = await tx.account.create({
+            data: {
+              accountNo: await nextSequenceNumber('Account', companyId),
+              accountName: potential.potentialName || 'Untitled',
+              phone: (potential as any).phone || null,
+              website: (potential as any).website || null,
+              email: (potential as any).email || null,
+              industry: (potential as any).industry || null,
+              annualRevenue: potential.amount,
+              rating: (potential as any).rating || null,
+              billingStreet: (potential as any).street || null,
+              billingCity: (potential as any).city || null,
+              billingState: (potential as any).state || null,
+              billingCountry: (potential as any).country || null,
+              billingPostalCode: (potential as any).postalCode || null,
+              description: potential.description || null,
+              companyId,
+              createdBy: req.user!.userId,
+              assignedTo: potential.assignedTo || req.user!.userId,
+            },
+          })
+        }
+
+        if (createContact) {
+          contact = await tx.contact.create({
+            data: {
+              contactNo: await nextSequenceNumber('Contact', companyId),
+              firstName: (potential as any).contactFirstName || (potential as any).firstName || '',
+              lastName: (potential as any).contactLastName || (potential as any).lastName || potential.potentialName || 'Contact',
+              email: (potential as any).email || (potential as any).contactEmail || null,
+              phone: (potential as any).phone || (potential as any).contactPhone || null,
+              mobile: (potential as any).mobile || null,
+              title: (potential as any).contactTitle || null,
+              accountId: account ? account.id : potential.accountId || null,
+              mailingStreet: (potential as any).street || null,
+              mailingCity: (potential as any).city || null,
+              mailingState: (potential as any).state || null,
+              mailingCountry: (potential as any).country || null,
+              mailingPostalCode: (potential as any).postalCode || null,
+              description: potential.description || null,
+              companyId,
+              createdBy: req.user!.userId,
+              assignedTo: potential.assignedTo || req.user!.userId,
+            },
+          })
+        }
+
+        const updated = await tx.potential.update({
+          where: { id: potential.id },
+          data: {
+            stage: 'Closed Won',
+            probability: 100,
+            accountId: account ? account.id : potential.accountId || null,
+            contactId: contact ? contact.id : potential.contactId || null,
+          },
+        })
+
+        await tx.potentialStageHistory.create({
+          data: { potentialId: potential.id, stage: 'Closed Won', changedBy: req.user!.userId, companyId },
+        }).catch(() => {})
+
+        return { potential: updated, account, contact }
+      })
+
+      await writeAudit({
+        moduleName: 'potentials', recordId: potential.id,         action: 'CONVERT',
+        newValue: `Opportunity closed as won. Amount: ${potential.amount != null ? Number(potential.amount).toLocaleString(undefined, { style: 'currency', currency: 'USD' }) : 'N/A'}${result.account ? `. Account: ${result.account.accountName}` : ''}${result.contact ? `. Contact: ${result.contact.firstName} ${result.contact.lastName}` : ''}`,
+        userId: req.user!.userId, req,
+      }).catch(() => {})
+
+      notifyFollowersAndAssignee({
+        moduleName: 'potentials', recordId: potential.id, assigneeId: potential.assignedTo,
+        title: `Opportunity closed as won: ${potential.potentialName}`,
+        message: `"${potential.potentialName}" has been marked as Closed Won.${result.account ? ` Account "${result.account.accountName}" created.` : ''}${result.contact ? ` Contact "${result.contact.firstName} ${result.contact.lastName}" created.` : ''}`,
+        link: `/potentials/${potential.id}`, companyId, actorId: req.user!.userId,
+      }).catch(() => {})
+
+      res.json(result)
+    } catch (err) { next(err) }
+  })
+
   router.get('/:id', async (req, res, next) => {
     try {
       if (!(await checkPermission(req, 'view'))) return res.status(403).json({ error: 'Access denied' })

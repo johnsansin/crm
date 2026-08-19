@@ -549,6 +549,10 @@ export const api = {
   convertLead: (id: string, data: any) =>
     request<any>(`/leads/${id}/convert`, { method: 'POST', body: JSON.stringify(data) }),
 
+  // ---- Close Opportunity as Won ----
+  closeAsWon: (id: string, data?: { createAccount?: boolean; createContact?: boolean }) =>
+    request<any>(`/potentials/${id}/close-as-won`, { method: 'POST', body: JSON.stringify(data || {}) }),
+
   // ---- Forecast ----
   getForecast: (range?: string) =>
     request<{ data: any }>(`/forecast/opportunities${range ? `?range=${range}` : ''}`),

@@ -156,6 +156,8 @@ export function ModuleDetailPage() {
   const [mergeOpen, setMergeOpen] = useState(false)
   const [aiPrediction, setAiPrediction] = useState<any>(null)
   const [showAiPrediction, setShowAiPrediction] = useState(false)
+  const [closeWonOpen, setCloseWonOpen] = useState(false)
+  const [closeWonModules, setCloseWonModules] = useState({ account: true, contact: true })
 
   const { data: record, isLoading: loadingRecord } = useQuery({
     queryKey: [mod, id],
@@ -365,6 +367,19 @@ export function ModuleDetailPage() {
     onError: (err: Error) => addToast({ title: 'Error', description: err.message, variant: 'destructive' }),
   })
 
+  const closeWonMutation = useMutation({
+    mutationFn: () => api.closeAsWon(id!, closeWonModules),
+    onSuccess: (data) => {
+      setCloseWonOpen(false)
+      queryClient.invalidateQueries({ queryKey: [mod, id] })
+      const parts = ['Opportunity closed as Won!']
+      if (data.account) parts.push(`Account "${data.account.accountName}" created`)
+      if (data.contact) parts.push(`Contact "${data.contact.firstName} ${data.contact.lastName}" created`)
+      addToast({ title: 'Closed as Won', description: parts.join('. '), variant: 'success' })
+    },
+    onError: (err: Error) => addToast({ title: 'Error', description: err.message, variant: 'destructive' }),
+  })
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const config = fieldConfigs[mod] || []
@@ -453,15 +468,26 @@ export function ModuleDetailPage() {
                 <Pencil size={16} className="mr-2" /> <span className="hidden sm:inline">{t('Edit')}</span>
               </Button>
               {mod === 'potentials' && (
-                <Button
-                  variant="outline"
-                  onClick={() => aiPredictionMutation.mutate()}
-                  disabled={aiPredictionMutation.isPending}
-                  className="bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 border-violet-200 dark:border-violet-800"
-                >
-                  {aiPredictionMutation.isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Sparkles size={16} className="mr-2 text-violet-500" />}
-                  <span className="hidden sm:inline">AI Predict</span>
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => aiPredictionMutation.mutate()}
+                    disabled={aiPredictionMutation.isPending}
+                    className="bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 border-violet-200 dark:border-violet-800"
+                  >
+                    {aiPredictionMutation.isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Sparkles size={16} className="mr-2 text-violet-500" />}
+                    <span className="hidden sm:inline">AI Predict</span>
+                  </Button>
+                  {record?.stage !== 'Closed Won' && record?.stage !== 'Closed Lost' && (
+                    <Button
+                      onClick={() => setCloseWonOpen(true)}
+                      className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-none shadow-lg shadow-emerald-500/20"
+                    >
+                      <CheckCircle2 size={16} className="mr-2" />
+                      <span className="hidden sm:inline">Close as Won</span>
+                    </Button>
+                  )}
+                </>
               )}
               {MERGEABLE_MODULES.includes(mod) && (
                 <Button variant="outline" onClick={() => setMergeOpen(true)}>
@@ -510,6 +536,62 @@ export function ModuleDetailPage() {
             </div>
           </div>
         )}
+        <Dialog open={closeWonOpen} onOpenChange={setCloseWonOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle2 size={18} className="text-emerald-500" /> Close as Won
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Mark this opportunity as Closed Won and optionally create Account & Contact records from its data.
+              </p>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 p-3 text-sm">
+                <p className="font-medium text-emerald-800 dark:text-emerald-200">Opportunity: {record?.potentialName}</p>
+                {record?.amount != null && (
+                  <p className="text-emerald-600 dark:text-emerald-400 mt-1">Amount: ${Number(record.amount).toLocaleString()}</p>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">Create the following records?</p>
+              <label className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={closeWonModules.account}
+                  onChange={e => setCloseWonModules(m => ({ ...m, account: e.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <div>
+                  <p className="text-sm font-medium">Create Account</p>
+                  <p className="text-xs text-muted-foreground">Create an account from this opportunity</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={closeWonModules.contact}
+                  onChange={e => setCloseWonModules(m => ({ ...m, contact: e.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <div>
+                  <p className="text-sm font-medium">Create Contact</p>
+                  <p className="text-xs text-muted-foreground">Create a contact from this opportunity</p>
+                </div>
+              </label>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setCloseWonOpen(false)}>Cancel</Button>
+              <Button
+                onClick={() => closeWonMutation.mutate()}
+                disabled={closeWonMutation.isPending || (!closeWonModules.account && !closeWonModules.contact)}
+                className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-none"
+              >
+                {closeWonMutation.isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <CheckCircle2 size={16} className="mr-2" />}
+                Close as Won
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
         <Card>
           <CardContent className="p-0">
             <TabsRoot value={activeTab} onValueChange={setActiveTab}>
