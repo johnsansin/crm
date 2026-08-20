@@ -107,6 +107,21 @@ invoicesRouter.get('/', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+invoicesRouter.get('/all', async (req, res, next) => {
+  try {
+    const { search } = req.query
+    let where: any = { isActive: true, companyId: req.user!.companyId }
+    if (search) {
+      where.OR = [
+        { invoiceNo: { contains: search as string, mode: 'insensitive' } },
+        { subject: { contains: search as string, mode: 'insensitive' } },
+      ]
+    }
+    const data = await prisma.invoice.findMany({ where, include, orderBy: { createdAt: 'desc' } })
+    res.json({ data })
+  } catch (err) { next(err) }
+})
+
 invoicesRouter.get('/users', async (req, res, next) => {
   try {
     if (!req.user!.companyId) return res.json({ data: [] })
