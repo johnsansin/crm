@@ -8,6 +8,36 @@ import { writeAudit, writeAuditFields, auditSummary } from '../lib/audit'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { notifyFollowersAndAssignee } from '../lib/notify'
 
+async function syncInvoiceBalance(invoiceId: string, companyId: string) {
+  try {
+    const inv = await prisma.invoice.findFirst({ where: { id: invoiceId, companyId } })
+    if (!inv) return
+    const receipts = await prisma.receipt.findMany({ where: { invoiceId, isActive: true } })
+    const totalPaid = receipts.reduce((s, r) => s + Number(r.amount || 0), 0)
+    let invoiceStatus = inv.invoiceStatus
+    const grandTotal = Number(inv.grandTotal || 0)
+    if (totalPaid >= grandTotal - 0.005) invoiceStatus = 'Paid'
+    else if (totalPaid > 0) invoiceStatus = 'Partially Paid'
+    else invoiceStatus = inv.invoiceStatus === 'Paid' || inv.invoiceStatus === 'Partially Paid' ? 'Sent' : inv.invoiceStatus
+    await prisma.invoice.update({ where: { id: invoiceId }, data: { paidAmount: Number(totalPaid.toFixed(2)), invoiceStatus } })
+  } catch {}
+}
+
+async function syncPOBalance(poId: string, companyId: string) {
+  try {
+    const po = await prisma.purchaseOrder.findFirst({ where: { id: poId, companyId } })
+    if (!po) return
+    const payments = await prisma.payment.findMany({ where: { purchaseOrderId: poId, isActive: true } })
+    const totalPaid = payments.reduce((s, p) => s + Number(p.amount || 0), 0)
+    let poStatus = po.poStatus
+    const grandTotal = Number(po.grandTotal || 0)
+    if (totalPaid >= grandTotal - 0.005) poStatus = 'Paid'
+    else if (totalPaid > 0) poStatus = 'Partially Paid'
+    else poStatus = po.poStatus === 'Paid' || po.poStatus === 'Partially Paid' ? 'Approved' : po.poStatus
+    await prisma.purchaseOrder.update({ where: { id: poId }, data: { paidAmount: Number(totalPaid.toFixed(2)), poStatus } })
+  } catch {}
+}
+
 const moduleActiveCache = new Map<string, { active: boolean; at: number }>()
 async function isModuleActive(moduleName: string): Promise<boolean | null> {
   const cached = moduleActiveCache.get(moduleName)
@@ -674,6 +704,8 @@ export function entityRouter(moduleName: string): Router {
       }
       await writeAudit({ moduleName, recordId: record.id, action: 'CREATE', newValue: auditSummary(record), userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onCreate', record, req })
+      if (modelName === 'receipt' && record.invoiceId) syncInvoiceBalance(record.invoiceId, req.user!.companyId!)
+      if (modelName === 'payment' && record.purchaseOrderId) syncPOBalance(record.purchaseOrderId, req.user!.companyId!)
       if (modelName === 'lead') {
         const label = `${record.firstName || ''} ${record.lastName || ''}`.trim() || record.company || record.id
         notifyFollowersAndAssignee({
@@ -765,6 +797,8 @@ export function entityRouter(moduleName: string): Router {
       }
       await writeAuditFields({ moduleName, recordId: record.id, before, after: { ...before, ...data }, userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onUpdate', record, prevRecord: before, req })
+      if (modelName === 'receipt' && record.invoiceId) syncInvoiceBalance(record.invoiceId, req.user!.companyId!)
+      if (modelName === 'payment' && record.purchaseOrderId) syncPOBalance(record.purchaseOrderId, req.user!.companyId!)
       if (modelName === 'lead') {
         const changedFields = Object.keys(data).filter(k => JSON.stringify((before as any)[k]) !== JSON.stringify((record as any)[k]))
         if (changedFields.length) {
@@ -797,6 +831,8 @@ export function entityRouter(moduleName: string): Router {
       await prismaModel.update({ where, data: TRASH_BY_IS_DELETED.has(modelName) ? { isDeleted: true } : { isActive: false } })
       await writeAudit({ moduleName, recordId: before.id, action: 'DELETE', oldValue: auditSummary(before), userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onDelete', record: before, req })
+      if (modelName === 'receipt' && before.invoiceId) syncInvoiceBalance(before.invoiceId, req.user!.companyId!)
+      if (modelName === 'payment' && before.purchaseOrderId) syncPOBalance(before.purchaseOrderId, req.user!.companyId!)
       res.json({ success: true })
     } catch (err) { next(err) }
   })
