@@ -226,13 +226,11 @@ export function ModuleDetailPage() {
   })
   const products = productsData?.data || []
 
-  const needsInvoices = mod === 'payments'
   const { data: invoicesData } = useQuery({
     queryKey: ['module-invoices', mod],
     queryFn: () => api.listAll('invoices'),
-    enabled: needsInvoices,
+    enabled: mod === 'payments',
   })
-  const allInvoices = invoicesData?.data || []
 
   const needsCurrencies = (fieldConfigs[mod] || []).some((f: any) => f.type === 'currency-select')
   const { data: currenciesData } = useQuery({
@@ -1007,19 +1005,19 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                       )}
                     </div>
                   ) : field.type === 'invoice-select' ? (
-                    <div>
+                     <div>
                       <SearchSelect
                         value={formData[field.name] || ''}
-                        options={allInvoices.map((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})`)}
+                        options={(invoicesData?.data || []).map((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})`)}
                         onSelect={(v: string) => {
-                          const match = allInvoices.find((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})` === v)
+                          const match = (invoicesData?.data || []).find((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})` === v)
                           if (match) handleChange(field.name, match.id)
                         }}
                       />
                       {formData[field.name] && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {(() => {
-                            const inv = allInvoices.find((i: any) => i.id === formData[field.name])
+                            const inv = (invoicesData?.data || []).find((i: any) => i.id === formData[field.name])
                             return inv ? `Balance: $${Number(inv.grandTotal || 0).toLocaleString()} — ${inv.invoiceStatus || 'Unknown'}` : 'Invoice selected'
                           })()}
                         </p>
