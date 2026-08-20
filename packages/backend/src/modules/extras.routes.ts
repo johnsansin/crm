@@ -1027,7 +1027,7 @@ extrasRouter.delete('/quantity-discounts/:id', authMiddleware, requireTenant, as
 // =====================================================================
 // Project Resources
 // =====================================================================
-extrasRouter.get('/projects/:id/resources', authMiddleware, requireTenant, async (req: any, res, next) => {
+extrasRouter.get('/projects/:id/resources', authMiddleware, requireTenant, requireModulePermission('projects', 'view'), requireModulePermission('projectresources', 'view'), async (req: any, res, next) => {
   try {
     const where: any = { projectId: req.params.id, isActive: true }
     if (req.user!.companyId) where.companyId = req.user!.companyId
@@ -1036,10 +1036,18 @@ extrasRouter.get('/projects/:id/resources', authMiddleware, requireTenant, async
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/projects/:id/resources', authMiddleware, requireTenant, async (req: any, res, next) => {
+extrasRouter.post('/projects/:id/resources', authMiddleware, requireTenant, requireModulePermission('projects', 'edit'), requireModulePermission('projectresources', 'create'), async (req: any, res, next) => {
   try {
     const { userId, role, allocationPercent, hourlyRate, startDate, endDate } = req.body
     if (!userId) return res.status(400).json({ error: 'userId is required' })
+    const [project, user] = await Promise.all([
+      prisma.project.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId, isActive: true }, select: { id: true } }),
+      prisma.user.findFirst({ where: { id: userId, companyId: req.user!.companyId, isActive: true }, select: { id: true } }),
+    ])
+    if (!project) return res.status(404).json({ error: 'Project not found in this organization' })
+    if (!user) return res.status(404).json({ error: 'User not found in this organization' })
+    if (allocationPercent != null && (Number(allocationPercent) < 1 || Number(allocationPercent) > 100)) return res.status(400).json({ error: 'Allocation must be between 1 and 100 percent' })
+    if (startDate && endDate && new Date(endDate) < new Date(startDate)) return res.status(400).json({ error: 'Resource end date cannot be before start date' })
     const record = await prisma.projectResource.upsert({
       where: { projectId_userId: { projectId: req.params.id, userId } },
       update: {
@@ -1061,15 +1069,17 @@ extrasRouter.post('/projects/:id/resources', authMiddleware, requireTenant, asyn
         companyId: req.user!.companyId,
       },
     })
+    await prisma.project.update({ where: { id: req.params.id }, data: { resourceCount: await prisma.projectResource.count({ where: { projectId: req.params.id, isActive: true } }) } })
     res.status(201).json({ data: record })
   } catch (err) { next(err) }
 })
 
-extrasRouter.delete('/projects/:projectId/resources/:id', authMiddleware, requireTenant, async (req: any, res, next) => {
+extrasRouter.delete('/projects/:projectId/resources/:id', authMiddleware, requireTenant, requireModulePermission('projects', 'edit'), requireModulePermission('projectresources', 'delete'), async (req: any, res, next) => {
   try {
-    const where: any = { id: req.params.id }
+    const where: any = { id: req.params.id, projectId: req.params.projectId }
     if (req.user!.companyId) where.companyId = req.user!.companyId
     await prisma.projectResource.updateMany({ where, data: { isActive: false } })
+    await prisma.project.updateMany({ where: { id: req.params.projectId, companyId: req.user!.companyId }, data: { resourceCount: await prisma.projectResource.count({ where: { projectId: req.params.projectId, isActive: true } }) } })
     res.json({ success: true })
   } catch (err) { next(err) }
 })

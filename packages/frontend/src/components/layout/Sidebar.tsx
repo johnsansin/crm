@@ -81,6 +81,7 @@ const fallbackGroups = [
       { module: 'projects', label: 'Projects', icon: 'FolderKanban' },
       { module: 'projecttasks', label: 'Project Tasks', icon: 'CheckSquare' },
       { module: 'projectmilestones', label: 'Project Milestones', icon: 'Flag' },
+      { module: 'timeentries', label: 'Time Entries', icon: 'Clock' },
     ]
   },
   {

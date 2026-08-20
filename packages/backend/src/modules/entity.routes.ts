@@ -323,7 +323,50 @@ function buildInclude(moduleName: string): Record<string, any> {
   if (moduleName === 'purchaseorders') {
     return { lineItems: { orderBy: { sequence: 'asc' as const } } }
   }
+  if (moduleName === 'projects') {
+    return { resources: { where: { isActive: true }, orderBy: { createdAt: 'asc' as const } } }
+  }
   return {}
+}
+
+async function validateProjectLinks(modelName: string, data: any, companyId: string) {
+  if (['projectTask', 'projectMilestone', 'timeEntry', 'projectResource'].includes(modelName) && data.projectId) {
+    const project = await prisma.project.findFirst({ where: { id: data.projectId, companyId, isActive: true }, select: { id: true } })
+    if (!project) throw Object.assign(new Error('Project not found in this organization'), { status: 404 })
+  }
+  if (modelName === 'timeEntry' && data.taskId) {
+    const task = await prisma.projectTask.findFirst({ where: { id: data.taskId, projectId: data.projectId, companyId, isActive: true }, select: { id: true } })
+    if (!task) throw Object.assign(new Error('Task does not belong to this project'), { status: 400 })
+  }
+  if (modelName === 'projectTask' && data.milestoneId) {
+    const milestone = await prisma.projectMilestone.findFirst({ where: { id: data.milestoneId, projectId: data.projectId, companyId, isActive: true }, select: { id: true } })
+    if (!milestone) throw Object.assign(new Error('Milestone does not belong to this project'), { status: 400 })
+  }
+  if (['timeEntry', 'projectResource'].includes(modelName) && data.userId) {
+    const user = await prisma.user.findFirst({ where: { id: data.userId, companyId, isActive: true }, select: { id: true } })
+    if (!user) throw Object.assign(new Error('User not found in this organization'), { status: 404 })
+  }
+  if (data.progress != null && (Number(data.progress) < 0 || Number(data.progress) > 100)) throw Object.assign(new Error('Progress must be between 0 and 100'), { status: 400 })
+  if (data.startDate && data.endDate && new Date(data.endDate) < new Date(data.startDate)) throw Object.assign(new Error('End date cannot be before start date'), { status: 400 })
+}
+
+async function syncProjectSummary(projectId?: string | null) {
+  if (!projectId) return
+  const [project, tasks, milestones, time, resources] = await Promise.all([
+    prisma.project.findUnique({ where: { id: projectId } }),
+    prisma.projectTask.findMany({ where: { projectId, isActive: true }, select: { progress: true, status: true, loggedHours: true } }),
+    prisma.projectMilestone.findMany({ where: { projectId, isActive: true }, select: { progress: true, status: true } }),
+    prisma.timeEntry.aggregate({ where: { projectId, isActive: true }, _sum: { hours: true } }),
+    prisma.projectResource.count({ where: { projectId, isActive: true } }),
+  ])
+  if (!project) return
+  const work = tasks.length ? tasks : milestones
+  const progress = work.length ? Math.round(work.reduce((sum, item) => sum + Number(item.progress || (item.status === 'Completed' ? 100 : 0)), 0) / work.length) : Number(project.progress || 0)
+  const actualHours = Number(time._sum.hours || tasks.reduce((sum, task) => sum + Number(task.loggedHours || 0), 0))
+  const estimated = Number(project.estimatedHours || 0)
+  const overdue = !!project.endDate && project.endDate < new Date() && progress < 100
+  const healthStatus = overdue || (estimated > 0 && actualHours > estimated * 1.2) ? 'Off Track' : estimated > 0 && actualHours > estimated ? 'At Risk' : 'On Track'
+  await prisma.project.update({ where: { id: projectId }, data: { progress, actualHours, resourceCount: resources, healthStatus } })
 }
 
 async function replacePotentialProducts(potentialId: string, products: any[], companyId?: string | null) {
@@ -667,6 +710,11 @@ export function entityRouter(moduleName: string): Router {
         data.createdBy = req.user!.userId
         if (!NO_ASSIGNED_TO.has(modelName)) data.assignedTo = req.body.assignedTo || req.user!.userId
       }
+      if (modelName === 'timeEntry') {
+        if (!req.user!.isAdmin && !req.user!.isSuperAdmin) data.userId = req.user!.userId
+        data.approved = false
+        data.approvedBy = null
+      }
       if (modelName === 'product' && !data.productNo) {
         data.productNo = await nextSequenceNumber('Product', req.user!.companyId)
       }
@@ -682,6 +730,9 @@ export function entityRouter(moduleName: string): Router {
       }
       fixBooleans(data)
       fixDecimals(data)
+      await validateProjectLinks(modelName, data, req.user!.companyId!)
+      if (modelName === 'projectTask' && data.status === 'Completed') { data.progress = 100; data.completedAt = data.completedAt || new Date() }
+      if (modelName === 'projectMilestone' && data.status === 'Completed') data.progress = 100
       delete data.products
       delete data.stageHistory
       delete data.images
@@ -695,6 +746,7 @@ export function entityRouter(moduleName: string): Router {
         await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
       }
       const record = await prismaModel.create({ data })
+      if (['projectTask', 'projectMilestone', 'timeEntry', 'projectResource'].includes(modelName)) await syncProjectSummary(record.projectId)
       if (custom) await saveCustomData(moduleName, record.id, custom)
       if (modelName === 'product' && Array.isArray(req.body.images)) {
         await replaceProductImages(record.id, req.body.images)
@@ -762,8 +814,15 @@ export function entityRouter(moduleName: string): Router {
         if (data[k] === '') data[k] = null
       }
       if (modelName === 'purchaseOrder' && (data.conversionRate == null || data.conversionRate === '')) data.conversionRate = 1
+      if (modelName === 'timeEntry' && data.approved !== undefined) {
+        if (!req.user!.isAdmin && !req.user!.isSuperAdmin) return res.status(403).json({ error: 'Administrator approval is required for time entries' })
+        data.approvedBy = data.approved ? req.user!.userId : null
+      }
       fixBooleans(data)
       fixDecimals(data)
+      await validateProjectLinks(modelName, { ...before, ...data }, req.user!.companyId!)
+      if (modelName === 'projectTask' && data.status === 'Completed') { data.progress = 100; data.completedAt = data.completedAt || new Date() }
+      if (modelName === 'projectMilestone' && data.status === 'Completed') data.progress = 100
       delete data.products
       delete data.stageHistory
       delete data.images
@@ -777,6 +836,7 @@ export function entityRouter(moduleName: string): Router {
         await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
       }
       const record = await prismaModel.update({ where, data })
+      if (['projectTask', 'projectMilestone', 'timeEntry', 'projectResource'].includes(modelName)) await syncProjectSummary(record.projectId || before.projectId)
       if (custom) await saveCustomData(moduleName, record.id, custom)
       if (modelName === 'product' && Array.isArray(req.body.images)) {
         await replaceProductImages(record.id, req.body.images)
@@ -841,6 +901,7 @@ export function entityRouter(moduleName: string): Router {
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onDelete', record: before, req })
       if (modelName === 'receipt' && before.invoiceId) syncInvoiceBalance(before.invoiceId, req.user!.companyId!)
       if (modelName === 'payment' && before.purchaseOrderId) syncPOBalance(before.purchaseOrderId, req.user!.companyId!)
+      if (['projectTask', 'projectMilestone', 'timeEntry', 'projectResource'].includes(modelName)) await syncProjectSummary(before.projectId)
       res.json({ success: true })
     } catch (err) { next(err) }
   })

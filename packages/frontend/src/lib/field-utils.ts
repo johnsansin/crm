@@ -224,16 +224,24 @@ const moduleTabs: Record<string, FieldTab[]> = {
   projects: [
     { label: 'Information', fields: ['projectName', 'projectNo', 'projectType', 'status', 'priority', 'progress', 'accountId', 'contactId', 'url', 'assignedTo'] },
     { label: 'Schedule', fields: ['startDate', 'endDate', 'actualEndDate'] },
-    { label: 'Financial', fields: ['targetBudget', 'actualBudget'] },
+    { label: 'Financial', fields: ['targetBudget', 'actualBudget', 'budgetType', 'billingRate'] },
+    { label: 'Delivery', fields: ['estimatedHours', 'actualHours', 'healthStatus', 'department'] },
     { label: 'Description', fields: ['description'] },
   ],
   projecttasks: [
-    { label: 'Information', fields: ['projectId', 'projectTaskNo', 'title', 'status', 'priority', 'projectTaskType', 'progress', 'hours', 'assignedTo', 'startDate', 'endDate'] },
+    { label: 'Information', fields: ['projectId', 'milestoneId', 'projectTaskNo', 'title', 'status', 'priority', 'projectTaskType', 'progress', 'hours', 'estimatedHours', 'loggedHours', 'blockedBy', 'assignedTo', 'startDate', 'endDate'] },
     { label: 'Description', fields: ['description'] },
   ],
   projectmilestones: [
     { label: 'Information', fields: ['projectId', 'milestoneNo', 'title', 'status', 'progress', 'milestoneDate', 'milestoneType', 'plannedHours', 'actualHours', 'sequence', 'assignedTo', 'startDate', 'endDate'] },
     { label: 'Description', fields: ['description'] },
+  ],
+  timeentries: [
+    { label: 'Time Entry', fields: ['projectId', 'taskId', 'userId', 'date', 'hours', 'billable', 'approved'] },
+    { label: 'Description', fields: ['description'] },
+  ],
+  projectresources: [
+    { label: 'Resource', fields: ['projectId', 'userId', 'role', 'allocationPercent', 'hourlyRate', 'startDate', 'endDate'] },
   ],
   assets: [
     { label: 'Details', fields: ['assetName', 'assetNo', 'serialNo', 'tagNumber', 'productId', 'accountId', 'contactId', 'datesInService', 'dateOutOfService', 'dateSold', 'status', 'shippingMethod', 'shippingTrackingNumber', 'invoiceId'] },

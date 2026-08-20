@@ -1095,7 +1095,7 @@ model EmailTemplate {
 
 model Project {
   id            String   @id @default(uuid())
-  projectNo     String?  @unique @db.VarChar(100)
+  projectNo     String?  @db.VarChar(100)
   projectName   String   @db.VarChar(200)
   projectType   String?  @db.VarChar(100)
   description   String?  @db.Text
@@ -1129,11 +1129,14 @@ model Project {
   tasks      ProjectTask[]
   milestones ProjectMilestone[]
   resources  ProjectResource[]
+
+  @@unique([companyId, projectNo])
+  @@index([companyId])
 }
 
 model ProjectTask {
   id            String   @id @default(uuid())
-  projectTaskNo String?  @unique @db.VarChar(100)
+  projectTaskNo String?  @db.VarChar(100)
   title         String   @db.VarChar(500)
   description   String?  @db.Text
   status        String?  @db.VarChar(100)
@@ -1147,6 +1150,8 @@ model ProjectTask {
   isActive Boolean  @default(true)
   projectId     String
   project       Project  @relation(fields: [projectId], references: [id])
+  milestoneId   String?
+  milestone     ProjectMilestone? @relation(fields: [milestoneId], references: [id])
   assignedTo    String?
   createdBy     String?
   createdAt     DateTime @default(now())
@@ -1157,11 +1162,16 @@ model ProjectTask {
   completedAt    DateTime?
   blockedBy      String?  @db.VarChar(500)
   tags           String?  @db.VarChar(500)
+
+  @@unique([companyId, projectTaskNo])
+  @@index([projectId])
+  @@index([milestoneId])
+  @@index([companyId])
 }
 
 model ProjectMilestone {
   id          String   @id @default(uuid())
-  milestoneNo String?  @unique @db.VarChar(100)
+  milestoneNo String?  @db.VarChar(100)
   title       String   @db.VarChar(500)
   description String?  @db.Text
   status      String?  @db.VarChar(100)
@@ -1177,10 +1187,15 @@ model ProjectMilestone {
   isActive Boolean  @default(true)
   projectId   String
   project     Project  @relation(fields: [projectId], references: [id])
+  tasks       ProjectTask[]
   assignedTo  String?
   createdBy   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, milestoneNo])
+  @@index([projectId])
+  @@index([companyId])
 }
 
 model Asset {

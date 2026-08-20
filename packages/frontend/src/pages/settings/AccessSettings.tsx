@@ -20,6 +20,7 @@ const MODULES = [
   { key: 'invoices', label: 'Invoices' }, { key: 'tickets', label: 'Tickets' }, { key: 'faq', label: 'FAQ' },
   { key: 'documents', label: 'Documents' }, { key: 'emails', label: 'Emails' }, { key: 'emailtemplates', label: 'Email Templates' },
   { key: 'projects', label: 'Projects' }, { key: 'projecttasks', label: 'Project Tasks' }, { key: 'projectmilestones', label: 'Project Milestones' },
+  { key: 'timeentries', label: 'Time Entries' }, { key: 'projectresources', label: 'Project Resources' },
   { key: 'assets', label: 'Assets' }, { key: 'servicecontracts', label: 'Service Contracts' }, { key: 'smsnotifier', label: 'SMS Notifier' },
 ]
 
@@ -319,4 +320,3 @@ function ProfileSettings() {
     </div>
   )
 }
-

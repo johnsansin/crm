@@ -290,6 +290,8 @@ const MODULES = [
   { key: 'projects', label: 'Projects', parent: 'Projects' },
   { key: 'projecttasks', label: 'Project Tasks', parent: 'Projects' },
   { key: 'projectmilestones', label: 'Project Milestones', parent: 'Projects' },
+  { key: 'timeentries', label: 'Time Entries', parent: 'Projects' },
+  { key: 'projectresources', label: 'Project Resources', parent: 'Projects' },
   { key: 'documents', label: 'Documents', parent: 'Tools' },
   { key: 'emails', label: 'Emails', parent: 'Tools' },
   { key: 'emailtemplates', label: 'Email Templates', parent: 'Tools' },

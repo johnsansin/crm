@@ -487,9 +487,9 @@ export async function checkProjectHealth(): Promise<number> {
     const ratio = actual / estimated
     let newStatus: string | null = null
     if (ratio > 1.2) {
-      newStatus = 'At Risk'
+      newStatus = 'Off Track'
     } else if (ratio > 1.0) {
-      newStatus = 'Over Budget'
+      newStatus = 'At Risk'
     }
 
     if (newStatus && project.healthStatus !== newStatus) {
@@ -499,7 +499,7 @@ export async function checkProjectHealth(): Promise<number> {
       }).catch(() => {})
       updated++
 
-      if (project.assignedTo && newStatus === 'At Risk') {
+      if (project.assignedTo && (newStatus === 'At Risk' || newStatus === 'Off Track')) {
         await prisma.notification.create({
           data: {
             userId: project.assignedTo,

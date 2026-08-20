@@ -87,6 +87,8 @@ const SELECT_OPTIONS: Record<string, Record<string, string[]>> = {
     status: ['--None--','Prospecting','Initiated','In Progress','Waiting for Feedback','On Hold','Completed','Delivered','Cancelled'],
     priority: ['--None--','Low','Normal','High','Urgent'],
     projectType: ['--None--','Internal','External','Research & Development','Training','Other'],
+    budgetType: ['Fixed','Hourly','Retainer','Non-billable'],
+    healthStatus: ['On Track','At Risk','Off Track'],
   },
   projecttasks: {
     status: ['--None--','Not Started','In Progress','Completed','Deferred','Waiting for Feedback'],
@@ -247,6 +249,18 @@ export function ModuleDetailPage() {
     enabled: mod === 'projectmilestones' || mod === 'projecttasks',
   })
   const projects = projectsData?.data || []
+  const { data: milestoneOptionsData } = useQuery({
+    queryKey: ['projectmilestones', 'task-options'],
+    queryFn: () => api.listAll('projectmilestones'),
+    enabled: mod === 'projecttasks',
+  })
+  const milestoneOptions = (milestoneOptionsData?.data || []).filter((item: any) => !formData.projectId || item.projectId === formData.projectId)
+  const { data: taskOptionsData } = useQuery({
+    queryKey: ['projecttasks', 'time-options'],
+    queryFn: () => api.listAll('projecttasks'),
+    enabled: mod === 'timeentries',
+  })
+  const taskOptions = (taskOptionsData?.data || []).filter((item: any) => !formData.projectId || item.projectId === formData.projectId)
 
   const { data: relatedTasks } = useQuery({
     queryKey: ['projects', id, 'tasks'],
@@ -260,6 +274,12 @@ export function ModuleDetailPage() {
   })
   const relatedTaskList = relatedTasks?.data || []
   const relatedMilestoneList = relatedMilestones?.data || []
+  const { data: relatedTimeEntries } = useQuery({
+    queryKey: ['projects', id, 'timeentries'],
+    queryFn: () => api.listAll('timeentries', { filter: JSON.stringify({ projectId: id }) }),
+    enabled: mod === 'projects' && !isNew,
+  })
+  const relatedTimeList = relatedTimeEntries?.data || []
 
   const needsUsers = (fieldConfigs[mod] || []).some((f: any) => f.type === 'user-select')
   const { data: usersData } = useQuery({
@@ -380,7 +400,15 @@ export function ModuleDetailPage() {
     if (isNew) {
       const saved = localStorage.getItem(DRAFT_KEY)
       if (saved) {
-        try { setFormData(JSON.parse(saved)); return } catch {}
+        try {
+          const restored = JSON.parse(saved)
+          for (const f of fieldConfigs[mod] || []) {
+            const qv = searchParams.get(f.name)
+            if (qv) restored[f.name] = qv
+          }
+          setFormData(restored)
+          return
+        } catch {}
       }
       const preseed: Record<string, any> = {}
       for (const f of fieldConfigs[mod] || []) {
@@ -743,6 +771,10 @@ export function ModuleDetailPage() {
                           <p className="text-sm mt-1.5 font-medium text-foreground">
                             {field.name === 'projectId'
                               ? (projects.find(p => p.id === record?.projectId)?.projectName || '-')
+                              : field.name === 'milestoneId'
+                                ? (milestoneOptions.find((item: any) => item.id === record?.milestoneId)?.title || '-')
+                              : field.name === 'taskId'
+                                ? (taskOptions.find((item: any) => item.id === record?.taskId)?.title || '-')
                               : field.name === 'accountId'
                                 ? (accounts.find(a => a.id === record?.accountId)?.accountName || '-')
                                 : field.name === 'reportsTo'
@@ -792,7 +824,7 @@ export function ModuleDetailPage() {
         {mod === 'vendors' && !isNew && <VendorExtras record={record} />}
         {mod === 'pricebooks' && !isNew && <PriceBookExtras record={record} />}
         {mod === 'assets' && !isNew && <AssetExtras record={record} />}
-        {mod === 'projects' && !isNew && <ProjectExtras record={record} relatedTaskList={relatedTaskList} relatedMilestoneList={relatedMilestoneList} navigate={navigate} id={id!} />}
+        {mod === 'projects' && !isNew && <ProjectExtras record={record} relatedTaskList={relatedTaskList} relatedMilestoneList={relatedMilestoneList} relatedTimeList={relatedTimeList} users={users} navigate={navigate} id={id!} />}
         {mod === 'quotes' && !isNew && <QuoteExtras record={record} id={id!} />}
         {mod === 'invoices' && !isNew && <InvoiceExtras record={record} />}
         {['accounts', 'contacts', 'campaigns', 'servicecontracts'].includes(mod) && !isNew && <RelatedRecords mod={mod} id={id!} />}
@@ -1160,6 +1192,16 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                         </p>
                       )}
                     </div>
+                  ) : field.type === 'milestone-select' ? (
+                    <select value={formData[field.name] || ''} onChange={e => handleChange(field.name, e.target.value)} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" disabled={!formData.projectId}>
+                      <option value="">{formData.projectId ? 'No milestone' : 'Select a project first'}</option>
+                      {milestoneOptions.map((milestone: any) => <option key={milestone.id} value={milestone.id}>{milestone.title}</option>)}
+                    </select>
+                  ) : field.type === 'task-select' ? (
+                    <select value={formData[field.name] || ''} onChange={e => handleChange(field.name, e.target.value)} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" disabled={!formData.projectId}>
+                      <option value="">{formData.projectId ? 'No specific task' : 'Select a project first'}</option>
+                      {taskOptions.map((task: any) => <option key={task.id} value={task.id}>{task.title}</option>)}
+                    </select>
                   ) : field.type === 'file' ? (
                     <Input
                       type="file"
@@ -2213,7 +2255,10 @@ function AssetExtras({ record }: { record: any }) {
   )
 }
 
-function ProjectExtras({ record, relatedTaskList, relatedMilestoneList, navigate, id }: { record: any; relatedTaskList: any[]; relatedMilestoneList: any[]; navigate: any; id: string }) {
+function ProjectExtras({ record, relatedTaskList, relatedMilestoneList, relatedTimeList, users, navigate, id }: { record: any; relatedTaskList: any[]; relatedMilestoneList: any[]; relatedTimeList: any[]; users: any[]; navigate: any; id: string }) {
+  const queryClient = useQueryClient()
+  const { addToast } = useToast()
+  const [resourceForm, setResourceForm] = useState({ userId: '', role: '', allocationPercent: 100 })
   if (!record) return null
   const healthStatus = record.healthStatus
   const budgetType = record.budgetType
@@ -2227,8 +2272,22 @@ function ProjectExtras({ record, relatedTaskList, relatedMilestoneList, navigate
   else if (healthStatus === 'At Risk') healthColor = 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
   else if (healthStatus === 'Off Track') healthColor = 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
 
-  const hasExtras = healthStatus || budgetType || billingRate || estimatedHours || actualHours || resources.length > 0
-  if (!hasExtras) return null
+  const addResource = async () => {
+    if (!resourceForm.userId) return
+    try {
+      await api.request(`/projects/${id}/resources`, { method: 'POST', body: JSON.stringify(resourceForm) })
+      setResourceForm({ userId: '', role: '', allocationPercent: 100 })
+      queryClient.invalidateQueries({ queryKey: ['projects', id] })
+      addToast({ title: 'Project resource added', variant: 'success' })
+    } catch (error: any) { addToast({ title: 'Resource not added', description: error.message, variant: 'destructive' }) }
+  }
+  const removeResource = async (resourceId: string) => {
+    try {
+      await api.request(`/projects/${id}/resources/${resourceId}`, { method: 'DELETE' })
+      queryClient.invalidateQueries({ queryKey: ['projects', id] })
+      addToast({ title: 'Project resource removed', variant: 'success' })
+    } catch (error: any) { addToast({ title: 'Resource not removed', description: error.message, variant: 'destructive' }) }
+  }
 
   return (
     <div className="space-y-4">
@@ -2295,6 +2354,18 @@ function ProjectExtras({ record, relatedTaskList, relatedMilestoneList, navigate
           </div>
         </CardContent>
       </Card>
+      <Card>
+        <CardContent className="p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold flex items-center gap-1.5"><Users size={15} className="text-primary" /> Project Resources</h3><p className="text-xs text-muted-foreground mt-1">Assign organization users and control their project allocation.</p></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">{resources.length} assigned</span></div>
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_110px_auto]">
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={resourceForm.userId} onChange={e => setResourceForm({ ...resourceForm, userId: e.target.value })}><option value="">Select user…</option>{users.map((user: any) => <option key={user.id} value={user.id}>{userDisplayName(user)}</option>)}</select>
+            <Input placeholder="Project role" value={resourceForm.role} onChange={e => setResourceForm({ ...resourceForm, role: e.target.value })} />
+            <Input aria-label="Allocation percent" type="number" min={1} max={100} value={resourceForm.allocationPercent} onChange={e => setResourceForm({ ...resourceForm, allocationPercent: Number(e.target.value) })} />
+            <Button onClick={addResource} disabled={!resourceForm.userId}><Plus size={14} className="mr-1.5" />Add</Button>
+          </div>
+          {!resources.length ? <p className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">No resources assigned yet.</p> : <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{resources.map((resource: any) => { const user = users.find((item: any) => item.id === resource.userId); return <div key={resource.id} className="flex items-center gap-3 rounded-xl border bg-muted/10 p-3"><div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">{(userDisplayName(user || {}).charAt(0) || 'U').toUpperCase()}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{user ? userDisplayName(user) : 'Organization user'}</p><p className="text-xs text-muted-foreground">{resource.role || 'Team member'} · {resource.allocationPercent || 100}%</p></div><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeResource(resource.id)}><Trash2 size={14} /></Button></div> })}</div>}
+        </CardContent>
+      </Card>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-5">
@@ -2357,6 +2428,7 @@ function ProjectExtras({ record, relatedTaskList, relatedMilestoneList, navigate
           </CardContent>
         </Card>
       </div>
+      <Card><CardContent className="p-5"><div className="flex items-center justify-between gap-2 mb-3"><div><h3 className="text-sm font-semibold flex items-center gap-1.5"><Clock size={15} className="text-primary" /> Time Tracking</h3><p className="text-xs text-muted-foreground mt-1">{relatedTimeList.reduce((sum, entry) => sum + Number(entry.hours || 0), 0).toFixed(2)} total hours logged</p></div><Button size="sm" variant="outline" onClick={() => navigate(`/timeentries/new?projectId=${id}`)}><Plus size={14} className="mr-1.5" />Log time</Button></div>{!relatedTimeList.length ? <p className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">No time entries yet.</p> : <div className="space-y-2">{relatedTimeList.slice(0, 10).map((entry: any) => <button key={entry.id} onClick={() => navigate(`/timeentries/${entry.id}`)} className="flex w-full items-center justify-between gap-3 rounded-lg border p-3 text-left hover:bg-muted/30"><span className="min-w-0"><span className="block truncate text-sm font-medium">{entry.description || 'Time entry'}</span><span className="text-xs text-muted-foreground">{entry.date ? new Date(entry.date).toLocaleDateString() : ''}</span></span><span className="font-semibold text-primary">{Number(entry.hours || 0).toFixed(2)}h</span></button>)}</div>}</CardContent></Card>
     </div>
   )
 }

@@ -7,7 +7,7 @@ export const PERMISSION_MODULES = [
   'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails',
   'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets',
   'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices',
-  'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'chat', 'ai', 'landingpages',
+  'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'timeentries', 'projectresources', 'chat', 'ai', 'landingpages',
   'social', 'webhooks',
 ] as const
 
