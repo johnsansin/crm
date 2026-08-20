@@ -24,6 +24,7 @@ import { webformRouter } from './modules/webform.routes'
 import { quotationsRouter } from './modules/quotations.routes'
 import { salesOrdersRouter } from './modules/salesorders.routes'
 import { invoicesRouter } from './modules/invoices.routes'
+import { purchaseOrdersRouter } from './modules/purchaseorders.routes'
 import { calendarRouter } from './modules/calendar.routes'
 import { recordRouter } from './modules/record.routes'
 import { leadRouter } from './modules/lead.routes'
@@ -82,6 +83,7 @@ app.use('/api/webforms', webformRouter)
 app.use('/api/quotations', quotationsRouter)
 app.use('/api/salesorders', salesOrdersRouter)
 app.use('/api/invoices', invoicesRouter)
+app.use('/api/purchaseorders', purchaseOrdersRouter)
 app.use('/api/calendar', calendarRouter)
 app.use('/api/records', recordRouter)
 app.use('/api/leads', leadRouter)

@@ -54,7 +54,7 @@ async function canMutateRecord(req: any, record: any, moduleName: string): Promi
 const CUSTOM_FIELD_PREFIX = 'cf_'
 
 const NO_ASSIGNED_TO = new Set([
-  'recurringInvoice', 'payment', 'mailbox', 'rssFeed', 'rssEntry', 'report',
+  'recurringInvoice', 'receipt', 'payment', 'mailbox', 'rssFeed', 'rssEntry', 'report',
   'apiKey', 'moduleLayout', 'picklistDependency', 'emailToTicketRule',
   'portalUser', 'googleAccount',
   'ticketComment', 'escalationHistory', 'stageProbability',
@@ -90,6 +90,7 @@ export const modelMap: Record<string, string> = {
   assets: 'asset',
   servicecontracts: 'serviceContract',
   smsnotifier: 'smsNotifier',
+  receipts: 'receipt',
   payments: 'payment',
   recurringinvoices: 'recurringInvoice',
   calllogs: 'callLog',
@@ -126,6 +127,7 @@ export const scopedModels = new Set([
   'potentialProduct', 'potentialStageHistory', 'callLog', 'report',
   'competitor', 'potentialCompetitor', 'timeEntry', 'stageProbability',
   'quantityDiscount', 'ticketComment', 'escalationHistory', 'projectResource',
+  'receipt', 'payment',
 ])
 
 const permissionModules = new Set([
@@ -135,7 +137,7 @@ const permissionModules = new Set([
   'tickets', 'faq', 'documents', 'emails', 'emailtemplates',
   'projects', 'projecttasks', 'projectmilestones',
   'assets', 'servicecontracts', 'smsnotifier',
-  'payments', 'recurringinvoices', 'calllogs', 'reports',
+  'payments', 'receipts', 'recurringinvoices', 'calllogs', 'reports',
   'mailboxes', 'rssfeeds',
   'competitors', 'timeentries', 'stageprobability',
   'quantitydiscounts', 'ticketcomments', 'escalationhistory', 'projectresources',

@@ -141,8 +141,12 @@ const moduleTabs: Record<string, FieldTab[]> = {
     { label: 'Analysis', fields: ['strengths', 'weaknesses'] },
     { label: 'Description', fields: ['description'] },
   ],
+  receipts: [
+    { label: 'Receipt', fields: ['invoiceId', 'amount', 'paymentDate', 'method'] },
+    { label: 'Details', fields: ['reference', 'notes'] },
+  ],
   payments: [
-    { label: 'Payment', fields: ['invoiceId', 'amount', 'paymentDate', 'method'] },
+    { label: 'Payment', fields: ['purchaseOrderId', 'amount', 'paymentDate', 'method'] },
     { label: 'Details', fields: ['reference', 'notes'] },
   ],
   campaigns: [

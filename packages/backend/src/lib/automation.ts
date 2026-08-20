@@ -413,7 +413,7 @@ export async function checkOverdueInvoices(): Promise<number> {
 
   let notified = 0
   for (const inv of invoices) {
-    const payments = await prisma.payment.findMany({ where: { invoiceId: inv.id } })
+    const payments = await prisma.receipt.findMany({ where: { invoiceId: inv.id } })
     const paidTotal = payments.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0)
     const balance = Number(inv.grandTotal || 0) - paidTotal
     if (balance <= 0) continue

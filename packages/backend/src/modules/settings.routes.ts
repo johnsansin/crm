@@ -217,7 +217,7 @@ settingsRouter.get('/modules', requireAdmin, async (req, res, next) => {
 function getModuleConfigCache() {
   // @ts-ignore - imported lazily to avoid circular dep at module load time
   const configs: Record<string, any> = {}
-  for (const mod of ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'currencies', 'taxinfo', 'roles', 'usergroups', 'rolepermissions']) {
+  for (const mod of ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'currencies', 'taxinfo', 'roles', 'usergroups', 'rolepermissions']) {
     const c = getModuleConfig(mod)
     if (c) configs[mod] = c
   }

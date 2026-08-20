@@ -162,7 +162,7 @@ async function createCompanyForRegistration(payload: any) {
     data: { name: payload.companyName || `${payload.firstName}'s Organization` }
   })
 
-  const modules = ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds']
+  const modules = ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds']
 
   const ceo = await prisma.role.create({ data: { name: 'CEO', description: 'Full access to all modules', companyId: company.id } })
   await prisma.role.create({ data: { name: 'Manager', description: 'Manager level access', parentId: ceo.id, companyId: company.id } })

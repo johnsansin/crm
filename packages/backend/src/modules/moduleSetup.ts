@@ -250,15 +250,25 @@ const modules: Record<string, ModuleConfig> = {
     listFields: ['toNumber', 'message', 'status', 'createdAt'],
     relatedModules: []
   },
-  payments: {
-    modelName: 'payment',
-    label: 'Payments',
+  receipts: {
+    modelName: 'receipt',
+    label: 'Receipts',
     parent: 'Sales',
-    icon: 'CreditCard',
+    icon: 'Receipt',
     sequence: 95,
     searchFields: ['reference', 'invoiceId'],
     listFields: ['amount', 'paymentDate', 'method', 'reference'],
     relatedModules: ['invoices']
+  },
+  payments: {
+    modelName: 'payment',
+    label: 'Payments',
+    parent: 'Purchasing',
+    icon: 'CreditCard',
+    sequence: 97,
+    searchFields: ['reference', 'purchaseOrderId'],
+    listFields: ['amount', 'paymentDate', 'method', 'reference'],
+    relatedModules: ['purchaseorders']
   },
   recurringinvoices: {
     modelName: 'recurringInvoice',

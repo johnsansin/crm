@@ -578,11 +578,17 @@ export const api = {
     request<any>(`/recurringinvoices/${id}/generate`, { method: 'POST', body: JSON.stringify({}) }),
   getUpcomingRecurring: () => request<{ data: any[] }>('/recurringinvoices/upcoming'),
 
-  // ---- Invoice payments ----
+  // ---- Invoice payments (Receipts) ----
   getInvoicePayments: (invoiceId: string) => request<{ data: any[]; total: number }>(`/invoices/${invoiceId}/payments`),
   addInvoicePayment: (invoiceId: string, data: any) =>
     request<any>(`/invoices/${invoiceId}/payments`, { method: 'POST', body: JSON.stringify(data) }),
   getInvoiceBalance: (invoiceId: string) => request<any>(`/invoices/${invoiceId}/balance`),
+
+  // ---- Purchase Order payments ----
+  getPOPayments: (poId: string) => request<{ data: any[]; total: number }>(`/purchaseorders/${poId}/payments`),
+  addPOPayment: (poId: string, data: any) =>
+    request<any>(`/purchaseorders/${poId}/payments`, { method: 'POST', body: JSON.stringify(data) }),
+  getPOBalance: (poId: string) => request<any>(`/purchaseorders/${poId}/balance`),
 
   // ---- Mailboxes / Email-to-ticket ----
   getMailboxRule: (mailboxId: string) => request<{ data: any }>(`/mailboxes/${mailboxId}/rule`),

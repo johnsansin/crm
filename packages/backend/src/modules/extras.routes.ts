@@ -869,7 +869,7 @@ extrasRouter.get('/portal/invoices', async (req: any, res, next) => {
       where: { contactId: req.portal.contact.id, companyId: req.portal.companyId || undefined, isActive: true },
       orderBy: { createdAt: 'desc' },
     })
-    const paid = await prisma.payment.findMany({ where: { invoiceId: { in: data.map(i => i.id) } } })
+    const paid = await prisma.receipt.findMany({ where: { invoiceId: { in: data.map(i => i.id) } } })
     const paidMap: Record<string, number> = {}
     paid.forEach(p => { paidMap[p.invoiceId] = (paidMap[p.invoiceId] || 0) + Number(p.amount || 0) })
     res.json({ data: data.map(i => ({ ...i, paidAmount: paidMap[i.id] || 0, balance: Number(i.grandTotal || 0) - (paidMap[i.id] || 0) })) })

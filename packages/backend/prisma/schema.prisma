@@ -838,6 +838,7 @@ model PurchaseOrder {
   salesCommission Decimal  @default(0) @db.Decimal(16,2)
   exciseDuty      Decimal  @default(0) @db.Decimal(16,2)
   poStatus        String?  @db.VarChar(100)
+  paidAmount      Decimal  @default(0) @db.Decimal(16,2)
   currency        String?  @db.VarChar(3)
   conversionRate  Decimal  @default(1) @db.Decimal(10,5)
   terms           String?  @db.Text
@@ -1708,7 +1709,7 @@ model Follow {
   @@index([moduleName, recordId])
 }
 
-model Payment {
+model Receipt {
   id          String   @id @default(uuid())
   invoiceId   String
   amount      Decimal  @default(0) @db.Decimal(16,2)
@@ -1722,6 +1723,23 @@ model Payment {
   updatedAt   DateTime @updatedAt
 
   @@index([invoiceId])
+  @@index([companyId])
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  purchaseOrderId String
+  amount          Decimal  @default(0) @db.Decimal(16,2)
+  paymentDate     DateTime @default(now())
+  method          String?  @db.VarChar(50)
+  reference       String?  @db.VarChar(200)
+  notes           String?  @db.Text
+  companyId       String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([purchaseOrderId])
   @@index([companyId])
 }
 

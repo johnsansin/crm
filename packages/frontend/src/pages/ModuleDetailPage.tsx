@@ -37,7 +37,7 @@ const labelMap: Record<string, string> = {
   emailtemplates: 'Email Template', projects: 'Project',
   projecttasks: 'Project Task', projectmilestones: 'Project Milestone',
   assets: 'Asset', servicecontracts: 'Service Contract',
-  smsnotifier: 'SMS Notifier', payments: 'Payment',
+  smsnotifier: 'SMS Notifier', receipts: 'Receipt', payments: 'Payment',
 }
 
 const TAB_DOT_COLORS = ['bg-blue-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500']
@@ -150,6 +150,31 @@ function InvoiceSelectField({ value, onChange }: { value: string; onChange: (id:
           {(() => {
             const inv = invoices.find((i: any) => i.id === value)
             return inv ? `Balance: $${Number(inv.grandTotal || 0).toLocaleString()} — ${inv.invoiceStatus || 'Unknown'}` : 'Invoice selected'
+          })()}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function PurchaseOrderSelectField({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const { data } = useQuery({ queryKey: ['po-select-list'], queryFn: () => api.listAll('purchaseorders') })
+  const pos: any[] = data?.data || []
+  return (
+    <div>
+      <SearchSelect
+        value={value}
+        options={pos.map((po: any) => `${po.purchaseOrderNo || po.id} — ${po.subject || 'PO'} ($${Number(po.grandTotal || 0).toLocaleString()})`)}
+        onSelect={(v: string) => {
+          const match = pos.find((po: any) => `${po.purchaseOrderNo || po.id} — ${po.subject || 'PO'} ($${Number(po.grandTotal || 0).toLocaleString()})` === v)
+          if (match) onChange(match.id)
+        }}
+      />
+      {value && (
+        <p className="text-xs text-muted-foreground mt-1">
+          {(() => {
+            const po = pos.find((p: any) => p.id === value)
+            return po ? `Balance: $${Number(po.grandTotal || 0).toLocaleString()} — ${po.poStatus || 'Unknown'}` : 'PO selected'
           })()}
         </p>
       )}
@@ -1028,6 +1053,8 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                     </div>
                   ) : field.type === 'invoice-select' ? (
                      <InvoiceSelectField value={formData[field.name] || ''} onChange={(id: string) => handleChange(field.name, id)} />
+                  ) : field.type === 'purchaseorder-select' ? (
+                     <PurchaseOrderSelectField value={formData[field.name] || ''} onChange={(id: string) => handleChange(field.name, id)} />
                   ) : field.type === 'search-select' && selOptions ? (
                     <SearchSelect
                       value={formData[field.name] || ''}

@@ -27,7 +27,7 @@ const labelMap: Record<string, string> = {
   emailtemplates: 'Email Templates', projects: 'Projects',
   projecttasks: 'Project Tasks', projectmilestones: 'Project Milestones',
   assets: 'Assets', servicecontracts: 'Service Contracts',
-  smsnotifier: 'SMS Notifier', payments: 'Payments',
+  smsnotifier: 'SMS Notifier', receipts: 'Receipts', payments: 'Payments',
   recurringinvoices: 'Recurring Invoices', calllogs: 'Phone Calls',
   reports: 'Reports', mailboxes: 'Mailboxes', rssfeeds: 'RSS Feeds',
 }
@@ -58,6 +58,7 @@ const displayFields: Record<string, string[]> = {
   assets: ['assetName', 'serialNo', 'status'],
   servicecontracts: ['contractName', 'contractType', 'status'],
   smsnotifier: ['toNumber', 'message', 'status'],
+  receipts: ['amount', 'paymentDate', 'method', 'reference'],
   payments: ['amount', 'paymentDate', 'method', 'reference'],
   recurringinvoices: ['frequency', 'interval', 'nextRun', 'isActive'],
   calllogs: ['fromNumber', 'toNumber', 'direction', 'callTime', 'status'],
