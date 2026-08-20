@@ -2,10 +2,43 @@ import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { requireModulePermission } from '../lib/module-permissions'
+import { requireAdmin } from '../middleware/auth'
+import { getSmsConfig, publicSmsConfig, sendSms, verifySmsConfig } from '../lib/sms-provider'
+import { setGlobalSetting, setOrgSetting } from '../lib/settings'
 
 export const smsRouter = Router()
 smsRouter.use(authMiddleware)
 smsRouter.use(requireModulePermission('smsnotifier'))
+
+smsRouter.get('/config', async (req, res, next) => {
+  try { res.json({ data: publicSmsConfig(await getSmsConfig(req.user!.companyId)) }) } catch (err) { next(err) }
+})
+
+smsRouter.put('/config', requireAdmin, async (req, res, next) => {
+  try {
+    const current = await getSmsConfig(req.user!.companyId)
+    const config = {
+      provider: 'twilio' as const,
+      accountSid: String(req.body?.accountSid || '').trim(),
+      authToken: String(req.body?.authToken || '').trim() || current.authToken,
+      fromNumber: String(req.body?.fromNumber || '').trim(),
+    }
+    await verifySmsConfig(config)
+    if (req.user!.companyId) await setOrgSetting(req.user!.companyId, 'sms', config)
+    else if (req.user!.isSuperAdmin) await setGlobalSetting('sms', config)
+    else return res.status(403).json({ error: 'Organization is required' })
+    res.json({ data: publicSmsConfig(config), message: 'SMS provider verified and saved successfully' })
+  } catch (err) { next(err) }
+})
+
+smsRouter.post('/config/test', requireAdmin, async (req, res, next) => {
+  try {
+    const current = await getSmsConfig(req.user!.companyId)
+    const config = { ...current, ...req.body, authToken: String(req.body?.authToken || '').trim() || current.authToken }
+    await verifySmsConfig(config)
+    res.json({ success: true, message: 'Twilio connection verified successfully' })
+  } catch (err) { next(err) }
+})
 
 smsRouter.get('/templates', async (req, res, next) => {
   try {
@@ -56,11 +89,18 @@ smsRouter.post('/send', async (req, res, next) => {
     if (!toNumber || !message) return res.status(400).json({ error: 'toNumber and message are required' })
     const log = await prisma.smsNotifier.create({
       data: {
-        toNumber, fromNumber, message, status: 'Sent',
+        toNumber, fromNumber, message, status: 'Queued',
         companyId: req.user!.companyId || null, createdBy: req.user!.userId,
       },
     })
-    res.status(201).json({ data: log })
+    try {
+      const delivery = await sendSms(req.user!.companyId!, String(toNumber).trim(), String(message), fromNumber)
+      const sent = await prisma.smsNotifier.update({ where: { id: log.id }, data: { status: 'Sent', fromNumber: fromNumber || (await getSmsConfig(req.user!.companyId)).fromNumber } })
+      res.status(201).json({ data: sent, delivery })
+    } catch (error: any) {
+      await prisma.smsNotifier.update({ where: { id: log.id }, data: { status: 'Failed' } }).catch(() => {})
+      res.status(502).json({ error: error?.message || 'SMS provider rejected the message' })
+    }
   } catch (err) { next(err) }
 })
 
@@ -70,12 +110,24 @@ smsRouter.post('/bulk', async (req, res, next) => {
     if (!Array.isArray(toNumbers) || !toNumbers.length || !message) {
       return res.status(400).json({ error: 'toNumbers array and message are required' })
     }
-    const companyId = req.user!.companyId || null
+    if (toNumbers.length > 100) return res.status(400).json({ error: 'Bulk SMS is limited to 100 recipients per request' })
+    const normalized = Array.from(new Set(toNumbers.map((value: any) => String(value).trim()).filter(Boolean)))
+    const companyId = req.user!.companyId!
     const createdBy = req.user!.userId
-    const result = await prisma.smsNotifier.createMany({
-      data: toNumbers.map((num: string) => ({ toNumber: num, fromNumber, message, status: 'Sent', companyId, createdBy })),
-    })
-    res.status(201).json({ success: true, sentCount: result.count })
+    let sentCount = 0
+    const errors: { toNumber: string; error: string }[] = []
+    for (const toNumber of normalized) {
+      const log = await prisma.smsNotifier.create({ data: { toNumber, fromNumber, message, status: 'Queued', companyId, createdBy } })
+      try {
+        await sendSms(companyId, toNumber, String(message), fromNumber)
+        await prisma.smsNotifier.update({ where: { id: log.id }, data: { status: 'Sent' } })
+        sentCount++
+      } catch (error: any) {
+        await prisma.smsNotifier.update({ where: { id: log.id }, data: { status: 'Failed' } }).catch(() => {})
+        errors.push({ toNumber, error: error?.message || 'Failed' })
+      }
+    }
+    res.status(sentCount ? 201 : 502).json({ success: errors.length === 0, sentCount, failedCount: errors.length, errors })
   } catch (err) { next(err) }
 })
 

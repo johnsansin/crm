@@ -59,7 +59,7 @@ export async function sendMail(
           body: opts.html || opts.text || '',
           fromEmail: cfg.fromEmail || from || '',
           toEmails: to,
-          emailFlag: 'Sent',
+          emailFlag: 'Queued',
           companyId: opts.companyId,
         },
       })
@@ -69,7 +69,8 @@ export async function sendMail(
 
   if (!cfg.host || !from) {
     console.log(`[EMAIL] (no SMTP configured, logged only) to=${to} subject="${opts.subject}"`)
-    return { ok: true, delivered: false, id: emailId }
+    if (emailId) await prisma.email.update({ where: { id: emailId }, data: { emailFlag: 'Failed' } }).catch(() => {})
+    return { ok: false, delivered: false, error: 'SMTP is not configured', id: emailId }
   }
 
   try {
@@ -87,10 +88,12 @@ export async function sendMail(
       text: opts.text,
       attachments: opts.attachments,
     })
+    if (emailId) await prisma.email.update({ where: { id: emailId }, data: { emailFlag: 'Sent' } }).catch(() => {})
     return { ok: true, delivered: true, id: emailId }
   } catch (err: any) {
     console.error('[EMAIL] SMTP send failed:', err?.message)
-    return { ok: true, delivered: false, error: err?.message, id: emailId }
+    if (emailId) await prisma.email.update({ where: { id: emailId }, data: { emailFlag: 'Failed' } }).catch(() => {})
+    return { ok: false, delivered: false, error: err?.message, id: emailId }
   }
 }
 

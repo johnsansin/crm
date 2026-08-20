@@ -52,6 +52,7 @@ settingsRouter.get('/preferences', async (req, res, next) => {
 settingsRouter.get('/', requireAdmin, async (req, res, next) => {
   try {
     const settings = await getAllOrgSettings(req.user!.companyId)
+    if (settings.smtp) settings.smtp = { ...settings.smtp, pass: '', configured: !!(settings.smtp.host && settings.smtp.fromEmail && settings.smtp.pass) }
     res.json(settings)
   } catch (err) { next(err) }
 })
@@ -61,10 +62,16 @@ settingsRouter.put('/', requireAdmin, async (req, res, next) => {
     const body = req.body
     const keys = body && body.settings ? body.settings : body
     for (const key of Object.keys(keys || {})) {
+      if (key === 'smtp' && !keys[key]?.pass) {
+        const current = await getOrgSetting(req.user!.companyId, 'smtp', {})
+        keys[key] = { ...current, ...keys[key], pass: current?.pass || '' }
+      }
       await setOrgSetting(req.user!.companyId, key, keys[key])
     }
     await writeAudit({ moduleName: 'settings', action: 'UPDATE', fieldName: 'org', newValue: JSON.stringify(Object.keys(keys || {})), userId: req.user!.userId, req })
-    res.json(await getAllOrgSettings(req.user!.companyId))
+    const result = await getAllOrgSettings(req.user!.companyId)
+    if (result.smtp) result.smtp = { ...result.smtp, pass: '', configured: !!(result.smtp.host && result.smtp.fromEmail && result.smtp.pass) }
+    res.json(result)
   } catch (err) { next(err) }
 })
 
@@ -841,7 +848,8 @@ settingsRouter.post('/import/:module/rows', requireAdmin, async (req, res, next)
 
 settingsRouter.post('/smtp/test', requireAdmin, async (req, res, next) => {
   try {
-    const cfg = req.body
+    const stored = await getSmtpConfig(req.user!.companyId)
+    const cfg = { ...stored, ...req.body, pass: req.body?.pass || stored.pass }
     const result = await testSmtpConnection(cfg)
     if (!result.ok) return res.status(400).json({ error: result.error || 'Connection failed' })
     res.json({ success: true, message: 'SMTP connection verified' })

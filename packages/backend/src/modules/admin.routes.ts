@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
-import { getAllGlobalSettings, setGlobalSetting, validatePassword } from '../lib/settings'
+import { getAllGlobalSettings, getGlobalSetting, setGlobalSetting, validatePassword } from '../lib/settings'
 import bcrypt from 'bcryptjs'
 import { publicUser } from '../lib/public-user'
 import fs from 'fs'
@@ -60,7 +60,9 @@ adminRouter.get('/search', async (req, res, next) => {
 
 adminRouter.get('/settings', async (_req, res, next) => {
   try {
-    res.json(await getAllGlobalSettings())
+    const settings = await getAllGlobalSettings()
+    if (settings.smtp) settings.smtp = { ...settings.smtp, pass: '', configured: !!(settings.smtp.host && settings.smtp.fromEmail && settings.smtp.pass) }
+    res.json(settings)
   } catch (err) { next(err) }
 })
 
@@ -69,9 +71,15 @@ adminRouter.put('/settings', async (req, res, next) => {
     const body = req.body
     const keys = body && body.settings ? body.settings : body
     for (const key of Object.keys(keys || {})) {
+      if (key === 'smtp' && !keys[key]?.pass) {
+        const current = await getGlobalSetting('smtp', {})
+        keys[key] = { ...current, ...keys[key], pass: current?.pass || '' }
+      }
       await setGlobalSetting(key, keys[key])
     }
-    res.json(await getAllGlobalSettings())
+    const settings = await getAllGlobalSettings()
+    if (settings.smtp) settings.smtp = { ...settings.smtp, pass: '', configured: !!(settings.smtp.host && settings.smtp.fromEmail && settings.smtp.pass) }
+    res.json(settings)
   } catch (err) { next(err) }
 })
 

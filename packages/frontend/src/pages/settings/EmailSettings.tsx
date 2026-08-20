@@ -68,7 +68,7 @@ export function EmailSettings() {
         <p className="text-sm text-muted-foreground max-w-2xl">
           {isSuper
             ? 'Global outgoing mail server used as the default for all organizations. When an organization has no SMTP of its own, emails are sent through this server.'
-            : 'Outgoing email server used for password resets, workflow email actions, and sent emails. When SMTP is not configured, emails are logged to the Emails module instead.'}
+            : 'Outgoing email server used for password resets, workflow email actions, and sent emails. Failed delivery attempts are recorded accurately in the Emails module.'}
         </p>
         {editing ? (
           <div className="flex gap-2 shrink-0">
@@ -104,7 +104,7 @@ export function EmailSettings() {
           </div>
           <div>
             <label className="text-sm font-medium block mb-1.5">Password</label>
-            <PasswordInput value={editing ? (form.pass || '') : (form.pass ? '••••••••' : '')} onChange={e => set('pass', e.target.value)} disabled={!editing} placeholder={editing ? '' : 'No password set'} />
+            <PasswordInput value={editing ? (form.pass || '') : (form.configured ? '••••••••' : '')} onChange={e => set('pass', e.target.value)} disabled={!editing} placeholder={editing ? (form.configured ? 'Leave blank to keep current password' : '') : 'No password set'} />
           </div>
           <div>
             <label className="text-sm font-medium block mb-1.5">From Email</label>
