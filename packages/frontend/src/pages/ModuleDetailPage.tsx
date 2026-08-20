@@ -132,6 +132,32 @@ const SELECT_OPTIONS: Record<string, Record<string, string[]>> = {
 }
 
 
+function InvoiceSelectField({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const { data } = useQuery({ queryKey: ['invoice-select-list'], queryFn: () => api.listAll('invoices') })
+  const invoices: any[] = data?.data || []
+  return (
+    <div>
+      <SearchSelect
+        value={value}
+        options={invoices.map((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})`)}
+        onSelect={(v: string) => {
+          const match = invoices.find((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})` === v)
+          if (match) onChange(match.id)
+        }}
+      />
+      {value && (
+        <p className="text-xs text-muted-foreground mt-1">
+          {(() => {
+            const inv = invoices.find((i: any) => i.id === value)
+            return inv ? `Balance: $${Number(inv.grandTotal || 0).toLocaleString()} — ${inv.invoiceStatus || 'Unknown'}` : 'Invoice selected'
+          })()}
+        </p>
+      )}
+    </div>
+  )
+}
+
+
 function formatDisplayValue(value: any, type: string, name?: string) {
   if (value == null || value === '') return '-'
   if (type === 'user-select' && name === 'assignedTo') return value
@@ -225,12 +251,6 @@ export function ModuleDetailPage() {
     enabled: needsProducts,
   })
   const products = productsData?.data || []
-
-  const { data: invoicesData } = useQuery({
-    queryKey: ['module-invoices', mod],
-    queryFn: () => api.listAll('invoices'),
-    enabled: mod === 'payments',
-  })
 
   const needsCurrencies = (fieldConfigs[mod] || []).some((f: any) => f.type === 'currency-select')
   const { data: currenciesData } = useQuery({
@@ -687,6 +707,8 @@ export function ModuleDetailPage() {
                                       })())
                                   : field.name === 'productId'
                                     ? (products.find((p: any) => p.id === record?.productId)?.productName || '-')
+                                  : field.name === 'invoiceId'
+                                    ? formatDisplayValue(record?.invoiceId, field.type, field.name)
                                     : field.name === 'assignedTo'
                                 ? ((() => {
                                     const assignedId = record?.assignedTo
@@ -1005,24 +1027,7 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                       )}
                     </div>
                   ) : field.type === 'invoice-select' ? (
-                     <div>
-                      <SearchSelect
-                        value={formData[field.name] || ''}
-                        options={(invoicesData?.data || []).map((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})`)}
-                        onSelect={(v: string) => {
-                          const match = (invoicesData?.data || []).find((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})` === v)
-                          if (match) handleChange(field.name, match.id)
-                        }}
-                      />
-                      {formData[field.name] && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {(() => {
-                            const inv = (invoicesData?.data || []).find((i: any) => i.id === formData[field.name])
-                            return inv ? `Balance: $${Number(inv.grandTotal || 0).toLocaleString()} — ${inv.invoiceStatus || 'Unknown'}` : 'Invoice selected'
-                          })()}
-                        </p>
-                      )}
-                    </div>
+                     <InvoiceSelectField value={formData[field.name] || ''} onChange={(id: string) => handleChange(field.name, id)} />
                   ) : field.type === 'search-select' && selOptions ? (
                     <SearchSelect
                       value={formData[field.name] || ''}
