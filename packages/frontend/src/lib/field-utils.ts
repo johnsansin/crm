@@ -46,6 +46,7 @@ function labelFromName(name: string): string {
     image: 'Image',
     competitorName: 'Competitor Name', marketShare: 'Market Share', strengths: 'Strengths',
     weaknesses: 'Weaknesses',
+    paymentDate: 'Payment Date', method: 'Payment Method',
     packSize: 'Pack Size', salesStartDate: 'Sales Start Date', salesEndDate: 'Sales End Date',
     startDate: 'Start Date', endDate: 'End Date', expiryDate: 'Expiry Date',
     serialNo: 'Serial No', mfrPartNo: 'Mfr PartNo', vendorPartNo: 'Vendor PartNo',
@@ -139,6 +140,10 @@ const moduleTabs: Record<string, FieldTab[]> = {
     { label: 'Details', fields: ['competitorName', 'website', 'rating', 'marketShare', 'products'] },
     { label: 'Analysis', fields: ['strengths', 'weaknesses'] },
     { label: 'Description', fields: ['description'] },
+  ],
+  payments: [
+    { label: 'Payment', fields: ['invoiceId', 'amount', 'paymentDate', 'method'] },
+    { label: 'Details', fields: ['reference', 'notes'] },
   ],
   campaigns: [
     { label: 'Details', fields: ['campaignName', 'campaignType', 'status', 'startDate', 'endDate', 'closingDate', 'expectedRevenue', 'budget', 'actualCost', 'expectedResponse', 'targetSize', 'sponsor', 'targetAudience', 'expectedROI', 'actualROI', 'expectedResponseCount', 'expectedSalesCount', 'actualResponseCount', 'actualSalesCount'] },

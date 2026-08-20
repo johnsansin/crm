@@ -515,4 +515,12 @@ export const fieldConfigs: Record<string, ModuleField[]> = {
     { name: 'message', type: 'textarea' },
     { name: 'status', type: 'select' },
   ],
+  payments: [
+    { name: 'invoiceId', type: 'invoice-select', required: true },
+    { name: 'amount', type: 'number', required: true },
+    { name: 'paymentDate', type: 'date' },
+    { name: 'method', type: 'select' },
+    { name: 'reference', type: 'text' },
+    { name: 'notes', type: 'textarea' },
+  ],
 }

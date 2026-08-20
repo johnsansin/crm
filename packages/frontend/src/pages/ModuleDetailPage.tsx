@@ -37,7 +37,7 @@ const labelMap: Record<string, string> = {
   emailtemplates: 'Email Template', projects: 'Project',
   projecttasks: 'Project Task', projectmilestones: 'Project Milestone',
   assets: 'Asset', servicecontracts: 'Service Contract',
-  smsnotifier: 'SMS Notifier'
+  smsnotifier: 'SMS Notifier', payments: 'Payment',
 }
 
 const TAB_DOT_COLORS = ['bg-blue-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500']
@@ -225,6 +225,14 @@ export function ModuleDetailPage() {
     enabled: needsProducts,
   })
   const products = productsData?.data || []
+
+  const needsInvoices = mod === 'payments'
+  const { data: invoicesData } = useQuery({
+    queryKey: ['module-invoices', mod],
+    queryFn: () => api.listAll('invoices'),
+    enabled: needsInvoices,
+  })
+  const allInvoices = invoicesData?.data || []
 
   const needsCurrencies = (fieldConfigs[mod] || []).some((f: any) => f.type === 'currency-select')
   const { data: currenciesData } = useQuery({
@@ -984,7 +992,7 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                       contacts={allContacts}
                       onSelect={v => handleChange(field.name, v)}
                     />
-                  ) : field.type === 'product-select' ? (
+                   ) : field.type === 'product-select' ? (
                     <div>
                       <ProductSearchSelect
                         value={formData[field.name] || ''}
@@ -995,6 +1003,25 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                       {formData[field.name] && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {products.find((p: any) => p.id === formData[field.name])?.productName || 'Product selected'}
+                        </p>
+                      )}
+                    </div>
+                  ) : field.type === 'invoice-select' ? (
+                    <div>
+                      <SearchSelect
+                        value={formData[field.name] || ''}
+                        options={allInvoices.map((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})`)}
+                        onSelect={(v: string) => {
+                          const match = allInvoices.find((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})` === v)
+                          if (match) handleChange(field.name, match.id)
+                        }}
+                      />
+                      {formData[field.name] && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {(() => {
+                            const inv = allInvoices.find((i: any) => i.id === formData[field.name])
+                            return inv ? `Balance: $${Number(inv.grandTotal || 0).toLocaleString()} — ${inv.invoiceStatus || 'Unknown'}` : 'Invoice selected'
+                          })()}
                         </p>
                       )}
                     </div>
