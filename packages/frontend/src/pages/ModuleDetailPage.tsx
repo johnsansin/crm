@@ -134,24 +134,36 @@ const SELECT_OPTIONS: Record<string, Record<string, string[]>> = {
 
 function InvoiceSelectField({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const { data } = useQuery({ queryKey: ['invoice-select-list'], queryFn: () => api.listAll('invoices') })
+  const { data: accountsData } = useQuery({ queryKey: ['invoice-select-accounts'], queryFn: () => api.listAll('accounts') })
   const invoices: any[] = data?.data || []
+  const accounts: any[] = accountsData?.data || []
+  const getAccountName = (id: string) => accounts.find((a: any) => a.id === id)?.accountName || ''
+  const enriched = invoices.map((inv: any) => ({ ...inv, _accountName: getAccountName(inv.accountId) }))
+  const selected = enriched.find((i: any) => i.id === value)
+  const balance = selected ? Number(selected.grandTotal || 0) - Number(selected.paidAmount || 0) : 0
   return (
     <div>
       <SearchSelect
         value={value}
-        options={invoices.map((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})`)}
-        onSelect={(v: string) => {
-          const match = invoices.find((inv: any) => `${inv.invoiceNo || inv.id} — ${inv.subject || 'Invoice'} ($${Number(inv.grandTotal || 0).toLocaleString()})` === v)
-          if (match) onChange(match.id)
-        }}
+        options={enriched.map((inv: any) => ({
+          value: inv.id,
+          label: `${inv.invoiceNo || 'No#'} — ${inv.subject || 'Invoice'}`,
+          sub: `$${Number(inv.grandTotal || 0).toLocaleString()} | Balance: $${(Number(inv.grandTotal || 0) - Number(inv.paidAmount || 0)).toLocaleString()} | ${inv.invoiceStatus || 'Unknown'}${inv._accountName ? ' | ' + inv._accountName : ''}`,
+        }))}
+        onSelect={(v: string) => onChange(v)}
       />
-      {value && (
-        <p className="text-xs text-muted-foreground mt-1">
-          {(() => {
-            const inv = invoices.find((i: any) => i.id === value)
-            return inv ? `Balance: $${Number(inv.grandTotal || 0).toLocaleString()} — ${inv.invoiceStatus || 'Unknown'}` : 'Invoice selected'
-          })()}
-        </p>
+      {selected && (
+        <div className="mt-2 rounded-lg border bg-muted/30 p-3 space-y-1.5">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            {selected.invoiceNo && <div><span className="text-muted-foreground">Invoice #:</span> <span className="font-medium">{selected.invoiceNo}</span></div>}
+            {selected.subject && <div><span className="text-muted-foreground">Subject:</span> <span className="font-medium">{selected.subject}</span></div>}
+            {selected._accountName && <div><span className="text-muted-foreground">Customer:</span> <span className="font-medium">{selected._accountName}</span></div>}
+            <div><span className="text-muted-foreground">Status:</span> <span className="font-medium">{selected.invoiceStatus || 'Unknown'}</span></div>
+            <div><span className="text-muted-foreground">Total:</span> <span className="font-semibold">${Number(selected.grandTotal || 0).toLocaleString()}</span></div>
+            <div><span className="text-muted-foreground">Paid:</span> <span className="font-medium text-emerald-600">${Number(selected.paidAmount || 0).toLocaleString()}</span></div>
+            <div><span className="text-muted-foreground">Balance:</span> <span className={`font-semibold ${balance > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>${balance.toLocaleString()}</span></div>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -159,24 +171,36 @@ function InvoiceSelectField({ value, onChange }: { value: string; onChange: (id:
 
 function PurchaseOrderSelectField({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const { data } = useQuery({ queryKey: ['po-select-list'], queryFn: () => api.listAll('purchaseorders') })
+  const { data: vendorsData } = useQuery({ queryKey: ['po-select-vendors'], queryFn: () => api.listAll('vendors') })
   const pos: any[] = data?.data || []
+  const vendors: any[] = vendorsData?.data || []
+  const getVendorName = (id: string) => vendors.find((v: any) => v.id === id)?.vendorName || ''
+  const enriched = pos.map((po: any) => ({ ...po, _vendorName: getVendorName(po.vendorId) }))
+  const selected = enriched.find((p: any) => p.id === value)
+  const balance = selected ? Number(selected.grandTotal || 0) - Number(selected.paidAmount || 0) : 0
   return (
     <div>
       <SearchSelect
         value={value}
-        options={pos.map((po: any) => `${po.purchaseOrderNo || po.id} — ${po.subject || 'PO'} ($${Number(po.grandTotal || 0).toLocaleString()})`)}
-        onSelect={(v: string) => {
-          const match = pos.find((po: any) => `${po.purchaseOrderNo || po.id} — ${po.subject || 'PO'} ($${Number(po.grandTotal || 0).toLocaleString()})` === v)
-          if (match) onChange(match.id)
-        }}
+        options={enriched.map((po: any) => ({
+          value: po.id,
+          label: `${po.purchaseOrderNo || 'No#'} — ${po.subject || 'Purchase Order'}`,
+          sub: `$${Number(po.grandTotal || 0).toLocaleString()} | Balance: $${(Number(po.grandTotal || 0) - Number(po.paidAmount || 0)).toLocaleString()} | ${po.poStatus || 'Unknown'}${po._vendorName ? ' | ' + po._vendorName : ''}`,
+        }))}
+        onSelect={(v: string) => onChange(v)}
       />
-      {value && (
-        <p className="text-xs text-muted-foreground mt-1">
-          {(() => {
-            const po = pos.find((p: any) => p.id === value)
-            return po ? `Balance: $${Number(po.grandTotal || 0).toLocaleString()} — ${po.poStatus || 'Unknown'}` : 'PO selected'
-          })()}
-        </p>
+      {selected && (
+        <div className="mt-2 rounded-lg border bg-muted/30 p-3 space-y-1.5">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            {selected.purchaseOrderNo && <div><span className="text-muted-foreground">PO #:</span> <span className="font-medium">{selected.purchaseOrderNo}</span></div>}
+            {selected.subject && <div><span className="text-muted-foreground">Subject:</span> <span className="font-medium">{selected.subject}</span></div>}
+            {selected._vendorName && <div><span className="text-muted-foreground">Vendor:</span> <span className="font-medium">{selected._vendorName}</span></div>}
+            <div><span className="text-muted-foreground">Status:</span> <span className="font-medium">{selected.poStatus || 'Unknown'}</span></div>
+            <div><span className="text-muted-foreground">Total:</span> <span className="font-semibold">${Number(selected.grandTotal || 0).toLocaleString()}</span></div>
+            <div><span className="text-muted-foreground">Paid:</span> <span className="font-medium text-emerald-600">${Number(selected.paidAmount || 0).toLocaleString()}</span></div>
+            <div><span className="text-muted-foreground">Balance:</span> <span className={`font-semibold ${balance > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>${balance.toLocaleString()}</span></div>
+          </div>
+        </div>
       )}
     </div>
   )

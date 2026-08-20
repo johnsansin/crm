@@ -58,8 +58,8 @@ const displayFields: Record<string, string[]> = {
   assets: ['assetName', 'serialNo', 'status'],
   servicecontracts: ['contractName', 'contractType', 'status'],
   smsnotifier: ['toNumber', 'message', 'status'],
-  receipts: ['amount', 'paymentDate', 'method', 'reference'],
-  payments: ['amount', 'paymentDate', 'method', 'reference'],
+  receipts: ['invoiceId', 'amount', 'paymentDate', 'method', 'reference'],
+  payments: ['purchaseOrderId', 'amount', 'paymentDate', 'method', 'reference'],
   recurringinvoices: ['frequency', 'interval', 'nextRun', 'isActive'],
   calllogs: ['fromNumber', 'toNumber', 'direction', 'callTime', 'status'],
   reports: ['name', 'moduleName', 'reportType'],
@@ -200,7 +200,23 @@ export function ModuleListPage() {
   const fields = displayFields[mod] || ['id']
   const label = t(labelMap[mod] || mod)
 
-  const monetaryColumns = ['amount', 'grandTotal', 'subTotal', 'unitPrice', 'costPrice', 'annualRevenue', 'expectedRevenue', 'budget', 'actualCost', 'shipping', 'shippingHandling', 'discount', 'adjustment', 'salesCommission', 'exciseDuty', 'targetBudget', 'actualBudget']
+  const monetaryColumns = ['amount', 'grandTotal', 'subTotal', 'unitPrice', 'costPrice', 'annualRevenue', 'expectedRevenue', 'budget', 'actualCost', 'shipping', 'shippingHandling', 'discount', 'adjustment', 'salesCommission', 'exciseDuty', 'targetBudget', 'actualBudget', 'paidAmount']
+
+  const { data: receiptsInvoiceData } = useQuery({
+    queryKey: ['receipts-invoices-list'],
+    queryFn: () => api.listAll('invoices'),
+    enabled: mod === 'receipts',
+  })
+  const { data: paymentsPOData } = useQuery({
+    queryKey: ['payments-pos-list'],
+    queryFn: () => api.listAll('purchaseorders'),
+    enabled: mod === 'payments',
+  })
+  const invoicesMap: Record<string, any> = {}
+  const posMap: Record<string, any> = {}
+  for (const inv of (receiptsInvoiceData?.data || [])) invoicesMap[inv.id] = inv
+  for (const po of (paymentsPOData?.data || [])) posMap[po.id] = po
+
   const columns = fields
     .filter(f => f && !hiddenCols.includes(f))
     .map(f => ({
@@ -208,6 +224,17 @@ export function ModuleListPage() {
       label: getFieldLabel(f),
       sortable: true,
       className: monetaryColumns.includes(f) ? 'text-right' : '',
+      ...(f === 'invoiceId' && mod === 'receipts' ? {
+        render: (val: string) => {
+          const inv = invoicesMap[val]
+          return inv ? `${inv.invoiceNo || 'No#'} — ${inv.subject}` : <span className="text-muted-foreground">-</span>
+        }
+      } : f === 'purchaseOrderId' && mod === 'payments' ? {
+        render: (val: string) => {
+          const po = posMap[val]
+          return po ? `${po.purchaseOrderNo || 'No#'} — ${po.subject}` : <span className="text-muted-foreground">-</span>
+        }
+      } : {}),
     }))
 
   const handleSort = (key: string, order: 'asc' | 'desc') => {

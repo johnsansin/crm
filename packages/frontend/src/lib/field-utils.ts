@@ -47,6 +47,7 @@ function labelFromName(name: string): string {
     competitorName: 'Competitor Name', marketShare: 'Market Share', strengths: 'Strengths',
     weaknesses: 'Weaknesses',
     paymentDate: 'Payment Date', method: 'Payment Method',
+    invoiceId: 'Invoice', purchaseOrderId: 'Purchase Order',
     packSize: 'Pack Size', salesStartDate: 'Sales Start Date', salesEndDate: 'Sales End Date',
     startDate: 'Start Date', endDate: 'End Date', expiryDate: 'Expiry Date',
     serialNo: 'Serial No', mfrPartNo: 'Mfr PartNo', vendorPartNo: 'Vendor PartNo',
