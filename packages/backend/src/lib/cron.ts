@@ -2,6 +2,7 @@ import { prisma } from './prisma'
 import { runScheduledTaskActions } from './settings'
 import { runRecurringInvoices, fetchAllRssFeeds, syncAllMailboxes, sendPaymentReminders, checkSLADeadlines, checkFollowUpReminders, checkOverdueInvoices, checkAssetMaintenance, checkProjectHealth } from './automation'
 import { runScheduledReports } from './report-runner'
+import { runScheduledDatabaseBackup } from './database-backup'
 
 function nextRunFor(frequency: string): Date {
   const d = new Date(Date.now() + 60 * 1000)
@@ -60,6 +61,7 @@ export async function runDueTasks(): Promise<void> {
   syncAllMailboxes().catch(() => {})
   sendPaymentReminders().catch(() => {})
   runScheduledReports().catch(() => {})
+  runScheduledDatabaseBackup().catch(err => console.error('[CRON] database backup failed:', err?.message || err))
 
   // Automated monitoring tasks
   const now = Date.now()

@@ -12,8 +12,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, Target, Languages, type LucideIcon } from 'lucide-react'
-import { useTheme } from '@/lib/theme'
-import { useAuthStore } from '@/lib/auth'
+import { useTheme, type Accent } from '@/lib/theme'
 import { TIMEZONES, DATE_FORMATS, COUNTRIES, SOCIAL_FIELDS } from '@/lib/constants'
 import { OrgSettings } from '@/pages/settings/OrgSettings'
 import { AccessSettings } from '@/pages/settings/AccessSettings'
@@ -120,10 +119,8 @@ const sectionMap = Object.fromEntries(settingSections.map(s => [s.key, s]))
 export function SettingsPage() {
   const [activeSection, setActiveSection] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const { theme, toggleTheme } = useTheme()
-  const isSuperAdmin = !!useAuthStore(s => s.user?.isSuperAdmin)
-
-  const visibleSections = settingSections.filter(s => isSuperAdmin || s.key !== 'data')
+  const { theme, toggleTheme, accent, setAccent } = useTheme()
+  const visibleSections = settingSections
   const filtered = visibleSections.filter(s =>
     s.label.toLowerCase().includes(search.toLowerCase()) ||
     s.desc.toLowerCase().includes(search.toLowerCase())
@@ -135,9 +132,10 @@ export function SettingsPage() {
       <div className="space-y-5">
         <button
           onClick={() => setActiveSection(null)}
-          className="group inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="group inline-flex items-center gap-3 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 via-card to-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
         >
-          <ArrowLeft size={15} className="transition-transform group-hover:-translate-x-0.5" /> All Settings
+          <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm"><ArrowLeft size={15} className="transition-transform group-hover:-translate-x-0.5" /></span>
+          <span><span className="block leading-none">All Settings</span><span className="mt-1 block text-[10px] font-normal text-muted-foreground">Back to control center</span></span>
         </button>
         <div className="p-5 md:p-6 rounded-2xl border bg-card relative overflow-hidden">
           <div className={`absolute -top-16 -right-16 w-48 h-48 rounded-full bg-gradient-to-br ${TINTS[activeSection] || 'from-primary to-indigo-600'} opacity-20 blur-2xl pointer-events-none`} />
@@ -166,7 +164,7 @@ export function SettingsPage() {
         {activeSection === 'audit' && <AuditSettings />}
         {activeSection === 'automation' && <AutomationSettings />}
         {activeSection === 'announcements' && <CommunicationSettings />}
-        {activeSection === 'data' && isSuperAdmin && <DataSettings />}
+        {activeSection === 'data' && <DataSettings />}
         {activeSection === 'terms' && <TermsSettings />}
         {activeSection === 'integrations' && <IntegrationSettings />}
         {activeSection === 'tags' && <TagsSettings />}
@@ -207,14 +205,19 @@ export function SettingsPage() {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search settings..."
-          className="pl-9 rounded-xl h-11"
-        />
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-3 shadow-sm">
+        <div className="relative min-w-[240px] max-w-md flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search settings..." className="pl-9 rounded-xl h-11" />
+        </div>
+        <div className="flex items-center gap-2" aria-label="Accent theme">
+          <span className="mr-1 text-xs font-medium text-muted-foreground">Accent</span>
+          {([
+            ['blue', 'bg-blue-600'], ['violet', 'bg-violet-600'], ['emerald', 'bg-emerald-600'], ['rose', 'bg-rose-600'], ['orange', 'bg-orange-500'],
+          ] as [Accent, string][]).map(([value, color]) => (
+            <button key={value} type="button" title={`${value} theme`} aria-label={`${value} theme`} aria-pressed={accent === value} onClick={() => setAccent(value)} className={`h-7 w-7 rounded-full ${color} ring-offset-2 ring-offset-card transition-transform hover:scale-110 ${accent === value ? 'ring-2 ring-foreground' : ''}`} />
+          ))}
+        </div>
       </div>
 
       {/* Categories */}
@@ -529,7 +532,8 @@ function UsersSettings() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
-  const [form, setForm] = useState({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '', dashboardEnabled: true })
+  const emptyUserForm = { userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', groupId: '', pbxExtension: '', dashboardEnabled: true }
+  const [form, setForm] = useState(emptyUserForm)
 
   const { data: usersData } = useQuery({
     queryKey: ['all-users'],
@@ -540,21 +544,30 @@ function UsersSettings() {
     queryKey: ['roles'],
     queryFn: () => api.listAll('roles').catch(() => ({ data: [] })),
   })
+  const { data: groupsData } = useQuery({ queryKey: ['usergroups'], queryFn: () => api.listGroups().catch(() => ({ data: [] })) })
 
   const createMutation = useMutation({
-    mutationFn: (data: any) =>
-      fetch('/api/users', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data),
-      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User created', variant: 'success' }); setShowForm(false); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '', dashboardEnabled: true }) },
+    mutationFn: async (data: any) => {
+      const { groupId, ...userData } = data
+      const user = await fetch('/api/users', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(userData),
+      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() })
+      if (groupId && user.id) await api.addGroupMember(groupId, user.id)
+      return user
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); queryClient.invalidateQueries({ queryKey: ['usergroups'] }); addToast({ title: 'User created', variant: 'success' }); setShowForm(false); setForm(emptyUserForm) },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) =>
-      fetch(`/api/users/${editId}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data),
-      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
+    mutationFn: async (data: any) => {
+      const { groupId, ...userData } = data
+      const user = await fetch(`/api/users/${editId}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(userData),
+      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() })
+      if (groupId && editId) await api.addGroupMember(groupId, editId).catch(() => null)
+      return user
+    },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User updated', variant: 'success' }); setEditId(null); setShowForm(false) },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
@@ -577,6 +590,7 @@ function UsersSettings() {
   })
 
   const roles = rolesData?.data || []
+  const groups = groupsData?.data || []
 
   const filteredUsers = (usersData?.data || [])
     .map((u: any) => ({ ...u, name: `${u.firstName} ${u.lastName}` }))
@@ -600,7 +614,7 @@ function UsersSettings() {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-          <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', pbxExtension: '', dashboardEnabled: true }) }}>
+          <Button onClick={() => { setShowForm(true); setEditId(null); setForm(emptyUserForm) }}>
             <Plus size={16} className="mr-2" /> New User
           </Button>
         </div>
@@ -636,7 +650,7 @@ function UsersSettings() {
             pageSize={10}
             actions={(u: any) => (
               <div className="flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(u.id); setForm({ userName: u.userName, email: u.email, firstName: u.firstName, lastName: u.lastName, password: '', isAdmin: u.isAdmin, roleId: u.roleId || '', pbxExtension: u.pbxExtension || '', dashboardEnabled: u.dashboardEnabled !== false }); setShowForm(true) }} title="Edit">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(u.id); setForm({ userName: u.userName, email: u.email, firstName: u.firstName, lastName: u.lastName, password: '', isAdmin: u.isAdmin, roleId: u.roleId || '', groupId: groups.find((g:any) => g.members?.some((m:any) => m.userId === u.id || m.user?.id === u.id))?.id || '', pbxExtension: u.pbxExtension || '', dashboardEnabled: u.dashboardEnabled !== false }); setShowForm(true) }} title="Edit">
                   <Pencil size={14} />
                 </Button>
                 {u.isActive === false ? (
@@ -691,6 +705,14 @@ function UsersSettings() {
                 <option value="">No role</option>
                 {roles.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Organization Group</label>
+              <select value={form.groupId} onChange={e => setForm(f => ({ ...f, groupId: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">No group</option>
+                {groups.map((g:any) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+              <p className="mt-1 text-xs text-muted-foreground">Groups can be used for team assignment and access organization.</p>
             </div>
             <div>
               <label className="text-sm font-medium">PBX Extension</label>

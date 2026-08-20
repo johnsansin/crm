@@ -23,7 +23,7 @@ export function ChatAdminPage() {
 
   const { data: messagesData } = useQuery({
     queryKey: ['chat-widget-admin-messages', selectedId],
-    queryFn: () => selectedId ? api.request<{ data: any[] }>(`/chat-widget/sessions/${selectedId}/messages`) : Promise.resolve({ data: [] }),
+    queryFn: () => selectedId ? api.request<{ data: any[] }>(`/chat-widget/admin/sessions/${selectedId}/messages`) : Promise.resolve({ data: [] }),
     enabled: !!selectedId,
     refetchInterval: 5000,
   })

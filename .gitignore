@@ -6,6 +6,8 @@ dist/
 .spc.cache.php
 data/pg/
 uploads/
+data/*.sql
+data/*.dump
 *.tsbuildinfo
 android/.gradle/
 android/build/

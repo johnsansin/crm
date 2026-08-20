@@ -2,8 +2,9 @@ import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma'
+import { signingSecret } from '../lib/secrets'
 
-const PORTAL_JWT_SECRET = process.env.PORTAL_JWT_SECRET || 'bizforce-portal-jwt-secret-2026'
+const PORTAL_JWT_SECRET = signingSecret('PORTAL_JWT_SECRET', 'bizforce-portal-jwt-secret-2026')
 
 export const portalRouter = Router()
 

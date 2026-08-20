@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Sparkles, Send, Loader2, Plus, Trash2, Brain, Lightbulb, BarChart3, History, Save, Mail, Target, AlertTriangle, TrendingUp, Users, MessageSquare, Copy, Check } from 'lucide-react'
+import { Sparkles, Send, Loader2, Plus, Trash2, Brain, Lightbulb, BarChart3, History, Save, Mail, Target, AlertTriangle, TrendingUp, Users, MessageSquare, Copy, Check, RotateCcw, ShieldCheck, WandSparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -54,6 +54,8 @@ export function AiAssistantPage() {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
+  const [assistantContext, setAssistantContext] = useState('all')
+  const [responseStyle, setResponseStyle] = useState('actionable')
 
   // Global search (Ctrl+K)
   useEffect(() => {
@@ -139,7 +141,8 @@ export function AiAssistantPage() {
   const handleSend = () => {
     if (!input.trim()) return
     setMessages(m => [...m, { role: 'user', content: input }])
-    chatMutation.mutate(input)
+    const context = assistantContext === 'all' ? 'the CRM' : `the ${assistantContext} module`
+    chatMutation.mutate(`Context: ${context}. Response style: ${responseStyle}. User request: ${input}`)
     setInput('')
   }
 
@@ -175,9 +178,30 @@ export function AiAssistantPage() {
         </div>
       </div>
 
+      <Card className="border-violet-200/70 bg-gradient-to-r from-violet-50/70 to-indigo-50/60 dark:border-violet-900 dark:from-violet-950/25 dark:to-indigo-950/20">
+        <CardContent className="p-4">
+          <div className="grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-center">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-semibold"><WandSparkles size={16} className="text-violet-600" /> Assistant workspace</p>
+              <p className="mt-1 text-xs text-muted-foreground">Choose a data context and response style so answers are focused and easier to act on.</p>
+            </div>
+            <label className="text-xs font-medium text-muted-foreground">Data context
+              <select value={assistantContext} onChange={e => setAssistantContext(e.target.value)} className="mt-1 block h-9 min-w-40 rounded-lg border bg-background px-3 text-sm text-foreground">
+                <option value="all">All permitted CRM data</option><option value="leads">Leads</option><option value="potentials">Opportunities</option><option value="tickets">Support tickets</option><option value="accounts">Accounts</option><option value="projects">Projects</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground">Answer style
+              <select value={responseStyle} onChange={e => setResponseStyle(e.target.value)} className="mt-1 block h-9 min-w-36 rounded-lg border bg-background px-3 text-sm text-foreground">
+                <option value="actionable">Action plan</option><option value="concise">Concise</option><option value="analytical">Analytical</option><option value="executive">Executive summary</option>
+              </select>
+            </label>
+          </div>
+        </CardContent>
+      </Card>
+
       <TabsRoot value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="chat"><Sparkles size={14} className="mr-1" /> Chat</TabsTrigger>
+          <TabsTrigger value="chat"><Sparkles size={14} className="mr-1" /> Ask AI</TabsTrigger>
           <TabsTrigger value="leads"><Target size={14} className="mr-1" /> Lead Scores</TabsTrigger>
           <TabsTrigger value="predictions"><TrendingUp size={14} className="mr-1" /> Predictions</TabsTrigger>
           <TabsTrigger value="insights"><BarChart3 size={14} className="mr-1" /> Insights</TabsTrigger>
@@ -188,7 +212,11 @@ export function AiAssistantPage() {
 
         {/* Chat Tab */}
         <TabsContent value="chat">
-          <Card className="h-[500px] flex flex-col">
+          <Card className="h-[560px] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between border-b px-4 py-2.5">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><ShieldCheck size={13} className="text-emerald-600" /> Tenant-isolated: uses only your organization’s CRM data</div>
+              {messages.length > 0 && <Button variant="ghost" size="sm" onClick={() => setMessages([])} className="h-7 text-xs"><RotateCcw size={12} className="mr-1" /> New conversation</Button>}
+            </div>
             <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
@@ -196,7 +224,7 @@ export function AiAssistantPage() {
                   <p className="text-sm font-medium">Ask me anything about your CRM data</p>
                   <p className="text-xs mt-1">I can help with lead insights, pipeline analysis, ticket status, and more</p>
                   <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                    {['How many leads?', 'Open opportunities?', 'Revenue summary', 'Ticket status'].map(q => (
+                    {['Prioritize my work for today', 'Show at-risk opportunities and next actions', 'Which leads should I contact first?', 'Summarize overdue tickets', 'Find pipeline risks this month'].map(q => (
                       <button key={q} onClick={() => { setInput(q); setMessages(m => [...m, { role: 'user', content: q }]); chatMutation.mutate(q) }} className="rounded-full border bg-muted/50 px-3 py-1 text-xs text-muted-foreground hover:bg-muted transition-colors">{q}</button>
                     ))}
                   </div>
@@ -223,7 +251,7 @@ export function AiAssistantPage() {
             </CardContent>
             <div className="border-t p-3">
               <div className="flex gap-2">
-                <Input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()} placeholder="Ask about leads, opportunities, tickets..." className="flex-1" disabled={chatMutation.isPending} />
+                <Input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()} placeholder={`Ask about ${assistantContext === 'all' ? 'your permitted CRM data' : assistantContext}...`} className="flex-1" disabled={chatMutation.isPending} />
                 <Button onClick={handleSend} disabled={!input.trim() || chatMutation.isPending}><Send size={14} /></Button>
               </div>
             </div>
@@ -290,7 +318,7 @@ export function AiAssistantPage() {
                 <div className="p-8 text-center text-sm text-muted-foreground">No open opportunities to predict</div>
               ) : (
                 <div className="space-y-3">
-                  {oppPredictions.map((o: any) => (
+                  {(oppPredictions || []).map((o: any) => (
                     <div key={o.id} className="rounded-lg border p-4 bg-card">
                       <div className="flex items-center justify-between mb-2">
                         <div>

@@ -226,7 +226,7 @@ export function ChatPage() {
   }
 
   const togglePick = (id: string) => {
-    setPicked((prev) => (prev.includes(id) ? prev.filter((p) => p.id !== id) : [...prev, id]))
+    setPicked((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]))
   }
 
   const pickable = selected && selected.type === 'group'

@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/lib/auth'
 import { useTheme } from '@/lib/theme'
 import { api } from '@/lib/api'
+import { AppBreadcrumbs } from '@/components/layout/AppBreadcrumbs'
 import { Building2, LayoutDashboard, Users, History, Settings, LogOut, Sun, Moon, Menu, X, Shield, Bell, Search, Loader2, Mail, Phone, Globe, Headphones } from 'lucide-react'
 
 const navItems = [
@@ -286,8 +287,11 @@ export function SuperAdminLayout() {
             </button>
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          <Outlet />
+        <div className="flex-1 overflow-y-auto bg-slate-100/80 dark:bg-slate-950/70 p-4 md:p-6 lg:p-8">
+          <div className="mx-auto max-w-[1600px]">
+            <AppBreadcrumbs />
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>

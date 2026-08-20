@@ -9,17 +9,17 @@ import {
   LineChart, TrendingUp, DollarSign, RefreshCw, Loader2, ArrowUpRight, ArrowDownRight,
   BarChart3, Target, Trophy, Zap, Users, Clock, Percent, CircleDollarSign, ChevronRight
 } from 'lucide-react'
-import { formatDate } from '@/lib/org-format'
+import { formatDate, formatMoney } from '@/lib/org-format'
 
 function money(v: any) {
-  return `$${Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+  return formatMoney(Number(v || 0))
 }
 
 function moneyShort(v: any) {
   const n = Number(v || 0)
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
-  return `$${n.toLocaleString()}`
+  if (n >= 1_000_000) return `${formatMoney(n / 1_000_000).replace(/[\d.,\s]+$/, '').trim()}${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${formatMoney(n / 1_000).replace(/[\d.,\s]+$/, '').trim()}${(n / 1_000).toFixed(0)}K`
+  return formatMoney(n)
 }
 
 const STAGE_TONES: Record<string, { bar: string; badge: string }> = {
@@ -67,6 +67,7 @@ function StageBar({ stage, count, amount, totalAmount }: { stage: string; count:
 
 export function ForecastPage() {
   const [range, setRange] = useState('quarter')
+  const [scenario, setScenario] = useState<'conservative' | 'base' | 'upside'>('base')
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
@@ -88,6 +89,9 @@ export function ForecastPage() {
   const pipeline = data?.data?.pipeline || { won: { count: 0, amount: 0 }, lost: { count: 0, amount: 0 }, pipeline: { count: 0, amount: 0 } }
   const recent = data?.data?.recent || []
   const totals = data?.data?.totals || { expected: 0, weighted: 0 }
+  const scenarioFactor = scenario === 'conservative' ? 0.75 : scenario === 'upside' ? 1.2 : 1
+  const scenarioForecast = Number(totals.weighted || 0) * scenarioFactor
+  const coverage = totals.expected > 0 ? Math.round((scenarioForecast / totals.expected) * 100) : 0
   const maxVal = Math.max(...forecast.map((f: any) => f.expected), 1)
 
   const totalPipelineAmt = pipeline.won.amount + pipeline.pipeline.amount + pipeline.lost.amount
@@ -165,6 +169,27 @@ export function ForecastPage() {
         </div>
       </div>
 
+      <Card className="border-indigo-200/60 bg-gradient-to-r from-indigo-50/70 to-violet-50/50 dark:border-indigo-900 dark:from-indigo-950/30 dark:to-violet-950/20">
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-300">Forecast scenario</p>
+              <h2 className="mt-1 text-lg font-semibold">{money(scenarioForecast)} projected weighted revenue</h2>
+              <p className="text-sm text-muted-foreground">{coverage}% of the unweighted pipeline · adjust the scenario to understand risk.</p>
+            </div>
+            <div className="grid grid-cols-3 gap-1 rounded-xl border bg-background p-1">
+              {[
+                ['conservative', 'Conservative', '75%'], ['base', 'Base case', '100%'], ['upside', 'Upside', '120%'],
+              ].map(([key, label, factor]) => (
+                <button key={key} onClick={() => setScenario(key as any)} className={`rounded-lg px-3 py-2 text-left transition-colors ${scenario === key ? 'bg-indigo-600 text-white shadow-sm' : 'hover:bg-muted'}`}>
+                  <span className="block text-xs font-semibold">{label}</span><span className={`text-[10px] ${scenario === key ? 'text-indigo-100' : 'text-muted-foreground'}`}>{factor} weighted</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-0 shadow-md bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 overflow-hidden relative">
@@ -234,8 +259,8 @@ export function ForecastPage() {
               </div>
             </div>
             <p className="text-sm text-muted-foreground">Weighted Forecast</p>
-            <p className="text-2xl font-bold mt-0.5 tabular-nums">{moneyShort(totals.weighted)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{winRate}% win rate</p>
+            <p className="text-2xl font-bold mt-0.5 tabular-nums">{moneyShort(scenarioForecast)}</p>
+            <p className="text-xs text-muted-foreground mt-1">{winRate}% win rate · {scenario} scenario</p>
           </CardContent>
         </Card>
       </div>
@@ -269,7 +294,8 @@ export function ForecastPage() {
               <div className="flex items-end gap-2 md:gap-4 h-56 pt-2">
                 {forecast.map((f: any) => {
                   const expectedPct = Math.max((f.expected / maxVal) * 100, 2)
-                  const weightedPct = Math.max((f.weighted / maxVal) * 100, 2)
+                  const weightedValue = f.weighted * scenarioFactor
+                  const weightedPct = Math.max((weightedValue / maxVal) * 100, 2)
                   return (
                     <div key={f.period} className="flex-1 flex flex-col items-center gap-1 min-w-0 group/bar">
                       <div className="w-full flex items-end justify-center gap-1 h-44">
@@ -285,10 +311,10 @@ export function ForecastPage() {
                         <div
                           className="w-1/2 rounded-t-md bg-gradient-to-t from-indigo-300 to-indigo-200 dark:from-indigo-800 dark:to-indigo-600 hover:from-indigo-400 hover:to-indigo-300 transition-all duration-300 cursor-pointer relative shadow-sm hover:shadow-md"
                           style={{ height: `${weightedPct}%` }}
-                          title={`Weighted: ${money(f.weighted)}`}
+                          title={`${scenario} forecast: ${money(weightedValue)}`}
                         >
                           <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                            {moneyShort(f.weighted)}
+                            {moneyShort(weightedValue)}
                           </div>
                         </div>
                       </div>

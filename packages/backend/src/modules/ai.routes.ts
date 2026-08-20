@@ -1,8 +1,11 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 
 export const aiRouter = Router()
+aiRouter.use(authMiddleware)
+aiRouter.use(requireModulePermission('ai'))
 
 async function logAi(req: any, input: any, output: any, moduleName?: string, recordId?: string) {
   try {
@@ -121,12 +124,13 @@ aiRouter.post('/draft-email', authMiddleware, async (req: any, res) => {
     const { contactId, subject, tone } = req.body
     if (!contactId) { res.status(400).json({ error: 'contactId required' }); return }
 
-    const contact: any = await prisma.contact.findUnique({ where: { id: contactId } }).catch(() => null)
+    const companyId = req.user!.companyId
+    const contact: any = await prisma.contact.findFirst({ where: { id: contactId, companyId } }).catch(() => null)
     if (!contact) { res.status(404).json({ error: 'Contact not found' }); return }
 
-    const account = contact.accountId ? await prisma.account.findUnique({ where: { id: contact.accountId } }).catch(() => null) : null
-    const activities = await prisma.activity.findMany({ where: { parentModule: 'contacts', parentId: contactId }, orderBy: { createdAt: 'desc' }, take: 5 })
-    const tickets = await prisma.ticket.findMany({ where: { contactId }, orderBy: { createdAt: 'desc' }, take: 3 })
+    const account = contact.accountId ? await prisma.account.findFirst({ where: { id: contact.accountId, companyId } }).catch(() => null) : null
+    const activities = await prisma.activity.findMany({ where: { companyId, parentModule: 'contacts', parentId: contactId }, orderBy: { createdAt: 'desc' }, take: 5 })
+    const tickets = await prisma.ticket.findMany({ where: { companyId, contactId }, orderBy: { createdAt: 'desc' }, take: 3 })
 
     const firstName = contact.firstName || 'there'
     const companyName = account?.accountName || contact.department || ''
@@ -179,13 +183,14 @@ aiRouter.post('/customer-summary', authMiddleware, async (req: any, res) => {
     const { contactId } = req.body
     if (!contactId) { res.status(400).json({ error: 'contactId required' }); return }
 
-    const contact: any = await prisma.contact.findUnique({ where: { id: contactId } }).catch(() => null)
+    const companyId = req.user!.companyId
+    const contact: any = await prisma.contact.findFirst({ where: { id: contactId, companyId } }).catch(() => null)
     if (!contact) { res.status(404).json({ error: 'Contact not found' }); return }
 
     const [activities, tickets, comments] = await Promise.all([
-      prisma.activity.findMany({ where: { parentModule: 'contacts', parentId: contactId }, orderBy: { createdAt: 'desc' }, take: 20 }),
-      prisma.ticket.findMany({ where: { contactId }, orderBy: { createdAt: 'desc' }, take: 10 }),
-      prisma.comment.findMany({ where: { moduleName: 'contacts', recordId: contactId }, orderBy: { createdAt: 'desc' }, take: 20 }),
+      prisma.activity.findMany({ where: { companyId, parentModule: 'contacts', parentId: contactId }, orderBy: { createdAt: 'desc' }, take: 20 }),
+      prisma.ticket.findMany({ where: { companyId, contactId }, orderBy: { createdAt: 'desc' }, take: 10 }),
+      prisma.comment.findMany({ where: { companyId, moduleName: 'contacts', recordId: contactId }, orderBy: { createdAt: 'desc' }, take: 20 }),
     ])
 
     const allText = [...activities.map(a => `${a.subject} ${a.description || ''}`), ...tickets.map(t => `${t.title} ${t.description || ''} ${t.solution || ''}`), ...comments.map(c => c.comment)].filter(Boolean)
@@ -220,11 +225,12 @@ aiRouter.post('/lead-score', authMiddleware, async (req: any, res) => {
     const { leadId } = req.body
     if (!leadId) { res.status(400).json({ error: 'leadId required' }); return }
 
-    const lead: any = await prisma.lead.findUnique({ where: { id: leadId } }).catch(() => null)
+    const companyId = req.user!.companyId
+    const lead: any = await prisma.lead.findFirst({ where: { id: leadId, companyId } }).catch(() => null)
     if (!lead) { res.status(404).json({ error: 'Lead not found' }); return }
 
-    const activities = await prisma.activity.findMany({ where: { parentModule: 'leads', parentId: leadId } })
-    const emails = await prisma.email.findMany({ where: { parentModule: 'leads', parentId: leadId } })
+    const activities = await prisma.activity.findMany({ where: { companyId, parentModule: 'leads', parentId: leadId } })
+    const emails = await prisma.email.findMany({ where: { companyId, parentModule: 'leads', parentId: leadId } })
 
     const score = computeLeadScore(lead, activities, emails)
 
@@ -237,11 +243,12 @@ aiRouter.post('/lead-score', authMiddleware, async (req: any, res) => {
 
 aiRouter.post('/lead-score/batch', authMiddleware, async (req: any, res) => {
   try {
-    const leads: any[] = await prisma.lead.findMany({ where: { isActive: true, isConverted: false } }).catch(() => [])
+    const companyId = req.user!.companyId
+    const leads: any[] = await prisma.lead.findMany({ where: { companyId, isActive: true, isConverted: false } }).catch(() => [])
     const results: any[] = []
     for (const lead of leads) {
-      const activities = await prisma.activity.findMany({ where: { parentModule: 'leads', parentId: lead.id } }).catch(() => [])
-      const emails = await prisma.email.findMany({ where: { parentModule: 'leads', parentId: lead.id } }).catch(() => [])
+      const activities = await prisma.activity.findMany({ where: { companyId, parentModule: 'leads', parentId: lead.id } }).catch(() => [])
+      const emails = await prisma.email.findMany({ where: { companyId, parentModule: 'leads', parentId: lead.id } }).catch(() => [])
       const score = computeLeadScore(lead, activities, emails)
       results.push({ leadId: lead.id, firstName: lead.firstName, lastName: lead.lastName, company: lead.company, score: score.score, factors: score.factors, color: score.color })
     }
@@ -259,11 +266,12 @@ aiRouter.post('/opportunity-prediction', authMiddleware, async (req: any, res) =
     const { potentialId } = req.body
     if (!potentialId) { res.status(400).json({ error: 'potentialId required' }); return }
 
-    const potential: any = await prisma.potential.findUnique({ where: { id: potentialId } }).catch(() => null)
+    const companyId = req.user!.companyId
+    const potential: any = await prisma.potential.findFirst({ where: { id: potentialId, companyId } }).catch(() => null)
     if (!potential) { res.status(404).json({ error: 'Opportunity not found' }); return }
 
     const [activities, stageHistory, competitors] = await Promise.all([
-      prisma.activity.findMany({ where: { parentModule: 'potentials', parentId: potentialId } }),
+      prisma.activity.findMany({ where: { companyId, parentModule: 'potentials', parentId: potentialId } }),
       prisma.potentialStageHistory.findMany({ where: { potentialId } } as any),
       prisma.potentialCompetitor.findMany({ where: { potentialId }, include: { competitor: true } }),
     ])
@@ -285,9 +293,9 @@ aiRouter.post('/suggest-actions', authMiddleware, async (req: any, res) => {
     const suggestions: any[] = []
 
     if (module === 'potentials' && recordId) {
-      const potential: any = await prisma.potential.findUnique({ where: { id: recordId } }).catch(() => null)
+      const potential: any = await prisma.potential.findFirst({ where: { id: recordId, companyId: req.user!.companyId } }).catch(() => null)
       if (potential) {
-        const activities = await prisma.activity.findMany({ where: { parentModule: 'potentials', parentId: recordId }, orderBy: { createdAt: 'desc' }, take: 5 })
+        const activities = await prisma.activity.findMany({ where: { companyId: req.user!.companyId, parentModule: 'potentials', parentId: recordId }, orderBy: { createdAt: 'desc' }, take: 5 })
         const daysSinceLastActivity = activities.length > 0 ? Math.floor((Date.now() - new Date(activities[0].createdAt).getTime()) / 86400000) : 999
         const daysInPipeline = potential.createdAt ? Math.floor((Date.now() - new Date(potential.createdAt).getTime()) / 86400000) : 0
 
@@ -298,17 +306,17 @@ aiRouter.post('/suggest-actions', authMiddleware, async (req: any, res) => {
         if (potential.nextFollowUp && new Date(potential.nextFollowUp) < new Date()) suggestions.push({ type: 'overdue', priority: 'high', title: 'Overdue follow-up', description: `Follow-up was due on ${new Date(potential.nextFollowUp).toLocaleDateString()}.`, icon: 'alert' })
       }
     } else if (module === 'leads' && recordId) {
-      const lead: any = await prisma.lead.findUnique({ where: { id: recordId } }).catch(() => null)
+      const lead: any = await prisma.lead.findFirst({ where: { id: recordId, companyId: req.user!.companyId } }).catch(() => null)
       if (lead) {
         const daysSinceCreated = lead.createdAt ? Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / 86400000) : 0
-        const activities = await prisma.activity.findMany({ where: { parentModule: 'leads', parentId: recordId } })
+        const activities = await prisma.activity.findMany({ where: { companyId: req.user!.companyId, parentModule: 'leads', parentId: recordId } })
 
         if (daysSinceCreated > 7 && activities.length === 0) suggestions.push({ type: 'stale', priority: 'high', title: 'Stale lead', description: `Lead created ${daysSinceCreated} days ago with no activity. Contact them or mark as unqualified.`, icon: 'clock' })
         if (lead.leadStatus === 'Contacted' && daysSinceCreated > 3) suggestions.push({ type: 'follow-up', priority: 'medium', title: 'Follow up on outreach', description: 'Lead has been contacted but no response yet. Send a follow-up.', icon: 'mail' })
         if (activities.length > 3) suggestions.push({ type: 'convert', priority: 'medium', title: 'Consider converting', description: `${activities.length} activities logged. This lead may be ready for conversion.`, icon: 'refresh' })
       }
     } else if (module === 'tickets' && recordId) {
-      const ticket: any = await prisma.ticket.findUnique({ where: { id: recordId } }).catch(() => null)
+      const ticket: any = await prisma.ticket.findFirst({ where: { id: recordId, companyId: req.user!.companyId } }).catch(() => null)
       if (ticket) {
         const hoursOpen = ticket.createdAt ? Math.floor((Date.now() - new Date(ticket.createdAt).getTime()) / 3600000) : 0
         if (ticket.slaDeadline && new Date(ticket.slaDeadline) < new Date()) suggestions.push({ type: 'sla-breach', priority: 'critical', title: 'SLA breach', description: `SLA deadline was ${new Date(ticket.slaDeadline).toLocaleString()}. Immediate action required.`, icon: 'alert' })
@@ -333,12 +341,13 @@ aiRouter.post('/generate-email', authMiddleware, async (req: any, res) => {
     const { potentialId, template } = req.body
     if (!potentialId) { res.status(400).json({ error: 'potentialId required' }); return }
 
-    const potential: any = await prisma.potential.findUnique({ where: { id: potentialId } }).catch(() => null)
+    const companyId = req.user!.companyId
+    const potential: any = await prisma.potential.findFirst({ where: { id: potentialId, companyId } }).catch(() => null)
     if (!potential) { res.status(404).json({ error: 'Opportunity not found' }); return }
 
-    const contact = potential.contactId ? await prisma.contact.findUnique({ where: { id: potential.contactId } }).catch(() => null) : null
-    const account = potential.accountId ? await prisma.account.findUnique({ where: { id: potential.accountId } }).catch(() => null) : null
-    const activities = await prisma.activity.findMany({ where: { parentModule: 'potentials', parentId: potentialId }, orderBy: { createdAt: 'desc' }, take: 5 })
+    const contact = potential.contactId ? await prisma.contact.findFirst({ where: { id: potential.contactId, companyId } }).catch(() => null) : null
+    const account = potential.accountId ? await prisma.account.findFirst({ where: { id: potential.accountId, companyId } }).catch(() => null) : null
+    const activities = await prisma.activity.findMany({ where: { companyId, parentModule: 'potentials', parentId: potentialId }, orderBy: { createdAt: 'desc' }, take: 5 })
 
     const daysSinceLastActivity = activities.length > 0 ? Math.floor((Date.now() - new Date(activities[0].createdAt).getTime()) / 86400000) : null
     const email = composeSalesEmail({ potential, contact, account, activities, daysSinceLastActivity, template })

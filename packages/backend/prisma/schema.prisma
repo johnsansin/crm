@@ -1825,7 +1825,7 @@ model Translation {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([locale, key, namespace])
+  @@unique([companyId, locale, key, namespace])
   @@index([locale])
   @@index([companyId])
 }
@@ -2319,6 +2319,8 @@ model ChatWidget {
 model ChatSession {
   id          String   @id @default(uuid())
   widgetId    String?
+  // Nullable for legacy rows; new sessions receive an unguessable token.
+  visitorToken String? @default(uuid())
   visitorName String?  @db.VarChar(200)
   visitorEmail String? @db.VarChar(200)
   visitorIp   String?  @db.VarChar(45)
@@ -2335,6 +2337,7 @@ model ChatSession {
   messages ChatSessionMessage[]
 
   @@index([companyId])
+  @@index([visitorToken])
   @@index([status])
 }
 

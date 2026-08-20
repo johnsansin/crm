@@ -16,25 +16,27 @@ chatWidgetRouter.get('/config', async (req, res, next) => {
 chatWidgetRouter.post('/sessions', async (req, res, next) => {
   try {
     const { widgetId, visitorName, visitorEmail, visitorIp, userAgent } = req.body || {}
+    const widget = widgetId ? await prisma.chatWidget.findFirst({ where: { id: widgetId, isActive: true } }) : null
+    if (!widget) return res.status(404).json({ error: 'Active chat widget not found' })
     const session = await prisma.chatSession.create({
       data: {
         widgetId: widgetId || null, visitorName, visitorEmail, visitorIp, userAgent,
-        status: 'active', companyId: null,
+        status: 'active', companyId: widget.companyId,
       },
     })
-    res.status(201).json({ data: session })
+    res.status(201).json({ data: session, visitorToken: session.visitorToken })
   } catch (err) { next(err) }
 })
 
 chatWidgetRouter.post('/sessions/:id/messages', async (req, res, next) => {
   try {
     const { id } = req.params
-    const { body, senderType, senderId } = req.body || {}
+    const { body, visitorToken } = req.body || {}
     if (!body) return res.status(400).json({ error: 'body is required' })
-    const session = await prisma.chatSession.findUnique({ where: { id } })
+    const session = await prisma.chatSession.findFirst({ where: { id, visitorToken: String(visitorToken || '') } })
     if (!session) return res.status(404).json({ error: 'Session not found' })
     const message = await prisma.chatSessionMessage.create({
-      data: { sessionId: id, senderType: senderType || 'visitor', senderId, body },
+      data: { sessionId: id, senderType: 'visitor', body },
     })
     res.status(201).json({ data: message })
   } catch (err) { next(err) }
@@ -43,7 +45,9 @@ chatWidgetRouter.post('/sessions/:id/messages', async (req, res, next) => {
 chatWidgetRouter.get('/sessions/:id/messages', async (req, res, next) => {
   try {
     const { id } = req.params
-    const data = await prisma.chatSessionMessage.findMany({ where: { sessionId: id }, orderBy: { createdAt: 'asc' } })
+    const session = await prisma.chatSession.findFirst({ where: { id, visitorToken: String(req.query.visitorToken || '') } })
+    if (!session) return res.status(404).json({ error: 'Session not found' })
+    const data = await prisma.chatSessionMessage.findMany({ where: { sessionId: session.id }, orderBy: { createdAt: 'asc' } })
     res.json({ data })
   } catch (err) { next(err) }
 })
@@ -60,12 +64,21 @@ chatWidgetAdminRouter.get('/admin/sessions', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+chatWidgetAdminRouter.get('/admin/sessions/:id/messages', async (req, res, next) => {
+  try {
+    const session = await prisma.chatSession.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId || undefined } })
+    if (!session) return res.status(404).json({ error: 'Session not found' })
+    const data = await prisma.chatSessionMessage.findMany({ where: { sessionId: session.id }, orderBy: { createdAt: 'asc' } })
+    res.json({ data })
+  } catch (err) { next(err) }
+})
+
 chatWidgetAdminRouter.post('/admin/sessions/:id/messages', async (req, res, next) => {
   try {
     const { id } = req.params
     const { body } = req.body || {}
     if (!body) return res.status(400).json({ error: 'body is required' })
-    const session = await prisma.chatSession.findUnique({ where: { id } })
+    const session = await prisma.chatSession.findFirst({ where: { id, companyId: req.user!.companyId || undefined } })
     if (!session) return res.status(404).json({ error: 'Session not found' })
     const message = await prisma.chatSessionMessage.create({
       data: { sessionId: id, senderType: 'agent', senderId: req.user!.userId, body },
@@ -78,8 +91,12 @@ chatWidgetAdminRouter.put('/admin/sessions/:id/assign', async (req, res, next) =
   try {
     const { id } = req.params
     const { assignedTo } = req.body || {}
-    const session = await prisma.chatSession.findUnique({ where: { id } })
+    const session = await prisma.chatSession.findFirst({ where: { id, companyId: req.user!.companyId || undefined } })
     if (!session) return res.status(404).json({ error: 'Session not found' })
+    if (assignedTo) {
+      const assignee = await prisma.user.findFirst({ where: { id: assignedTo, companyId: req.user!.companyId || undefined, isActive: true } })
+      if (!assignee) return res.status(400).json({ error: 'Assignee not found in this organization' })
+    }
     const updated = await prisma.chatSession.update({ where: { id }, data: { assignedTo } })
     res.json({ data: updated })
   } catch (err) { next(err) }
@@ -88,7 +105,7 @@ chatWidgetAdminRouter.put('/admin/sessions/:id/assign', async (req, res, next) =
 chatWidgetAdminRouter.put('/admin/sessions/:id/close', async (req, res, next) => {
   try {
     const { id } = req.params
-    const session = await prisma.chatSession.findUnique({ where: { id } })
+    const session = await prisma.chatSession.findFirst({ where: { id, companyId: req.user!.companyId || undefined } })
     if (!session) return res.status(404).json({ error: 'Session not found' })
     const updated = await prisma.chatSession.update({ where: { id }, data: { status: 'closed', endedAt: new Date() } })
     res.json({ data: updated })

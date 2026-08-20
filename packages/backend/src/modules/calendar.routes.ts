@@ -1,9 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 
 export const calendarRouter = Router()
 calendarRouter.use(authMiddleware)
+calendarRouter.use(requireModulePermission('calendar'))
 
 function addScope(where: any, companyId?: string): any {
   if (companyId) where.companyId = companyId

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Save, Loader2, KeyRound, ShieldCheck, GitBranch, Globe, Package, ArrowDownUp, Link2 } from 'lucide-react'
-import { TIMEZONES, DATE_FORMATS, LANGUAGES } from '@/lib/constants'
+import { TIMEZONES, DATE_FORMATS, LANGUAGES, HOUR_FORMATS } from '@/lib/constants'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
@@ -83,6 +83,7 @@ export function OrgSettings() {
     queryKey: ['org-settings'],
     queryFn: () => api.getOrgSettings(),
   })
+  const { data: currencyData } = useQuery({ queryKey: ['currencies'], queryFn: () => api.listAll('currencies').catch(() => ({ data: [] })) })
 
   const saveMutation = useMutation({
     mutationFn: (settings: any) => api.updateOrgSettings(settings),
@@ -224,6 +225,19 @@ export function OrgSettings() {
                   <select className={inputCls} value={form.dateFormat || 'mm-dd-yyyy'} onChange={e => setForm((f: any) => ({ ...f, dateFormat: e.target.value }))}>
                     {DATE_FORMATS.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
+                </Field>
+                <Field label="Default Hour Format">
+                  <select className={inputCls} value={form.hourFormat || '12h'} onChange={e => setForm((f: any) => ({ ...f, hourFormat: e.target.value }))}>
+                    {HOUR_FORMATS.map(h => <option key={h} value={h}>{h === '12h' ? '12-hour' : '24-hour'}</option>)}
+                  </select>
+                </Field>
+                <Field label="Default Currency">
+                  <select className={inputCls} value={form.defaultCurrency || 'USD'} onChange={e => setForm((f: any) => ({ ...f, defaultCurrency: e.target.value }))}>
+                    {(currencyData?.data || []).map((c: any) => <option key={c.code} value={c.code}>{c.symbol} {c.code} — {c.name}</option>)}
+                  </select>
+                </Field>
+                <Field label="Currency Fallback Symbol">
+                  <Input value={form.currencySymbol || '$'} maxLength={8} onChange={e => setForm((f: any) => ({ ...f, currencySymbol: e.target.value }))} />
                 </Field>
               </div>
               <div>

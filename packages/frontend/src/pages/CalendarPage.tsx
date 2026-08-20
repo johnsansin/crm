@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Card, CardContent } from '@/components/ui/card'
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, CalendarPlus, Pencil, Trash2, Loader2, Clock, MapPin } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, CalendarPlus, Pencil, Trash2, Loader2, Clock, MapPin, Search, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   useOrgSettings, formatDate, formatTime, monthNames, weekDayNames,
@@ -115,6 +115,8 @@ export function CalendarPage() {
   const [editing, setEditing] = useState<any | null>(null)
   const [preset, setPreset] = useState<{ type: string; date: Date } | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [search, setSearch] = useState('')
   const queryClient = useQueryClient()
   const { addToast } = useToast()
   useOrgSettings()
@@ -126,7 +128,12 @@ export function CalendarPage() {
     queryFn: () => api.getCalendar(range.from, range.to),
   })
 
-  const activities = data?.data || []
+  const allActivities = data?.data || []
+  const activities = allActivities.filter((activity: any) => {
+    if (typeFilter !== 'all' && activity.activityType !== typeFilter) return false
+    if (search && !`${activity.subject || ''} ${activity.location || ''} ${activity.description || ''}`.toLowerCase().includes(search.toLowerCase())) return false
+    return true
+  })
 
   const mutateDelete = useMutation({
     mutationFn: (id: string) => api.deleteCalendarActivity(id),
@@ -219,6 +226,11 @@ export function CalendarPage() {
           </div>
         </CardContent>
       </Card>
+      <Card><CardContent className="flex flex-wrap items-center gap-3 p-3 sm:p-4">
+        <div className="relative min-w-[220px] flex-1"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('Search activities...')} className="pl-9" /></div>
+        <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-1"><SlidersHorizontal size={14} className="mx-2 text-muted-foreground" />{['all', 'Task', 'Call', 'Meeting', 'Other'].map(type => <button key={type} onClick={() => setTypeFilter(type)} className={cn('rounded-md px-3 py-1.5 text-xs font-medium', typeFilter === type ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background')}>{type === 'all' ? t('All') : t(type)}</button>)}</div>
+        <div className="ml-auto flex gap-2 text-xs"><span className="rounded-full bg-sky-100 px-2.5 py-1 font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">{activities.length} {t('shown')}</span><span className="rounded-full bg-emerald-100 px-2.5 py-1 font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">{activities.filter((a:any) => a.status === 'Completed' || a.status === 'Held').length} {t('completed')}</span></div>
+      </CardContent></Card>
 
       <div className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b bg-muted/30 px-4 py-2 text-[11px] font-medium text-muted-foreground">

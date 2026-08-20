@@ -1,7 +1,12 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
+import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 
 const purchaseOrdersRouter = Router()
+
+purchaseOrdersRouter.use(authMiddleware)
+purchaseOrdersRouter.use(requireModulePermission('purchaseorders'))
 
 purchaseOrdersRouter.get('/:id/payments', async (req, res, next) => {
   try {

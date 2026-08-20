@@ -11,6 +11,7 @@ export interface OrgFormatSettings {
   language: string
   timezone: string
   dateFormat: string
+  hourFormat: string
   calendar: OrgCalendarSettings
   defaultCurrency: string
   currencySymbol: string
@@ -27,6 +28,7 @@ const DEFAULT_SETTINGS: OrgFormatSettings = {
   language: 'en_us',
   timezone: 'Asia/Karachi',
   dateFormat: 'mm-dd-yyyy',
+  hourFormat: '12h',
   calendar: DEFAULT_CALENDAR,
   defaultCurrency: 'USD',
   currencySymbol: '$',
@@ -35,11 +37,14 @@ const DEFAULT_SETTINGS: OrgFormatSettings = {
 let settings: OrgFormatSettings = DEFAULT_SETTINGS
 const listeners = new Set<() => void>()
 
-export function setOrgSettings(s: Partial<OrgFormatSettings>) {
+type OrgSettingsUpdate = Partial<Omit<OrgFormatSettings, 'calendar'>> & { calendar?: Partial<OrgCalendarSettings> }
+
+export function setOrgSettings(s: OrgSettingsUpdate) {
+  const defined = Object.fromEntries(Object.entries(s).filter(([, value]) => value !== undefined && value !== null && value !== '')) as OrgSettingsUpdate
   settings = {
     ...settings,
-    ...s,
-    calendar: { ...DEFAULT_CALENDAR, ...(s.calendar || {}) },
+    ...defined,
+    calendar: { ...settings.calendar, ...(defined.calendar || {}) },
   }
   listeners.forEach((l) => l())
 }
@@ -114,6 +119,7 @@ export function formatTime(value: any): string {
     timeZone: settings.timezone,
     hour: 'numeric',
     minute: '2-digit',
+    hour12: settings.hourFormat !== '24h',
   }).format(d)
 }
 

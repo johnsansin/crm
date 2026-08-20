@@ -10,13 +10,12 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ArrowLeft, Save, Loader2, Mail, Phone, MapPin, Shield, KeyRound, Camera, Smartphone, Unlink } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { TIMEZONES, LANGUAGES, COUNTRIES } from '@/lib/constants'
+import { TIMEZONES, LANGUAGES, COUNTRIES, DATE_FORMATS, HOUR_FORMATS } from '@/lib/constants'
+import { useQuery } from '@tanstack/react-query'
 import { t } from '@/lib/i18n'
+import { setOrgSettings } from '@/lib/org-format'
 
-const DATE_FORMATS = ['MM/dd/yyyy', 'dd-MM-yyyy', 'yyyy-MM-dd']
-const HOUR_FORMATS = ['12h', '24h']
 const WEEK_STARTS = ['Sunday', 'Monday']
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD']
 
 const sectionMeta = {
   personal: { label: t('Personal'), icon: Shield, fields: [
@@ -44,7 +43,7 @@ const sectionMeta = {
     { label: t('Hour Format'), field: 'hourFormat', type: 'select', options: HOUR_FORMATS },
     { label: t('Start of Week'), field: 'startOfWeek', type: 'select', options: WEEK_STARTS },
     { label: t('Default Module'), field: 'defaultModule', type: 'text' },
-    { label: t('Currency'), field: 'currencyCode', type: 'select', options: CURRENCIES },
+    { label: t('Currency'), field: 'currencyCode', type: 'select', options: [] },
   ]},
 }
 
@@ -66,6 +65,8 @@ export function ProfilePage() {
   const [pwd, setPwd] = useState({ current: '', next: '' })
   const [pwdBusy, setPwdBusy] = useState(false)
   const [twoFa, setTwoFa] = useState({ loading: false, enabled: false, secret: '', otpauthUri: '', setupOpen: false, code: '', disableCode: '' })
+  const { data: currencyData } = useQuery({ queryKey: ['currencies'], queryFn: () => api.listAll('currencies').catch(() => ({ data: [] })) })
+  const organizationCurrencies = (currencyData?.data || []).map((c: any) => ({ value: c.code, label: `${c.symbol || ''} ${c.code} — ${c.name}`.trim() }))
 
   useEffect(() => {
     if (user) {
@@ -91,6 +92,14 @@ export function ProfilePage() {
       }
       const updated = await res.json()
       useAuthStore.setState({ user: updated })
+      setOrgSettings({
+        language: updated.language,
+        timezone: updated.timezone,
+        dateFormat: updated.dateFormat,
+        hourFormat: updated.hourFormat,
+        defaultCurrency: updated.currencyCode,
+        calendar: { firstDayOfWeek: updated.startOfWeek },
+      })
       addToast({ title: 'Profile updated', variant: 'success' })
     } catch (err: any) {
       addToast({ title: 'Error', description: err.message, variant: 'destructive' })
@@ -242,7 +251,7 @@ export function ProfilePage() {
                               <SelectValue placeholder={`Select ${f.label.toLowerCase()}`} />
                             </SelectTrigger>
                             <SelectContent>
-                              {(f.options as any[]).map((o: any) => {
+                              {(f.field === 'currencyCode' ? organizationCurrencies : f.options as any[]).map((o: any) => {
                                 const val = typeof o === 'string' ? o : o.value
                                 const label = typeof o === 'string' ? o : o.label
                                 return <SelectItem key={val} value={val}>{label}</SelectItem>

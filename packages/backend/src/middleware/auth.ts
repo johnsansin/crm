@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import { prisma } from '../lib/prisma'
+import { signingSecret } from '../lib/secrets'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'bizforce-jwt-secret-dev-2026'
+const JWT_SECRET = signingSecret('JWT_SECRET', 'bizforce-jwt-secret-dev-2026')
 
 declare global {
   namespace Express {
@@ -17,8 +18,6 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   let token = ''
   if (header && header.startsWith('Bearer ')) {
     token = header.split(' ')[1]
-  } else if (req.query && typeof req.query.token === 'string') {
-    token = req.query.token
   }
   if (!token) {
     return res.status(401).json({ error: 'No token provided' })

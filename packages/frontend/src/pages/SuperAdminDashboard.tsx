@@ -97,7 +97,7 @@ const icon3d: Record<string, React.ComponentType<any>> = {
 
 export function SuperAdminDashboard() {
   const navigate = useNavigate()
-  const [stats, setStats] = useState({ totalOrgs: 0, totalUsers: 0, activeOrgs: 0, inactiveOrgs: 0 })
+  const [stats, setStats] = useState({ totalOrgs: 0, totalUsers: 0, activeOrgs: 0, inactiveOrgs: 0, newOrgs: 0, emptyOrgs: 0 })
   const [recentUsers, setRecentUsers] = useState<any[]>([])
   const [recentOrgs, setRecentOrgs] = useState<any[]>([])
 
@@ -109,6 +109,8 @@ export function SuperAdminDashboard() {
         totalUsers: companies.reduce((s: number, c: any) => s + (c._count?.users || 0), 0),
         activeOrgs: companies.filter((c: any) => c.isActive !== false).length,
         inactiveOrgs: companies.filter((c: any) => c.isActive === false).length,
+        newOrgs: companies.filter((c: any) => Date.now() - new Date(c.createdAt).getTime() <= 30 * 86400000).length,
+        emptyOrgs: companies.filter((c: any) => (c._count?.users || 0) === 0).length,
       })
     }).catch(() => {})
     api.adminListUsers().then(res => {
@@ -127,12 +129,29 @@ export function SuperAdminDashboard() {
     { label: 'Active', value: stats.activeOrgs, icon: CheckCircle, color: 'from-emerald-500 to-green-500', bg: 'bg-emerald-50 dark:bg-emerald-950/30', path: '/superadmin/organizations' },
     { label: 'Inactive', value: stats.inactiveOrgs, icon: XCircle, color: 'from-rose-500 to-red-500', bg: 'bg-rose-50 dark:bg-rose-950/30', path: '/superadmin/organizations' },
   ]
+  const activationRate = stats.totalOrgs ? Math.round((stats.activeOrgs / stats.totalOrgs) * 100) : 0
+  const averageUsers = stats.totalOrgs ? (stats.totalUsers / stats.totalOrgs).toFixed(1) : '0.0'
 
   return (
     <div className="space-y-8 max-w-6xl">
       <div>
         <h1 className="text-3xl font-bold text-slate-800 dark:text-white">SuperAdmin Dashboard</h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">Monitor and manage all organizations</p>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: 'Activation rate', value: `${activationRate}%`, detail: 'organizations enabled' },
+          { label: 'Average seats', value: averageUsers, detail: 'users per organization' },
+          { label: 'New this month', value: stats.newOrgs, detail: 'last 30 days' },
+          { label: 'Needs attention', value: stats.inactiveOrgs + stats.emptyOrgs, detail: `${stats.emptyOrgs} without users` },
+        ].map(metric => (
+          <div key={metric.label} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 px-4 py-3">
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{metric.label}</p>
+            <p className="mt-1 text-xl font-bold text-slate-800 dark:text-white">{metric.value}</p>
+            <p className="text-[11px] text-slate-400">{metric.detail}</p>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -296,4 +315,3 @@ export function SuperAdminDashboard() {
     </div>
   )
 }
-

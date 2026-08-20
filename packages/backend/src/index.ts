@@ -10,6 +10,8 @@ try {
 } catch { /* older runtime */ }
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
 import path from 'path'
 import { authRouter } from './auth/auth.routes'
 import { entityRouter } from './modules/entity.routes'
@@ -47,13 +49,19 @@ import { errorHandler } from './middleware/errorHandler'
 import { setupModules, getModuleConfig } from './modules/moduleSetup'
 import { startCron } from './lib/cron'
 import { prisma } from './lib/prisma'
+import { PERMISSION_MODULES } from './lib/module-permissions'
 
 const app = express()
 const PORT = process.env.PORT || 3000
+const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map(v => v.trim()).filter(Boolean)
+const isProduction = process.env.NODE_ENV === 'production'
 
-app.use(cors())
-app.use(express.json({ limit: '10mb' }))
-app.use(express.urlencoded({ extended: true }))
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }))
+app.use(cors({ origin: isProduction ? corsOrigins : true }))
+app.use(express.json({ limit: '15mb' }))
+app.use(express.urlencoded({ extended: true, limit: '15mb' }))
+app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 600, standardHeaders: 'draft-7', legacyHeaders: false }))
+app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false }))
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
@@ -65,7 +73,8 @@ app.post('/api/contact', (req, res) => {
     res.status(400).json({ error: 'Name, email and message are required' })
     return
   }
-  console.log('[CONTACT]', JSON.stringify({ name, email, subject: subject || '', message, receivedAt: new Date().toISOString() }, null, 2))
+  // Avoid writing customer messages and email addresses to process logs.
+  console.info('[CONTACT] message received', { hasSubject: Boolean(subject), receivedAt: new Date().toISOString() })
   res.status(200).json({ ok: true })
 })
 
@@ -102,7 +111,14 @@ app.use('/api/webhooks', incomingWebhookRouter)
 app.use('/api/i18n', i18nRouter)
 app.use('/api/portal', portalRouter)
 app.use('/api/ai', aiRouter)
-app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')))
+// Legacy backup files may exist under uploads/backups. Never expose database dumps publicly.
+app.use('/uploads/backups', (_req, res) => res.status(404).json({ error: 'Not found' }))
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads'), {
+  setHeaders(res, filePath) {
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    if (!/\.(png|jpe?g|gif|webp)$/i.test(filePath)) res.setHeader('Content-Disposition', 'attachment')
+  },
+}))
 
 async function seedModules() {
   try {
@@ -115,6 +131,28 @@ async function seedModules() {
         update: { label: cfg.label, parent: cfg.parent, sequence: cfg.sequence, icon: cfg.icon },
         create: { name, label: cfg.label, parent: cfg.parent, sequence: cfg.sequence, icon: cfg.icon, isEntity: !!cfg.modelName },
       })
+    }
+    const roles = await prisma.role.findMany({ select: { id: true, name: true } })
+    for (const role of roles) {
+      const existing = await prisma.rolePermission.findMany({ where: { roleId: role.id }, select: { moduleName: true } })
+      const configured = new Set(existing.map(permission => permission.moduleName))
+      const fullAccess = role.name.toLowerCase() === 'ceo'
+      const missing = PERMISSION_MODULES.filter(moduleName => !configured.has(moduleName))
+      if (missing.length) {
+        await prisma.rolePermission.createMany({
+          data: missing.map(moduleName => ({
+            roleId: role.id,
+            moduleName,
+            view: true,
+            create: fullAccess,
+            edit: fullAccess,
+            delete: fullAccess,
+            import: fullAccess,
+            export: fullAccess,
+          })),
+          skipDuplicates: true,
+        })
+      }
     }
     console.log(`[MODULES] seeded ${names.length} modules`)
   } catch (err) {

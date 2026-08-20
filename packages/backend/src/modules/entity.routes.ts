@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { Prisma } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireTenant } from '../lib/module-permissions'
 import { getModuleConfig } from './moduleSetup'
 import { runWorkflows, nextSequenceNumber } from '../lib/settings'
 import { writeAudit, writeAuditFields, auditSummary } from '../lib/audit'
@@ -402,6 +403,7 @@ export function entityRouter(moduleName: string): Router {
   const isScoped = scopedModels.has(modelName)
 
   router.use(authMiddleware)
+  router.use(requireTenant)
   router.use(async (req: any, _res, next) => {
     req.moduleName = moduleName
     const active = await isModuleActive(moduleName)
@@ -671,6 +673,12 @@ export function entityRouter(moduleName: string): Router {
       if (modelName === 'product' && data.productNo) {
         const dupErr = await ensureUniqueProductNo(String(data.productNo))
         if (dupErr) return res.status(400).json({ error: dupErr })
+      }
+      if (modelName === 'escalationHistory') {
+        const ticket = await prisma.ticket.findFirst({ where: { id: data.ticketId, companyId: req.user!.companyId, isActive: true } })
+        if (!ticket) return res.status(404).json({ error: 'Ticket not found in this organization' })
+        if (!Number.isInteger(Number(data.fromLevel)) || !Number.isInteger(Number(data.toLevel)) || Number(data.toLevel) <= Number(data.fromLevel)) return res.status(400).json({ error: 'Escalation level must be greater than the current level' })
+        data.escalatedBy = req.user!.userId
       }
       fixBooleans(data)
       fixDecimals(data)

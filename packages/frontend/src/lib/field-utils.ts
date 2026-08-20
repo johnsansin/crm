@@ -1,4 +1,5 @@
 import { formatDate, formatMoney } from '@/lib/org-format'
+import { t } from '@/lib/i18n'
 
 export interface FieldConfig {
   name: string
@@ -76,7 +77,7 @@ function labelFromName(name: string): string {
     milestoneNo: 'Milestone No', plannedHours: 'Planned Hours', actualHours: 'Actual Hours', sequence: 'Sequence',
     assetName: 'Asset Name', tagNumber: 'Tag Number', dateSold: 'Date Sold', datesInService: 'Date In Service',
     dateOutOfService: 'Date Out Of Service', faqNo: 'FAQ Number',
-    shippingMethod: 'Shipping Method', shippingTrackingNumber: 'Tracking Number', invoiceId: 'Invoice',
+    shippingMethod: 'Shipping Method', shippingTrackingNumber: 'Tracking Number',
     contractName: 'Contract Name', contractNo: 'Contract Number', contractType: 'Contract Type',
     trackingUnit: 'Tracking Unit', totalUnits: 'Total Units', usedUnits: 'Used Units',
     renewalDate: 'Renewal Date', relatedTo: 'Related To', relatedModule: 'Related Module',
@@ -255,20 +256,20 @@ export function getFieldTabs(module: string, fields: FieldConfig[]): { label: st
     const addrFields = fields.filter(f => isAddressField(f.name))
     const finFields = fields.filter(f => isFinancialField(f.name))
     const result: { label: string; fieldConfigs: FieldConfig[] }[] = []
-    if (detailFields.length) result.push({ label: 'Details', fieldConfigs: detailFields })
-    if (addrFields.length) result.push({ label: 'Address', fieldConfigs: addrFields })
-    if (finFields.length) result.push({ label: 'Financial', fieldConfigs: finFields })
-    if (descFields.length) result.push({ label: 'Description', fieldConfigs: descFields })
+    if (detailFields.length) result.push({ label: t('Details'), fieldConfigs: detailFields })
+    if (addrFields.length) result.push({ label: t('Address'), fieldConfigs: addrFields })
+    if (finFields.length) result.push({ label: t('Financial'), fieldConfigs: finFields })
+    if (descFields.length) result.push({ label: t('Description'), fieldConfigs: descFields })
     return result
   }
   return tabs.map(tab => ({
-    label: tab.label,
+    label: t(tab.label),
     fieldConfigs: tab.fields.map(name => fields.find(f => f.name === name)).filter(Boolean) as FieldConfig[],
   })).filter(t => t.fieldConfigs.length > 0)
 }
 
 export function getFieldLabel(name: string): string {
-  return labelFromName(name)
+  return t(labelFromName(name))
 }
 
 export function formatFieldValue(value: any, key: string): string {

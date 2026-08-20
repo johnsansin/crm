@@ -2,9 +2,11 @@ import { Router } from 'express'
 import crypto from 'crypto'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 
 export const webhooksRouter = Router()
 webhooksRouter.use(authMiddleware)
+webhooksRouter.use(requireModulePermission('webhooks'))
 
 webhooksRouter.get('/', async (req, res, next) => {
   try {

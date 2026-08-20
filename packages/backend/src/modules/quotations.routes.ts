@@ -1,11 +1,13 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 import { renderReport, escapeHtml } from './report'
 
 export const quotationsRouter = Router()
 
 quotationsRouter.use(authMiddleware)
+quotationsRouter.use(requireModulePermission('quotes'))
 
 const quoteInclude = {
   lineItems: { orderBy: { sequence: 'asc' as const } },
@@ -21,7 +23,7 @@ async function quoteRelatedData(quoteId: string, companyId: string) {
     prisma.quoteStageHistory.findMany({ where: { quoteId }, orderBy: { createdAt: 'asc' } }),
     prisma.salesOrder.findMany({ where: { quoteId, companyId, isActive: true }, orderBy: { createdAt: 'desc' } }),
     prisma.invoice.findMany({ where: { quoteId, companyId, isActive: true }, orderBy: { createdAt: 'desc' } }),
-    prisma.comment.findMany({ where: { moduleName: 'quotes', recordId: quoteId }, orderBy: { createdAt: 'desc' } }),
+    prisma.comment.findMany({ where: { companyId, moduleName: 'quotes', recordId: quoteId }, orderBy: { createdAt: 'desc' } }),
   ])
   const userIds = new Set<string>()
   stageHistory.forEach(h => h.changedBy && userIds.add(h.changedBy))
@@ -29,7 +31,7 @@ async function quoteRelatedData(quoteId: string, companyId: string) {
   salesOrders.forEach(s => s.assignedTo && userIds.add(s.assignedTo))
   invoices.forEach(i => i.assignedTo && userIds.add(i.assignedTo))
   const users = await prisma.user.findMany({
-    where: { id: { in: [...userIds] } },
+    where: { id: { in: [...userIds] }, companyId },
     select: { id: true, firstName: true, lastName: true, email: true, userName: true },
   })
   const nameMap = new Map(users.map(u => [u.id, [u.firstName, u.lastName].filter(Boolean).join(' ') || u.userName || u.email]))

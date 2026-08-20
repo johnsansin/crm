@@ -14,7 +14,6 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { t } from '@/lib/i18n'
-import { api } from '@/lib/api'
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard, Building2, Users, UserPlus, TrendingUp, Megaphone, Swords,
@@ -32,9 +31,7 @@ const fallbackGroups = [
     label: 'Marketing',
     items: [
       { module: 'campaigns', label: 'Campaigns', icon: 'Megaphone' },
-      { module: 'leads', label: 'Leads', icon: 'UserPlus' },
-      { module: 'accounts', label: 'Accounts', icon: 'Building2' },
-      { module: 'contacts', label: 'Contacts', icon: 'Users' },
+      { module: 'email-campaigns', label: 'Email Campaigns', icon: 'Send' },
       { module: 'landing-pages', label: 'Landing Pages', icon: 'Globe' },
       { module: 'social-media', label: 'Social Media', icon: 'Share2' },
     ]
@@ -42,7 +39,10 @@ const fallbackGroups = [
   {
     label: 'Sales',
     items: [
+      { module: 'leads', label: 'Leads', icon: 'UserPlus' },
       { module: 'potentials', label: 'Opportunities', icon: 'TrendingUp' },
+      { module: 'accounts', label: 'Accounts', icon: 'Building2' },
+      { module: 'contacts', label: 'Contacts', icon: 'Users' },
       { module: 'quotes', label: 'Quotes', icon: 'FileText' },
       { module: 'salesorders', label: 'Sales Orders', icon: 'ShoppingCart' },
       { module: 'invoices', label: 'Invoices', icon: 'Receipt' },
@@ -89,7 +89,6 @@ const fallbackGroups = [
       { module: 'documents', label: 'Documents', icon: 'File' },
       { module: 'emailtemplates', label: 'Email Templates', icon: 'FileText' },
       { module: 'emails', label: 'Emails', icon: 'Mail' },
-      { module: 'email-campaigns', label: 'Email Campaigns', icon: 'Send' },
       { module: 'sms', label: 'SMS', icon: 'MessageSquare' },
       { module: 'chat-admin', label: 'Chat Admin', icon: 'MessageCircle' },
       { module: 'webhooks', label: 'Webhooks', icon: 'Webhook' },
@@ -103,6 +102,8 @@ for (const group of fallbackGroups) {
     moduleToGroup[item.module] = group.label
   }
 }
+
+const WORKFLOW_ORDER = ['campaigns', 'email-campaigns', 'landing-pages', 'social-media', 'leads', 'potentials', 'accounts', 'contacts', 'quotes', 'salesorders', 'invoices']
 
 function buildGroups(modules: any[] | null) {
   if (!modules) return fallbackGroups
@@ -119,7 +120,11 @@ function buildGroups(modules: any[] | null) {
   for (const g of GROUP_ORDER) if (byGroup[g]) groups.push(g)
   for (const g of Object.keys(byGroup)) if (!groups.includes(g)) groups.push(g)
   return groups
-    .map(label => ({ label, items: byGroup[label].sort((a, b) => a.module.localeCompare(b.module)) }))
+    .map(label => ({ label, items: byGroup[label].sort((a, b) => {
+      const ai = WORKFLOW_ORDER.indexOf(a.module); const bi = WORKFLOW_ORDER.indexOf(b.module)
+      if (ai !== -1 || bi !== -1) return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+      return a.label.localeCompare(b.label)
+    }) }))
     .filter(g => g.items.length > 0)
 }
 
@@ -135,6 +140,12 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
       if (mounted) setMenuModules(res.data || [])
     }).catch(() => {})
     return () => { mounted = false }
+  }, [])
+
+  useEffect(() => {
+    const refresh = () => api.getMenuModules().then(res => setMenuModules(res.data || [])).catch(() => {})
+    window.addEventListener('crm-menu-updated', refresh)
+    return () => window.removeEventListener('crm-menu-updated', refresh)
   }, [])
 
   const menuGroups = buildGroups(menuModules)
@@ -183,6 +194,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
           <NavItem module="calendar" label={t('Calendar')} icon="CalendarDays" collapsed={collapsed} dataTour="calendar" />
           <NavItem module="chat" label={t('Chat')} icon="MessageSquare" collapsed={collapsed} />
           <NavItem module="forecast" label={t('Forecasting')} icon="LineChart" collapsed={collapsed} />
+          <NavItem module="reports" label={t('Reports')} icon="BarChart3" collapsed={collapsed} />
           <NavItem module="ai-assistant" label={t('AI Assistant')} icon="Sparkles" collapsed={collapsed} dataTour="ai-assistant" />
 
           <div className="pt-2 pb-1">
@@ -239,22 +251,6 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
           {user?.isSuperAdmin && (
             <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" collapsed={collapsed} />
           )}
-          <button
-            onClick={async () => {
-              try {
-                await api.resetOnboarding()
-                useAuthStore.setState({ user: { ...user, hasCompletedOnboarding: false } })
-              } catch {}
-            }}
-            className={cn(
-              'w-full flex items-center gap-3 rounded-lg transition-all duration-150 text-sidebar-foreground/60 hover:bg-sidebar-hover hover:text-white',
-              collapsed && 'md:justify-center md:px-2',
-              'px-3 py-2.5 text-[13px] font-medium'
-            )}
-          >
-            <Sparkles size={19} strokeWidth={1.8} className="shrink-0" />
-            <span className={cn('truncate leading-tight', collapsed && 'md:hidden')}>{t('Replay Tour')}</span>
-          </button>
           <NavLink
             to="/profile"
             className={({ isActive }) =>
@@ -305,7 +301,7 @@ function NavItem({ module, label, icon, collapsed, dataTour }: { module: string;
         )
       }
     >
-      <Icon size={19} strokeWidth={isActive => isActive ? 2.2 : 1.8} className="shrink-0" />
+      <Icon size={19} strokeWidth={1.8} className="shrink-0" />
       <span className={cn('truncate leading-tight', collapsed && 'md:hidden')}>{label}</span>
     </NavLink>
   )

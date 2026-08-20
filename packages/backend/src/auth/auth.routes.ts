@@ -8,8 +8,12 @@ import { canLogin, recordLoginFailure, resetLoginFailures, validatePassword } fr
 import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { verifyTotp } from '../lib/otp'
 import { getClientIp, writeAudit } from '../lib/audit'
+import { signingSecret } from '../lib/secrets'
+import { publicUser } from '../lib/public-user'
+import { PERMISSION_MODULES } from '../lib/module-permissions'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'bizforce-jwt-secret-dev-2026'
+const JWT_SECRET = signingSecret('JWT_SECRET', 'bizforce-jwt-secret-dev-2026')
+const TWO_FACTOR_CHALLENGE_TTL = '5m'
 
 export const authRouter = Router()
 
@@ -43,6 +47,23 @@ async function issueToken(user: any) {
     { expiresIn: '7d' }
   )
   return { token, isSuperAdmin }
+}
+
+function issueTwoFactorChallenge(userId: string): string {
+  return jwt.sign({ userId, purpose: 'two-factor-login' }, JWT_SECRET, {
+    expiresIn: TWO_FACTOR_CHALLENGE_TTL,
+    audience: 'bizforce-two-factor',
+  })
+}
+
+function verifyTwoFactorChallenge(challenge: unknown): string | null {
+  if (typeof challenge !== 'string' || !challenge) return null
+  try {
+    const payload = jwt.verify(challenge, JWT_SECRET, { audience: 'bizforce-two-factor' }) as jwt.JwtPayload
+    return payload.purpose === 'two-factor-login' && typeof payload.userId === 'string' ? payload.userId : null
+  } catch {
+    return null
+  }
 }
 
 async function verifyCredentials(user: any, password: string, req?: any) {
@@ -82,11 +103,10 @@ authRouter.post('/login', async (req, res, next) => {
 
     // 2FA: issue a one-time session challenge
     if (user.twoFactorEnabled) {
-      const { password: _, profile: p, ...userData } = user
       return res.json({
         requires2FA: true,
-        userId: user.id,
-        user: { ...userData, isSuperAdmin: p?.isSuperAdmin || false },
+        challenge: issueTwoFactorChallenge(user.id),
+        user: publicUser(user, { isSuperAdmin: user.profile?.isSuperAdmin || false }),
       })
     }
 
@@ -96,14 +116,15 @@ authRouter.post('/login', async (req, res, next) => {
     await writeAudit({ moduleName: 'auth', action: 'LOGIN', newValue: user.email, userId: user.id, req })
 
     const { token, isSuperAdmin } = await issueToken(user)
-    const { password: _, profile: p, ...userData } = user
-    res.json({ token, user: { ...userData, isSuperAdmin } })
+    res.json({ token, user: publicUser(user, { isSuperAdmin }) })
   } catch (err) { next(err) }
 })
 
 authRouter.post('/login/2fa', async (req, res, next) => {
   try {
-    const { userId, code } = req.body
+    const { challenge, code } = req.body
+    const userId = verifyTwoFactorChallenge(challenge)
+    if (!userId) return res.status(401).json({ error: 'Invalid or expired login challenge' })
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { company: true, profile: true }
@@ -126,8 +147,7 @@ authRouter.post('/login/2fa', async (req, res, next) => {
     await writeAudit({ moduleName: 'auth', action: 'LOGIN', newValue: user.email, userId: user.id, req })
 
     const { token, isSuperAdmin } = await issueToken(user)
-    const { password: _, profile: p, ...userData } = user
-    res.json({ token, user: { ...userData, isSuperAdmin } })
+    res.json({ token, user: publicUser(user, { isSuperAdmin }) })
   } catch (err) { next(err) }
 })
 
@@ -153,7 +173,7 @@ async function sendVerificationEmail(email: string, code: string) {
   ].join('')
   const fromOverride = await getSmtpConfig(null)
   const sent = await sendMail({ to: email, subject: 'Verify your email — BizForce CRM', html, fromOverride })
-  console.log(`[REGISTER] Verification code for ${email}: ${code}${sent.delivered ? '' : ' (email NOT delivered)'}`)
+  if (!sent.delivered) console.warn(`[REGISTER] Verification email could not be delivered to ${email}`)
   return sent
 }
 
@@ -162,7 +182,7 @@ async function createCompanyForRegistration(payload: any) {
     data: { name: payload.companyName || `${payload.firstName}'s Organization` }
   })
 
-  const modules = ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds']
+  const modules = PERMISSION_MODULES
 
   const ceo = await prisma.role.create({ data: { name: 'CEO', description: 'Full access to all modules', companyId: company.id } })
   await prisma.role.create({ data: { name: 'Manager', description: 'Manager level access', parentId: ceo.id, companyId: company.id } })
@@ -287,8 +307,7 @@ authRouter.post('/register/verify', async (req, res, next) => {
     await writeAudit({ moduleName: 'auth', action: 'LOGIN', newValue: user.email, userId: user.id, req })
 
     const { token } = await issueToken(user)
-    const { password: _, ...userData } = user
-    res.status(201).json({ token, user: { ...userData, isSuperAdmin: false } })
+    res.status(201).json({ token, user: publicUser(user, { isSuperAdmin: false }) })
   } catch (err) { next(err) }
 })
 
@@ -337,8 +356,7 @@ authRouter.get('/me', authMiddleware, async (req, res, next) => {
       include: { role: true, company: true, profile: true }
     })
     if (!user) return res.status(404).json({ error: 'User not found' })
-    const { password: _, profile: p, ...userData } = user
-    res.json({ ...userData, isSuperAdmin: p?.isSuperAdmin || false, hasCompletedOnboarding: user.hasCompletedOnboarding || false, hasCompletedQuickStart: user.hasCompletedQuickStart || false })
+    res.json(publicUser(user, { isSuperAdmin: user.profile?.isSuperAdmin || false }))
   } catch (err) { next(err) }
 })
 
@@ -348,7 +366,7 @@ authRouter.post('/forgot-password', async (req, res, next) => {
     const raw = (req.body?.email || '').toString().trim().toLowerCase()
     if (!raw) return res.status(400).json({ error: 'Email is required' })
     const user = await prisma.user.findUnique({ where: { email: raw } })
-    if (!user) return res.status(404).json({ error: `Invalid email id. No account found for ${raw}` })
+    if (!user) return res.json({ message: 'If that email exists, a reset link has been sent.' })
     const now = Date.now()
     if (user.resetToken && user.resetTokenExpires && user.resetTokenExpires.getTime() > now) {
       return res.json({ message: `A reset link was already sent to ${raw}. Please check your inbox.`, email: raw, alreadySent: true, delivered: false })
@@ -359,7 +377,6 @@ authRouter.post('/forgot-password', async (req, res, next) => {
       where: { id: user.id },
       data: { resetToken: token, resetTokenExpires: expires }
     })
-    console.log(`[RESET] Token for ${raw}: ${token}`)
     const baseUrl = req.headers.origin || 'http://localhost:5173'
     const resetLink = `${baseUrl}/reset-password?token=${token}`
     const sent = await sendMail({
@@ -429,8 +446,7 @@ authRouter.put('/me', authMiddleware, async (req, res, next) => {
       where: { id: req.user!.userId },
       data
     })
-    const { password: _, ...userData } = user
-    res.json(userData)
+    res.json(publicUser(user))
   } catch (err) { next(err) }
 })
 
@@ -459,14 +475,13 @@ authRouter.put('/me/quickstart', authMiddleware, async (req, res, next) => {
     const { language, timezone, dateFormat } = req.body || {}
     await prisma.user.update({
       where: { id: req.user!.userId },
-      data: { hasCompletedQuickStart: true, ...(language ? { language } : {}) },
+      data: {
+        hasCompletedQuickStart: true,
+        ...(language ? { language } : {}),
+        ...(timezone ? { timezone } : {}),
+        ...(dateFormat ? { dateFormat } : {}),
+      },
     })
-    if (req.user!.companyId) {
-      const { setOrgSetting } = require('../lib/settings')
-      if (language) await setOrgSetting(req.user!.companyId, 'language', language)
-      if (timezone) await setOrgSetting(req.user!.companyId, 'timezone', timezone)
-      if (dateFormat) await setOrgSetting(req.user!.companyId, 'dateFormat', dateFormat)
-    }
     res.json({ success: true, hasCompletedQuickStart: true })
   } catch (err) { next(err) }
 })

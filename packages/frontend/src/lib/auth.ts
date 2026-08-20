@@ -1,5 +1,14 @@
 import { create } from 'zustand'
 import { api } from './api'
+import { setOrgSettings } from './org-format'
+
+function applyUserLocale(user: any) {
+  if (!user) return
+  setOrgSettings({ language: user.language || 'en_us', timezone: user.timezone || 'UTC', dateFormat: user.dateFormat || 'mm-dd-yyyy', hourFormat: user.hourFormat || '12h', defaultCurrency: user.currencyCode || 'USD' })
+  const code = (user.language || 'en_us').split('_')[0]
+  document.documentElement.lang = code
+  document.documentElement.dir = ['ar', 'ur', 'he', 'fa'].includes(code) ? 'rtl' : 'ltr'
+}
 
 interface AuthState {
   token: string | null
@@ -7,7 +16,7 @@ interface AuthState {
   loading: boolean
   setToken: (token: string | null) => void
   login: (email: string, password: string) => Promise<any>
-  login2fa: (userId: string, code: string) => Promise<void>
+  login2fa: (challenge: string, code: string) => Promise<void>
   register: (data: any) => Promise<any>
   verifyRegister: (verificationId: string, code: string) => Promise<any>
   logout: () => void
@@ -32,12 +41,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return res
     }
     localStorage.setItem('token', res.token)
+    applyUserLocale(res.user)
     set({ token: res.token, user: res.user, loading: false })
   },
 
-  login2fa: async (userId, code) => {
-    const res = await api.login2fa(userId, code)
+  login2fa: async (challenge, code) => {
+    const res = await api.login2fa(challenge, code)
     localStorage.setItem('token', res.token)
+    applyUserLocale(res.user)
     set({ token: res.token, user: res.user, loading: false })
   },
 
@@ -50,6 +61,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   verifyRegister: async (verificationId, code) => {
     const res = await api.verifyRegister(verificationId, code)
     localStorage.setItem('token', res.token)
+    applyUserLocale(res.user)
     set({ token: res.token, user: res.user, loading: false })
     return res
   },
@@ -69,6 +81,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     try {
       const user = await api.getMe()
+      applyUserLocale(user)
       set({ user, loading: false })
     } catch {
       localStorage.removeItem('token')

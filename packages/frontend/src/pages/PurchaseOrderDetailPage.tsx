@@ -318,9 +318,9 @@ export function PurchaseOrderDetailPage() {
     setDeleteTarget(false)
   }
 
-  function handlePdf() {
-    const token = localStorage.getItem('token')
-    window.open(`/api/purchaseorders/${id}/pdf?token=${encodeURIComponent(token || '')}`, '_blank')
+  async function handlePdf() {
+    try { await api.openAuthenticatedFile(`/purchaseorders/${id}/pdf`) }
+    catch (e: any) { addToast({ title: 'PDF preview failed', description: e.message, variant: 'destructive' }) }
   }
 
   async function handleEmail() {

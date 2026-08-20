@@ -104,10 +104,10 @@ export function PricingPage() {
                   ))}
                 </ul>
                 <Button
-                  className={`relative mt-8 w-full h-11 overflow-hidden rounded-lg text-white font-semibold text-sm border-none shadow-lg transition-all hover:shadow-xl ${
+                  className={`relative mt-8 w-full h-11 overflow-hidden rounded-lg !text-white font-semibold text-sm !border-0 shadow-lg transition-all hover:shadow-xl ${
                     plan.highlight
-                      ? 'bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 hover:from-sky-400 hover:via-blue-500 hover:to-blue-600 shadow-blue-500/40'
-                      : 'bg-gradient-to-b from-slate-600 to-slate-800 hover:from-slate-500 hover:to-slate-700 shadow-slate-500/30'
+                      ? '!bg-gradient-to-b !from-sky-500 !via-blue-600 !to-blue-700 hover:!from-sky-400 hover:!via-blue-500 hover:!to-blue-600 shadow-blue-500/40'
+                      : '!bg-gradient-to-b !from-slate-600 !to-slate-800 hover:!from-slate-500 hover:!to-slate-700 shadow-slate-500/30'
                   }`}
                   onClick={() => {
                     if (plan.name === 'Enterprise') {

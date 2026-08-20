@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { formatDate, formatMoney, useOrgSettings } from '@/lib/org-format'
+import { t } from '@/lib/i18n'
 
 interface Column<T> {
   key: string
@@ -139,7 +140,7 @@ export function DataTable<T extends Record<string, any>>({
                   onClick={() => col.sortable && handleSort(col.key)}
                 >
                   <span className={cn('inline-flex items-center gap-1.5', col.className === 'text-right' && 'flex-row-reverse')}>
-                    {col.label}
+                    {t(col.label)}
                     {col.sortable && (
                       activeKey === col.key
                         ? (activeOrder === 'asc' ? <ArrowUp size={13} className="text-primary" /> : <ArrowDown size={13} className="text-primary" />)

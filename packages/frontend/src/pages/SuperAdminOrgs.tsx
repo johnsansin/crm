@@ -16,8 +16,8 @@ const statusColors: Record<string, string> = {
 type ViewMode = 'table' | 'kanban' | 'cards'
 
 const langLabel = (code?: string) => LANGUAGES.find(l => l.value === code)?.label || code || '-'
-const tzLabel = (tz?: string) => TIMEZONES.find(t => t.value === tz)?.label?.split(' ')[0] || tz || '-'
-const dfLabel = (df?: string) => DATE_FORMATS.find(d => d.value === df)?.label || df || '-'
+const tzLabel = (tz?: string) => TIMEZONES.find(t => t === tz) || tz || '-'
+const dfLabel = (df?: string) => DATE_FORMATS.find(d => d === df) || df || '-'
 
 export function SuperAdminOrgs() {
   useOrgSettings()
@@ -27,6 +27,7 @@ export function SuperAdminOrgs() {
   const [toggling, setToggling] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const [sortBy, setSortBy] = useState<'newest' | 'name' | 'users'>('newest')
   const [view, setView] = useState<ViewMode>('cards')
 
   const load = () => {
@@ -55,6 +56,10 @@ export function SuperAdminOrgs() {
     if (statusFilter === 'active' && c.isActive === false) return false
     if (statusFilter === 'inactive' && c.isActive !== false) return false
     return true
+  }).sort((a, b) => {
+    if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '')
+    if (sortBy === 'users') return (b._count?.users || 0) - (a._count?.users || 0)
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   })
 
   const OrgLogo = ({ org, size = 'md' }: { org: any; size?: 'sm' | 'md' | 'lg' }) => {
@@ -104,6 +109,11 @@ export function SuperAdminOrgs() {
             >{s}</button>
           ))}
         </div>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="px-3 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+          <option value="newest">Newest first</option>
+          <option value="name">Name A–Z</option>
+          <option value="users">Most users</option>
+        </select>
       </div>
 
       {loading ? (

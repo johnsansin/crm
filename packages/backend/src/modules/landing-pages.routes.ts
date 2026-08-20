@@ -1,9 +1,11 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 
 export const landingPagesRouter = Router()
 landingPagesRouter.use(authMiddleware)
+landingPagesRouter.use(requireModulePermission('landingpages'))
 
 landingPagesRouter.get('/', async (req, res, next) => {
   try {

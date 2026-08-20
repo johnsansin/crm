@@ -1,11 +1,21 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 
 export const dashboardRouter = Router()
+dashboardRouter.use(authMiddleware)
+dashboardRouter.use(requireModulePermission('dashboard', 'view'))
 
 function fixedDecimal(v: any, d = 2): number {
   return Number(Number(v || 0).toFixed(d))
+}
+
+function recordScope(req: any) {
+  return {
+    ...(req.user?.companyId ? { companyId: req.user.companyId } : {}),
+    ...(!req.user?.isAdmin && !req.user?.isSuperAdmin ? { assignedTo: req.user.userId } : {}),
+  }
 }
 
 function startOfPeriod(period: 'month' | 'quarter' | 'year'): Date {
@@ -21,7 +31,7 @@ function startOfPeriod(period: 'month' | 'quarter' | 'year'): Date {
 dashboardRouter.get('/stats', authMiddleware, async (req, res, next) => {
   try {
     const companyId = req.user!.companyId
-    const base = companyId ? { companyId } : {}
+    const base = recordScope(req)
     const active = { isActive: true }
 
     const now = new Date()
@@ -107,8 +117,7 @@ dashboardRouter.get('/stats', authMiddleware, async (req, res, next) => {
 dashboardRouter.get('/pipeline', authMiddleware, async (req, res, next) => {
   try {
     const companyId = req.user!.companyId
-    const where: any = { isActive: true }
-    if (companyId) where.companyId = companyId
+    const where: any = { ...recordScope(req), isActive: true }
 
     const potentials = await prisma.potential.findMany({ where })
     const stageMap = new Map<string, { count: number; amount: number; weighted: number }>()
@@ -140,8 +149,7 @@ dashboardRouter.get('/pipeline', authMiddleware, async (req, res, next) => {
 dashboardRouter.get('/forecast', authMiddleware, async (req, res, next) => {
   try {
     const companyId = req.user!.companyId
-    const where: any = { isActive: true }
-    if (companyId) where.companyId = companyId
+    const where: any = { ...recordScope(req), isActive: true }
 
     const potentials = await prisma.potential.findMany({ where })
     const now = new Date()
@@ -180,10 +188,10 @@ dashboardRouter.get('/forecast', authMiddleware, async (req, res, next) => {
 dashboardRouter.get('/activity', authMiddleware, async (req, res, next) => {
   try {
     const companyId = req.user!.companyId
-    const where: any = companyId ? { companyId } : {}
+    const where: any = recordScope(req)
 
     const [auditLogs, activities] = await Promise.all([
-      prisma.auditLog.findMany({ where, orderBy: { createdAt: 'desc' }, take: 20, select: { id: true, moduleName: true, action: true, newValue: true, userId: true, createdAt: true } }),
+      prisma.auditLog.findMany({ where: { ...(companyId ? { companyId } : {}), ...(!req.user!.isAdmin && !req.user!.isSuperAdmin ? { userId: req.user!.userId } : {}) }, orderBy: { createdAt: 'desc' }, take: 20, select: { id: true, moduleName: true, action: true, newValue: true, userId: true, createdAt: true } }),
       prisma.activity.findMany({ where: { ...where, isActive: true }, orderBy: { createdAt: 'desc' }, take: 20, select: { id: true, subject: true, activityType: true, status: true, startAt: true, dueAt: true, createdAt: true } }),
     ])
 
@@ -202,7 +210,7 @@ dashboardRouter.get('/activity', authMiddleware, async (req, res, next) => {
 dashboardRouter.get('/kpis', authMiddleware, async (req, res, next) => {
   try {
     const companyId = req.user!.companyId
-    const base = companyId ? { companyId } : {}
+    const base = recordScope(req)
     const active = { isActive: true }
 
     const now = new Date()
@@ -226,7 +234,7 @@ dashboardRouter.get('/kpis', authMiddleware, async (req, res, next) => {
       prisma.ticket.count({ where: { ...base, ...active } }),
       prisma.lead.findMany({ where: { ...base, ...active }, select: { id: true, isConverted: true, leadSource: true, createdAt: true, convertedAccountId: true } }),
       prisma.lead.count({ where: { ...base, ...active, isConverted: true } }),
-      prisma.user.findMany({ where: { ...base, isActive: true }, select: { id: true } }),
+      prisma.user.findMany({ where: { ...(companyId ? { companyId } : {}), ...(!req.user!.isAdmin && !req.user!.isSuperAdmin ? { id: req.user!.userId } : {}), isActive: true }, select: { id: true } }),
       prisma.invoice.findMany({ where: { ...base, ...active, invoiceStatus: 'Paid', invoiceDate: { gte: monthStart } }, select: { grandTotal: true } }),
       prisma.potential.aggregate({ where: { ...base, ...active, stage: 'Closed Won', createdAt: { gte: monthStart } }, _sum: { amount: true } }),
       prisma.potential.aggregate({ where: { ...base, ...active, stage: 'Closed Won', createdAt: { gte: prevMonthStart, lt: monthStart } }, _sum: { amount: true } }),
@@ -310,7 +318,7 @@ dashboardRouter.get('/kpis', authMiddleware, async (req, res, next) => {
 
     // Activity feed
     const [auditLogs, activities] = await Promise.all([
-      prisma.auditLog.findMany({ where: base, orderBy: { createdAt: 'desc' }, take: 10, select: { id: true, moduleName: true, action: true, newValue: true, createdAt: true } }),
+      prisma.auditLog.findMany({ where: { ...(companyId ? { companyId } : {}), ...(!req.user!.isAdmin && !req.user!.isSuperAdmin ? { userId: req.user!.userId } : {}) }, orderBy: { createdAt: 'desc' }, take: 10, select: { id: true, moduleName: true, action: true, newValue: true, createdAt: true } }),
       prisma.activity.findMany({ where: { ...base, isActive: true }, orderBy: { createdAt: 'desc' }, take: 10, select: { id: true, subject: true, activityType: true, status: true, createdAt: true } }),
     ])
     const activityFeed = [

@@ -55,6 +55,10 @@
     --sidebar-hover: 217 33% 14%;
     --sidebar-active: 221 83% 53%;
   }
+  [data-accent="violet"] { --primary: 262 83% 58%; --ring: 262 83% 58%; --sidebar-active: 262 83% 58%; }
+  [data-accent="emerald"] { --primary: 160 84% 39%; --ring: 160 84% 39%; --sidebar-active: 160 84% 39%; }
+  [data-accent="rose"] { --primary: 347 77% 50%; --ring: 347 77% 50%; --sidebar-active: 347 77% 50%; }
+  [data-accent="orange"] { --primary: 25 95% 53%; --ring: 25 95% 53%; --sidebar-active: 25 95% 53%; }
 }
 
 @layer base {
@@ -64,6 +68,12 @@
   body {
     @apply bg-background text-foreground;
   }
+  button, a, input, select, textarea { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background; }
+}
+
+@layer components {
+  .page-surface { @apply rounded-2xl border border-border/70 bg-card shadow-sm; }
+  .page-tabs { @apply flex w-full gap-1 overflow-x-auto rounded-xl border border-border/70 bg-card p-1 shadow-sm; }
 }
 
 /* Hide scrollbar everywhere */

@@ -18,6 +18,13 @@ export const DATE_FORMATS = [
   'M d, yyyy', 'd M, yyyy', 'M d yy',
 ]
 
+export const HOUR_FORMATS = ['12h', '24h']
+
+export const CURRENCIES = [
+  'USD', 'EUR', 'GBP', 'PKR', 'INR', 'AUD', 'CAD', 'AED', 'SAR', 'JPY', 'CNY',
+  'CHF', 'SEK', 'NOK', 'DKK', 'NZD', 'SGD', 'HKD', 'ZAR', 'BRL', 'MXN',
+]
+
 export const LANGUAGES = [
   { value: 'en_us', label: 'English (US)' },
   { value: 'en_gb', label: 'English (UK)' },

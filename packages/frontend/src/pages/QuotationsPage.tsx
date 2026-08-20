@@ -370,9 +370,9 @@ export function QuotationsPage() {
     } catch { addToast({ title: 'Error', description: 'Failed to send email', variant: 'destructive' }) }
   }
 
-  function handlePdf() {
-    const token = localStorage.getItem('token')
-    window.open(`/api/quotations/${id}/pdf?token=${encodeURIComponent(token || '')}`, '_blank')
+  async function handlePdf() {
+    try { await api.openAuthenticatedFile(`/quotations/${id}/pdf`) }
+    catch (e: any) { addToast({ title: 'PDF preview failed', description: e.message, variant: 'destructive' }) }
   }
 
   const selectedRecord = records.find(r => r.id === id)

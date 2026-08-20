@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { resolveAuditReferences } from '../lib/audit'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireTenant } from '../lib/module-permissions'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { writeAudit } from '../lib/audit'
 import { notifyFollowersAndAssignee, userName } from '../lib/notify'
@@ -9,6 +10,7 @@ import { notifyFollowersAndAssignee, userName } from '../lib/notify'
 export const recordRouter = Router()
 
 recordRouter.use(authMiddleware)
+recordRouter.use(requireTenant)
 
 const modelMap: Record<string, string> = {
   accounts: 'account', contacts: 'contact', leads: 'lead', potentials: 'potential',

@@ -3119,6 +3119,24 @@ const ar: Dict = {
   'Ticket overview': 'نظرة عامة على التذاكر',
 }
 
+Object.assign(ar, {
+  'General': 'عام', 'Financial': 'مالي', 'Analysis': 'تحليل', 'Content': 'المحتوى', 'Terms': 'الشروط',
+  'Product Details': 'تفاصيل المنتج', 'Product Image Information': 'معلومات صورة المنتج', 'Stock Information': 'معلومات المخزون', 'Product Prices': 'أسعار المنتج', 'Pricing': 'التسعير',
+  'Account Name': 'اسم الحساب', 'Account Number': 'رقم الحساب', 'Parent Account': 'الحساب الرئيسي', 'Account Type': 'نوع الحساب',
+  'First Name': 'الاسم الأول', 'Last Name': 'اسم العائلة', 'Assigned To': 'مسند إلى', 'Secondary Email': 'البريد الإلكتروني الثانوي',
+  'Lead Source': 'مصدر العميل المحتمل', 'Lead Status': 'حالة العميل المحتمل', 'Annual Revenue': 'الإيرادات السنوية', 'Employees': 'الموظفون',
+  'Opportunity Name': 'اسم الفرصة', 'Closing Date': 'تاريخ الإغلاق', 'Forecast Category': 'فئة التوقع', 'Next Step': 'الخطوة التالية',
+  'Campaign Name': 'اسم الحملة', 'Campaign Type': 'نوع الحملة', 'Expected Revenue': 'الإيرادات المتوقعة', 'Actual Cost': 'التكلفة الفعلية',
+  'Product Name': 'اسم المنتج', 'Product No': 'رقم المنتج', 'Category': 'الفئة', 'Unit Price': 'سعر الوحدة', 'Cost Price': 'سعر التكلفة',
+  'Service Name': 'اسم الخدمة', 'Service Number': 'رقم الخدمة', 'Vendor Name': 'اسم المورد', 'Price Book Name': 'اسم قائمة الأسعار',
+  'Quote Number': 'رقم عرض السعر', 'Valid Until': 'صالح حتى', 'Grand Total': 'الإجمالي الكلي', 'Sub Total': 'المجموع الفرعي',
+  'Sales Order No': 'رقم أمر البيع', 'Purchase Order No': 'رقم أمر الشراء', 'Invoice No': 'رقم الفاتورة', 'Invoice Date': 'تاريخ الفاتورة', 'Due Date': 'تاريخ الاستحقاق',
+  'Billing Street': 'شارع الفوترة', 'Billing City': 'مدينة الفوترة', 'Billing State': 'منطقة الفوترة', 'Billing Country': 'بلد الفوترة', 'Billing Postal Code': 'الرمز البريدي للفوترة',
+  'Shipping Street': 'شارع الشحن', 'Shipping City': 'مدينة الشحن', 'Shipping State': 'منطقة الشحن', 'Shipping Country': 'بلد الشحن', 'Shipping Postal Code': 'الرمز البريدي للشحن',
+  'Conversion Rate': 'سعر التحويل', 'Probability (%)': 'الاحتمالية (%)', 'Progress (%)': 'التقدم (%)', 'Terms & Conditions': 'الشروط والأحكام',
+  'All': 'الكل', 'shown': 'معروض', 'completed': 'مكتمل', 'Search activities...': 'البحث في الأنشطة...'
+})
+
 const pl: Dict = {
 
   'Dashboard': 'Pulpit',
@@ -4107,10 +4125,16 @@ function languageCode(lang: string): string {
   return lang.split('_')[0].toLowerCase()
 }
 
+const remoteDictionaries: Record<string, Dict> = {}
+
+export function setRemoteTranslations(locale: string, values: Dict) {
+  remoteDictionaries[languageCode(locale)] = { ...(values || {}) }
+}
+
 export function t(key: string, vars?: Record<string, string | number>): string {
   const lang = languageCode(orgLanguage())
   const dict = DICTS[lang]
-  let s = (dict && dict[key]) || key
+  let s = remoteDictionaries[lang]?.[key] || (dict && dict[key]) || key
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
       s = s.split(`{${k}}`).join(String(v))

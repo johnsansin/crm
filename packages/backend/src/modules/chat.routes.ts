@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
@@ -22,6 +23,7 @@ const chatUpload = multer({
 export const chatRouter = Router()
 
 chatRouter.use(authMiddleware)
+chatRouter.use(requireModulePermission('chat'))
 
 const ONLINE_WINDOW_MS = 2 * 60 * 1000
 

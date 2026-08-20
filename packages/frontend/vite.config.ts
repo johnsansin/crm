@@ -1,17 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': new URL('./src', import.meta.url).pathname,
     },
   },
   server: {
     port: 5173,
-    host: '0.0.0.0',
+    // Keep the development server private; production is served by nginx.
+    host: '127.0.0.1',
     proxy: {
       '/api': {
         target: 'http://localhost:3000',

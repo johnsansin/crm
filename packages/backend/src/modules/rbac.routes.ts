@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, requireAdmin } from '../middleware/auth'
+import { PERMISSION_MODULES } from '../lib/module-permissions'
 
 export const rbacRouter = Router()
 
@@ -36,7 +37,7 @@ rbacRouter.get('/roles/:id/permissions', requireAdmin, async (req, res, next) =>
     const role = await prisma.role.findFirst({ where: { id: req.params.id, companyId } })
     if (!role) return res.status(404).json({ error: 'Role not found' })
 
-    const moduleNames = ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds']
+    const moduleNames = PERMISSION_MODULES
 
     const permissions = await prisma.rolePermission.findMany({ where: { roleId: role.id } })
     const permMap = new Map(permissions.map(p => [p.moduleName, p]))
@@ -121,7 +122,8 @@ rbacRouter.put('/usergroups/:id', requireAdmin, async (req, res, next) => {
       where: { id: req.params.id, companyId: req.user!.companyId }
     })
     if (!group) return res.status(404).json({ error: 'Group not found' })
-    const updated = await prisma.userGroup.update({ where: { id: req.params.id }, data: req.body })
+    const { name, description, isActive } = req.body
+    const updated = await prisma.userGroup.update({ where: { id: req.params.id }, data: { name, description, isActive } })
     res.json(updated)
   } catch (err) { next(err) }
 })
@@ -146,6 +148,8 @@ rbacRouter.post('/usergroups/:id/members', requireAdmin, async (req, res, next) 
     })
     if (!group) return res.status(404).json({ error: 'Group not found' })
     const { userId } = req.body
+    const memberUser = await prisma.user.findFirst({ where: { id: userId, companyId: req.user!.companyId, isActive: true }, select: { id: true } })
+    if (!memberUser) return res.status(404).json({ error: 'User not found in this organization' })
     const existing = await prisma.userGroupMember.findUnique({
       where: { groupId_userId: { groupId: req.params.id, userId } }
     })

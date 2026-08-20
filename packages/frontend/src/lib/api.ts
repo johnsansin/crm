@@ -33,17 +33,42 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return res.json()
 }
 
+async function openAuthenticatedFile(endpoint: string, fileName?: string): Promise<void> {
+  const token = localStorage.getItem('token')
+  const preview = !fileName ? window.open('', '_blank') : null
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    if (!res.ok) {
+      let message = `Download failed (${res.status})`
+      try { const body = await res.json(); message = body.error || message } catch {}
+      throw new Error(message)
+    }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    if (fileName) {
+      const a = document.createElement('a'); a.href = url; a.download = fileName
+      document.body.appendChild(a); a.click(); a.remove()
+    } else if (preview) preview.location.href = url
+    else window.open(url, '_blank', 'noopener,noreferrer')
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+  } catch (error) {
+    preview?.close()
+    throw error
+  }
+}
+
 export const api = {
+  openAuthenticatedFile,
   login: (email: string, password: string) =>
-    request<{ token: string; user: any; requires2FA?: boolean; userId?: string }>('/auth/login', {
+    request<{ token: string; user: any; requires2FA?: boolean; challenge?: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
 
-  login2fa: (userId: string, code: string) =>
+  login2fa: (challenge: string, code: string) =>
     request<{ token: string; user: any }>('/auth/login/2fa', {
       method: 'POST',
-      body: JSON.stringify({ userId, code }),
+      body: JSON.stringify({ challenge, code }),
     }),
 
   orgRegister: (data: { userName: string; email: string; firstName: string; lastName: string; password: string; companyName: string }) =>
@@ -209,6 +234,7 @@ export const api = {
 
   // ---- Settings ----
   getOrgSettings: () => request<any>('/settings'),
+  getPreferences: () => request<any>('/settings/preferences'),
   updateOrgSettings: (settings: any) =>
     request<any>('/settings', { method: 'PUT', body: JSON.stringify({ settings }) }),
 
@@ -366,8 +392,11 @@ export const api = {
     return request<{ data: any[]; pagination: any }>(`/settings/login-history${qs}`)
   },
 
-  createBackup: () => request<any>('/settings/backup', { method: 'POST' }),
-  listBackups: () => request<{ data: any[] }>('/settings/backups'),
+  getSystemBackups: () => request<{ config: any; data: any[] }>('/admin/backups'),
+  updateSystemBackupConfig: (config: any) => request<{ config: any; message: string }>('/admin/backups/config', { method: 'PUT', body: JSON.stringify(config) }),
+  runSystemBackup: () => request<{ backup: any; message: string }>('/admin/backups/run', { method: 'POST' }),
+  emailSystemBackup: (fileName: string, emailTo: string) => request<{ message: string }>(`/admin/backups/${encodeURIComponent(fileName)}/email`, { method: 'POST', body: JSON.stringify({ emailTo }) }),
+  downloadSystemBackup: (fileName: string) => openAuthenticatedFile(`/admin/backups/${encodeURIComponent(fileName)}/download`, fileName),
 
   exportModule: async (moduleName: string, format: 'csv' | 'json'): Promise<{ ok: boolean; error?: string }> => {
     const token = localStorage.getItem('token')
@@ -438,7 +467,7 @@ export const api = {
   // ---- Custom views ----
   getCustomViews: (moduleName: string) => request<{ data: any[] }>(`/settings/customviews/${moduleName}`),
   createCustomView: (moduleName: string, data: any) =>
-    request<any>(`/settings/customviews/${moduleName}`, { method: 'POST', body: JSON.stringify(data) }),
+    request<any>('/settings/customviews', { method: 'POST', body: JSON.stringify({ ...data, moduleName }) }),
   updateCustomView: (id: string, data: any) =>
     request<any>(`/settings/customviews/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCustomView: (id: string) =>

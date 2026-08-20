@@ -6,14 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { LANGUAGES, TIMEZONES, DATE_FORMATS } from '@/lib/constants'
 import { t } from '@/lib/i18n'
+import { setOrgSettings } from '@/lib/org-format'
 import { Settings, Globe, Clock, CalendarDays, Sparkles, Loader2 } from 'lucide-react'
 
 export function QuickStartModal() {
   const { user } = useAuthStore()
   const { addToast } = useToast()
-  const [language, setLanguage] = useState('en_us')
-  const [timezone, setTimezone] = useState('Asia/Karachi')
-  const [dateFormat, setDateFormat] = useState('mm-dd-yyyy')
+  const [language, setLanguage] = useState(user?.language || 'en_us')
+  const [timezone, setTimezone] = useState(user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')
+  const [dateFormat, setDateFormat] = useState(user?.dateFormat || 'mm-dd-yyyy')
   const [saving, setSaving] = useState(false)
 
   if (user?.hasCompletedQuickStart) return null
@@ -23,8 +24,9 @@ export function QuickStartModal() {
     try {
       await api.completeQuickStart({ language, timezone, dateFormat })
       useAuthStore.setState({
-        user: { ...user, hasCompletedQuickStart: true, language }
+        user: { ...user, hasCompletedQuickStart: true, language, timezone, dateFormat }
       })
+      setOrgSettings({ language, timezone, dateFormat })
       addToast({ title: t('Welcome!'), description: t('Your preferences have been saved.'), variant: 'success' })
     } catch {
       addToast({ title: t('Error'), description: t('Failed to save preferences'), variant: 'destructive' })

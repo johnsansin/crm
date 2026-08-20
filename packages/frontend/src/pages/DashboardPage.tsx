@@ -5,7 +5,7 @@ import { api } from '@/lib/api'
 import { useAuthStore } from '@/lib/auth'
 import { Card, CardContent } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
-import { Building2, Users, UserPlus, TrendingUp, LifeBuoy, Package, FolderKanban, Receipt, CalendarDays, Filter, PlusCircle, LayoutDashboard, Check, RotateCcw, Save, BarChart3, PieChart, ListTodo, Ticket, User, GripVertical, Activity, Target, Clock, DollarSign, ArrowUpRight, ArrowDownRight, ArrowRightLeft, Zap, Star, Sparkles, X, Eye, EyeOff, ChevronDown, AlertCircle, CheckCircle2, Clock3, FolderOpen, Mail, UserCheck } from 'lucide-react'
+import { Building2, Users, UserPlus, TrendingUp, LifeBuoy, Package, FolderKanban, Receipt, CalendarDays, Filter, PlusCircle, LayoutDashboard, Check, RotateCcw, Save, BarChart3, PieChart, ListTodo, Ticket, User, GripVertical, Activity, Target, Clock, DollarSign, ArrowUpRight, ArrowDownRight, ArrowRightLeft, Zap, Star, Sparkles, X, Eye, EyeOff, ChevronDown, AlertCircle, CheckCircle2, Clock3, FolderOpen, Mail, UserCheck, Megaphone, BriefcaseBusiness, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useOrgSettings, formatDateTime, weekDayNames } from '@/lib/org-format'
 import { useViewableModules } from '@/lib/permissions'
@@ -31,7 +31,7 @@ const quickActions = [
 
 type WidgetKey = string
 
-const WIDGETS: { key: WidgetKey; label: string; icon: React.ElementType; tint: string; span: string; module: string | null; render: () => React.ReactNode }[] = [
+const WIDGETS: { key: WidgetKey; label: string; icon: React.ElementType; tint?: string; tile?: string; span: string; module: string | null; render: () => React.ReactNode }[] = [
   { key: 'revenueOverview', label: 'Revenue overview', icon: DollarSign, tint: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400', span: 'md:col-span-2 xl:col-span-4', module: null, render: () => <RevenueOverviewWidget /> },
   { key: 'pipelineFunnel', label: 'Sales pipeline funnel', icon: Filter, tint: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400', span: 'xl:col-span-2', module: 'potentials', render: () => <PipelineFunnelWidget /> },
   { key: 'activityFeed', label: 'Activity feed', icon: Activity, tint: 'bg-slate-50 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400', span: 'xl:col-span-1', module: null, render: () => <ActivityFeedWidget /> },
@@ -65,12 +65,20 @@ const WIDGETS: { key: WidgetKey; label: string; icon: React.ElementType; tint: s
 ]
 
 const WIDGET_KEYS = WIDGETS.map(w => w.key)
-const DEFAULT_ORDER: string[] = []
+const DEFAULT_ORDER: string[] = [
+  'assignedToMe', 'upcoming', 'openPotentials', 'openTickets', 'upcomingFollowUps',
+  'recentLeads', 'recentPotentials', 'recentTickets', 'aiInsights', 'revenueOverview',
+  'pipelineFunnel', 'salesByMonth', 'ticketStats', 'projectMilestones',
+]
+
+const PERSONAL_WIDGETS = new Set(['assignedToMe', 'upcoming', 'openPotentials', 'openTickets', 'upcomingFollowUps', 'recentLeads', 'recentPotentials', 'recentTickets', 'aiInsights'])
+const SALES_WIDGETS = new Set(['openPotentials', 'upcomingFollowUps', 'recentLeads', 'recentPotentials', 'salesFunnel', 'pipelineChart', 'leadSources', 'leadsByStatus'])
+const SERVICE_WIDGETS = new Set(['assignedToMe', 'openTickets', 'recentTickets', 'ticketStats', 'ticketsByPriority', 'projectMilestones'])
 
 function resolveConfig(saved: any): { order: string[]; hidden: string[] } {
   const order: string[] = Array.isArray(saved?.order) ? saved.order.filter((k: any) => WIDGET_KEYS.includes(k)) : []
   const hidden: string[] = Array.isArray(saved?.hidden) ? saved.hidden.filter((k: any) => WIDGET_KEYS.includes(k)) : []
-  return { order, hidden }
+  return { order: order.length ? order : [...DEFAULT_ORDER], hidden }
 }
 
 export function DashboardPage() {
@@ -91,6 +99,7 @@ export function DashboardPage() {
   const [dragKey, setDragKey] = useState<string | null>(null)
   const [overKey, setOverKey] = useState<string | null>(null)
   const [showCustomize, setShowCustomize] = useState(false)
+  const [dashboardTab, setDashboardTab] = useState<'workspace' | 'sales' | 'service' | 'notices' | 'admin'>('workspace')
   const dragRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -166,11 +175,19 @@ export function DashboardPage() {
 
   const effectiveOrder = order ?? [...DEFAULT_ORDER]
   const canViewWidget = (module: string | null) => !module || viewable.has(module)
-  const widgets = effectiveOrder
+  const allWidgets = effectiveOrder
     .filter(key => !hidden.includes(key))
     .map(key => WIDGETS.find(w => w.key === key))
     .filter((w): w is (typeof WIDGETS)[number] => Boolean(w))
     .filter(w => canViewWidget(w.module))
+
+  const widgets = allWidgets.filter(widget => {
+    if (dashboardTab === 'workspace') return PERSONAL_WIDGETS.has(widget.key)
+    if (dashboardTab === 'sales') return SALES_WIDGETS.has(widget.key)
+    if (dashboardTab === 'service') return SERVICE_WIDGETS.has(widget.key)
+    if (dashboardTab === 'admin') return !!user?.isAdmin && !PERSONAL_WIDGETS.has(widget.key)
+    return false
+  })
 
   const visibleQuickActions = quickActions.filter(a => viewable.has(a.module))
 
@@ -193,7 +210,7 @@ export function DashboardPage() {
                   <PlusCircle size={13} /> {t(a.label)}
                 </Link>
               ))}
-              <button
+              {dashboardTab !== 'notices' && <button
                 type="button"
                 onClick={() => setShowCustomize(v => !v)}
                 className={cn(
@@ -202,14 +219,31 @@ export function DashboardPage() {
                 )}
               >
                 <LayoutDashboard size={13} /> {showCustomize ? t('Done') : t('Customize')}
-              </button>
+              </button>}
             </div>
           </div>
         </CardContent>
       </Card>
 
+      <div className="flex gap-1 overflow-x-auto rounded-xl border bg-card p-1 shadow-sm">
+        {[
+          { key: 'workspace', label: 'My Workspace', icon: BriefcaseBusiness },
+          { key: 'sales', label: 'My Sales', icon: TrendingUp },
+          { key: 'service', label: 'Service & Tasks', icon: LifeBuoy },
+          { key: 'notices', label: 'Notice Board', icon: Megaphone },
+          ...(user?.isAdmin ? [{ key: 'admin', label: 'Organization Overview', icon: ShieldCheck }] : []),
+        ].map(tab => (
+          <button key={tab.key} type="button" onClick={() => { setDashboardTab(tab.key as any); setShowCustomize(false) }} className={cn(
+            'inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            dashboardTab === tab.key ? 'bg-indigo-600 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          )}>
+            <tab.icon size={15} /> {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Customize Panel — slide down */}
-      {showCustomize && (
+      {showCustomize && dashboardTab !== 'notices' && (
         <Card className="border-indigo-200 dark:border-indigo-900 shadow-md animate-in slide-in-from-top-2 duration-200">
           <CardContent className="p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -306,6 +340,7 @@ export function DashboardPage() {
         </Card>
       )}
 
+      {dashboardTab === 'notices' ? <NoticeBoard isAdmin={!!user?.isAdmin} /> : <>
       {/* Dashboard cards grid */}
       <div
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
@@ -366,6 +401,64 @@ export function DashboardPage() {
           </button>
         </div>
       )}
+      </>}
+    </div>
+  )
+}
+
+function NoticeBoard({ isAdmin }: { isAdmin: boolean }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['announcements-active'],
+    queryFn: () => api.getActiveAnnouncements(),
+  })
+  const notices = data?.data || []
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <Card className="overflow-hidden">
+        <div className="border-b bg-gradient-to-r from-amber-50 to-orange-50 px-5 py-4 dark:from-amber-950/30 dark:to-orange-950/20">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="flex items-center gap-2 font-semibold"><Megaphone size={17} className="text-amber-600" /> Organization Notice Board</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Announcements shared with everyone in your organization.</p>
+            </div>
+            {isAdmin && <Link to="/settings" className="rounded-lg border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted">Manage notices</Link>}
+          </div>
+        </div>
+        <CardContent className="p-0">
+          {isLoading ? <div className="p-10 text-center text-sm text-muted-foreground">Loading notices…</div> : notices.length === 0 ? (
+            <div className="p-12 text-center">
+              <Megaphone size={34} className="mx-auto text-muted-foreground/30" />
+              <p className="mt-3 font-medium">No active notices</p>
+              <p className="mt-1 text-sm text-muted-foreground">Important organization updates will appear here.</p>
+            </div>
+          ) : <div className="divide-y">
+            {notices.map((notice: any) => (
+              <article key={notice.id} className="p-5 transition-colors hover:bg-muted/20">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"><Megaphone size={16} /></span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold">{notice.title}</h3>
+                    {notice.message && <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{notice.message}</p>}
+                    <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+                      {notice.startsAt && <span>Published {formatDateTime(notice.startsAt)}</span>}
+                      {notice.expiresAt && <span>Expires {formatDateTime(notice.expiresAt)}</span>}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>}
+        </CardContent>
+      </Card>
+      <Card className="h-fit">
+        <CardContent className="p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Board summary</p>
+          <p className="mt-2 text-3xl font-bold">{notices.length}</p>
+          <p className="text-sm text-muted-foreground">active {notices.length === 1 ? 'announcement' : 'announcements'}</p>
+          <div className="mt-4 rounded-lg bg-muted/50 p-3 text-xs leading-5 text-muted-foreground">Notices are isolated to your organization and managed by organization administrators.</div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

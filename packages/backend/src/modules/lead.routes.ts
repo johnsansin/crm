@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 import { writeAudit } from '../lib/audit'
 import { nextSequenceNumber, getOrgSetting } from '../lib/settings'
 import { notifyFollowersAndAssignee } from '../lib/notify'
@@ -8,6 +9,7 @@ import { notifyFollowersAndAssignee } from '../lib/notify'
 export const leadRouter = Router()
 
 leadRouter.use(authMiddleware)
+leadRouter.use(requireModulePermission('leads'))
 
 leadRouter.get('/users', async (req, res, next) => {
   try {

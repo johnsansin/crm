@@ -1,5 +1,7 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
+import { AppBreadcrumbs, CrmFlowGuide } from './AppBreadcrumbs'
+import { LiveTranslation } from '@/components/LiveTranslation'
 import { useState, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/lib/auth'
@@ -9,12 +11,12 @@ import { usePresence } from '@/hooks/usePresence'
 import { UserAvatar } from '@/components/UserAvatar'
 import { OnboardingTour } from '@/components/OnboardingTour'
 import { QuickStartModal } from '@/components/QuickStartModal'
-import { LogOut, User, Search, Sun, Moon, Loader2, Menu, Bell, Building2, Megaphone, CheckCheck, X, Languages, Check, ChevronDown, Command, MessageSquare } from 'lucide-react'
+import { LogOut, User, Search, Sun, Moon, Loader2, Menu, Bell, Building2, Megaphone, CheckCheck, X, Languages, Check, ChevronDown, Command, MessageSquare, PlayCircle } from 'lucide-react'
 import { api } from '@/lib/api'
 import { setOrgSettings, orgLocale, orgLanguage, formatDateTime, useOrgSettings } from '@/lib/org-format'
 import { LANGUAGES } from '@/lib/constants'
 import { useToast } from '@/lib/toast'
-import { t } from '@/lib/i18n'
+import { setRemoteTranslations, t } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -53,9 +55,16 @@ export function AppLayout() {
     refetchInterval: 15000,
   })
 
-  const { data: orgSettingsData } = useQuery({
-    queryKey: ['org-settings'],
-    queryFn: () => api.getOrgSettings().catch(() => ({})),
+  const { data: preferences } = useQuery({
+    queryKey: ['preferences', user?.id],
+    queryFn: () => api.getPreferences().catch(() => ({})),
+  })
+
+  const preferenceLocale = (preferences?.language || 'en_us').split('_')[0]
+  const { data: translationsData } = useQuery({
+    queryKey: ['active-translations', user?.companyId, preferenceLocale],
+    queryFn: () => api.request<{ data: Record<string, string> }>(`/i18n/${preferenceLocale}`).catch(() => ({ data: {} })),
+    enabled: Boolean(user?.companyId && preferences),
   })
 
   const { data: recentOrgsData } = useQuery({
@@ -66,17 +75,24 @@ export function AppLayout() {
   })
 
   useEffect(() => {
-    if (!orgSettingsData) return
+    if (!preferences) return
     setOrgSettings({
-      language: orgSettingsData.language || 'en_us',
-      timezone: orgSettingsData.timezone || 'Asia/Karachi',
-      dateFormat: orgSettingsData.dateFormat || 'mm-dd-yyyy',
-      calendar: orgSettingsData.calendar || {},
+      language: preferences.language || 'en_us',
+      timezone: preferences.timezone || 'UTC',
+      dateFormat: preferences.dateFormat || 'mm-dd-yyyy',
+      hourFormat: preferences.hourFormat || '12h',
+      defaultCurrency: preferences.defaultCurrency || 'USD',
+      currencySymbol: preferences.currencySymbol || '$',
+      calendar: preferences.calendar || {},
     })
-    const lang = user?.language || orgSettingsData.language || 'en_us'
+    const lang = preferences.language || 'en_us'
     document.documentElement.lang = lang
-    document.documentElement.dir = ['ar', 'he', 'fa'].includes(lang) ? 'rtl' : 'ltr'
-  }, [orgSettingsData, user?.language])
+    document.documentElement.dir = ['ar', 'ur', 'he', 'fa'].includes(lang.split('_')[0]) ? 'rtl' : 'ltr'
+  }, [preferences])
+
+  useEffect(() => {
+    setRemoteTranslations(preferenceLocale, translationsData?.data || {})
+  }, [preferenceLocale, translationsData])
 
   const [langSaving, setLangSaving] = useState(false)
   const currentLang = user?.language || orgLanguage()
@@ -88,8 +104,8 @@ export function AppLayout() {
       useAuthStore.setState({ user: { ...user, language: code } })
       setOrgSettings({ language: code })
       document.documentElement.lang = code
-      document.documentElement.dir = ['ar', 'he', 'fa'].includes(code) ? 'rtl' : 'ltr'
-      queryClient.invalidateQueries({ queryKey: ['org-settings'] })
+      document.documentElement.dir = ['ar', 'ur', 'he', 'fa'].includes(code.split('_')[0]) ? 'rtl' : 'ltr'
+      queryClient.invalidateQueries({ queryKey: ['preferences', user?.id] })
       addToast({ title: t('Language updated'), description: LANGUAGES.find(l => l.value === code)?.label, variant: 'success' })
     } catch (e: any) {
       addToast({ title: t('Error'), description: e?.message || String(e), variant: 'destructive' })
@@ -121,6 +137,16 @@ export function AppLayout() {
       await api.markNotificationRead(id)
       queryClient.invalidateQueries({ queryKey: ['notifications'] })
     } catch {}
+  }
+
+  const replayTour = async () => {
+    try {
+      await api.resetOnboarding()
+      useAuthStore.setState({ user: { ...user, hasCompletedOnboarding: false } })
+      addToast({ title: t('Product tour ready'), description: t('The guided tour has restarted.'), variant: 'success' })
+    } catch (e: any) {
+      addToast({ title: t('Unable to restart tour'), description: e?.message, variant: 'destructive' })
+    }
   }
 
   useEffect(() => {
@@ -382,6 +408,10 @@ export function AppLayout() {
                   <User size={14} className="mr-2" />
                   {t('My Profile')}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={replayTour}>
+                  <PlayCircle size={14} className="mr-2" />
+                  {t('Replay product tour')}
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive">
                   <LogOut size={14} className="mr-2" />
@@ -392,12 +422,17 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto bg-slate-100/80 dark:bg-slate-950/70 p-4 md:p-6">
+          <div className="mx-auto w-full max-w-[1600px]">
+            <AppBreadcrumbs />
+            <CrmFlowGuide />
+            <Outlet />
+          </div>
         </main>
       </div>
       {user && !user.hasCompletedQuickStart && <QuickStartModal />}
       {user && user.hasCompletedQuickStart && !user.hasCompletedOnboarding && <OnboardingTour />}
+      <LiveTranslation />
     </div>
   )
 }

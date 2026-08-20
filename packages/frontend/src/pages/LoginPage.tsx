@@ -11,7 +11,7 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
-  const [userId, setUserId] = useState('')
+  const [twoFactorChallenge, setTwoFactorChallenge] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login, login2fa } = useAuthStore()
@@ -27,7 +27,7 @@ export function LoginPage() {
     try {
       const res = await login(email, password)
       if (res?.requires2FA) {
-        setUserId(res.userId)
+        setTwoFactorChallenge(res.challenge || '')
         setLoading(false)
         return
       }
@@ -48,7 +48,7 @@ export function LoginPage() {
     }
     setLoading(true)
     try {
-      await login2fa(userId, code)
+      await login2fa(twoFactorChallenge, code)
       const u = useAuthStore.getState().user
       navigate(u?.isSuperAdmin ? '/superadmin' : '/dashboard')
     } catch (err: any) {
@@ -85,7 +85,7 @@ export function LoginPage() {
 
           {/* Form body */}
           <div className="p-6 md:p-8">
-            {userId ? (
+            {twoFactorChallenge ? (
               <form onSubmit={handle2fa} className="space-y-4">
                 {error && (
                   <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900 px-3 py-2 rounded-lg">
@@ -122,7 +122,7 @@ export function LoginPage() {
                 </Button>
                 <button
                   type="button"
-                  onClick={() => setUserId('')}
+                  onClick={() => { setTwoFactorChallenge(''); setCode(''); setError('') }}
                   className="w-full text-center text-sm text-slate-500 dark:text-slate-400 hover:underline"
                 >
                   Back to sign in

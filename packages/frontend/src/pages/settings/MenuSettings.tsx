@@ -10,13 +10,18 @@ export function MenuSettings() {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({ queryKey: ['menu-modules'], queryFn: () => api.getMenuModules() })
+  const { data, isLoading } = useQuery({ queryKey: ['settings-modules'], queryFn: () => api.getSettingsModules() })
 
   const saveMutation = useMutation({
-    mutationFn: (row: any) => api.updateModule(row.name, { label: row.label, parent: row.parent, sequence: row.sequence, icon: row.icon, isActive: row.isActive }),
+    mutationFn: async (input: any | any[]) => {
+      const rows = Array.isArray(input) ? input : [input]
+      for (const row of rows) await api.updateModule(row.name, { label: row.label, parent: row.parent, sequence: row.sequence, icon: row.icon, isActive: row.isActive })
+    },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings-modules'] })
       queryClient.invalidateQueries({ queryKey: ['menu-modules'] })
       addToast({ title: 'Menu saved', variant: 'success' })
+      window.dispatchEvent(new Event('crm-menu-updated'))
     },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
@@ -28,9 +33,10 @@ export function MenuSettings() {
     if (j < 0 || j >= items.length) return
     const [a] = items.splice(index, 1)
     items.splice(j, 0, a)
-    items.forEach((row, i) => saveMutation.mutate({ ...row, sequence: i }))
+    saveMutation.mutate(items.map((row, i) => ({ ...row, sequence: i })))
   }
   const setParent = (row: any, parent: string) => saveMutation.mutate({ ...row, parent })
+  const groups = ['Marketing', 'Sales', 'Inventory', 'Purchasing', 'Support', 'Projects', 'Tools']
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading menu…</p>
 
@@ -58,9 +64,7 @@ export function MenuSettings() {
                 onChange={e => setParent(row, e.target.value)}
               >
                 <option value="">Top level</option>
-                {items.filter(i => i.name !== row.name).map(i => (
-                  <option key={i.name} value={i.name}>{i.label || i.name}</option>
-                ))}
+                {groups.map(group => <option key={group} value={group}>{group}</option>)}
               </select>
               <div className="flex items-center gap-0.5">
                 <Button variant="ghost" size="icon" disabled={index === 0} onClick={() => move(index, -1)} title="Move up"><ArrowUp size={14} /></Button>

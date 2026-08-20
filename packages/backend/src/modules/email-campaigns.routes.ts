@@ -1,9 +1,11 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 
 export const emailCampaignsRouter = Router()
 emailCampaignsRouter.use(authMiddleware)
+emailCampaignsRouter.use(requireModulePermission('campaigns'))
 
 emailCampaignsRouter.get('/', async (req, res, next) => {
   try {

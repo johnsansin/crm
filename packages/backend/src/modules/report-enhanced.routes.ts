@@ -1,8 +1,11 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 
 export const reportEnhancedRouter = Router()
+reportEnhancedRouter.use(authMiddleware)
+reportEnhancedRouter.use(requireModulePermission('reports'))
 
 function fixedDecimal(v: any, d = 2): number {
   return Number(Number(v || 0).toFixed(d))

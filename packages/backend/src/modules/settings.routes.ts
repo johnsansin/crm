@@ -1,7 +1,4 @@
 import { Router, Request, Response, NextFunction } from 'express'
-import fs from 'fs'
-import path from 'path'
-import { execFile } from 'child_process'
 import bcrypt from 'bcryptjs'
 import multer from 'multer'
 import { prisma } from '../lib/prisma'
@@ -18,7 +15,40 @@ settingsRouter.use(authMiddleware)
 
 const userOnly = (fn: (req: Request, res: Response, next: NextFunction) => void) => fn
 
+async function requireOwnedRecord(model: any, id: string, req: Request, res: Response): Promise<boolean> {
+  const where: any = { id }
+  if (!req.user!.isSuperAdmin) where.companyId = req.user!.companyId ?? null
+  const record = await model.findFirst({ where, select: { id: true } })
+  if (record) return true
+  res.status(404).json({ error: 'Record not found' })
+  return false
+}
+
 // ---- Org settings ----
+settingsRouter.get('/preferences', async (req, res, next) => {
+  try {
+    const [org, user] = await Promise.all([
+      getAllOrgSettings(req.user!.companyId),
+      prisma.user.findUnique({
+        where: { id: req.user!.userId },
+        select: { language: true, timezone: true, dateFormat: true, hourFormat: true, startOfWeek: true, currencyCode: true, defaultModule: true },
+      }),
+    ])
+    const calendar = { ...(org.calendar || {}) }
+    if (user?.startOfWeek) calendar.firstDayOfWeek = user.startOfWeek
+    res.json({
+      language: user?.language || org.language || 'en_us',
+      timezone: user?.timezone || org.timezone || 'UTC',
+      dateFormat: user?.dateFormat || org.dateFormat || 'mm-dd-yyyy',
+      hourFormat: user?.hourFormat || org.hourFormat || '12h',
+      defaultCurrency: user?.currencyCode || org.defaultCurrency || 'USD',
+      currencySymbol: org.currencySymbol || '$',
+      defaultModule: user?.defaultModule || 'dashboard',
+      calendar,
+    })
+  } catch (err) { next(err) }
+})
+
 settingsRouter.get('/', requireAdmin, async (req, res, next) => {
   try {
     const settings = await getAllOrgSettings(req.user!.companyId)
@@ -82,6 +112,7 @@ settingsRouter.post('/picklists', requireAdmin, async (req, res, next) => {
 
 settingsRouter.put('/picklists/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.picklistOption, req.params.id, req, res))) return
     const { label, sequence, isActive } = req.body
     const opt = await prisma.picklistOption.update({ where: { id: req.params.id }, data: { label, sequence, isActive } })
     res.json(opt)
@@ -90,6 +121,7 @@ settingsRouter.put('/picklists/:id', requireAdmin, async (req, res, next) => {
 
 settingsRouter.delete('/picklists/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.picklistOption, req.params.id, req, res))) return
     await prisma.picklistOption.update({ where: { id: req.params.id }, data: { isActive: false } })
     res.json({ success: true })
   } catch (err) { next(err) }
@@ -100,6 +132,7 @@ settingsRouter.post('/picklists/reorder', requireAdmin, async (req, res, next) =
     const { ids } = req.body
     if (Array.isArray(ids)) {
       for (let i = 0; i < ids.length; i++) {
+        if (!(await requireOwnedRecord(prisma.picklistOption, ids[i], req, res))) return
         await prisma.picklistOption.update({ where: { id: ids[i] }, data: { sequence: i } })
       }
     }
@@ -141,6 +174,7 @@ settingsRouter.post('/custom-fields', requireAdmin, async (req, res, next) => {
 
 settingsRouter.put('/custom-fields/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.customField, req.params.id, req, res))) return
     const { label, type, options, isRequired, isActive, sequence } = req.body
     const field = await prisma.customField.update({ where: { id: req.params.id }, data: { label, type, options, isRequired, isActive, sequence } })
     res.json(field)
@@ -149,6 +183,7 @@ settingsRouter.put('/custom-fields/:id', requireAdmin, async (req, res, next) =>
 
 settingsRouter.delete('/custom-fields/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.customField, req.params.id, req, res))) return
     await prisma.customField.update({ where: { id: req.params.id }, data: { isActive: false } })
     res.json({ success: true })
   } catch (err) { next(err) }
@@ -157,18 +192,21 @@ settingsRouter.delete('/custom-fields/:id', requireAdmin, async (req, res, next)
 // ---- Module manager ----
 settingsRouter.get('/modules/menu', userOnly(async (req, res, next) => {
   try {
-    const moduleRows = await prisma.module.findMany({ where: { isActive: true }, orderBy: { sequence: 'asc' } })
+    const moduleRows = await prisma.module.findMany({ orderBy: { sequence: 'asc' } })
+    const overrides = (await getOrgSetting(req.user!.companyId, 'menuConfig', {})) as Record<string, any>
     const configs = getModuleConfigCache()
     let data = moduleRows.map(row => {
       const cfg = configs[row.name]
+      const own = overrides[row.name] || {}
       return {
         name: row.name,
-        label: row.label || cfg?.label || row.name,
-        parent: row.parent || cfg?.parent || '',
-        icon: row.icon || cfg?.icon || null,
-        sequence: row.sequence,
+        label: own.label ?? row.label ?? cfg?.label ?? row.name,
+        parent: own.parent ?? row.parent ?? cfg?.parent ?? '',
+        icon: own.icon ?? row.icon ?? cfg?.icon ?? null,
+        sequence: own.sequence ?? row.sequence,
+        isActive: own.isActive ?? row.isActive,
       }
-    })
+    }).filter(row => row.isActive)
     // Non-admin users only see modules their role has view permission on
     if (!req.user!.isAdmin && !req.user!.isSuperAdmin) {
       let allowed = new Set<string>()
@@ -188,18 +226,20 @@ settingsRouter.get('/modules/menu', userOnly(async (req, res, next) => {
 settingsRouter.get('/modules', requireAdmin, async (req, res, next) => {
   try {
     const moduleRows = await prisma.module.findMany({ orderBy: { sequence: 'asc' } })
+    const overrides = (await getOrgSetting(req.user!.companyId, 'menuConfig', {})) as Record<string, any>
     const rowMap = new Map(moduleRows.map(m => [m.name, m]))
     const configs = getModuleConfigCache()
     const names = Object.keys(configs)
     const data = names.map(name => {
       const row = rowMap.get(name)
       const cfg = configs[name]
+      const own = overrides[name] || {}
       return {
         name,
-        label: row?.label || cfg?.label || name,
-        parent: row?.parent ?? cfg?.parent ?? '',
-        sequence: row?.sequence ?? cfg?.sequence ?? 0,
-        isActive: row ? row.isActive : true,
+        label: own.label ?? row?.label ?? cfg?.label ?? name,
+        parent: own.parent ?? row?.parent ?? cfg?.parent ?? '',
+        sequence: own.sequence ?? row?.sequence ?? cfg?.sequence ?? 0,
+        isActive: own.isActive ?? (row ? row.isActive : true),
         isEntity: cfg?.modelName ? true : false,
         icon: row?.icon || cfg?.icon || null,
       }
@@ -234,13 +274,11 @@ settingsRouter.put('/modules/:name', requireAdmin, async (req, res, next) => {
     if (sequence != null) data.sequence = sequence
     if (icon != null) data.icon = icon
     if (parent != null) data.parent = parent
-    const row = await prisma.module.upsert({
-      where: { name },
-      update: data,
-      create: { name, label: label || name, isActive: isActive != null ? isActive : true, sequence: sequence || 0, parent: parent || '', icon: icon || null },
-    })
+    const current = (await getOrgSetting(req.user!.companyId, 'menuConfig', {})) as Record<string, any>
+    const next = { ...current, [name]: { ...(current[name] || {}), ...data } }
+    await setOrgSetting(req.user!.companyId, 'menuConfig', next)
     await writeAudit({ moduleName: 'settings', action: 'UPDATE', fieldName: `module:${name}`, newValue: JSON.stringify(data), userId: req.user!.userId, req })
-    res.json(row)
+    res.json({ name, ...next[name] })
   } catch (err) { next(err) }
 })
 
@@ -291,6 +329,7 @@ settingsRouter.post('/profiles', requireAdmin, async (req, res, next) => {
 
 settingsRouter.put('/profiles/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.permissionProfile, req.params.id, req, res))) return
     const { name, description, roleIds, permissions, isActive } = req.body
     const profile = await prisma.permissionProfile.update({ where: { id: req.params.id }, data: { name, description, roleIds, permissions, isActive } })
     res.json(profile)
@@ -299,6 +338,7 @@ settingsRouter.put('/profiles/:id', requireAdmin, async (req, res, next) => {
 
 settingsRouter.delete('/profiles/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.permissionProfile, req.params.id, req, res))) return
     await prisma.permissionProfile.delete({ where: { id: req.params.id } })
     res.json({ success: true })
   } catch (err) { next(err) }
@@ -347,6 +387,7 @@ settingsRouter.post('/workflows', requireAdmin, async (req, res, next) => {
 
 settingsRouter.put('/workflows/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.workflow, req.params.id, req, res))) return
     const { name, moduleName, triggerType, conditions, actions, isActive } = req.body
     const wf = await prisma.workflow.update({ where: { id: req.params.id }, data: { name, moduleName, triggerType, conditions, actions, isActive } })
     res.json(wf)
@@ -355,6 +396,7 @@ settingsRouter.put('/workflows/:id', requireAdmin, async (req, res, next) => {
 
 settingsRouter.delete('/workflows/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.workflow, req.params.id, req, res))) return
     await prisma.workflow.delete({ where: { id: req.params.id } })
     res.json({ success: true })
   } catch (err) { next(err) }
@@ -394,6 +436,7 @@ settingsRouter.post('/cron', requireAdmin, async (req, res, next) => {
 
 settingsRouter.put('/cron/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.scheduledTask, req.params.id, req, res))) return
     const { name, moduleName, frequency, actions, isActive } = req.body
     const data: any = { name, moduleName, actions, isActive }
     if (frequency) { data.frequency = frequency; data.nextRun = computeNextRun(frequency) }
@@ -404,6 +447,7 @@ settingsRouter.put('/cron/:id', requireAdmin, async (req, res, next) => {
 
 settingsRouter.delete('/cron/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.scheduledTask, req.params.id, req, res))) return
     await prisma.scheduledTask.delete({ where: { id: req.params.id } })
     res.json({ success: true })
   } catch (err) { next(err) }
@@ -441,6 +485,7 @@ settingsRouter.post('/webforms', requireAdmin, async (req, res, next) => {
 
 settingsRouter.put('/webforms/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.webform, req.params.id, req, res))) return
     const { name, moduleName, fields, successMessage, redirectUrl, isActive } = req.body
     const wf = await prisma.webform.update({ where: { id: req.params.id }, data: { name, moduleName, fields, successMessage, redirectUrl, isActive } })
     res.json(wf)
@@ -449,6 +494,7 @@ settingsRouter.put('/webforms/:id', requireAdmin, async (req, res, next) => {
 
 settingsRouter.delete('/webforms/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.webform, req.params.id, req, res))) return
     await prisma.webform.delete({ where: { id: req.params.id } })
     res.json({ success: true })
   } catch (err) { next(err) }
@@ -456,6 +502,7 @@ settingsRouter.delete('/webforms/:id', requireAdmin, async (req, res, next) => {
 
 settingsRouter.post('/webforms/:id/token', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.webform, req.params.id, req, res))) return
     const token = generateSecret(16).toLowerCase()
     const wf = await prisma.webform.update({ where: { id: req.params.id }, data: { token } })
     res.json(wf)
@@ -479,7 +526,8 @@ settingsRouter.put('/notifications/read-all', userOnly(async (req, res, next) =>
 
 settingsRouter.put('/notifications/:id/read', userOnly(async (req, res, next) => {
   try {
-    await prisma.notification.update({ where: { id: req.params.id }, data: { isRead: true } })
+    const result = await prisma.notification.updateMany({ where: { id: req.params.id, userId: req.user!.userId }, data: { isRead: true } })
+    if (!result.count) return res.status(404).json({ error: 'Notification not found' })
     res.json({ success: true })
   } catch (err) { next(err) }
 }))
@@ -521,6 +569,7 @@ settingsRouter.post('/announcements', requireAdmin, async (req, res, next) => {
 
 settingsRouter.put('/announcements/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.announcement, req.params.id, req, res))) return
     const { title, message, startsAt, expiresAt, isActive } = req.body
     const ann = await prisma.announcement.update({ where: { id: req.params.id }, data: { title, message, startsAt: startsAt ? new Date(startsAt) : null, expiresAt: expiresAt ? new Date(expiresAt) : null, isActive } })
     res.json(ann)
@@ -529,6 +578,7 @@ settingsRouter.put('/announcements/:id', requireAdmin, async (req, res, next) =>
 
 settingsRouter.delete('/announcements/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.announcement, req.params.id, req, res))) return
     await prisma.announcement.delete({ where: { id: req.params.id } })
     res.json({ success: true })
   } catch (err) { next(err) }
@@ -553,6 +603,7 @@ settingsRouter.post('/holidays', requireAdmin, async (req, res, next) => {
 
 settingsRouter.put('/holidays/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.holiday, req.params.id, req, res))) return
     const { title, date, description } = req.body
     const holiday = await prisma.holiday.update({ where: { id: req.params.id }, data: { title, date: date ? new Date(date) : undefined, description } })
     res.json(holiday)
@@ -561,6 +612,7 @@ settingsRouter.put('/holidays/:id', requireAdmin, async (req, res, next) => {
 
 settingsRouter.delete('/holidays/:id', requireAdmin, async (req, res, next) => {
   try {
+    if (!(await requireOwnedRecord(prisma.holiday, req.params.id, req, res))) return
     await prisma.holiday.delete({ where: { id: req.params.id } })
     res.json({ success: true })
   } catch (err) { next(err) }
@@ -628,38 +680,6 @@ settingsRouter.get('/login-history', requireAdmin, async (req, res, next) => {
     ])
     res.json({ data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } })
   } catch (err) { next(err) }
-})
-
-// ---- Backup ----
-settingsRouter.post('/backup', requireAdmin, async (req, res, next) => {
-  try {
-    const dbUrl = process.env.DATABASE_URL || 'postgresql://crm:crm@127.0.0.1:5432/crm'
-    const backupDir = path.resolve(process.cwd(), 'uploads', 'backups')
-    if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true })
-    const fileName = `bizforce-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.sql`
-    const filePath = path.join(backupDir, fileName)
-    await new Promise<void>((resolve, reject) => {
-      execFile('pg_dump', [dbUrl, '--no-owner', '--no-privileges'], { maxBuffer: 512 * 1024 * 1024 }, (err, stdout) => {
-        if (err) return reject(new Error('pg_dump failed: ' + (err.message || 'ensure postgresql-client is installed')))
-        fs.writeFileSync(filePath, stdout)
-        resolve()
-      })
-    })
-    await writeAudit({ moduleName: 'settings', action: 'BACKUP', newValue: fileName, userId: req.user!.userId, req })
-    res.json({ fileName, path: `/uploads/backups/${fileName}`, size: fs.statSync(filePath).size })
-  } catch (err) { next(err) }
-})
-
-settingsRouter.get('/backups', requireAdmin, async (_req, res) => {
-  try {
-    const backupDir = path.resolve(process.cwd(), 'uploads', 'backups')
-    if (!fs.existsSync(backupDir)) return res.json({ data: [] })
-    const files = fs.readdirSync(backupDir).filter(f => f.endsWith('.sql')).map(f => {
-      const st = fs.statSync(path.join(backupDir, f))
-      return { fileName: f, path: `/uploads/backups/${f}`, size: st.size, modifiedAt: st.mtime }
-    }).sort((a, b) => b.modifiedAt.getTime() - a.modifiedAt.getTime())
-    res.json({ data: files })
-  } catch { res.json({ data: [] }) }
 })
 
 // ---- Export / Import ----
@@ -935,6 +955,7 @@ settingsRouter.post('/tags', async (req, res, next) => {
   try {
     const { name, module, recordId } = req.body
     if (!name) return res.status(400).json({ error: 'name is required' })
+    if ((!module || !recordId) && !req.user!.isAdmin && !req.user!.isSuperAdmin) return res.status(403).json({ error: 'Admin access required to manage organization tags' })
     const tag = await prisma.tag.create({
       data: { name, module: module || null, recordId: recordId || null, userId: req.user!.userId, companyId: req.user!.isSuperAdmin ? null : req.user!.companyId },
     })
@@ -947,6 +968,9 @@ settingsRouter.put('/tags/:id', async (req, res, next) => {
   try {
     const { name } = req.body
     if (!name) return res.status(400).json({ error: 'name is required' })
+    const owned = await prisma.tag.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId } })
+    if (!owned) return res.status(404).json({ error: 'Tag not found' })
+    if (!req.user!.isAdmin && !req.user!.isSuperAdmin && (!owned.recordId || owned.userId !== req.user!.userId)) return res.status(403).json({ error: 'Not allowed to edit this tag' })
     const where: any = { id: req.params.id }
     if (!req.user!.isSuperAdmin) where.companyId = req.user!.companyId
     const tag = await prisma.tag.updateMany({ where, data: { name } })
@@ -958,6 +982,9 @@ settingsRouter.put('/tags/:id', async (req, res, next) => {
 
 settingsRouter.delete('/tags/:id', async (req, res, next) => {
   try {
+    const owned = await prisma.tag.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId } })
+    if (!owned) return res.status(404).json({ error: 'Tag not found' })
+    if (!req.user!.isAdmin && !req.user!.isSuperAdmin && (!owned.recordId || owned.userId !== req.user!.userId)) return res.status(403).json({ error: 'Not allowed to delete this tag' })
     const where: any = { id: req.params.id }
     if (!req.user!.isSuperAdmin) where.companyId = req.user!.companyId
     await prisma.tag.deleteMany({ where })

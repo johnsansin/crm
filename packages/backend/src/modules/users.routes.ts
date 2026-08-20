@@ -4,6 +4,7 @@ import { authMiddleware, requireAdmin } from '../middleware/auth'
 import bcrypt from 'bcryptjs'
 import { validatePassword } from '../lib/settings'
 import { ONLINE_WINDOW_MS } from './presence.routes'
+import { publicUser } from '../lib/public-user'
 
 export const userRouter = Router()
 
@@ -49,8 +50,7 @@ userRouter.post('/', async (req, res, next) => {
         companyId: req.user!.companyId
       }
     })
-    const { password: _, ...userData } = user
-    res.status(201).json(userData)
+    res.status(201).json(publicUser(user))
   } catch (err) { next(err) }
 })
 
@@ -61,17 +61,18 @@ userRouter.put('/:id', async (req, res, next) => {
       where: { id: req.params.id, companyId: req.user!.companyId }
     })
     if (!existing) return res.status(404).json({ error: 'User not found' })
-    const data: any = { ...req.body }
-    if (data.password) {
-      const policyError = await validatePassword(req.user!.companyId, data.password)
+    const allowed = ['userName', 'email', 'firstName', 'lastName', 'phone', 'mobile', 'title', 'department', 'roleId', 'pbxExtension', 'dashboardEnabled', 'isAdmin', 'isActive']
+    const data: any = {}
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) data[key] = req.body[key]
+    }
+    if (req.body.password) {
+      const policyError = await validatePassword(req.user!.companyId, req.body.password)
       if (policyError) return res.status(400).json({ error: policyError })
-      data.password = await bcrypt.hash(data.password, 10)
-    } else {
-      delete data.password
+      data.password = await bcrypt.hash(req.body.password, 10)
     }
     const user = await prisma.user.update({ where: { id: req.params.id }, data })
-    const { password: _, ...userData } = user
-    res.json(userData)
+    res.json(publicUser(user))
   } catch (err) { next(err) }
 })
 

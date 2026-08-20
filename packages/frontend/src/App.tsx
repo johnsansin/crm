@@ -50,6 +50,8 @@ const SuperAdminSettings = lazy(() => import('@/pages/SuperAdminSettings').then(
 const AgentsPage = lazy(() => import('@/pages/AgentsPage').then(m => ({ default: m.AgentsPage })))
 const PortalPage = lazy(() => import('@/pages/PortalPage').then(m => ({ default: m.PortalPage })))
 const AiAssistantPage = lazy(() => import('@/pages/AiAssistantPage').then(m => ({ default: m.AiAssistantPage })))
+const RecurringInvoicesPage = lazy(() => import('@/pages/RecurringInvoicesPage').then(m => ({ default: m.RecurringInvoicesPage })))
+const EscalationHistoryPage = lazy(() => import('@/pages/EscalationHistoryPage').then(m => ({ default: m.EscalationHistoryPage })))
 
 const AppLayout = lazy(() => import('@/components/layout/AppLayout').then(m => ({ default: m.AppLayout })))
 
@@ -156,6 +158,9 @@ export default function App() {
               <Route path="/social-media" element={<SocialMediaPage />} />
               <Route path="/webhooks" element={<WebhooksPage />} />
               <Route path="/ai-assistant" element={<AiAssistantPage />} />
+              <Route path="/recurringinvoices/new" element={<RecurringInvoicesPage />} />
+              <Route path="/recurringinvoices/:id" element={<RecurringInvoicesPage />} />
+              <Route path="/escalationhistory/new" element={<EscalationHistoryPage />} />
               <Route path="/trash" element={<RecycleBinPage />} />
               <Route path="/leads/new" element={<ModuleDetailPage />} />
               <Route path="/leads/:id" element={<LeadDetailPage />} />

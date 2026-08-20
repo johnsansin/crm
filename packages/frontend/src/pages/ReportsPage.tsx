@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch'
 import { DataTable } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { TabsRoot, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Plus, Pencil, Trash2, Loader2, BarChart3, Play, Printer, Table2, ChartPie, Download, Folder, Clock, TrendingUp, DollarSign, UserPlus, CalendarDays, LifeBuoy, Receipt, Users, Megaphone } from 'lucide-react'
 import { getFieldLabel, formatFieldValue } from '@/lib/field-utils'
@@ -67,7 +68,7 @@ export function ReportsPage() {
   const folders = useMemo(() => [...new Set(reports.map((r: any) => r.folder).filter(Boolean) as string[])].sort(), [reports])
   const visible = folderFilter ? reports.filter((r: any) => r.folder === folderFilter) : reports
 
-  const [showPrebuilt, setShowPrebuilt] = useState(false)
+  const [reportView, setReportView] = useState<'analytics' | 'custom'>('analytics')
   const [selectedPrebuilt, setSelectedPrebuilt] = useState<any>(null)
   const [prebuiltDateFrom, setPrebuiltDateFrom] = useState('')
   const [prebuiltDateTo, setPrebuiltDateTo] = useState('')
@@ -102,8 +103,9 @@ export function ReportsPage() {
     }
   }
 
-  const exportPrebuiltCsv = (reportId: string) => {
-    window.open(`/api/reports/export/${reportId}`, '_blank')
+  const exportPrebuiltCsv = async (reportId: string) => {
+    try { await api.openAuthenticatedFile(`/reports/export/${reportId}`, `${reportId}.csv`) }
+    catch (e: any) { addToast({ title: 'Export failed', description: e.message, variant: 'destructive' }) }
   }
 
   const deleteMutation = useMutation({
@@ -143,7 +145,14 @@ export function ReportsPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card p-5">
+      <TabsRoot value={reportView} onValueChange={v => setReportView(v as typeof reportView)}>
+        <TabsList>
+          <TabsTrigger value="analytics"><TrendingUp size={14} className="mr-2" />Analytics library</TabsTrigger>
+          <TabsTrigger value="custom"><Table2 size={14} className="mr-2" />Custom reports ({reports.length})</TabsTrigger>
+        </TabsList>
+      </TabsRoot>
+
+      {reportView === 'analytics' && <div className="rounded-xl border bg-card p-4 sm:p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-base font-semibold flex items-center gap-2"><BarChart3 size={16} className="text-primary" /> Quick Analytics Reports</h2>
@@ -165,7 +174,7 @@ export function ReportsPage() {
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       <Dialog open={!!selectedPrebuilt && !prebuiltResult} onOpenChange={() => { setSelectedPrebuilt(null); setPrebuiltResult(null) }}>
         <DialogContent>
@@ -235,7 +244,7 @@ export function ReportsPage() {
         </DialogContent>
       </Dialog>
 
-      <DataTable
+      {reportView === 'custom' && <DataTable
         columns={[
           { key: 'name', label: 'Name', render: (v, r) => <span className="font-medium">{v}{r.schedule?.enabled ? <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 text-[11px]"><Clock size={11} /> Scheduled</span> : null}</span> },
           { key: 'folder', label: 'Folder', render: (v) => v ? <span className="inline-flex items-center gap-1 text-muted-foreground"><Folder size={12} /> {v}</span> : <span className="text-muted-foreground">—</span> },
@@ -255,7 +264,7 @@ export function ReportsPage() {
             <Button variant="ghost" size="icon" onClick={() => setDeleteId(r.id)}><Trash2 size={13} className="text-destructive" /></Button>
           </>
         )}
-      />
+      />}
 
       <Dialog open={showForm} onOpenChange={(o) => { if (!o) setEditing(null); setShowForm(o) }}>
         <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto">

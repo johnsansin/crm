@@ -56,19 +56,19 @@ function AnimatedStat({ value, suffix, label }: { value: number; suffix: string;
 const pricingPlans = [
   {
     name: 'Starter',
-    price: 'Free',
-    period: 'forever',
-    description: 'Perfect for small teams getting started',
-    features: ['Up to 5 users', '10 CRM modules', 'Basic reporting', 'Email support', '1 GB storage'],
-    cta: 'Get Started Free',
+    price: '$0',
+    period: '/month',
+    description: 'For small teams getting started with CRM.',
+    features: ['Up to 3 users', '2,000 contacts', 'Core CRM modules', 'Email support', 'Mobile access'],
+    cta: 'Start Free Trial',
     highlight: false,
   },
   {
-    name: 'Professional',
+    name: 'Growth',
     price: '$29',
     period: '/user/month',
-    description: 'For growing teams that need more power',
-    features: ['Unlimited users', 'All 24+ modules', 'Advanced analytics', 'Workflow automation', 'Email & SMS campaigns', 'API access', '50 GB storage'],
+    description: 'For growing teams that need more power.',
+    features: ['Up to 20 users', '50,000 contacts', 'All CRM modules', 'Workflow automation', 'Custom reports', 'Priority support'],
     cta: 'Start Free Trial',
     highlight: true,
   },
@@ -76,8 +76,8 @@ const pricingPlans = [
     name: 'Enterprise',
     price: 'Custom',
     period: '',
-    description: 'For large organizations with custom needs',
-    features: ['Everything in Professional', 'Multi-organization support', 'Custom modules', 'Priority support', 'SLA guarantee', 'SSO & SAML', 'Unlimited storage'],
+    description: 'For large organizations with advanced needs.',
+    features: ['Unlimited users', 'Unlimited contacts', 'Advanced permissions', 'API access', 'SSO / SAML', 'Dedicated support'],
     cta: 'Contact Sales',
     highlight: false,
   },
@@ -295,40 +295,41 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 reveal reveal-up">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">Simple, transparent pricing</h2>
-            <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">Start free. Upgrade when you're ready.</p>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">Start free and upgrade as you grow. No hidden fees, cancel anytime.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto stagger">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger">
             {pricingPlans.map(plan => (
-              <div key={plan.name} className={`reveal reveal-up relative p-8 rounded-2xl border ${plan.highlight ? 'border-sky-300 dark:border-sky-700 bg-gradient-to-b from-sky-50 to-white dark:from-sky-950/30 dark:to-slate-900 shadow-xl shadow-sky-200/40 dark:shadow-sky-950/40 scale-[1.02] hover:scale-[1.04]' : 'border-white/70 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl hover:-translate-y-1'} transition-all duration-300`}>
+              <div key={plan.name} className={`reveal reveal-up relative p-7 rounded-2xl border bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg flex flex-col transition-all duration-300 ${plan.highlight ? 'border-sky-400 dark:border-sky-500 shadow-sky-200/60 dark:shadow-indigo-950/60 hover:shadow-xl hover:scale-[1.02]' : 'border-white/70 dark:border-white/10 shadow-sky-200/40 dark:shadow-indigo-950/40 hover:shadow-xl hover:-translate-y-1'}`}>
                 {plan.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-semibold">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 text-white text-xs font-semibold shadow-lg shadow-blue-500/30">
                     Most Popular
                   </div>
                 )}
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{plan.name}</h3>
-                <div className="mt-4 flex items-baseline gap-1">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{plan.name}</h3>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{plan.description}</p>
+                <div className="mt-5 flex items-baseline gap-1">
                   <span className="text-4xl font-bold text-slate-900 dark:text-white">{plan.price}</span>
                   {plan.period && <span className="text-sm text-slate-500 dark:text-slate-400">{plan.period}</span>}
                 </div>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{plan.description}</p>
-                <ul className="mt-6 space-y-3">
+                <ul className="mt-6 space-y-3 flex-1">
                   {plan.features.map(f => (
                     <li key={f} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                      <CheckCircle size={16} className="text-green-500 shrink-0" />
+                      <span className="w-5 h-5 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white shrink-0"><CheckCircle size={12} /></span>
                       {f}
                     </li>
                   ))}
                 </ul>
                 <Button
-                  className={`mt-8 w-full h-11 rounded-xl font-semibold transition-all ${plan.highlight ? 'bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white border-none shadow-lg shadow-blue-500/30 hover:shadow-xl' : ''}`}
-                  variant={plan.highlight ? 'default' : 'outline'}
-                  onClick={() => navigate('/signup')}
+                  className={`relative mt-8 w-full h-11 overflow-hidden rounded-lg !text-white font-semibold text-sm !border-0 shadow-lg transition-all hover:shadow-xl ${plan.highlight ? '!bg-gradient-to-b !from-sky-500 !via-blue-600 !to-blue-700 hover:!from-sky-400 hover:!via-blue-500 hover:!to-blue-600 shadow-blue-500/40' : '!bg-gradient-to-b !from-slate-600 !to-slate-800 hover:!from-slate-500 hover:!to-slate-700 shadow-slate-500/30'}`}
+                  onClick={() => navigate(plan.name === 'Enterprise' ? '/contact' : '/signup')}
                 >
-                  {plan.cta}
+                  <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent rounded-t-lg pointer-events-none" />
+                  <span className="relative">{plan.cta}</span>
                 </Button>
               </div>
             ))}
           </div>
+          <p className="mt-12 text-center text-sm text-slate-500 dark:text-slate-400">Need a custom plan? <button onClick={() => navigate('/contact')} className="text-blue-600 dark:text-blue-400 font-medium hover:underline">Contact our sales team</button></p>
         </div>
       </section>
 

@@ -15,7 +15,20 @@ const storage = multer.diskStorage({
   }
 })
 
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } })
+const allowedMimeTypes = new Set([
+  'application/pdf', 'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'text/plain', 'text/csv',
+])
+const upload = multer({
+  storage,
+  limits: { fileSize: 15 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (!allowedMimeTypes.has(file.mimetype)) return cb(new Error('Unsupported file type'))
+    cb(null, true)
+  },
+})
 
 export const uploadRouter = Router()
 

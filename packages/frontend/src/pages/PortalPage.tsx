@@ -33,7 +33,7 @@ export function PortalPage() {
   const [commentText, setCommentText] = useState('')
   const [profileForm, setProfileForm] = useState({ name: '', phone: '', company: '' })
 
-  const portalHeaders = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : {}
+  const portalHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : {}
 
   const loginMutation = useMutation({
     mutationFn: async () => {

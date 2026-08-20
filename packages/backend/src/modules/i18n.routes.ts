@@ -1,12 +1,14 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
-import { authMiddleware } from '../middleware/auth'
+import { authMiddleware, requireAdmin } from '../middleware/auth'
+import { requireTenant } from '../lib/module-permissions'
 
 export const i18nRouter = Router()
 
-i18nRouter.get('/locales', async (_req, res) => {
+i18nRouter.get('/locales', authMiddleware, requireTenant, async (req, res) => {
   try {
     const rows = await prisma.translation.findMany({
+      where: { companyId: req.user!.companyId },
       select: { locale: true },
       distinct: ['locale'],
     })
@@ -18,12 +20,12 @@ i18nRouter.get('/locales', async (_req, res) => {
   }
 })
 
-i18nRouter.get('/:locale', async (req, res) => {
+i18nRouter.get('/:locale', authMiddleware, requireTenant, async (req, res) => {
   try {
     const { locale } = req.params
     const namespace = (req.query.namespace as string) || 'common'
     const rows = await prisma.translation.findMany({
-      where: { locale, namespace },
+      where: { companyId: req.user!.companyId, locale, namespace },
     })
     const translations: Record<string, string> = {}
     for (const row of rows) {
@@ -35,7 +37,7 @@ i18nRouter.get('/:locale', async (req, res) => {
   }
 })
 
-i18nRouter.put('/:locale', authMiddleware, async (req, res) => {
+i18nRouter.put('/:locale', authMiddleware, requireTenant, requireAdmin, async (req, res) => {
   try {
     const { locale } = req.params
     const { translations, namespace = 'common' } = req.body
@@ -43,15 +45,15 @@ i18nRouter.put('/:locale', authMiddleware, async (req, res) => {
       res.status(400).json({ error: 'translations object required' })
       return
     }
-    const companyId = req.user?.companyId
+    const companyId = req.user!.companyId!
     const ops: Promise<any>[] = []
     for (const [key, value] of Object.entries(translations)) {
       ops.push(
-        prisma.translation.upsert({
-          where: { locale_key_namespace: { locale, key, namespace } },
-          update: { value: String(value), companyId },
-          create: { locale, key, value: String(value), namespace, companyId },
-        })
+        prisma.translation.findFirst({ where: { companyId, locale, key, namespace } }).then(existing =>
+          existing
+            ? prisma.translation.update({ where: { id: existing.id }, data: { value: String(value) } })
+            : prisma.translation.create({ data: { locale, key, value: String(value), namespace, companyId } })
+        )
       )
     }
     await Promise.all(ops)

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, requireAdmin } from '../middleware/auth'
+import { signingSecret } from '../lib/secrets'
 import { getModuleConfig, setupModules } from './moduleSetup'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { writeAudit } from '../lib/audit'
@@ -11,9 +12,10 @@ import { renderReport, escapeHtml } from './report'
 import { renderReportHtml, renderReportCsv } from '../lib/report-runner'
 import { dialViaPbx } from './pbx.routes'
 import { evaluateConditions } from '../lib/settings'
+import { requireModulePermission, requireTenant } from '../lib/module-permissions'
 
 export const extrasRouter = Router()
-const JWT_SECRET = process.env.JWT_SECRET || 'bizforce-jwt-secret-dev-2026'
+const JWT_SECRET = signingSecret('JWT_SECRET', 'bizforce-jwt-secret-dev-2026')
 
 function modelFor(modelName: string): any {
   return (prisma as any)[modelName]
@@ -31,7 +33,7 @@ function trashByIsDeleted(modelName: string): boolean {
 // =====================================================================
 // Opportunity Forecasting
 // =====================================================================
-extrasRouter.get('/forecast/opportunities', authMiddleware, async (req, res, next) => {
+extrasRouter.get('/forecast/opportunities', authMiddleware, requireTenant, requireModulePermission('potentials', 'view'), async (req, res, next) => {
   try {
     const { range = 'quarter' } = req.query
     const where: any = { isActive: true }
@@ -103,7 +105,7 @@ extrasRouter.get('/forecast/opportunities', authMiddleware, async (req, res, nex
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/forecast/recalculate', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/forecast/recalculate', authMiddleware, requireTenant, requireModulePermission('potentials', 'edit'), async (req, res, next) => {
   try {
     const where: any = { isActive: true }
     if (req.user!.companyId) where.companyId = req.user!.companyId
@@ -120,7 +122,7 @@ extrasRouter.post('/forecast/recalculate', authMiddleware, async (req, res, next
 // =====================================================================
 // Recycle Bin (soft delete / restore)
 // =====================================================================
-extrasRouter.get('/trash', authMiddleware, async (req, res, next) => {
+extrasRouter.get('/trash', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const companyId = req.user!.companyId
     const results: any[] = []
@@ -142,7 +144,7 @@ extrasRouter.get('/trash', authMiddleware, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-extrasRouter.get('/trash/:moduleName', authMiddleware, async (req, res, next) => {
+extrasRouter.get('/trash/:moduleName', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const cfg = getModuleConfig(req.params.moduleName)
     if (!cfg?.modelName) return res.status(404).json({ error: 'Module not found' })
@@ -174,7 +176,7 @@ extrasRouter.get('/trash/:moduleName', authMiddleware, async (req, res, next) =>
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/trash/restore', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/trash/restore', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const { moduleName, id } = req.body
     const cfg = getModuleConfig(moduleName)
@@ -190,7 +192,7 @@ extrasRouter.post('/trash/restore', authMiddleware, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-extrasRouter.delete('/trash/:moduleName/:id', authMiddleware, async (req, res, next) => {
+extrasRouter.delete('/trash/:moduleName/:id', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const cfg = getModuleConfig(req.params.moduleName)
     if (!cfg?.modelName) return res.status(404).json({ error: 'Module not found' })
@@ -208,7 +210,7 @@ extrasRouter.delete('/trash/:moduleName/:id', authMiddleware, async (req, res, n
 // =====================================================================
 // Recurring Invoices
 // =====================================================================
-extrasRouter.post('/recurringinvoices/:id/generate', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/recurringinvoices/:id/generate', authMiddleware, requireTenant, requireModulePermission('recurringinvoices', 'create'), async (req, res, next) => {
   try {
     const rec = await prisma.recurringInvoice.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId || undefined } })
     if (!rec) return res.status(404).json({ error: 'Not found' })
@@ -218,7 +220,7 @@ extrasRouter.post('/recurringinvoices/:id/generate', authMiddleware, async (req,
   } catch (err) { next(err) }
 })
 
-extrasRouter.get('/recurringinvoices/upcoming', authMiddleware, async (req, res, next) => {
+extrasRouter.get('/recurringinvoices/upcoming', authMiddleware, requireTenant, requireModulePermission('recurringinvoices', 'view'), async (req, res, next) => {
   try {
     const data = await prisma.recurringInvoice.findMany({
       where: { companyId: req.user!.companyId || undefined, isActive: true },
@@ -232,7 +234,7 @@ extrasRouter.get('/recurringinvoices/upcoming', authMiddleware, async (req, res,
 // =====================================================================
 // Mailboxes / Email-to-Ticket
 // =====================================================================
-extrasRouter.get('/mailboxes/:id/rule', authMiddleware, async (req, res, next) => {
+extrasRouter.get('/mailboxes/:id/rule', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const rule = await prisma.emailToTicketRule.findFirst({
       where: { mailboxId: req.params.id, companyId: req.user!.companyId || undefined },
@@ -241,7 +243,7 @@ extrasRouter.get('/mailboxes/:id/rule', authMiddleware, async (req, res, next) =
   } catch (err) { next(err) }
 })
 
-extrasRouter.put('/mailboxes/:id/rule', authMiddleware, async (req, res, next) => {
+extrasRouter.put('/mailboxes/:id/rule', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const { defaultStatus, defaultPriority, defaultAssignedTo, createContactIfMissing, isActive } = req.body
     const data: any = {}
@@ -260,7 +262,7 @@ extrasRouter.put('/mailboxes/:id/rule', authMiddleware, async (req, res, next) =
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/mailboxes/:id/sync', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/mailboxes/:id/sync', authMiddleware, requireTenant, async (req, res, next) => {
   let mailbox: any = null
   try {
     mailbox = await prisma.mailbox.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId || undefined } })
@@ -286,7 +288,7 @@ extrasRouter.post('/mailboxes/:id/sync', authMiddleware, async (req, res, next) 
 // =====================================================================
 // RSS
 // =====================================================================
-extrasRouter.get('/rssfeeds/:id/entries', authMiddleware, async (req, res, next) => {
+extrasRouter.get('/rssfeeds/:id/entries', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const feed = await prisma.rssFeed.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId || undefined } })
     if (!feed) return res.status(404).json({ error: 'Not found' })
@@ -296,7 +298,7 @@ extrasRouter.get('/rssfeeds/:id/entries', authMiddleware, async (req, res, next)
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/rssfeeds/:id/fetch', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/rssfeeds/:id/fetch', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const feed = await prisma.rssFeed.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId || undefined } })
     if (!feed) return res.status(404).json({ error: 'Not found' })
@@ -307,7 +309,7 @@ extrasRouter.post('/rssfeeds/:id/fetch', authMiddleware, async (req, res, next) 
   }
 })
 
-extrasRouter.post('/rssentries/:id/read', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/rssentries/:id/read', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const entry = await prisma.rssEntry.findUnique({ where: { id: req.params.id } })
     if (!entry) return res.status(404).json({ error: 'Not found' })
@@ -321,7 +323,7 @@ extrasRouter.post('/rssentries/:id/read', authMiddleware, async (req, res, next)
 // =====================================================================
 // Google Sync
 // =====================================================================
-extrasRouter.get('/google/accounts', authMiddleware, async (req, res, next) => {
+extrasRouter.get('/google/accounts', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const data = await prisma.googleAccount.findMany({
       where: { companyId: req.user!.companyId || undefined, isActive: true },
@@ -330,7 +332,7 @@ extrasRouter.get('/google/accounts', authMiddleware, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-extrasRouter.get('/google/auth-url', authMiddleware, async (req, res, next) => {
+extrasRouter.get('/google/auth-url', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const row = await prisma.orgSetting.findUnique({
       where: { companyId_key: { companyId: req.user!.companyId || '', key: 'google' } },
@@ -346,7 +348,7 @@ extrasRouter.get('/google/auth-url', authMiddleware, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/google/token', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/google/token', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const { code, email, accessToken, refreshToken, scopes, syncCalendar, syncContacts } = req.body
     if (!email) return res.status(400).json({ error: 'email is required' })
@@ -370,7 +372,7 @@ extrasRouter.post('/google/token', authMiddleware, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/google/sync', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/google/sync', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const { accountId, mode } = req.body
     const account = await prisma.googleAccount.findFirst({
@@ -397,7 +399,7 @@ extrasRouter.post('/google/sync', authMiddleware, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-extrasRouter.delete('/google/accounts/:id', authMiddleware, async (req, res, next) => {
+extrasRouter.delete('/google/accounts/:id', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     await prisma.googleAccount.updateMany({
       where: { id: req.params.id, companyId: req.user!.companyId || undefined },
@@ -410,7 +412,7 @@ extrasRouter.delete('/google/accounts/:id', authMiddleware, async (req, res, nex
 // =====================================================================
 // Layout Editor
 // =====================================================================
-extrasRouter.get('/layout/:moduleName', authMiddleware, async (req, res, next) => {
+extrasRouter.get('/layout/:moduleName', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const { moduleName } = req.params
     const companyId = req.user!.companyId || null
@@ -422,7 +424,7 @@ extrasRouter.get('/layout/:moduleName', authMiddleware, async (req, res, next) =
   } catch (err) { next(err) }
 })
 
-extrasRouter.put('/layout/:moduleName/:tabName', authMiddleware, async (req, res, next) => {
+extrasRouter.put('/layout/:moduleName/:tabName', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const { moduleName, tabName } = req.params
     const { fieldOrder, fieldVisibility } = req.body
@@ -441,7 +443,7 @@ extrasRouter.put('/layout/:moduleName/:tabName', authMiddleware, async (req, res
 // =====================================================================
 // Picklist Dependencies
 // =====================================================================
-extrasRouter.get('/picklist-dependencies', authMiddleware, async (req, res, next) => {
+extrasRouter.get('/picklist-dependencies', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const { moduleName } = req.query
     const where: any = { companyId: req.user!.companyId || undefined, isActive: true }
@@ -451,7 +453,7 @@ extrasRouter.get('/picklist-dependencies', authMiddleware, async (req, res, next
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/picklist-dependencies', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/picklist-dependencies', authMiddleware, requireTenant, requireAdmin, async (req, res, next) => {
   try {
     const { moduleName, parentField, childField, mappings } = req.body
     if (!moduleName || !parentField || !childField) return res.status(400).json({ error: 'moduleName, parentField, childField required' })
@@ -465,7 +467,7 @@ extrasRouter.post('/picklist-dependencies', authMiddleware, async (req, res, nex
   } catch (err) { next(err) }
 })
 
-extrasRouter.delete('/picklist-dependencies/:id', authMiddleware, async (req, res, next) => {
+extrasRouter.delete('/picklist-dependencies/:id', authMiddleware, requireTenant, requireAdmin, async (req, res, next) => {
   try {
     await prisma.picklistDependency.updateMany({
       where: { id: req.params.id, companyId: req.user!.companyId || undefined },
@@ -475,7 +477,7 @@ extrasRouter.delete('/picklist-dependencies/:id', authMiddleware, async (req, re
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/picklist-dependencies/resolve', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/picklist-dependencies/resolve', authMiddleware, requireTenant, async (req, res, next) => {
   try {
     const { moduleName, parentField, childField, parentValue } = req.body
     const dep = await prisma.picklistDependency.findFirst({
@@ -496,7 +498,7 @@ function renderTemplate(template: any, variables: Record<string, any>): { subjec
   return { subject: sub(template.subject), body: sub(template.body || template.description || '') }
 }
 
-extrasRouter.post('/emailtemplates/:id/preview', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/emailtemplates/:id/preview', authMiddleware, requireTenant, requireModulePermission('emailtemplates', 'view'), async (req, res, next) => {
   try {
     const template = await prisma.emailTemplate.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId || undefined } })
     if (!template) return res.status(404).json({ error: 'Not found' })
@@ -505,7 +507,7 @@ extrasRouter.post('/emailtemplates/:id/preview', authMiddleware, async (req, res
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/emailtemplates/:id/send', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/emailtemplates/:id/send', authMiddleware, requireTenant, requireModulePermission('emailtemplates', 'create'), async (req, res, next) => {
   try {
     const template = await prisma.emailTemplate.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId || undefined } })
     if (!template) return res.status(404).json({ error: 'Not found' })
@@ -521,7 +523,7 @@ extrasRouter.post('/emailtemplates/:id/send', authMiddleware, async (req, res, n
 // =====================================================================
 // Product Price computation
 // =====================================================================
-extrasRouter.post('/products/:id/compute-price', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/products/:id/compute-price', authMiddleware, requireTenant, requireModulePermission('products', 'view'), async (req, res, next) => {
   try {
     const product = await prisma.product.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId || undefined } })
     if (!product) return res.status(404).json({ error: 'Not found' })
@@ -555,7 +557,7 @@ extrasRouter.post('/products/:id/compute-price', authMiddleware, async (req, res
 // =====================================================================
 // PBX / Click-to-call
 // =====================================================================
-extrasRouter.post('/calllogs/click-to-call', authMiddleware, async (req, res, next) => {
+extrasRouter.post('/calllogs/click-to-call', authMiddleware, requireTenant, requireModulePermission('calllogs', 'create'), async (req, res, next) => {
   try {
     const { toNumber, fromNumber, relatedToModule, relatedToId } = req.body
     if (!toNumber) return res.status(400).json({ error: 'toNumber is required' })
@@ -721,14 +723,14 @@ function hashKey(prefix: string, secret: string): string {
   return crypto.createHash('sha256').update(prefix + secret).digest('hex')
 }
 
-extrasRouter.get('/apikeys', authMiddleware, requireAdmin, async (req, res, next) => {
+extrasRouter.get('/apikeys', authMiddleware, requireTenant, requireAdmin, async (req, res, next) => {
   try {
     const data = await prisma.apiKey.findMany({ where: { companyId: req.user!.companyId || undefined, isActive: true }, select: { id: true, name: true, keyPrefix: true, scopes: true, expiresAt: true, lastUsedAt: true, createdAt: true } })
     res.json({ data })
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/apikeys', authMiddleware, requireAdmin, async (req, res, next) => {
+extrasRouter.post('/apikeys', authMiddleware, requireTenant, requireAdmin, async (req, res, next) => {
   try {
     const { name, scopes, expiresAt } = req.body
     if (!name) return res.status(400).json({ error: 'name is required' })
@@ -750,7 +752,7 @@ extrasRouter.post('/apikeys', authMiddleware, requireAdmin, async (req, res, nex
   } catch (err) { next(err) }
 })
 
-extrasRouter.delete('/apikeys/:id', authMiddleware, requireAdmin, async (req, res, next) => {
+extrasRouter.delete('/apikeys/:id', authMiddleware, requireTenant, requireAdmin, async (req, res, next) => {
   try {
     await prisma.apiKey.updateMany({ where: { id: req.params.id, companyId: req.user!.companyId || undefined }, data: { isActive: false } })
     res.json({ success: true })
@@ -760,7 +762,7 @@ extrasRouter.delete('/apikeys/:id', authMiddleware, requireAdmin, async (req, re
 // =====================================================================
 // Customer Portal
 // =====================================================================
-extrasRouter.post('/portal/register', authMiddleware, requireAdmin, async (req, res, next) => {
+extrasRouter.post('/portal/register', authMiddleware, requireTenant, requireAdmin, async (req, res, next) => {
   try {
     const { contactId } = req.body
     if (!contactId) return res.status(400).json({ error: 'contactId is required' })
@@ -776,7 +778,7 @@ extrasRouter.post('/portal/register', authMiddleware, requireAdmin, async (req, 
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/portal/unregister', authMiddleware, requireAdmin, async (req, res, next) => {
+extrasRouter.post('/portal/unregister', authMiddleware, requireTenant, requireAdmin, async (req, res, next) => {
   try {
     const { contactId } = req.body
     await prisma.portalUser.updateMany({ where: { contactId, companyId: req.user!.companyId || undefined }, data: { isActive: false } })
@@ -921,7 +923,7 @@ extrasRouter.get('/portal/invoices/:id/pdf', async (req: any, res, next) => {
 // =====================================================================
 // Reports: run + printable HTML export (tabular & summary)
 // =====================================================================
-extrasRouter.post('/reports/export', authMiddleware, async (req: any, res, next) => {
+extrasRouter.post('/reports/export', authMiddleware, requireTenant, requireModulePermission('reports', 'export'), async (req: any, res, next) => {
   try {
     const { name, moduleName, reportType, columns, grouping, filters, rows, format } = req.body || {}
     const report = { name, moduleName, reportType: reportType || 'tabular', columns, grouping, filters, rows }
@@ -945,7 +947,7 @@ extrasRouter.post('/reports/export', authMiddleware, async (req: any, res, next)
 // =====================================================================
 // Stage Probabilities
 // =====================================================================
-extrasRouter.get('/stage-probability', authMiddleware, async (req: any, res, next) => {
+extrasRouter.get('/stage-probability', authMiddleware, requireTenant, async (req: any, res, next) => {
   try {
     const where: any = { isActive: true }
     if (req.user!.companyId) where.companyId = req.user!.companyId
@@ -954,7 +956,7 @@ extrasRouter.get('/stage-probability', authMiddleware, async (req: any, res, nex
   } catch (err) { next(err) }
 })
 
-extrasRouter.put('/stage-probability', authMiddleware, async (req: any, res, next) => {
+extrasRouter.put('/stage-probability', authMiddleware, requireTenant, async (req: any, res, next) => {
   try {
     const { stages } = req.body
     if (!Array.isArray(stages)) return res.status(400).json({ error: 'stages array is required' })
@@ -987,7 +989,7 @@ extrasRouter.put('/stage-probability', authMiddleware, async (req: any, res, nex
 // =====================================================================
 // Quantity Discounts
 // =====================================================================
-extrasRouter.get('/products/:id/quantity-discounts', authMiddleware, async (req: any, res, next) => {
+extrasRouter.get('/products/:id/quantity-discounts', authMiddleware, requireTenant, async (req: any, res, next) => {
   try {
     const where: any = { productId: req.params.id, isActive: true }
     if (req.user!.companyId) where.companyId = req.user!.companyId
@@ -996,7 +998,7 @@ extrasRouter.get('/products/:id/quantity-discounts', authMiddleware, async (req:
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/products/:id/quantity-discounts', authMiddleware, async (req: any, res, next) => {
+extrasRouter.post('/products/:id/quantity-discounts', authMiddleware, requireTenant, async (req: any, res, next) => {
   try {
     const { minQty, maxQty, discountPercent } = req.body
     if (minQty == null || discountPercent == null) return res.status(400).json({ error: 'minQty and discountPercent are required' })
@@ -1013,7 +1015,7 @@ extrasRouter.post('/products/:id/quantity-discounts', authMiddleware, async (req
   } catch (err) { next(err) }
 })
 
-extrasRouter.delete('/quantity-discounts/:id', authMiddleware, async (req: any, res, next) => {
+extrasRouter.delete('/quantity-discounts/:id', authMiddleware, requireTenant, async (req: any, res, next) => {
   try {
     const where: any = { id: req.params.id }
     if (req.user!.companyId) where.companyId = req.user!.companyId
@@ -1025,7 +1027,7 @@ extrasRouter.delete('/quantity-discounts/:id', authMiddleware, async (req: any, 
 // =====================================================================
 // Project Resources
 // =====================================================================
-extrasRouter.get('/projects/:id/resources', authMiddleware, async (req: any, res, next) => {
+extrasRouter.get('/projects/:id/resources', authMiddleware, requireTenant, async (req: any, res, next) => {
   try {
     const where: any = { projectId: req.params.id, isActive: true }
     if (req.user!.companyId) where.companyId = req.user!.companyId
@@ -1034,7 +1036,7 @@ extrasRouter.get('/projects/:id/resources', authMiddleware, async (req: any, res
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/projects/:id/resources', authMiddleware, async (req: any, res, next) => {
+extrasRouter.post('/projects/:id/resources', authMiddleware, requireTenant, async (req: any, res, next) => {
   try {
     const { userId, role, allocationPercent, hourlyRate, startDate, endDate } = req.body
     if (!userId) return res.status(400).json({ error: 'userId is required' })
@@ -1063,7 +1065,7 @@ extrasRouter.post('/projects/:id/resources', authMiddleware, async (req: any, re
   } catch (err) { next(err) }
 })
 
-extrasRouter.delete('/projects/:projectId/resources/:id', authMiddleware, async (req: any, res, next) => {
+extrasRouter.delete('/projects/:projectId/resources/:id', authMiddleware, requireTenant, async (req: any, res, next) => {
   try {
     const where: any = { id: req.params.id }
     if (req.user!.companyId) where.companyId = req.user!.companyId
@@ -1075,7 +1077,7 @@ extrasRouter.delete('/projects/:projectId/resources/:id', authMiddleware, async 
 // =====================================================================
 // Workflow Test / Logs / Stats
 // =====================================================================
-extrasRouter.post('/workflows/:id/test', authMiddleware, async (req: any, res, next) => {
+extrasRouter.post('/workflows/:id/test', authMiddleware, requireTenant, async (req: any, res, next) => {
   try {
     const wf = await prisma.workflow.findFirst({
       where: { id: req.params.id, companyId: req.user!.companyId || undefined },
@@ -1113,7 +1115,7 @@ extrasRouter.post('/workflows/:id/test', authMiddleware, async (req: any, res, n
   } catch (err) { next(err) }
 })
 
-extrasRouter.get('/workflows/:id/logs', authMiddleware, async (req: any, res, next) => {
+extrasRouter.get('/workflows/:id/logs', authMiddleware, requireTenant, async (req: any, res, next) => {
   try {
     const where: any = { workflowId: req.params.id }
     if (req.user!.companyId) where.companyId = req.user!.companyId
@@ -1126,7 +1128,7 @@ extrasRouter.get('/workflows/:id/logs', authMiddleware, async (req: any, res, ne
   } catch (err) { next(err) }
 })
 
-extrasRouter.get('/automation/stats', authMiddleware, async (req: any, res, next) => {
+extrasRouter.get('/automation/stats', authMiddleware, requireTenant, async (req: any, res, next) => {
   try {
     const companyId = req.user!.companyId || undefined
     const where: any = {}

@@ -21,6 +21,20 @@ import {
 
 const PRODUCT_CATEGORIES = ['Hardware', 'Software', 'CRM Applications']
 
+async function optimizeProductImage(file: File): Promise<File> {
+  if (!file.type.startsWith('image/') || file.size <= 900 * 1024) return file
+  const bitmap = await createImageBitmap(file)
+  const maxSide = 1800
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  bitmap.close()
+  let blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Could not optimize image')), 'image/webp', 0.8))
+  if (blob.size > 900 * 1024) blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Could not optimize image')), 'image/webp', 0.52))
+  return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.webp', { type: 'image/webp' })
+}
+
 const MANUFACTURERS = [
   'Not Available', 'Acer', 'Apple', 'Asus', 'Belkin', 'Bose', 'Brother', 'Canon', 'Casio',
   'Cisco', 'Compaq', 'Dell', 'Denon', 'Dymo', 'Epson', 'Fellowes', 'Fujitsu',
@@ -348,7 +362,9 @@ export function ProductDetailPage() {
     if (!file) return
     setUploadingImage(true)
     try {
-      const res = await api.uploadFile(file)
+      if (!file.type.startsWith('image/')) throw new Error('Please select a JPEG, PNG, GIF, or WebP image')
+      const optimized = await optimizeProductImage(file)
+      const res = await api.uploadFile(optimized)
       setField('images', [...(draft.images || []), { url: res.path, isDefault: (draft.images?.length || 0) === 0 }])
     } catch (err: any) {
       addToast({ title: 'Upload failed', description: err.message, variant: 'destructive' })

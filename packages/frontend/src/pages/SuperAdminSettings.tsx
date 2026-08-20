@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Database, Mail, ArrowLeft, ChevronRight } from 'lucide-react'
-import { DataSettings } from '@/pages/settings/DataSettings'
+import { SystemBackupSettings } from '@/pages/settings/SystemBackupSettings'
 import { EmailSettings } from '@/pages/settings/EmailSettings'
 
 const sections = [
-  { key: 'data', label: 'Data Management', icon: Database, desc: 'Backup, export, and CSV import', tint: 'from-teal-500 to-emerald-700' },
+  { key: 'data', label: 'System Backups', icon: Database, desc: 'Schedule, retain, download, and securely email database backups', tint: 'from-teal-500 to-emerald-700' },
   { key: 'email', label: 'Email / SMTP', icon: Mail, desc: 'Outgoing mail server, test and send emails', tint: 'from-orange-500 to-amber-600' },
 ]
 
@@ -33,7 +33,7 @@ export function SuperAdminSettings() {
             </div>
           </div>
         </div>
-        {sec.key === 'data' && <DataSettings />}
+        {sec.key === 'data' && <SystemBackupSettings />}
         {sec.key === 'email' && <EmailSettings />}
       </div>
     )
@@ -43,7 +43,7 @@ export function SuperAdminSettings() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">Superadmin settings</p>
+        <p className="text-sm text-muted-foreground mt-1">Secure system-wide operations and platform configuration</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {sections.map(s => (

@@ -1,9 +1,11 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 
 export const socialRouter = Router()
 socialRouter.use(authMiddleware)
+socialRouter.use(requireModulePermission('social'))
 
 // ---- Profiles ----
 socialRouter.get('/profiles', async (req, res, next) => {

@@ -1,9 +1,11 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 
 export const smsRouter = Router()
 smsRouter.use(authMiddleware)
+smsRouter.use(requireModulePermission('smsnotifier'))
 
 smsRouter.get('/templates', async (req, res, next) => {
   try {

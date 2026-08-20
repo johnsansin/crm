@@ -25,6 +25,7 @@ import { ArrowLeft, ArrowRight, Save, Loader2, Trash2, Pencil, ChevronRight, Ast
 import { MergeRecordsDialog, MERGEABLE_MODULES } from '@/components/merge-records-dialog'
 import { fieldConfigs } from '@/lib/module-fields'
 import { t } from '@/lib/i18n'
+import { RecordTags } from '@/components/record-tags'
 
 const labelMap: Record<string, string> = {
   accounts: 'Account', contacts: 'Contact', leads: 'Lead',
@@ -232,7 +233,7 @@ export function ModuleDetailPage() {
   const [aiPrediction, setAiPrediction] = useState<any>(null)
   const [showAiPrediction, setShowAiPrediction] = useState(false)
   const [closeWonOpen, setCloseWonOpen] = useState(false)
-  const [closeWonModules, setCloseWonModules] = useState({ account: true, contact: true })
+  const [closeWonModules, setCloseWonModules] = useState({ createAccount: true, createContact: true })
 
   const { data: record, isLoading: loadingRecord } = useQuery({
     queryKey: [mod, id],
@@ -679,8 +680,8 @@ export function ModuleDetailPage() {
               <label className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors">
                 <input
                   type="checkbox"
-                  checked={closeWonModules.account}
-                  onChange={e => setCloseWonModules(m => ({ ...m, account: e.target.checked }))}
+                  checked={closeWonModules.createAccount}
+                  onChange={e => setCloseWonModules(m => ({ ...m, createAccount: e.target.checked }))}
                   className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                 />
                 <div>
@@ -691,8 +692,8 @@ export function ModuleDetailPage() {
               <label className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors">
                 <input
                   type="checkbox"
-                  checked={closeWonModules.contact}
-                  onChange={e => setCloseWonModules(m => ({ ...m, contact: e.target.checked }))}
+                  checked={closeWonModules.createContact}
+                  onChange={e => setCloseWonModules(m => ({ ...m, createContact: e.target.checked }))}
                   className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                 />
                 <div>
@@ -705,7 +706,7 @@ export function ModuleDetailPage() {
               <Button variant="outline" onClick={() => setCloseWonOpen(false)}>Cancel</Button>
               <Button
                 onClick={() => closeWonMutation.mutate()}
-                disabled={closeWonMutation.isPending || (!closeWonModules.account && !closeWonModules.contact)}
+                disabled={closeWonMutation.isPending || (!closeWonModules.createAccount && !closeWonModules.createContact)}
                 className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-none"
               >
                 {closeWonMutation.isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <CheckCircle2 size={16} className="mr-2" />}
@@ -734,7 +735,7 @@ export function ModuleDetailPage() {
                       return (
                         <div key={field.name} className={isLong ? 'md:col-span-2 xl:col-span-3' : ''}>
                           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            {(field as any).label || getFieldLabel(field.name)}
+                            {(field as any).label ? t((field as any).label) : getFieldLabel(field.name)}
                           </label>
                           {field.name === 'image' && record?.image ? (
                             <img src={record.image} alt={record.productName || record.firstName || 'Image'} className="mt-1.5 h-20 w-20 rounded-lg border object-cover" />
@@ -783,6 +784,7 @@ export function ModuleDetailPage() {
             </TabsRoot>
           </CardContent>
         </Card>
+        {!isNew && id && <RecordTags module={mod} recordId={id} />}
         {mod === 'leads' && !isNew && <LeadExtras record={record} />}
         {mod === 'potentials' && !isNew && <PotentialExtras potentialId={id!} />}
         {mod === 'tickets' && !isNew && <TicketExtras record={record} />}
@@ -976,7 +978,7 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
               return (
                 <div key={field.name} className={isLong ? 'md:col-span-2 xl:col-span-3' : ''}>
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1.5">
-                    {field.label || getFieldLabel(field.name)}
+                    {field.label ? t(field.label) : getFieldLabel(field.name)}
                     {field.required && <span className="text-destructive ml-1">*</span>}
                   </label>
                   {field.type === 'textarea' ? (
@@ -1129,7 +1131,7 @@ function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIO
                         checked={!!formData[field.name]}
                         onChange={e => handleChange(field.name, e.target.checked)}
                       />
-                      <span className="text-sm text-muted-foreground">{field.label || getFieldLabel(field.name)}</span>
+                      <span className="text-sm text-muted-foreground">{field.label ? t(field.label) : getFieldLabel(field.name)}</span>
                     </div>
                   ) : field.type === 'multiselect' ? (
                     <Input

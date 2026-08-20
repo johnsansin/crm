@@ -3,6 +3,9 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { getAllGlobalSettings, setGlobalSetting, validatePassword } from '../lib/settings'
 import bcrypt from 'bcryptjs'
+import { publicUser } from '../lib/public-user'
+import fs from 'fs'
+import { createDatabaseBackup, emailDatabaseBackup, getDatabaseBackupConfig, listDatabaseBackups, resolveBackupFile, saveDatabaseBackupConfig } from '../lib/database-backup'
 
 export const adminRouter = Router()
 
@@ -69,6 +72,55 @@ adminRouter.put('/settings', async (req, res, next) => {
       await setGlobalSetting(key, keys[key])
     }
     res.json(await getAllGlobalSettings())
+  } catch (err) { next(err) }
+})
+
+adminRouter.get('/backups', async (_req, res, next) => {
+  try {
+    const [config, data] = await Promise.all([getDatabaseBackupConfig(), listDatabaseBackups()])
+    res.json({ config, data })
+  } catch (err) { next(err) }
+})
+
+adminRouter.put('/backups/config', async (req, res, next) => {
+  try {
+    const body = req.body || {}
+    if (!['daily', 'weekly', 'monthly'].includes(body.frequency)) return res.status(400).json({ error: 'Invalid backup frequency' })
+    const hour = Number(body.hour), minute = Number(body.minute), dayOfWeek = Number(body.dayOfWeek), dayOfMonth = Number(body.dayOfMonth), retentionCount = Number(body.retentionCount)
+    if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) return res.status(400).json({ error: 'Invalid backup time' })
+    if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6 || !Number.isInteger(dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 28) return res.status(400).json({ error: 'Invalid schedule day' })
+    if (!Number.isInteger(retentionCount) || retentionCount < 1 || retentionCount > 365) return res.status(400).json({ error: 'Retention must be between 1 and 365 backups' })
+    const emailTo = String(body.emailTo || '').trim()
+    if (body.emailEnabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTo)) return res.status(400).json({ error: 'A valid backup email is required' })
+    const config = await saveDatabaseBackupConfig({
+      enabled: !!body.enabled, frequency: body.frequency, hour, minute, dayOfWeek, dayOfMonth,
+      retentionCount, emailEnabled: !!body.emailEnabled, emailTo,
+    })
+    res.json({ config, message: 'Backup schedule saved successfully' })
+  } catch (err) { next(err) }
+})
+
+adminRouter.post('/backups/run', async (_req, res, next) => {
+  try {
+    const backup = await createDatabaseBackup()
+    res.json({ backup, message: 'Database backup completed successfully' })
+  } catch (err) { next(err) }
+})
+
+adminRouter.post('/backups/:fileName/email', async (req, res, next) => {
+  try {
+    const emailTo = String(req.body?.emailTo || '').trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTo)) return res.status(400).json({ error: 'A valid backup email is required' })
+    await emailDatabaseBackup(req.params.fileName, emailTo)
+    res.json({ message: `Backup emailed successfully to ${emailTo}` })
+  } catch (err) { next(err) }
+})
+
+adminRouter.get('/backups/:fileName/download', async (req, res, next) => {
+  try {
+    const filePath = resolveBackupFile(req.params.fileName)
+    if (!filePath || !fs.existsSync(filePath)) return res.status(404).json({ error: 'Backup file not found' })
+    res.download(filePath, req.params.fileName)
   } catch (err) { next(err) }
 })
 
@@ -219,7 +271,6 @@ adminRouter.post('/users', async (req, res, next) => {
         companyId,
       }
     })
-    const { password: _, ...userData } = user
-    res.status(201).json(userData)
+    res.status(201).json(publicUser(user))
   } catch (err) { next(err) }
 })

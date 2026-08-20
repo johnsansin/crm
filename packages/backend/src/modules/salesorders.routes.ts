@@ -1,11 +1,13 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
+import { requireModulePermission } from '../lib/module-permissions'
 import { renderReport, escapeHtml } from './report'
 
 export const salesOrdersRouter = Router()
 
 salesOrdersRouter.use(authMiddleware)
+salesOrdersRouter.use(requireModulePermission('salesorders'))
 
 const include = {
   lineItems: { orderBy: { sequence: 'asc' as const } },

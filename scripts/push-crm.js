@@ -7,7 +7,7 @@ const DIR = '/home/ubuntu/crm'
 const token = process.argv[2]
 const REPO_URL = 'https://github.com/johnsansin/crm.git'
 
-const ignoreDirs = new Set(['node_modules', '.git', 'uploads'])
+const ignoreDirs = new Set(['node_modules', '.git', 'uploads', 'data'])
 const ignoreFiles = new Set(['.env', '.DS_Store', '.spc.cache.php'])
 const ignoreExact = new Set(['tsconfig.tsbuildinfo'])
 const skipPrefix = ['dist/']
@@ -50,12 +50,8 @@ function getAllFiles(dir) {
 async function main() {
   const files = getAllFiles(DIR).sort()
   console.log(`Found ${files.length} files`)
-  if (files.includes('data/db_backup.sql')) console.log('Including DB backup: data/db_backup.sql')
-  if (files.includes('data/db_backup.dump')) console.log('Including DB backup: data/db_backup.dump')
-
   if (!token) { console.log('No token provided. Usage: node push-crm.js <GITHUB_PAT>'); process.exit(1) }
 
-  try { fs.rmSync(path.join(DIR, '.git'), { recursive: true, force: true }) } catch {}
   await git.init({ fs, dir: DIR, defaultBranch: 'main' })
   console.log('Repo initialized (default branch: main)')
 
@@ -67,7 +63,7 @@ async function main() {
   const sha = await git.commit({
     fs, dir: DIR,
     author: { name: 'BizForce CRM', email: 'bot@bizforce.online' },
-    message: 'BizForce CRM full codebase + database backups'
+    message: 'BizForce CRM codebase'
   })
   console.log(`Commit: ${sha}`)
 
