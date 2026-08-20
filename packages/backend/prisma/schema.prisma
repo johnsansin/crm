@@ -1717,6 +1717,7 @@ model Receipt {
   method      String?  @db.VarChar(50)
   reference   String?  @db.VarChar(200)
   notes       String?  @db.Text
+  isActive    Boolean  @default(true)
   companyId   String?
   createdBy   String?
   createdAt   DateTime @default(now())
@@ -1734,6 +1735,7 @@ model Payment {
   method          String?  @db.VarChar(50)
   reference       String?  @db.VarChar(200)
   notes           String?  @db.Text
+  isActive        Boolean  @default(true)
   companyId       String?
   createdBy       String?
   createdAt       DateTime @default(now())

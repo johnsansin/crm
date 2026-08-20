@@ -25,7 +25,7 @@ const iconMap: Record<string, React.ElementType> = {
   Send, MessageCircle, Globe, Share2, Webhook, Sparkles, UserCog
 }
 
-const GROUP_ORDER = ['Marketing', 'Sales', 'Inventory', 'Support', 'Projects', 'Tools']
+const GROUP_ORDER = ['Marketing', 'Sales', 'Inventory', 'Purchasing', 'Support', 'Projects', 'Tools']
 
 const fallbackGroups = [
   {
@@ -46,6 +46,7 @@ const fallbackGroups = [
       { module: 'quotes', label: 'Quotes', icon: 'FileText' },
       { module: 'salesorders', label: 'Sales Orders', icon: 'ShoppingCart' },
       { module: 'invoices', label: 'Invoices', icon: 'Receipt' },
+      { module: 'receipts', label: 'Receipts', icon: 'Receipt' },
       { module: 'smsnotifier', label: 'SMS Notifier', icon: 'MessageSquare' },
     ]
   },
@@ -57,6 +58,12 @@ const fallbackGroups = [
       { module: 'vendors', label: 'Vendors', icon: 'Truck' },
       { module: 'pricebooks', label: 'Price Books', icon: 'BookOpen' },
       { module: 'purchaseorders', label: 'Purchase Orders', icon: 'ClipboardList' },
+    ]
+  },
+  {
+    label: 'Purchasing',
+    items: [
+      { module: 'payments', label: 'Payments', icon: 'CreditCard' },
     ]
   },
   {
