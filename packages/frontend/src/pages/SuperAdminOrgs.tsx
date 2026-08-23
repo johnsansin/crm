@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { api } from '@/lib/api'
 import {
   Building2, Users, ToggleLeft, ToggleRight, Search,
-  LayoutGrid, Table2, X, Mail, Globe, Phone, MapPin, Clock, ChevronRight, User, Pencil, Trash2
+  LayoutGrid, Table2, X, Mail, Globe, Phone, MapPin, Clock, ChevronRight, User, Pencil, Trash2, LogOut
 } from 'lucide-react'
 import { useToast } from '@/lib/toast'
 import { formatDate, useOrgSettings } from '@/lib/org-format'
@@ -29,6 +30,8 @@ export function SuperAdminOrgs() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [sortBy, setSortBy] = useState<'newest' | 'name' | 'users'>('newest')
   const [view, setView] = useState<ViewMode>('cards')
+  const [selectedOrg, setSelectedOrg] = useState<any>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const load = () => {
     setLoading(true)
@@ -36,6 +39,14 @@ export function SuperAdminOrgs() {
   }
 
   useEffect(() => { load() }, [])
+  useEffect(() => {
+    const id = searchParams.get('id')
+    if (!id) { setSelectedOrg(null); return }
+    api.adminGetCompany(id).then(response => setSelectedOrg(response.data || response)).catch(() => setSelectedOrg(null))
+  }, [searchParams])
+
+  const openOrganization = (id: string) => setSearchParams({ id })
+  const closeOrganization = () => { setSelectedOrg(null); setSearchParams({}) }
 
   const toggleOrg = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
@@ -49,6 +60,17 @@ export function SuperAdminOrgs() {
       addToast({ title: 'Failed to toggle status', variant: 'destructive' })
     }
     setToggling(null)
+  }
+
+  const logoutOrganization = async (e: React.MouseEvent, org: any) => {
+    e.stopPropagation()
+    if (!window.confirm(`Log out every user in ${org.name} from all devices?`)) return
+    try {
+      const result = await api.superAdminLogoutCompany(org.id)
+      addToast({ title: 'Organization sessions ended', description: result.message, variant: 'success' })
+    } catch (error: any) {
+      addToast({ title: 'Could not end organization sessions', description: error.message, variant: 'destructive' })
+    }
   }
 
   const filtered = companies.filter(c => {
@@ -135,7 +157,7 @@ export function SuperAdminOrgs() {
                   <OrgLogo org={org} size="lg" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-slate-800 dark:text-white truncate">{org.name}</h3>
+                      <button onClick={() => openOrganization(org.id)} className="truncate text-left text-lg font-bold text-sky-700 hover:underline dark:text-sky-300">{org.name}</button>
                       <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColors[org.isActive !== false ? 'active' : 'inactive']}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${org.isActive !== false ? 'bg-emerald-500' : 'bg-red-500'}`} />
                         {org.isActive !== false ? 'Active' : 'Inactive'}
@@ -181,6 +203,7 @@ export function SuperAdminOrgs() {
                     </div>
                   )}
                 </div>
+                <button onClick={(e) => logoutOrganization(e, org)} className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"><LogOut size={14} /> Logout all organization users</button>
 
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
@@ -220,7 +243,7 @@ export function SuperAdminOrgs() {
                   <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Date Format</th>
                   <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Users</th>
                   <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Status</th>
-                  <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Toggle</th>
+                  <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -230,7 +253,7 @@ export function SuperAdminOrgs() {
                       <div className="flex items-center gap-3">
                         <OrgLogo org={org} size="sm" />
                         <div>
-                          <p className="font-semibold text-slate-800 dark:text-white">{org.name}</p>
+                          <button onClick={() => openOrganization(org.id)} className="font-semibold text-sky-700 hover:underline dark:text-sky-300">{org.name}</button>
                           <p className="text-xs text-slate-400">{formatDate(org.createdAt)}</p>
                         </div>
                       </div>
@@ -247,7 +270,8 @@ export function SuperAdminOrgs() {
                         {org.isActive !== false ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-center">
+                    <td className="px-5 py-3 text-center"><div className="inline-flex items-center gap-1">
+                      <button onClick={(e) => logoutOrganization(e, org)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30" title="Logout all organization users"><LogOut size={17} /></button>
                       <button
                         onClick={(e) => toggleOrg(e, org.id)}
                         disabled={toggling === org.id}
@@ -258,7 +282,7 @@ export function SuperAdminOrgs() {
                           <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
                         ) : org.isActive !== false ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                       </button>
-                    </td>
+                    </div></td>
                   </tr>
                 ))}
               </tbody>
@@ -266,6 +290,21 @@ export function SuperAdminOrgs() {
           </div>
         </div>
       )}
+      {selectedOrg && <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/50 p-3" onMouseDown={event => { if (event.target === event.currentTarget) closeOrganization() }}>
+        <section className="max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white shadow-2xl dark:bg-slate-900">
+          <div className="flex items-start gap-4 border-b p-5 sm:p-6"><OrgLogo org={selectedOrg} size="lg"/><div className="min-w-0 flex-1"><h2 className="text-xl font-bold text-slate-900 dark:text-white">{selectedOrg.name}</h2><p className="mt-1 text-sm text-muted-foreground">Registered organisation details</p></div><button onClick={closeOrganization} className="rounded-xl p-2 hover:bg-muted"><X size={20}/></button></div>
+          <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
+            {[
+              ['Email', selectedOrg.email, Mail], ['Phone', selectedOrg.phone, Phone], ['Website', selectedOrg.website, Globe],
+              ['City', selectedOrg.addressCity, MapPin], ['Country', selectedOrg.addressCountry, MapPin],
+              ['Language', langLabel(selectedOrg.language), Globe], ['Timezone', tzLabel(selectedOrg.timezone), Clock],
+              ['Date format', dfLabel(selectedOrg.dateFormat), Clock], ['Users', selectedOrg._count?.users ?? selectedOrg.users?.length ?? 0, Users],
+              ['Registered', formatDate(selectedOrg.createdAt), Clock],
+            ].map(([label, value, Icon]: any) => <div key={label} className="rounded-2xl border bg-slate-50 p-4 dark:bg-slate-950/40"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"><Icon size={14}/>{label}</div><p className="mt-2 break-words text-sm font-semibold">{value || 'Not provided'}</p></div>)}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t p-5"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusColors[selectedOrg.isActive !== false ? 'active' : 'inactive']}`}>{selectedOrg.isActive !== false ? 'Active organisation' : 'Inactive organisation'}</span><button onClick={closeOrganization} className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white dark:bg-white dark:text-slate-900">Close</button></div>
+        </section>
+      </div>}
     </div>
   )
 }

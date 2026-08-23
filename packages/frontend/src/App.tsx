@@ -48,10 +48,13 @@ const SuperAdminUsers = lazy(() => import('@/pages/SuperAdminUsers').then(m => (
 const SuperAdminLoginHistory = lazy(() => import('@/pages/SuperAdminLoginHistory').then(m => ({ default: m.SuperAdminLoginHistory })))
 const SuperAdminSettings = lazy(() => import('@/pages/SuperAdminSettings').then(m => ({ default: m.SuperAdminSettings })))
 const AgentsPage = lazy(() => import('@/pages/AgentsPage').then(m => ({ default: m.AgentsPage })))
+const SuperAdminSupportInbox = lazy(() => import('@/pages/SuperAdminSupportInbox').then(m => ({ default: m.SuperAdminSupportInbox })))
+const SupportAgentLayout = lazy(() => import('@/pages/SupportAgentLayout').then(m => ({ default: m.SupportAgentLayout })))
 const PortalPage = lazy(() => import('@/pages/PortalPage').then(m => ({ default: m.PortalPage })))
 const AiAssistantPage = lazy(() => import('@/pages/AiAssistantPage').then(m => ({ default: m.AiAssistantPage })))
 const RecurringInvoicesPage = lazy(() => import('@/pages/RecurringInvoicesPage').then(m => ({ default: m.RecurringInvoicesPage })))
 const EscalationHistoryPage = lazy(() => import('@/pages/EscalationHistoryPage').then(m => ({ default: m.EscalationHistoryPage })))
+const TagsSettings = lazy(() => import('@/pages/settings/TagsSettings').then(m => ({ default: m.TagsSettings })))
 
 const AppLayout = lazy(() => import('@/components/layout/AppLayout').then(m => ({ default: m.AppLayout })))
 
@@ -90,8 +93,23 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function SupportAgentRoute({ children }: { children: React.ReactNode }) {
+  const { token, user, loading } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  if (loading) return <>{children}</>
+  if (!user?.isAgent || user?.isSuperAdmin) return <Navigate to={user?.isSuperAdmin ? '/superadmin' : '/dashboard'} replace />
+  return <>{children}</>
+}
+
+function CrmUserRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuthStore()
+  if (loading) return <>{children}</>
+  if (user?.isAgent && !user?.isSuperAdmin) return <Navigate to="/support-agent" replace />
+  return <>{children}</>
+}
+
 export default function App() {
-  const { token, loading } = useAuthStore()
+  const { token, user, loading } = useAuthStore()
 
   if (loading) {
     return (
@@ -118,7 +136,7 @@ export default function App() {
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/cookie-policy" element={<CookiePolicyPage />} />
             <Route path="/refund-policy" element={<RefundPolicyPage />} />
-            <Route path="/login" element={token ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+            <Route path="/login" element={token ? <Navigate to={user?.isSuperAdmin ? '/superadmin' : user?.isAgent ? '/support-agent' : '/dashboard'} replace /> : <LoginPage />} />
             <Route path="/signup" element={token ? <Navigate to="/dashboard" replace /> : <SignUpPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -135,17 +153,24 @@ export default function App() {
               <Route path="/superadmin/organizations" element={<SuperAdminOrgs />} />
               <Route path="/superadmin/users" element={<SuperAdminUsers />} />
               <Route path="/superadmin/agents" element={<AgentsPage />} />
+              <Route path="/superadmin/support" element={<SuperAdminSupportInbox />} />
               <Route path="/superadmin/login-history" element={<SuperAdminLoginHistory />} />
               <Route path="/superadmin/settings" element={<SuperAdminSettings />} />
             </Route>
 
+            <Route element={<ProtectedRoute><SupportAgentRoute><SupportAgentLayout /></SupportAgentRoute></ProtectedRoute>}>
+              <Route path="/support-agent" element={<SuperAdminSupportInbox />} />
+            </Route>
+
             {/* CRM routes */}
-            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route element={<ProtectedRoute><CrmUserRoute><AppLayout /></CrmUserRoute></ProtectedRoute>}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
               <Route path="/admin" element={<SuperAdminRoute><AdminPage /></SuperAdminRoute>} />
               <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/activities" element={<CalendarPage />} />
+              <Route path="/tags" element={<TagsSettings />} />
               <Route path="/forecast" element={<ForecastPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/mailboxes" element={<MailboxesPage />} />

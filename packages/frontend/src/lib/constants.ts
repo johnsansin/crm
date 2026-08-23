@@ -20,10 +20,46 @@ export const DATE_FORMATS = [
 
 export const HOUR_FORMATS = ['12h', '24h']
 
-export const CURRENCIES = [
-  'USD', 'EUR', 'GBP', 'PKR', 'INR', 'AUD', 'CAD', 'AED', 'SAR', 'JPY', 'CNY',
-  'CHF', 'SEK', 'NOK', 'DKK', 'NZD', 'SGD', 'HKD', 'ZAR', 'BRL', 'MXN',
+export type CurrencyDefinition = { code: string; name: string; symbol: string }
+
+// Active ISO 4217 currencies. Keeping this catalog client-side makes every
+// organization able to choose a currency before it has configured a rate.
+const CURRENCY_ROWS: [string, string, string][] = [
+  ['AED','United Arab Emirates Dirham','د.إ'],['AFN','Afghan Afghani','؋'],['ALL','Albanian Lek','L'],['AMD','Armenian Dram','֏'],['ANG','Netherlands Antillean Guilder','ƒ'],
+  ['AOA','Angolan Kwanza','Kz'],['ARS','Argentine Peso','$'],['AUD','Australian Dollar','A$'],['AWG','Aruban Florin','ƒ'],['AZN','Azerbaijani Manat','₼'],
+  ['BAM','Bosnia-Herzegovina Convertible Mark','KM'],['BBD','Barbadian Dollar','Bds$'],['BDT','Bangladeshi Taka','৳'],['BGN','Bulgarian Lev','лв'],['BHD','Bahraini Dinar','د.ب'],
+  ['BIF','Burundian Franc','FBu'],['BMD','Bermudian Dollar','BD$'],['BND','Brunei Dollar','B$'],['BOB','Bolivian Boliviano','Bs.'],['BRL','Brazilian Real','R$'],
+  ['BSD','Bahamian Dollar','B$'],['BTN','Bhutanese Ngultrum','Nu.'],['BWP','Botswanan Pula','P'],['BYN','Belarusian Ruble','Br'],['BZD','Belize Dollar','BZ$'],
+  ['CAD','Canadian Dollar','C$'],['CDF','Congolese Franc','FC'],['CHF','Swiss Franc','CHF'],['CLP','Chilean Peso','CLP$'],['CNY','Chinese Yuan','¥'],
+  ['COP','Colombian Peso','COL$'],['CRC','Costa Rican Colón','₡'],['CUP','Cuban Peso','₱'],['CVE','Cape Verdean Escudo','Esc'],['CZK','Czech Koruna','Kč'],
+  ['DJF','Djiboutian Franc','Fdj'],['DKK','Danish Krone','kr'],['DOP','Dominican Peso','RD$'],['DZD','Algerian Dinar','دج'],['EGP','Egyptian Pound','E£'],
+  ['ERN','Eritrean Nakfa','Nfk'],['ETB','Ethiopian Birr','Br'],['EUR','Euro','€'],['FJD','Fijian Dollar','FJ$'],['FKP','Falkland Islands Pound','£'],
+  ['GBP','British Pound','£'],['GEL','Georgian Lari','₾'],['GHS','Ghanaian Cedi','₵'],['GIP','Gibraltar Pound','£'],['GMD','Gambian Dalasi','D'],
+  ['GNF','Guinean Franc','FG'],['GTQ','Guatemalan Quetzal','Q'],['GYD','Guyanese Dollar','G$'],['HKD','Hong Kong Dollar','HK$'],['HNL','Honduran Lempira','L'],
+  ['HTG','Haitian Gourde','G'],['HUF','Hungarian Forint','Ft'],['IDR','Indonesian Rupiah','Rp'],['ILS','Israeli New Shekel','₪'],['INR','Indian Rupee','₹'],
+  ['IQD','Iraqi Dinar','ع.د'],['IRR','Iranian Rial','﷼'],['ISK','Icelandic Króna','kr'],['JMD','Jamaican Dollar','J$'],['JOD','Jordanian Dinar','د.ا'],
+  ['JPY','Japanese Yen','¥'],['KES','Kenyan Shilling','KSh'],['KGS','Kyrgyzstani Som','сом'],['KHR','Cambodian Riel','៛'],['KMF','Comorian Franc','CF'],
+  ['KPW','North Korean Won','₩'],['KRW','South Korean Won','₩'],['KWD','Kuwaiti Dinar','د.ك'],['KYD','Cayman Islands Dollar','CI$'],['KZT','Kazakhstani Tenge','₸'],
+  ['LAK','Lao Kip','₭'],['LBP','Lebanese Pound','ل.ل'],['LKR','Sri Lankan Rupee','Rs'],['LRD','Liberian Dollar','L$'],['LSL','Lesotho Loti','L'],
+  ['LYD','Libyan Dinar','ل.د'],['MAD','Moroccan Dirham','د.م.'],['MDL','Moldovan Leu','L'],['MGA','Malagasy Ariary','Ar'],['MKD','Macedonian Denar','ден'],
+  ['MMK','Myanmar Kyat','K'],['MNT','Mongolian Tögrög','₮'],['MOP','Macanese Pataca','MOP$'],['MRU','Mauritanian Ouguiya','UM'],['MUR','Mauritian Rupee','₨'],
+  ['MVR','Maldivian Rufiyaa','Rf'],['MWK','Malawian Kwacha','MK'],['MXN','Mexican Peso','MX$'],['MYR','Malaysian Ringgit','RM'],['MZN','Mozambican Metical','MT'],
+  ['NAD','Namibian Dollar','N$'],['NGN','Nigerian Naira','₦'],['NIO','Nicaraguan Córdoba','C$'],['NOK','Norwegian Krone','kr'],['NPR','Nepalese Rupee','रू'],
+  ['NZD','New Zealand Dollar','NZ$'],['OMR','Omani Rial','ر.ع.'],['PAB','Panamanian Balboa','B/.'],['PEN','Peruvian Sol','S/'],['PGK','Papua New Guinean Kina','K'],
+  ['PHP','Philippine Peso','₱'],['PKR','Pakistani Rupee','₨'],['PLN','Polish Złoty','zł'],['PYG','Paraguayan Guaraní','₲'],['QAR','Qatari Riyal','ر.ق'],
+  ['RON','Romanian Leu','lei'],['RSD','Serbian Dinar','дин'],['RUB','Russian Ruble','₽'],['RWF','Rwandan Franc','FRw'],['SAR','Saudi Riyal','ر.س'],
+  ['SBD','Solomon Islands Dollar','SI$'],['SCR','Seychellois Rupee','₨'],['SDG','Sudanese Pound','ج.س.'],['SEK','Swedish Krona','kr'],['SGD','Singapore Dollar','S$'],
+  ['SHP','Saint Helena Pound','£'],['SLE','Sierra Leonean Leone','Le'],['SOS','Somali Shilling','Sh'],['SRD','Surinamese Dollar','SR$'],['SSP','South Sudanese Pound','SS£'],
+  ['STN','São Tomé and Príncipe Dobra','Db'],['SVC','Salvadoran Colón','₡'],['SYP','Syrian Pound','£'],['SZL','Swazi Lilangeni','L'],['THB','Thai Baht','฿'],
+  ['TJS','Tajikistani Somoni','ЅМ'],['TMT','Turkmenistani Manat','m'],['TND','Tunisian Dinar','د.ت'],['TOP','Tongan Paʻanga','T$'],['TRY','Turkish Lira','₺'],
+  ['TTD','Trinidad and Tobago Dollar','TT$'],['TWD','New Taiwan Dollar','NT$'],['TZS','Tanzanian Shilling','TSh'],['UAH','Ukrainian Hryvnia','₴'],['UGX','Ugandan Shilling','USh'],
+  ['USD','United States Dollar','$'],['UYU','Uruguayan Peso','$U'],['UZS','Uzbekistani Som','soʻm'],['VES','Venezuelan Bolívar','Bs.'],['VND','Vietnamese Đồng','₫'],
+  ['VUV','Vanuatu Vatu','VT'],['WST','Samoan Tala','WS$'],['XAF','Central African CFA Franc','FCFA'],['XCD','East Caribbean Dollar','EC$'],['XCG','Caribbean Guilder','Cg'],
+  ['XOF','West African CFA Franc','CFA'],['XPF','CFP Franc','₣'],['YER','Yemeni Rial','﷼'],['ZAR','South African Rand','R'],['ZMW','Zambian Kwacha','ZK'],['ZWG','Zimbabwe Gold','ZiG'],
 ]
+
+export const CURRENCY_CATALOG: CurrencyDefinition[] = CURRENCY_ROWS.map(([code, name, symbol]) => ({ code, name, symbol }))
+export const CURRENCIES = CURRENCY_CATALOG.map(currency => currency.code)
 
 export const LANGUAGES = [
   { value: 'en_us', label: 'English (US)' },

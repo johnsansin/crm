@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { getFieldTabs, getFieldLabel, formatFieldValue } from '@/lib/field-utils'
-import { useOrgSettings } from '@/lib/org-format'
+import { useOrgSettings, formatMoney } from '@/lib/org-format'
 import { ProjectSearchSelect } from '@/components/project-search-select'
 import { UserRoleSelect, userDisplayName } from '@/components/user-role-select'
 import { SearchSelect } from '@/components/search-select'
@@ -26,6 +26,7 @@ import { MergeRecordsDialog, MERGEABLE_MODULES } from '@/components/merge-record
 import { fieldConfigs } from '@/lib/module-fields'
 import { t } from '@/lib/i18n'
 import { RecordTags } from '@/components/record-tags'
+import { useAuthStore } from '@/lib/auth'
 
 const labelMap: Record<string, string> = {
   accounts: 'Account', contacts: 'Contact', leads: 'Lead',
@@ -218,6 +219,7 @@ function formatDisplayValue(value: any, type: string, name?: string) {
 }
 
 export function ModuleDetailPage() {
+  const { user } = useAuthStore()
   useOrgSettings()
   const { module, id } = useParams<{ module: string; id: string }>()
   const [searchParams] = useSearchParams()
@@ -314,7 +316,7 @@ export function ModuleDetailPage() {
   })
   const allContacts = contactsData?.data || []
 
-  const needsProducts = mod === 'tickets' || mod === 'assets'
+  const needsProducts = (fieldConfigs[mod] || []).some((field: any) => field.type === 'product-select')
   const { data: productsData } = useQuery({
     queryKey: ['module-products', mod],
     queryFn: () => api.listAll('products'),
@@ -394,7 +396,7 @@ export function ModuleDetailPage() {
     return result
   }
 
-  const DRAFT_KEY = `draft_${mod}`
+  const DRAFT_KEY = `crm:draft:${user?.companyId || 'company'}:${user?.id || 'user'}:${mod}:${isNew ? 'new' : id}`
 
   useEffect(() => {
     if (isNew) {
@@ -415,17 +417,31 @@ export function ModuleDetailPage() {
         const qv = searchParams.get(f.name)
         if (qv) preseed[f.name] = qv
       }
+      if (mod === 'stageprobability') {
+        preseed.probability = preseed.probability ?? 0
+        preseed.sequence = preseed.sequence ?? 0
+        preseed.color = preseed.color || '#2563eb'
+        preseed.isActive = true
+      }
+      if (mod === 'quantitydiscounts') {
+        preseed.minQty = preseed.minQty ?? 1
+        preseed.isActive = true
+      }
       setFormData(preseed)
     } else if (record) {
+      const saved = localStorage.getItem(DRAFT_KEY)
+      if (saved) {
+        try { setFormData(JSON.parse(saved)); return } catch {}
+      }
       setFormData(formatRecordForForm(record))
     }
   }, [record, isNew])
 
   useEffect(() => {
-    if (isNew && Object.keys(formData).length > 0) {
+    if (Object.keys(formData).length > 0 && (isNew || record)) {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(formData))
     }
-  }, [formData, isNew])
+  }, [formData, isNew, record, DRAFT_KEY])
 
   const saveMutation = useMutation({
     mutationFn: (data: any) =>
@@ -489,9 +505,20 @@ export function ModuleDetailPage() {
     const config = fieldConfigs[mod] || []
     const newErrors: Record<string, string> = {}
     for (const field of config) {
-      if (field.required && !formData[field.name]) {
+      if (field.required && (formData[field.name] === '' || formData[field.name] == null)) {
         newErrors[field.name] = 'This field is required'
       }
+    }
+    if (mod === 'stageprobability' && (Number(formData.probability) < 0 || Number(formData.probability) > 100)) {
+      newErrors.probability = 'Probability must be between 0 and 100'
+    }
+    if (mod === 'quantitydiscounts') {
+      const minQty = Number(formData.minQty)
+      const maxQty = formData.maxQty === '' || formData.maxQty == null ? null : Number(formData.maxQty)
+      const discount = Number(formData.discountPercent)
+      if (!Number.isFinite(minQty) || minQty <= 0) newErrors.minQty = 'Minimum quantity must be greater than 0'
+      if (maxQty != null && (!Number.isFinite(maxQty) || maxQty < minQty)) newErrors.maxQty = 'Maximum quantity must be at least the minimum quantity'
+      if (!Number.isFinite(discount) || discount <= 0 || discount > 100) newErrors.discountPercent = 'Discount must be greater than 0 and no more than 100%'
     }
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
@@ -879,6 +906,8 @@ export function ModuleDetailPage() {
               handleChange={handleChange}
               SELECT_OPTIONS={dynamicOptions}
               projects={projects}
+              milestoneOptions={milestoneOptions}
+              taskOptions={taskOptions}
               users={users}
               roles={roles}
               vendors={vendors}
@@ -981,8 +1010,8 @@ export function ModuleDetailPage() {
   )
 }
 
-function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIONS: options, projects, users = [], roles = [], vendors = [], accounts = [], allContacts = [], products = [], currencies = [], uploadingImage = false, onUploadImage, onAddVendor, onOpenVendorFullForm, onOpenAccountFullForm, customFields = [] }: {
-  module: string; fields: any[]; formData: any; errors: any; handleChange: any; SELECT_OPTIONS: any; projects: any[]; users?: any[]; roles?: any[]; vendors?: any[]; accounts?: any[]; allContacts?: any[]; products?: any[]; currencies?: any[]; uploadingImage?: boolean; onUploadImage?: (file: File) => void; onAddVendor?: () => void; onOpenVendorFullForm?: () => void; onOpenAccountFullForm?: () => void; customFields?: any[]
+function FormTabs({ module, fields, formData, errors, handleChange, SELECT_OPTIONS: options, projects, milestoneOptions = [], taskOptions = [], users = [], roles = [], vendors = [], accounts = [], allContacts = [], products = [], currencies = [], uploadingImage = false, onUploadImage, onAddVendor, onOpenVendorFullForm, onOpenAccountFullForm, customFields = [] }: {
+  module: string; fields: any[]; formData: any; errors: any; handleChange: any; SELECT_OPTIONS: any; projects: any[]; milestoneOptions?: any[]; taskOptions?: any[]; users?: any[]; roles?: any[]; vendors?: any[]; accounts?: any[]; allContacts?: any[]; products?: any[]; currencies?: any[]; uploadingImage?: boolean; onUploadImage?: (file: File) => void; onAddVendor?: () => void; onOpenVendorFullForm?: () => void; onOpenAccountFullForm?: () => void; customFields?: any[]
 }) {
   const tabs = [
     ...getFieldTabs(module, fields),
@@ -1656,7 +1685,7 @@ function PotentialExtras({ potentialId }: { potentialId: string }) {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold flex items-center gap-1.5"><Target size={15} className="text-primary" /> Pipeline Stage</h3>
             {rec?.amount != null && (
-              <span className="text-sm font-semibold text-primary">{Number(rec.amount).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}</span>
+              <span className="text-sm font-semibold text-primary">{formatMoney(rec.amount)}</span>
             )}
           </div>
           <div className="flex items-center gap-1 overflow-x-auto pb-1">
@@ -2035,7 +2064,7 @@ function ServiceExtras({ record }: { record: any }) {
           {setupFee != null && (
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Setup Fee</label>
-              <p className="text-sm font-medium mt-1.5">{Number(setupFee).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}</p>
+              <p className="text-sm font-medium mt-1.5">{formatMoney(setupFee)}</p>
             </div>
           )}
         </div>
@@ -2199,7 +2228,7 @@ function AssetExtras({ record }: { record: any }) {
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Purchase Info</label>
               <div className="mt-1.5 space-y-0.5">
                 {purchaseDate && <p className="text-sm font-medium">{new Date(purchaseDate).toLocaleDateString()}</p>}
-                {purchasePrice != null && <p className="text-sm font-medium">{Number(purchasePrice).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}</p>}
+                {purchasePrice != null && <p className="text-sm font-medium">{formatMoney(purchasePrice)}</p>}
               </div>
             </div>
           )}
@@ -2587,7 +2616,7 @@ function InvoiceExtras({ record }: { record: any }) {
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Late Fee</label>
               <p className={cn('text-sm font-medium mt-1.5', overdueColor)}>
-                {Number(lateFee).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                {formatMoney(lateFee)}
               </p>
             </div>
           )}

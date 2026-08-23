@@ -20,9 +20,10 @@ export function AppBreadcrumbs() {
   const { pathname } = useLocation()
   const parts = pathname.split('/').filter(Boolean)
   if (!parts.length) return null
+  const homeHref = pathname === '/superadmin' || pathname.startsWith('/superadmin/') ? '/superadmin/organizations' : '/dashboard'
   return (
     <nav aria-label="Breadcrumb" className="mb-4 flex min-h-6 items-center gap-1 overflow-x-auto whitespace-nowrap text-xs text-muted-foreground">
-      <Link to="/dashboard" className="inline-flex items-center gap-1 hover:text-primary"><Home size={13} /> CRM</Link>
+      <Link to={homeHref} className="inline-flex items-center gap-1 hover:text-primary"><Home size={13} /> CRM</Link>
       {parts.map((part, index) => {
         const href = `/${parts.slice(0, index + 1).join('/')}`
         const current = index === parts.length - 1

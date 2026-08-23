@@ -88,17 +88,26 @@ export function ReportsPage() {
 
   const generatePrebuilt = async (reportId: string) => {
     setGeneratingPrebuilt(true)
+    setPrebuiltResult(null)
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 30000)
     try {
       const res = await fetch('/api/reports/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ reportType: reportId, dateFrom: prebuiltDateFrom || undefined, dateTo: prebuiltDateTo || undefined }),
+        signal: controller.signal,
       })
-      const data = await res.json()
-      setPrebuiltResult(data.data)
-    } catch {
-      addToast({ title: 'Error generating report', variant: 'destructive' })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(payload.error || `Report request failed (${res.status})`)
+      if (!payload.data) throw new Error('The report service returned no data')
+      setPrebuiltResult(payload.data)
+    } catch (error: any) {
+      const message = error?.name === 'AbortError' ? 'The report took too long. Please try a shorter date range.' : error?.message
+      addToast({ title: 'Error generating report', description: message || 'Please try again.', variant: 'destructive' })
+      setSelectedPrebuilt(null)
     } finally {
+      window.clearTimeout(timeout)
       setGeneratingPrebuilt(false)
     }
   }
@@ -176,12 +185,13 @@ export function ReportsPage() {
         </div>
       </div>}
 
-      <Dialog open={!!selectedPrebuilt && !prebuiltResult} onOpenChange={() => { setSelectedPrebuilt(null); setPrebuiltResult(null) }}>
+      <Dialog open={!!selectedPrebuilt && !prebuiltResult} onOpenChange={(open) => { if (!open) { setSelectedPrebuilt(null); setPrebuiltResult(null) } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{selectedPrebuilt?.name}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Generating report...</p>
+            <p className="text-sm text-muted-foreground">Generating report… This should only take a moment.</p>
             {generatingPrebuilt && <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary" size={24} /></div>}
+            <Button variant="outline" className="w-full" onClick={() => { setSelectedPrebuilt(null); setPrebuiltResult(null) }}>Cancel</Button>
           </div>
         </DialogContent>
       </Dialog>

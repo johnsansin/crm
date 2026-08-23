@@ -16,6 +16,7 @@ import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/ta
 import { DataTable } from '@/components/ui/data-table'
 import { RowActions } from '@/components/ui/row-actions'
 import { DetailDialog } from '@/components/ui/detail-dialog'
+import { UserRoleSelect } from '@/components/user-role-select'
 import { getFieldLabel, formatFieldValue } from '@/lib/field-utils'
 import { formatDate, formatDateTime, formatMoney, formatNumber, useOrgSettings } from '@/lib/org-format'
 import { cn } from '@/lib/utils'
@@ -70,6 +71,7 @@ const DETAIL_GROUPS: { title: string; icon: LucideIcon; fields: string[] }[] = [
   { title: 'Company Information', icon: TrendingUp, fields: ['industry', 'annualRevenue', 'noOfEmployees', 'rating', 'interest', 'emailOptOut'] },
   { title: 'Address Information', icon: Globe, fields: ['street', 'city', 'state', 'country', 'postalCode', 'poBox'] },
   { title: 'Description Information', icon: FileText, fields: ['description'] },
+  { title: 'Assignment & System Information', icon: History, fields: ['assignedTo', 'createdBy', 'createdAt', 'updatedAt'] },
 ]
 
 const ACTIVITY_TYPES = ['Event', 'Task', 'Call', 'Meeting', 'Other']
@@ -85,11 +87,17 @@ const RATINGS = ['-- None --', 'Acquired', 'Active', 'Failed', 'Inactive', 'Open
 const INTERESTS = ['-- None --', 'Buying signals', 'Product details', 'Quotation negotiation', 'Requested Sample', 'Specification', 'Support']
 
 const SUMMARY_INFO_FIELDS: { name: string; label: string; type: string; options?: string[] }[] = [
+  { name: 'leadNo', label: 'Lead No.', type: 'text' },
+  { name: 'salutation', label: 'Salutation', type: 'select', options: ['-- None --', 'Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Prof.'] },
+  { name: 'firstName', label: 'First Name', type: 'text' },
+  { name: 'lastName', label: 'Last Name', type: 'text' },
   { name: 'company', label: 'Company', type: 'text' },
+  { name: 'title', label: 'Title', type: 'text' },
   { name: 'email', label: 'Email', type: 'email' },
   { name: 'secondaryEmail', label: 'Secondary Email', type: 'email' },
   { name: 'phone', label: 'Phone', type: 'text' },
   { name: 'mobile', label: 'Mobile', type: 'text' },
+  { name: 'fax', label: 'Fax', type: 'text' },
   { name: 'website', label: 'Website', type: 'text' },
   { name: 'leadSource', label: 'Lead Source', type: 'select', options: LEAD_SOURCES },
   { name: 'leadStatus', label: 'Lead Status', type: 'select', options: LEAD_STATUSES },
@@ -98,11 +106,14 @@ const SUMMARY_INFO_FIELDS: { name: string; label: string; type: string; options?
   { name: 'noOfEmployees', label: 'No. of Employees', type: 'number' },
   { name: 'rating', label: 'Rating', type: 'select', options: RATINGS },
   { name: 'interest', label: 'Interest', type: 'select', options: INTERESTS },
+  { name: 'emailOptOut', label: 'Email Opt Out', type: 'checkbox' },
   { name: 'street', label: 'Street', type: 'text' },
   { name: 'city', label: 'City', type: 'text' },
   { name: 'state', label: 'State', type: 'text' },
   { name: 'country', label: 'Country', type: 'text' },
   { name: 'postalCode', label: 'Postal Code', type: 'text' },
+  { name: 'poBox', label: 'PO Box', type: 'text' },
+  { name: 'description', label: 'Description', type: 'textarea' },
 ]
 
 function pad(n: number) { return String(n).padStart(2, '0') }
@@ -198,21 +209,22 @@ function InlineField({
   const save = () => {
     let v = draft
     if (type === 'number') v = v === '' ? null : Number(v)
+    if (type === 'checkbox') v = !!v
     if (v === '' || v === '-- None --') v = null
     onSave(name, v)
     setEditing(false)
   }
 
   return (
-    <div className="group relative -mx-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50">
-      <label className="flex items-center justify-between text-xs font-medium text-muted-foreground uppercase tracking-wider">
+    <div className="group relative grid min-h-11 grid-cols-[minmax(92px,40%)_1fr] items-center gap-3 border-b border-border/60 px-2 py-1.5 transition-colors last:border-b-0 hover:bg-muted/50">
+      <label className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
         <span>{label}</span>
         {!editing && (
           <Pencil size={12} className="h-3.5 w-3.5 shrink-0 cursor-pointer text-muted-foreground/0 transition-colors group-hover:text-muted-foreground" onClick={start} />
         )}
       </label>
       {editing ? (
-        <div className="mt-1.5 flex items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-1.5">
           {type === 'select' ? (
             <Select value={draft ?? ''} onValueChange={setDraft}>
               <SelectTrigger className="h-8 text-sm">
@@ -222,6 +234,18 @@ function InlineField({
                 {allOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
               </SelectContent>
             </Select>
+          ) : type === 'checkbox' ? (
+            <div className="flex h-8 flex-1 items-center gap-2 rounded-md border bg-background px-3">
+              <Switch checked={!!draft} onCheckedChange={setDraft} />
+              <span className="text-xs text-muted-foreground">{draft ? 'Yes' : 'No'}</span>
+            </div>
+          ) : type === 'textarea' ? (
+            <textarea
+              className="min-h-20 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={draft ?? ''}
+              autoFocus
+              onChange={e => setDraft(e.target.value)}
+            />
           ) : (
             <Input
               className="h-8 text-sm"
@@ -244,7 +268,7 @@ function InlineField({
           </button>
         </div>
       ) : (
-        <p className="mt-1 cursor-pointer text-sm break-words hover:text-foreground" onClick={start} title={`Edit ${label}`}>
+        <p className="min-w-0 cursor-pointer break-words text-sm font-medium hover:text-primary" onClick={start} title={`Edit ${label}`}>
           {fmtDisplay(value, name)}
         </p>
       )}
@@ -367,6 +391,21 @@ export function LeadDetailPage() {
     queryFn: () => api.get('leads', id!),
     enabled: !!id,
   })
+
+  const { data: leadPicklistData } = useQuery({
+    queryKey: ['picklists-all', 'leads'],
+    queryFn: () => api.getAllPicklists('leads').catch(() => ({ data: {} })),
+  })
+  const summaryInfoFields = useMemo(() => {
+    const picklists = (leadPicklistData?.data || {}) as Record<string, Record<string, string[]>>
+    const configured = picklists.leads || {}
+    return SUMMARY_INFO_FIELDS.map(field => {
+      const values = configured[field.name]
+      return Array.isArray(values) && values.length
+        ? { ...field, options: ['-- None --', ...values] }
+        : field
+    })
+  }, [leadPicklistData])
 
   const { data: followersData } = useQuery({
     queryKey: ['followers', id],
@@ -896,8 +935,9 @@ export function LeadDetailPage() {
     { key: 'productName', label: 'Product', sortable: true, render: (_: any, p: any) => <span className="font-medium">{p.productName}</span> },
     { key: 'productCategory', label: 'Category', sortable: true, render: (_: any, p: any) => <span className="text-muted-foreground">{p.productCategory || '-'}</span> },
     { key: 'qty', label: 'Qty', sortable: true, render: (_: any, p: any) => (p.qty ?? 1) },
-    { key: 'listPrice', label: 'List Price', sortable: true, render: (_: any, p: any) => (p.listPrice != null ? `$${Number(p.listPrice).toLocaleString()}` : '-') },
-    { key: 'unitPrice', label: 'Unit Price', sortable: true, render: (_: any, p: any) => (p.unitPrice != null ? `$${Number(p.unitPrice).toLocaleString()}` : '-') },
+    { key: 'unitPrice', label: 'Unit Price', sortable: true, render: (_: any, p: any) => (p.unitPrice != null ? formatMoney(p.unitPrice) : '-') },
+    { key: 'listPrice', label: 'Selling Price', sortable: true, render: (_: any, p: any) => (p.listPrice != null ? formatMoney(p.listPrice) : '-') },
+    { key: 'lineTotal', label: 'Total', render: (_: any, p: any) => <span className="font-semibold">{formatMoney(Number(p.qty ?? 1) * Number(p.listPrice ?? p.unitPrice ?? 0))}</span> },
   ]
 
   const campaignColumns = [
@@ -917,7 +957,7 @@ export function LeadDetailPage() {
   ]
 
   return (
-    <div className="space-y-4 w-full max-w-6xl">
+    <div className="w-full min-w-0 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="icon" onClick={() => navigate('/leads')}>
@@ -938,7 +978,7 @@ export function LeadDetailPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
           <Button
             variant={isFollowing ? 'secondary' : 'outline'}
             size="sm"
@@ -1020,7 +1060,7 @@ export function LeadDetailPage() {
       <Card>
         <CardContent className="p-0">
           <TabsRoot value={activeTab} onValueChange={setActiveTab}>
-            <div className="px-6 pt-4 border-b overflow-x-auto">
+            <div className="overflow-x-auto border-b px-2 pt-3 sm:px-6 sm:pt-4">
               <TabsList className="border-b-0 min-w-max">
                 {TABS.map((tab, i) => {
                   const Icon = TAB_ICONS[tab]
@@ -1034,14 +1074,17 @@ export function LeadDetailPage() {
             </div>
 
             {/* Summary */}
-            <TabsContent value="Summary" className="px-6 py-6">
+            <TabsContent value="Summary" className="px-3 py-4 sm:px-6 sm:py-6">
               {/* Header card */}
-              <div className="mb-6 flex flex-wrap items-center gap-5 rounded-xl border bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 px-6 py-5">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 text-2xl font-bold text-white shadow-lg shadow-indigo-500/30">
+              <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:mb-6">
+                <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
+                <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-6">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 text-xl font-bold text-white shadow-lg shadow-indigo-500/30 sm:h-20 sm:w-20 sm:text-2xl">
                   {initials}
                 </div>
-                <div className="min-w-[200px] flex-1">
-                  <p className="text-base font-semibold">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Lead summary</p>
+                  <p className="mt-1 text-lg font-bold text-foreground">
                     {lead.title ? `${lead.title} · ` : ''}{lead.company || 'No company'}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -1056,7 +1099,7 @@ export function LeadDetailPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col gap-1.5 text-sm">
+                <div className="grid w-full gap-2 text-sm sm:w-auto sm:min-w-[240px]">
                   {lead.email && (
                     <a href={`mailto:${lead.email}`} className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-foreground transition-colors hover:bg-muted">
                       <Mail size={14} className="text-blue-500" /> <span className="max-w-[220px] truncate">{lead.email}</span>
@@ -1076,15 +1119,22 @@ export function LeadDetailPage() {
                     <span className="text-xs text-muted-foreground">No contact details</span>
                   )}
                 </div>
+                </div>
+                <div className="grid grid-cols-2 divide-x border-t bg-slate-50/80 dark:bg-slate-900/60 sm:grid-cols-4">
+                  <div className="px-4 py-3"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Lead No.</p><p className="mt-0.5 truncate text-sm font-semibold">{lead.leadNo || '—'}</p></div>
+                  <div className="px-4 py-3"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status</p><p className="mt-0.5 truncate text-sm font-semibold text-blue-600 dark:text-blue-400">{lead.leadStatus || 'Not set'}</p></div>
+                  <div className="border-t px-4 py-3 sm:border-t-0"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Source</p><p className="mt-0.5 truncate text-sm font-semibold">{lead.leadSource || '—'}</p></div>
+                  <div className="border-t px-4 py-3 sm:border-t-0"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Rating</p><p className="mt-0.5 truncate text-sm font-semibold">{lead.rating || '—'}</p></div>
+                </div>
               </div>
 
               {/* Information (inline editable) */}
-              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <h3 className="mb-3 flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
                 <Users size={15} className="text-muted-foreground" /> Information
-                <span className="text-xs font-normal text-muted-foreground">— hover a field and click the pencil to edit</span>
+                <span className="hidden text-xs font-normal text-muted-foreground sm:inline">— hover a field and click the pencil to edit</span>
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 rounded-xl border bg-card p-5">
-                {SUMMARY_INFO_FIELDS.map(f => (
+              <div className="grid grid-cols-1 gap-x-6 rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-2 sm:p-5 xl:grid-cols-3">
+                {summaryInfoFields.map(f => (
                   <InlineField
                     key={f.name}
                     label={f.label}
@@ -1159,7 +1209,7 @@ export function LeadDetailPage() {
             </TabsContent>
 
             {/* Details */}
-            <TabsContent value="Details" className="px-6 py-6">
+            <TabsContent value="Details" className="px-3 py-4 sm:px-6 sm:py-6">
               <div className="space-y-3">
                 {DETAIL_GROUPS.map(g => (
                   <DetailGroup
@@ -1169,9 +1219,12 @@ export function LeadDetailPage() {
                     open={!collapsedSections[g.title]}
                     onToggle={() => setCollapsedSections(prev => ({ ...prev, [g.title]: !prev[g.title] }))}
                   >
-                    {g.fields.map(f => (
-                      <FieldRow key={f} label={getFieldLabel(f)} value={formatFieldValue(lead[f], f)} />
-                    ))}
+                    {g.fields.map(f => {
+                      const value = f === 'assignedTo' ? (lead.ownerName || lead.assignedTo)
+                        : f === 'createdBy' ? (lead.createdByName || lead.createdBy)
+                        : lead[f]
+                      return <FieldRow key={f} label={getFieldLabel(f)} value={formatFieldValue(value, f)} />
+                    })}
                   </DetailGroup>
                 ))}
               </div>
@@ -1447,16 +1500,7 @@ export function LeadDetailPage() {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Assigned To</label>
-                <Select value={actForm.assignedTo || '_none_'} onValueChange={v => setActForm({ ...actForm, assignedTo: v === '_none_' ? '' : v })}>
-                  <SelectTrigger><SelectValue placeholder="--None--" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_none_">--None--</SelectItem>
-                    {users.map((u: any) => {
-                      const uname = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.userName || u.email
-                      return <SelectItem key={u.id} value={u.id}>{uname}</SelectItem>
-                    })}
-                  </SelectContent>
-                </Select>
+                <UserRoleSelect value={actForm.assignedTo || ''} users={users} onSelect={v => setActForm({ ...actForm, assignedTo: v })} placeholder="Search users or groups..." />
               </div>
             </div>
             {actForm.activityType === 'Task' ? (
@@ -1767,7 +1811,7 @@ export function LeadDetailPage() {
                       </td>
                       <td className="px-3 py-2 text-sm font-medium">{p.productName}</td>
                       <td className="px-3 py-2 text-sm text-muted-foreground">{p.productCategory || '-'}</td>
-                      <td className="px-3 py-2 text-sm text-right">{p.unitPrice != null ? `$${Number(p.unitPrice).toLocaleString()}` : '-'}</td>
+                      <td className="px-3 py-2 text-sm text-right">{p.unitPrice != null ? formatMoney(p.unitPrice) : '-'}</td>
                     </tr>
                   )
                 })}
@@ -1779,15 +1823,16 @@ export function LeadDetailPage() {
           </div>
           {Object.keys(selectedProducts).length > 0 && (
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Quantity & List Price</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Quantity, selling price & total</p>
               <div className="space-y-2">
                 {Object.entries(selectedProducts).map(([pid, v]) => {
                   const p = (allProductsData?.data || []).find((x: any) => x.id === pid)
                   return (
-                    <div key={pid} className="flex items-center justify-between gap-3 text-sm">
+                    <div key={pid} className="grid grid-cols-[minmax(0,1fr)_5rem_7rem_7rem_2rem] items-center gap-2 text-sm max-sm:grid-cols-[minmax(0,1fr)_4.5rem_2rem]">
                       <span className="min-w-0 flex-1 truncate font-medium">{p?.productName || pid}</span>
-                      <Input type="number" min={1} value={v.qty} onChange={e => setProductSelection(pid, { qty: Math.max(1, Number(e.target.value) || 1) })} className="h-8 w-20" placeholder="Qty" />
-                      <Input type="number" min={0} step="0.01" value={v.listPrice} onChange={e => setProductSelection(pid, { listPrice: Number(e.target.value) || 0 })} className="h-8 w-28" placeholder="List Price" />
+                      <Input aria-label="Quantity" type="number" min={1} step="0.01" value={v.qty} onChange={e => setProductSelection(pid, { qty: Math.max(1, Number(e.target.value) || 1) })} className="h-8 w-full" placeholder="Qty" />
+                      <Input aria-label="Selling price" type="number" min={0} step="0.01" value={v.listPrice} onChange={e => setProductSelection(pid, { listPrice: Math.max(0, Number(e.target.value) || 0) })} className="h-8 w-full max-sm:col-start-1 max-sm:row-start-2" placeholder="Price" />
+                      <span className="text-right font-semibold tabular-nums max-sm:col-start-2 max-sm:row-start-2">{formatMoney(v.qty * v.listPrice)}</span>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => removeProductSelection(pid)} title="Remove">
                         <X size={14} />
                       </Button>

@@ -11,9 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, Target, Languages, type LucideIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, Target, Languages, LogOut, type LucideIcon } from 'lucide-react'
+import { useAuthStore } from '@/lib/auth'
 import { useTheme, type Accent } from '@/lib/theme'
-import { TIMEZONES, DATE_FORMATS, COUNTRIES, SOCIAL_FIELDS } from '@/lib/constants'
+import { TIMEZONES, DATE_FORMATS, COUNTRIES, SOCIAL_FIELDS, CURRENCY_CATALOG } from '@/lib/constants'
 import { OrgSettings } from '@/pages/settings/OrgSettings'
 import { AccessSettings } from '@/pages/settings/AccessSettings'
 import { PicklistSettings } from '@/pages/settings/PicklistSettings'
@@ -269,6 +270,12 @@ export function SettingsPage() {
 }
 
 const MODULES = [
+  { key: 'dashboard', label: 'Dashboards', parent: 'Application' },
+  { key: 'calendar', label: 'Calendar', parent: 'Application' },
+  { key: 'activities', label: 'To-Dos & Activities', parent: 'Application' },
+  { key: 'forecast', label: 'Forecasting', parent: 'Application' },
+  { key: 'reports', label: 'Reports', parent: 'Application' },
+  { key: 'ai', label: 'AI Assistant', parent: 'Application' },
   { key: 'accounts', label: 'Accounts', parent: 'Marketing' },
   { key: 'contacts', label: 'Contacts', parent: 'Marketing' },
   { key: 'leads', label: 'Leads', parent: 'Marketing' },
@@ -297,7 +304,7 @@ const MODULES = [
   { key: 'emailtemplates', label: 'Email Templates', parent: 'Tools' },
 ]
 
-const PERMISSION_GROUPS = ['Marketing', 'Sales', 'Inventory', 'Support', 'Projects', 'Tools']
+const PERMISSION_GROUPS = ['Application', 'Marketing', 'Sales', 'Inventory', 'Support', 'Projects', 'Tools']
 
 const PERMISSION_ACTIONS = [
   { key: 'view', label: 'View', icon: Eye },
@@ -309,6 +316,7 @@ const PERMISSION_ACTIONS = [
 ] as const
 
 const GROUP_META: Record<string, { icon: LucideIcon; badge: string }> = {
+  Application: { icon: LayoutDashboard, badge: 'bg-indigo-500/10 text-indigo-600' },
   Marketing: { icon: Megaphone, badge: 'bg-pink-500/10 text-pink-600' },
   Sales: { icon: TrendingUp, badge: 'bg-emerald-500/10 text-emerald-600' },
   Inventory: { icon: Package, badge: 'bg-amber-500/10 text-amber-600' },
@@ -532,6 +540,7 @@ function UsersSettings() {
   const queryClient = useQueryClient()
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [logoutUser, setLogoutUser] = useState<any | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const emptyUserForm = { userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', groupId: '', pbxExtension: '', dashboardEnabled: true }
@@ -589,6 +598,22 @@ function UsersSettings() {
       }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User status updated', variant: 'success' }) },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
+  const logoutAllMutation = useMutation({
+    mutationFn: (userId: string) => api.adminLogoutAllDevices(userId),
+    onSuccess: () => {
+      const isCurrentUser = logoutUser?.id === useAuthStore.getState().user?.id
+      addToast({ title: 'Sessions ended', description: `${logoutUser?.name || 'User'} has been logged out from all devices.`, variant: 'success' })
+      setLogoutUser(null)
+      queryClient.invalidateQueries({ queryKey: ['all-users'] })
+      if (isCurrentUser) {
+        localStorage.removeItem('token')
+        useAuthStore.setState({ token: null, user: null })
+        window.location.assign('/login')
+      }
+    },
+    onError: (e: Error) => { addToast({ title: 'Could not end sessions', description: e.message, variant: 'destructive' }); setLogoutUser(null) },
   })
 
   const roles = rolesData?.data || []
@@ -652,6 +677,9 @@ function UsersSettings() {
             pageSize={10}
             actions={(u: any) => (
               <div className="flex items-center justify-end gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLogoutUser(u)} title="Log out from all devices">
+                  <LogOut size={14} className="text-amber-600" />
+                </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(u.id); setForm({ userName: u.userName, email: u.email, firstName: u.firstName, lastName: u.lastName, password: '', isAdmin: u.isAdmin, roleId: u.roleId || '', groupId: groups.find((g:any) => g.members?.some((m:any) => m.userId === u.id || m.user?.id === u.id))?.id || '', pbxExtension: u.pbxExtension || '', dashboardEnabled: u.dashboardEnabled !== false }); setShowForm(true) }} title="Edit">
                   <Pencil size={14} />
                 </Button>
@@ -735,6 +763,16 @@ function UsersSettings() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!logoutUser}
+        onOpenChange={(open) => { if (!open) setLogoutUser(null) }}
+        onConfirm={() => logoutUser && logoutAllMutation.mutate(logoutUser.id)}
+        title="Log out user from all devices?"
+        description={`Every active session for ${logoutUser?.name || 'this user'} will end immediately. They will need to sign in again.`}
+        confirmLabel="Log out all devices"
+        variant="destructive"
+      />
 
       <ConfirmDialog
         open={!!deleteId}
@@ -1059,11 +1097,12 @@ function CurrenciesSettings() {
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [form, setForm] = useState({ name: '', code: '', symbol: '', rate: '1', isDefault: false })
+  const [currencySearch, setCurrencySearch] = useState('')
+  const [form, setForm] = useState({ name: '', code: '', symbol: '', rate: '1', isDefault: false, isActive: true })
 
   const { data } = useQuery({
     queryKey: ['currencies'],
-    queryFn: () => api.listAll('currencies').catch(() => ({ data: [] })),
+    queryFn: () => api.listAll('currencies', { includeInactive: 'true' }).catch(() => ({ data: [] })),
   })
 
   const createMutation = useMutation({
@@ -1084,36 +1123,73 @@ function CurrenciesSettings() {
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
+  const configured = data?.data || []
+  const configuredByCode = new Map(configured.map((currency: any) => [currency.code, currency]))
+  const catalogRows = CURRENCY_CATALOG.map(currency => ({
+    ...currency,
+    rate: 1,
+    isDefault: false,
+    isActive: false,
+    configured: false,
+    ...(configuredByCode.get(currency.code) || {}),
+  })).filter(currency => `${currency.code} ${currency.name} ${currency.symbol}`.toLowerCase().includes(currencySearch.toLowerCase()))
+
+  const openCurrency = (currency?: any) => {
+    setEditId(currency?.id || null)
+    setForm(currency
+      ? { name: currency.name, code: currency.code, symbol: currency.symbol, rate: String(currency.rate ?? 1), isDefault: !!currency.isDefault, isActive: currency.configured ? currency.isActive !== false : true }
+      : { name: '', code: '', symbol: '', rate: '1', isDefault: false, isActive: true })
+    setShowForm(true)
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Currencies</h2>
-        <Button onClick={() => { setShowForm(true); setEditId(null); setForm({ name: '', code: '', symbol: '', rate: '1', isDefault: false }) }}>
+    <div className="space-y-5">
+      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/15 via-card to-teal-500/10 p-5 md:p-6">
+        <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-emerald-400/15 blur-3xl" />
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300"><Globe size={13} /> Global ISO catalog</div>
+            <h2 className="text-xl font-bold md:text-2xl">Organization currencies</h2>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Activate only the currencies this organisation uses. Active currencies appear throughout CRM dropdowns, and exactly one is the default.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <div className="rounded-xl border bg-background/80 px-4 py-2.5 backdrop-blur"><div className="text-xl font-bold">{configured.length}</div><div className="text-[11px] text-muted-foreground">Configured</div></div>
+            <div className="rounded-xl border bg-background/80 px-4 py-2.5 backdrop-blur"><div className="text-xl font-bold">{configured.find((c: any) => c.isDefault)?.code || '—'}</div><div className="text-[11px] text-muted-foreground">Default</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-md">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input value={currencySearch} onChange={e => setCurrencySearch(e.target.value)} placeholder="Search code, currency or symbol…" className="h-11 rounded-xl pl-9" />
+        </div>
+        <Button onClick={() => openCurrency()}>
           <Plus size={16} className="mr-2" /> New Currency
         </Button>
       </div>
-      <Card>
+      <Card className="overflow-hidden rounded-2xl">
         <CardContent className="p-0">
           <DataTable
             columns={[
-              { key: 'name', label: 'Name', render: (v: any) => <span className="font-medium">{v}</span> },
-              { key: 'code', label: 'Code', render: (v: any) => <span className="inline-flex rounded-md border bg-muted/50 px-2 py-0.5 text-xs font-mono">{v}</span> },
-              { key: 'symbol', label: 'Symbol', render: (v: any) => <span className="text-base">{v}</span> },
-              { key: 'rate', label: 'Rate', className: 'text-right', render: (v: any) => <span className="tabular-nums">{Number(v).toFixed(4)}</span> },
+              { key: 'name', label: 'Currency', render: (v: any, row: any) => <div className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/10 text-sm font-bold text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-300">{row.symbol}</span><div><div className="font-semibold">{v}</div><div className="text-xs text-muted-foreground">ISO 4217</div></div></div> },
+              { key: 'code', label: 'Code', render: (v: any) => <span className="inline-flex rounded-lg border bg-muted/50 px-2.5 py-1 text-xs font-bold tracking-wider">{v}</span> },
+              { key: 'rate', label: 'Organization rate', className: 'text-right', render: (v: any, row: any) => row.configured ? <span className="font-medium tabular-nums">{Number(v).toFixed(4)}</span> : <span className="text-xs text-muted-foreground">Not configured</span> },
               { key: 'isDefault', label: 'Default', render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium">Default</span> : '—' },
+              { key: 'isActive', label: 'Status', render: (v: any, row: any) => <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${row.configured && v ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{row.configured && v ? 'Active' : 'Inactive'}</span> },
             ]}
-            data={data?.data || []}
+            data={catalogRows}
             loading={!data}
-            emptyMessage="No currencies configured"
+            emptyMessage="No currencies match your search"
             pageSize={10}
             actions={(c: any) => (
               <div className="flex items-center justify-end gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(c.id); setForm({ name: c.name, code: c.code, symbol: c.symbol, rate: String(c.rate), isDefault: c.isDefault }); setShowForm(true) }} title="Edit">
-                  <Pencil size={14} />
+                <Button variant={c.configured ? 'ghost' : 'outline'} size={c.configured ? 'icon' : 'sm'} className={c.configured ? 'h-8 w-8' : 'h-8'} onClick={() => openCurrency(c)} title={c.configured ? 'Edit' : 'Configure'}>
+                  {c.configured ? <Pencil size={14} /> : <><Plus size={13} className="mr-1" /> Configure</>}
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(c.id)} title="Delete">
+                {c.configured && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(c.id)} title="Delete">
                   <Trash2 size={14} className="text-destructive" />
-                </Button>
+                </Button>}
               </div>
             )}
           />
@@ -1122,7 +1198,7 @@ function CurrenciesSettings() {
 
       <Dialog open={showForm} onOpenChange={(o) => { if (!o) setEditId(null); setShowForm(o) }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editId ? 'Edit Currency' : 'New Currency'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editId ? 'Edit Currency' : form.code ? `Configure ${form.code}` : 'New Currency'}</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); const d = { ...form, rate: parseFloat(form.rate) }; if (editId) updateMutation.mutate(d); else createMutation.mutate(d) }} className="space-y-3">
             <Input placeholder="Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
             <Input placeholder="Code (e.g. USD)" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} required />
@@ -1131,6 +1207,10 @@ function CurrenciesSettings() {
             <div className="flex items-center gap-2">
               <input type="checkbox" id="curIsDefault" checked={form.isDefault} onChange={e => setForm(f => ({ ...f, isDefault: e.target.checked }))} />
               <label htmlFor="curIsDefault" className="text-sm">Set as default currency</label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="curIsActive" checked={form.isActive} disabled={form.isDefault} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} />
+              <label htmlFor="curIsActive" className="text-sm">Active in application dropdowns</label>
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
@@ -1293,8 +1373,17 @@ function CompanySettings() {
     setUploading(true)
     try {
       const res = await api.uploadLogo(file)
-      setForm((prev: any) => ({ ...prev, logo: res.path }))
-      addToast({ title: 'Logo uploaded', variant: 'success' })
+      const updated = { ...form, logo: res.path }
+      setForm(updated)
+      const token = localStorage.getItem('token')
+      const saveRes = await fetch('/api/company', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(updated),
+      })
+      if (!saveRes.ok) throw new Error('Logo uploaded but could not be saved to the organization')
+      await refetch()
+      addToast({ title: 'Organization logo uploaded and saved', variant: 'success' })
     } catch (err: any) {
       addToast({ title: 'Error', description: err.message, variant: 'destructive' })
     } finally {
@@ -1302,7 +1391,7 @@ function CompanySettings() {
     }
   }
 
-  const currencyList = (currencies?.data || []).map((c: any) => ({
+  const currencyList = CURRENCY_CATALOG.map(c => ({
     value: c.code,
     label: `${c.symbol} ${c.code} — ${c.name}`
   }))

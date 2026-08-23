@@ -5,7 +5,6 @@ import { requireModulePermission } from '../lib/module-permissions'
 
 export const reportEnhancedRouter = Router()
 reportEnhancedRouter.use(authMiddleware)
-reportEnhancedRouter.use(requireModulePermission('reports'))
 
 function fixedDecimal(v: any, d = 2): number {
   return Number(Number(v || 0).toFixed(d))
@@ -25,7 +24,7 @@ const REPORT_TYPES = [
 // =====================================================================
 // GET /api/reports/available — list available report types
 // =====================================================================
-reportEnhancedRouter.get('/available', authMiddleware, async (_req, res, next) => {
+reportEnhancedRouter.get('/available', requireModulePermission('reports', 'view'), async (_req, res, next) => {
   try {
     res.json({ data: REPORT_TYPES })
   } catch (err) { next(err) }
@@ -34,7 +33,7 @@ reportEnhancedRouter.get('/available', authMiddleware, async (_req, res, next) =
 // =====================================================================
 // POST /api/reports/generate — generate a report with filters
 // =====================================================================
-reportEnhancedRouter.post('/generate', authMiddleware, async (req, res, next) => {
+reportEnhancedRouter.post('/generate', requireModulePermission('reports', 'view'), async (req, res, next) => {
   try {
     const { reportType, dateFrom, dateTo } = req.body
     if (!reportType) return res.status(400).json({ error: 'reportType is required' })
@@ -253,7 +252,7 @@ reportEnhancedRouter.post('/generate', authMiddleware, async (req, res, next) =>
 // =====================================================================
 // GET /api/reports/export/:id — export report as CSV
 // =====================================================================
-reportEnhancedRouter.get('/export/:id', authMiddleware, async (req, res, next) => {
+reportEnhancedRouter.get('/export/:id', requireModulePermission('reports', 'export'), async (req, res, next) => {
   try {
     const { id } = req.params
     const report = REPORT_TYPES.find(r => r.id === id)

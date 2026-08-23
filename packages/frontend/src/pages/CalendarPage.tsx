@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { useAuthStore } from '@/lib/auth'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +17,7 @@ import {
   orderedWeekDayNames, firstDayOffset, isWorkingDay, workingHourRange, weekdayShort,
 } from '@/lib/org-format'
 import { t } from '@/lib/i18n'
+import { useLocation } from 'react-router-dom'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
@@ -109,7 +111,9 @@ function emptyForm(preset: { type: string; date: Date } | null) {
 }
 
 export function CalendarPage() {
-  const [view, setView] = useState<View>('month')
+  const location = useLocation()
+  const isTodoPage = location.pathname === '/activities'
+  const [view, setView] = useState<View>(isTodoPage ? 'list' : 'month')
   const [anchor, setAnchor] = useState(new Date())
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<any | null>(null)
@@ -121,11 +125,17 @@ export function CalendarPage() {
   const { addToast } = useToast()
   useOrgSettings()
 
+  useEffect(() => {
+    setView(isTodoPage ? 'list' : 'month')
+    setTypeFilter(isTodoPage ? 'Task' : 'all')
+    setDialogOpen(false)
+  }, [isTodoPage])
+
   const range = useMemo(() => getRange(view, anchor), [view, anchor])
 
   const { data, isLoading } = useQuery({
-    queryKey: ['calendar', range.from, range.to],
-    queryFn: () => api.getCalendar(range.from, range.to),
+    queryKey: ['calendar', isTodoPage ? 'todo' : 'event', range.from, range.to],
+    queryFn: () => api.getCalendar(range.from, range.to, isTodoPage ? 'todo' : undefined),
   })
 
   const allActivities = data?.data || []
@@ -194,8 +204,8 @@ export function CalendarPage() {
                 <CalendarDays size={20} strokeWidth={1.75} />
               </div>
               <div className="min-w-0">
-                <h1 className="text-lg font-semibold tracking-tight text-slate-800 sm:text-xl dark:text-slate-100">{t('Calendar')}</h1>
-                <p className="truncate text-sm text-muted-foreground">{formatAnchor(view, anchor)}</p>
+                <h1 className="text-lg font-semibold tracking-tight text-slate-800 sm:text-xl dark:text-slate-100">{t(isTodoPage ? 'To-Dos' : 'Calendar')}</h1>
+                <p className="truncate text-sm text-muted-foreground">{isTodoPage ? t('Actions assigned with a due date') : `${t('Events plus To-Do due dates')} · ${formatAnchor(view, anchor)}`}</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -216,19 +226,17 @@ export function CalendarPage() {
                   </button>
                 ))}
               </div>
-              <Button size="sm" onClick={() => openCreate('Meeting')}>
+              {!isTodoPage && <Button size="sm" onClick={() => openCreate('Meeting')}>
                 <CalendarPlus size={15} className="mr-1.5" /> <span className="hidden sm:inline">{t('Add Event')}</span><span className="sm:hidden">{t('Event')}</span>
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => openCreate('Task')}>
-                <Plus size={15} className="mr-1.5" /> <span className="hidden sm:inline">{t('Add Task')}</span><span className="sm:hidden">{t('Task')}</span>
-              </Button>
+              </Button>}
+              {isTodoPage && <Button size="sm" onClick={() => openCreate('Task')}><Plus size={15} className="mr-1.5" /> {t('Add To-Do')}</Button>}
             </div>
           </div>
         </CardContent>
       </Card>
       <Card><CardContent className="flex flex-wrap items-center gap-3 p-3 sm:p-4">
         <div className="relative min-w-[220px] flex-1"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('Search activities...')} className="pl-9" /></div>
-        <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-1"><SlidersHorizontal size={14} className="mx-2 text-muted-foreground" />{['all', 'Task', 'Call', 'Meeting', 'Other'].map(type => <button key={type} onClick={() => setTypeFilter(type)} className={cn('rounded-md px-3 py-1.5 text-xs font-medium', typeFilter === type ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background')}>{type === 'all' ? t('All') : t(type)}</button>)}</div>
+        {!isTodoPage && <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-1"><SlidersHorizontal size={14} className="mx-2 text-muted-foreground" />{['all', 'Task', 'Call', 'Meeting', 'Other'].map(type => <button key={type} onClick={() => setTypeFilter(type)} className={cn('rounded-md px-3 py-1.5 text-xs font-medium', typeFilter === type ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background')}>{type === 'all' ? t('All') : type === 'Task' ? t('To-Dos') : t(type)}</button>)}</div>}
         <div className="ml-auto flex gap-2 text-xs"><span className="rounded-full bg-sky-100 px-2.5 py-1 font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">{activities.length} {t('shown')}</span><span className="rounded-full bg-emerald-100 px-2.5 py-1 font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">{activities.filter((a:any) => a.status === 'Completed' || a.status === 'Held').length} {t('completed')}</span></div>
       </CardContent></Card>
 
@@ -251,7 +259,7 @@ export function CalendarPage() {
         ) : view === 'week' ? (
           <WeekView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} />
         ) : view === 'list' ? (
-          <ListView activities={activities} anchor={anchor} onEdit={openEdit} />
+          <ListView activities={activities} anchor={anchor} onEdit={openEdit} todoOnly={isTodoPage} />
         ) : view === 'year' ? (
           <YearView activities={activities} anchor={anchor} onSelect={(d) => { setAnchor(d); setView('month') }} />
         ) : (
@@ -264,6 +272,7 @@ export function CalendarPage() {
         onOpenChange={(o) => { if (!o) { setDialogOpen(false); setEditing(null); setPreset(null) } }}
         editing={editing}
         preset={preset}
+        lockedType={isTodoPage ? 'Task' : 'Event'}
         onDelete={(id) => { setDialogOpen(false); setDeleteId(id) }}
       />
 
@@ -491,7 +500,7 @@ function DayView({ activities, anchor, onCreate, onEdit }: { activities: any[]; 
   )
 }
 
-function ListView({ activities, anchor, onEdit }: { activities: any[]; anchor: Date; onEdit: (a: any) => void }) {
+function ListView({ activities, anchor, onEdit, todoOnly = false }: { activities: any[]; anchor: Date; onEdit: (a: any) => void; todoOnly?: boolean }) {
   const sorted = [...activities].sort((a, b) => activityDay(a).getTime() - activityDay(b).getTime())
   const events = sorted.filter(a => a.activityType !== 'Task')
   const tasks = sorted.filter(a => a.activityType === 'Task')
@@ -534,8 +543,8 @@ function ListView({ activities, anchor, onEdit }: { activities: any[]; anchor: D
       <div className="border-b bg-muted/20 px-4 py-2.5 text-sm font-medium text-muted-foreground">
         {monthNames()[anchor.getMonth()]} {anchor.getFullYear()} — drag rows between day cells in Month/Week view to reschedule
       </div>
-      <Section title="Events" items={events} />
-      <Section title="Tasks" items={tasks} />
+      {!todoOnly && <Section title="Events" items={events} />}
+      <Section title={todoOnly ? 'To-Dos' : 'Tasks'} items={tasks} />
     </div>
   )
 }
@@ -574,17 +583,22 @@ function YearView({ activities, anchor, onSelect }: { activities: any[]; anchor:
   )
 }
 
-function ActivityDialog({ open, onOpenChange, editing, preset, onDelete }: {
+function ActivityDialog({ open, onOpenChange, editing, preset, lockedType, onDelete }: {
   open: boolean
   onOpenChange: (o: boolean) => void
   editing: any | null
   preset: { type: string; date: Date } | null
+  lockedType: 'Task' | 'Event'
   onDelete: (id: string) => void
 }) {
   const { addToast } = useToast()
+  const { user } = useAuthStore()
   const queryClient = useQueryClient()
   const editingId = editing?.id
   const [form, setForm] = useState<any>(emptyForm(null))
+  const { data: userData } = useQuery({ queryKey: ['calendar-users'], queryFn: () => api.getCalendarUsers(), enabled: open })
+  const activeUsers = userData?.data || []
+  const activeGroups = userData?.groups || []
 
   useEffect(() => {
     if (!open) return
@@ -598,12 +612,15 @@ function ActivityDialog({ open, onOpenChange, editing, preset, onDelete }: {
         startAt: editing.startAt ? toLocalInput(new Date(editing.startAt)) : '',
         endAt: editing.endAt ? toLocalInput(new Date(editing.endAt)) : '',
         dueAt: editing.dueAt ? toLocalInput(new Date(editing.dueAt)) : '',
+        reminderAt: editing.reminderAt ? toLocalInput(new Date(editing.reminderAt)) : '',
+        assignedTo: editing.assignedTo || user?.id || '',
+        assignedGroupId: editing.assignedGroupId || '',
         description: editing.description || '',
       })
     } else {
-      setForm(emptyForm(preset))
+      setForm({ ...emptyForm(preset), activityType: lockedType === 'Task' ? 'Task' : (preset?.type === 'Task' ? 'Meeting' : preset?.type || 'Meeting'), assignedTo: user?.id || '', assignedGroupId: '', reminderAt: '' })
     }
-  }, [open, editing, preset])
+  }, [open, editing, preset, lockedType, user?.id])
 
   const isTask = form.activityType === 'Task'
 
@@ -636,6 +653,9 @@ function ActivityDialog({ open, onOpenChange, editing, preset, onDelete }: {
       status: form.status,
       priority: form.priority,
       description: form.description,
+      reminderAt: form.reminderAt || null,
+      assignedTo: form.assignedGroupId ? null : (form.assignedTo || user?.id),
+      assignedGroupId: form.assignedGroupId || null,
     }
     if (isTask) payload.dueAt = form.dueAt || null
     else {
@@ -656,10 +676,10 @@ function ActivityDialog({ open, onOpenChange, editing, preset, onDelete }: {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-sm font-medium block mb-1.5">{t('Type')}</label>
-              <Select value={form.activityType} onValueChange={(v) => setForm((f: any) => ({ ...f, activityType: v, status: 'Planned' }))}>
+              <Select value={form.activityType} onValueChange={(v) => setForm((f: any) => ({ ...f, activityType: v, status: 'Planned' }))} disabled={lockedType === 'Task'}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {['Task', 'Call', 'Meeting', 'Other'].map(tn => <SelectItem key={tn} value={tn}>{t(tn)}</SelectItem>)}
+                  {(lockedType === 'Task' ? ['Task'] : ['Call', 'Meeting', 'Other']).map(tn => <SelectItem key={tn} value={tn}>{t(tn)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -707,6 +727,24 @@ function ActivityDialog({ open, onOpenChange, editing, preset, onDelete }: {
               </div>
             </div>
           )}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div>
+              <label className="text-sm font-medium block mb-1.5">{t(isTask ? 'Assigned To' : 'Organiser')}</label>
+              <Select value={form.assignedGroupId ? `group:${form.assignedGroupId}` : `user:${form.assignedTo || user?.id || ''}`} onValueChange={value => setForm((f: any) => value.startsWith('group:') ? ({ ...f, assignedTo: '', assignedGroupId: value.slice(6) }) : ({ ...f, assignedTo: value.slice(5), assignedGroupId: '' }))}>
+                <SelectTrigger><SelectValue placeholder={t('Select user')} /></SelectTrigger>
+                <SelectContent>
+                  <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Users</div>
+                  {activeUsers.map((member: any) => <SelectItem key={`user:${member.id}`} value={`user:${member.id}`}>{[member.firstName, member.lastName].filter(Boolean).join(' ') || member.email}</SelectItem>)}
+                  {activeGroups.length > 0 && <div className="mt-1 border-t px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Groups</div>}
+                  {activeGroups.map((group: any) => <SelectItem key={`group:${group.id}`} value={`group:${group.id}`}>{group.name} ({group._count?.members || 0} members)</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium block mb-1.5">{t(isTask ? 'Due reminder' : 'Meeting reminder')}</label>
+              <DateTimeField value={form.reminderAt || ''} onChange={v => setForm((f: any) => ({ ...f, reminderAt: v }))} />
+            </div>
+          </div>
           <div>
             <label className="text-sm font-medium block mb-1.5">{t('Description')}</label>
             <textarea placeholder={t('Description')} className={`${inputCls} h-20`} value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} />

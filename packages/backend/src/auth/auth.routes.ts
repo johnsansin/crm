@@ -42,7 +42,7 @@ async function recordLogin(req: any, user: any) {
 async function issueToken(user: any) {
   const isSuperAdmin = user.profile?.isSuperAdmin || false
   const token = jwt.sign(
-    { userId: user.id, email: user.email, isAdmin: user.isAdmin, companyId: user.companyId, isSuperAdmin, roleId: user.roleId },
+    { userId: user.id, email: user.email, isAdmin: user.isAdmin, companyId: user.companyId, isSuperAdmin, roleId: user.roleId, tokenVersion: user.tokenVersion || 0 },
     JWT_SECRET,
     { expiresIn: '7d' }
   )
@@ -349,6 +349,17 @@ authRouter.post('/logout', authMiddleware, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+authRouter.post('/logout-all', authMiddleware, async (req, res, next) => {
+  try {
+    await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { tokenVersion: { increment: 1 }, lastActiveAt: null },
+    })
+    await writeAudit({ moduleName: 'auth', action: 'LOGOUT', newValue: `${req.user!.email || ''} (all devices)`, userId: req.user!.userId, req })
+    res.json({ success: true })
+  } catch (err) { next(err) }
+})
+
 authRouter.get('/me', authMiddleware, async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
@@ -413,7 +424,9 @@ authRouter.post('/reset-password', async (req, res, next) => {
 
 authRouter.put('/me', authMiddleware, async (req, res, next) => {
   try {
-    const { firstName, lastName, email, phone, mobile, title, department, timezone, language, password, avatar, addressStreet, addressCity, addressState, addressCountry, addressPostalCode, dateFormat, hourFormat, startOfWeek, defaultModule, currencyCode, pbxExtension } = req.body
+    const { firstName, lastName, email, phone, mobile, title, department, timezone, language, password, avatar, addressStreet, addressCity, addressState, addressCountry, addressPostalCode, dateFormat, hourFormat, startOfWeek, defaultModule, currencyCode, pbxExtension, sidebarColor } = req.body
+    const sidebarColors = new Set(['vtiger', 'navy', 'graphite', 'emerald', 'burgundy'])
+    if (sidebarColor !== undefined && !sidebarColors.has(sidebarColor)) return res.status(400).json({ error: 'Invalid sidebar color' })
     const data: any = {
       ...(firstName !== undefined && { firstName }),
       ...(lastName !== undefined && { lastName }),
@@ -436,6 +449,7 @@ authRouter.put('/me', authMiddleware, async (req, res, next) => {
       ...(defaultModule !== undefined && { defaultModule }),
       ...(currencyCode !== undefined && { currencyCode }),
       ...(pbxExtension !== undefined && { pbxExtension }),
+      ...(sidebarColor !== undefined && { sidebarColor }),
     }
     if (password) {
       const policyError = await validatePassword(req.user!.companyId, password)

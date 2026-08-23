@@ -4,6 +4,7 @@ import { useAuthStore } from '@/lib/auth'
 import { useTheme } from '@/lib/theme'
 import { api } from '@/lib/api'
 import { AppBreadcrumbs } from '@/components/layout/AppBreadcrumbs'
+import { useSupportSocket } from '@/hooks/useSupportSocket'
 import { Building2, LayoutDashboard, Users, History, Settings, LogOut, Sun, Moon, Menu, X, Shield, Bell, Search, Loader2, Mail, Phone, Globe, Headphones } from 'lucide-react'
 
 const navItems = [
@@ -11,6 +12,7 @@ const navItems = [
   { path: '/superadmin/organizations', label: 'Organizations', icon: Building2 },
   { path: '/superadmin/users', label: 'Users', icon: Users },
   { path: '/superadmin/agents', label: 'Agents', icon: Headphones },
+  { path: '/superadmin/support', label: 'Support Inbox', icon: Headphones },
   { path: '/superadmin/login-history', label: 'Login History', icon: History },
   { path: '/superadmin/settings', label: 'Settings', icon: Settings },
 ]
@@ -26,8 +28,22 @@ export function SuperAdminLayout() {
   const [searchResults, setSearchResults] = useState<{ companies: any[]; users: any[] }>({ companies: [], users: [] })
   const [searching, setSearching] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [showNotifications, setShowNotifications] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const loadNotifications = () => api.getNotifications().then(response => setNotifications(response.data || [])).catch(() => {})
+
+  useEffect(() => {
+    loadNotifications()
+    const timer = window.setInterval(loadNotifications, 15_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  useSupportSocket(null, event => {
+    if (event.event === 'conversation.created' || event.event === 'conversation.status_changed') loadNotifications()
+  })
 
   useEffect(() => {
     if (!user?.isSuperAdmin) navigate('/login')
@@ -77,6 +93,14 @@ export function SuperAdminLayout() {
   const handleLogout = () => { logout(); navigate('/login') }
 
   const hasResults = searchResults.companies.length > 0 || searchResults.users.length > 0
+  const unreadNotifications = notifications.filter(item => !item.isRead)
+
+  async function openNotification(item: any) {
+    if (!item.isRead) await api.markNotificationRead(item.id).catch(() => {})
+    setShowNotifications(false)
+    setNotifications(rows => rows.map(row => row.id === item.id ? { ...row, isRead: true } : row))
+    navigate(item.link || '/superadmin/support')
+  }
 
   return (
     <div className="h-screen overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 flex">
@@ -264,10 +288,16 @@ export function SuperAdminLayout() {
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            <button className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 relative" title="Notifications">
-              <Bell size={17} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-            </button>
+            <div className="relative">
+              <button onClick={() => setShowNotifications(value => !value)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 relative" title="Notifications">
+                <Bell size={17} />
+                {unreadNotifications.length > 0 && <span className="absolute -right-1 -top-1 grid min-h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-background">{unreadNotifications.length > 99 ? '99+' : unreadNotifications.length}</span>}
+              </button>
+              {showNotifications && <div className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-2xl border bg-white shadow-2xl dark:bg-slate-900">
+                <div className="flex items-center justify-between border-b px-4 py-3"><div><p className="text-sm font-semibold">Notifications</p><p className="text-[11px] text-muted-foreground">{unreadNotifications.length} unread</p></div>{unreadNotifications.length > 0 && <button onClick={async () => { await api.markAllNotificationsRead().catch(() => {}); setNotifications(rows => rows.map(row => ({ ...row, isRead: true }))) }} className="text-xs font-semibold text-indigo-600">Mark all read</button>}</div>
+                <div className="max-h-[420px] overflow-y-auto p-2">{notifications.length === 0 ? <div className="p-8 text-center"><Bell className="mx-auto mb-2 text-muted-foreground"/><p className="text-sm font-medium">No notifications</p></div> : notifications.map(item => <button key={item.id} onClick={() => openNotification(item)} className={`mb-1 w-full rounded-xl p-3 text-left transition hover:bg-muted ${!item.isRead ? 'bg-indigo-50/80 dark:bg-indigo-950/30' : ''}`}><div className="flex gap-3"><span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${!item.isRead ? 'bg-indigo-500' : 'bg-slate-300'}`}/><div className="min-w-0"><p className="truncate text-sm font-semibold">{item.title}</p><p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.message}</p><p className="mt-1 text-[10px] text-muted-foreground">{new Date(item.createdAt).toLocaleString()}</p></div></div></button>)}</div>
+              </div>}
+            </div>
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"

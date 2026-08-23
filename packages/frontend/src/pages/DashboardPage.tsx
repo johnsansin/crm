@@ -5,9 +5,9 @@ import { api } from '@/lib/api'
 import { useAuthStore } from '@/lib/auth'
 import { Card, CardContent } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
-import { Building2, Users, UserPlus, TrendingUp, LifeBuoy, Package, FolderKanban, Receipt, CalendarDays, Filter, PlusCircle, LayoutDashboard, Check, RotateCcw, Save, BarChart3, PieChart, ListTodo, Ticket, User, GripVertical, Activity, Target, Clock, DollarSign, ArrowUpRight, ArrowDownRight, ArrowRightLeft, Zap, Star, Sparkles, X, Eye, EyeOff, ChevronDown, AlertCircle, CheckCircle2, Clock3, FolderOpen, Mail, UserCheck, Megaphone, BriefcaseBusiness, ShieldCheck } from 'lucide-react'
+import { Building2, Users, UserPlus, TrendingUp, LifeBuoy, Package, FolderKanban, Receipt, CalendarDays, Filter, PlusCircle, LayoutDashboard, Check, RotateCcw, Save, BarChart3, PieChart, ListTodo, Ticket, User, GripVertical, Activity, Target, Clock, DollarSign, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Zap, Star, Sparkles, X, Eye, EyeOff, ChevronDown, AlertCircle, CheckCircle2, Clock3, FolderOpen, Mail, UserCheck, Megaphone, BriefcaseBusiness, ShieldCheck, RefreshCw, NotebookPen, Plus, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useOrgSettings, formatDateTime, weekDayNames } from '@/lib/org-format'
+import { useOrgSettings, formatDateTime, weekDayNames, orgCurrency, orgCurrencySymbol, orgLocale } from '@/lib/org-format'
 import { useViewableModules } from '@/lib/permissions'
 import { t } from '@/lib/i18n'
 
@@ -32,7 +32,13 @@ const quickActions = [
 type WidgetKey = string
 
 const WIDGETS: { key: WidgetKey; label: string; icon: React.ElementType; tint?: string; tile?: string; span: string; module: string | null; render: () => React.ReactNode }[] = [
-  { key: 'revenueOverview', label: 'Revenue overview', icon: DollarSign, tint: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400', span: 'md:col-span-2 xl:col-span-4', module: null, render: () => <RevenueOverviewWidget /> },
+  { key: 'notebook', label: 'Notebook', icon: NotebookPen, tint: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300', span: 'md:col-span-2 xl:col-span-2', module: null, render: () => <NotebookWidget /> },
+  { key: 'organizationTodos', label: 'Organization To-Dos', icon: CheckCircle2, tint: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300', span: 'md:col-span-2 xl:col-span-2', module: null, render: () => <OrganizationTodosWidget /> },
+  { key: 'tagSummary', label: 'Tag Cloud', icon: Tag, tint: 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-500/10 dark:text-fuchsia-300', span: '', module: null, render: () => <TagCloudWidget /> },
+  { key: 'totalRevenue', label: 'Total Revenue', icon: DollarSign, tint: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400', span: '', module: 'invoices', render: () => <KpiMetricWidget metric="revenue" /> },
+  { key: 'pipelineValue', label: 'Pipeline Value', icon: Target, tint: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400', span: '', module: 'potentials', render: () => <KpiMetricWidget metric="pipeline" /> },
+  { key: 'newLeadsKpi', label: 'New Leads', icon: UserPlus, tint: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400', span: '', module: 'leads', render: () => <KpiMetricWidget metric="leads" /> },
+  { key: 'openTicketsKpi', label: 'Open Tickets', icon: LifeBuoy, tint: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400', span: '', module: 'tickets', render: () => <KpiMetricWidget metric="tickets" /> },
   { key: 'pipelineFunnel', label: 'Sales pipeline funnel', icon: Filter, tint: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400', span: 'xl:col-span-2', module: 'potentials', render: () => <PipelineFunnelWidget /> },
   { key: 'activityFeed', label: 'Activity feed', icon: Activity, tint: 'bg-slate-50 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400', span: 'xl:col-span-1', module: null, render: () => <ActivityFeedWidget /> },
   { key: 'leadSources', label: 'Lead sources', icon: PieChart, tint: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400', span: 'xl:col-span-1', module: 'leads', render: () => <LeadSourcesWidget /> },
@@ -66,18 +72,21 @@ const WIDGETS: { key: WidgetKey; label: string; icon: React.ElementType; tint?: 
 
 const WIDGET_KEYS = WIDGETS.map(w => w.key)
 const DEFAULT_ORDER: string[] = [
+  'totalRevenue', 'pipelineValue', 'newLeadsKpi', 'openTicketsKpi', 'notebook', 'organizationTodos', 'tagSummary',
   'assignedToMe', 'upcoming', 'openPotentials', 'openTickets', 'upcomingFollowUps',
-  'recentLeads', 'recentPotentials', 'recentTickets', 'aiInsights', 'revenueOverview',
+  'recentLeads', 'recentPotentials', 'recentTickets', 'aiInsights',
   'pipelineFunnel', 'salesByMonth', 'ticketStats', 'projectMilestones',
 ]
 
-const PERSONAL_WIDGETS = new Set(['assignedToMe', 'upcoming', 'openPotentials', 'openTickets', 'upcomingFollowUps', 'recentLeads', 'recentPotentials', 'recentTickets', 'aiInsights'])
-const SALES_WIDGETS = new Set(['openPotentials', 'upcomingFollowUps', 'recentLeads', 'recentPotentials', 'salesFunnel', 'pipelineChart', 'leadSources', 'leadsByStatus'])
-const SERVICE_WIDGETS = new Set(['assignedToMe', 'openTickets', 'recentTickets', 'ticketStats', 'ticketsByPriority', 'projectMilestones'])
+const PERSONAL_WIDGETS = new Set(['totalRevenue', 'pipelineValue', 'newLeadsKpi', 'openTicketsKpi', 'notebook', 'tagSummary', 'assignedToMe', 'upcoming', 'openPotentials', 'openTickets', 'upcomingFollowUps', 'recentLeads', 'recentPotentials', 'recentTickets', 'aiInsights'])
+const SALES_WIDGETS = new Set(['totalRevenue', 'pipelineValue', 'newLeadsKpi', 'notebook', 'openPotentials', 'upcomingFollowUps', 'recentLeads', 'recentPotentials', 'salesFunnel', 'pipelineChart', 'leadSources', 'leadsByStatus'])
+const SERVICE_WIDGETS = new Set(['openTicketsKpi', 'notebook', 'assignedToMe', 'openTickets', 'recentTickets', 'ticketStats', 'ticketsByPriority', 'projectMilestones'])
 
 function resolveConfig(saved: any): { order: string[]; hidden: string[] } {
-  const order: string[] = Array.isArray(saved?.order) ? saved.order.filter((k: any) => WIDGET_KEYS.includes(k)) : []
-  const hidden: string[] = Array.isArray(saved?.hidden) ? saved.hidden.filter((k: any) => WIDGET_KEYS.includes(k)) : []
+  const savedOrder: string[] = Array.isArray(saved?.order) ? saved.order : []
+  const migratedOrder = savedOrder.includes('revenueOverview') ? ['totalRevenue', 'pipelineValue', 'newLeadsKpi', 'openTicketsKpi', ...savedOrder] : savedOrder
+  const order: string[] = [...new Set(migratedOrder.filter((k: any) => WIDGET_KEYS.includes(k)))] as string[]
+  const hidden: string[] = [...new Set((Array.isArray(saved?.hidden) ? saved.hidden : []).filter((k: any) => WIDGET_KEYS.includes(k)))] as string[]
   return { order: order.length ? order : [...DEFAULT_ORDER], hidden }
 }
 
@@ -99,19 +108,36 @@ export function DashboardPage() {
   const [dragKey, setDragKey] = useState<string | null>(null)
   const [overKey, setOverKey] = useState<string | null>(null)
   const [showCustomize, setShowCustomize] = useState(false)
-  const [dashboardTab, setDashboardTab] = useState<'workspace' | 'sales' | 'service' | 'notices' | 'admin'>('workspace')
+  const [dashboardTab, setDashboardTab] = useState('workspace')
+  const [customDashboards, setCustomDashboards] = useState<{ id: string; name: string }[]>([])
+  const [dashboardConfigs, setDashboardConfigs] = useState<Record<string, { order: string[]; hidden: string[] }>>({})
+  const [tabOrder, setTabOrder] = useState<string[]>(['workspace', 'sales', 'service', 'notices', 'admin'])
+  const [rearrangingTabs, setRearrangingTabs] = useState(false)
+  const [dragTab, setDragTab] = useState<string | null>(null)
+  const [refreshInterval, setRefreshInterval] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastRefreshed, setLastRefreshed] = useState(new Date())
   const dragRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (order === null && cfg?.config) {
-      const resolved = resolveConfig(cfg.config)
+      const savedActiveTab = typeof cfg.config?.activeTab === 'string' ? cfg.config.activeTab : 'workspace'
+      const savedConfigs = cfg.config?.dashboardConfigs && typeof cfg.config.dashboardConfigs === 'object' ? cfg.config.dashboardConfigs : {}
+      const resolved = resolveConfig(savedConfigs[savedActiveTab] || cfg.config)
       setOrder(resolved.order)
       setHidden(resolved.hidden)
+      setDashboardConfigs(savedConfigs)
+      if (['workspace', 'sales', 'service', 'notices', 'admin'].includes(savedActiveTab) || savedActiveTab.startsWith('custom-')) setDashboardTab(savedActiveTab)
+      if ([0, 60, 300, 900].includes(Number(cfg.config?.refreshInterval))) {
+        setRefreshInterval(Number(cfg.config.refreshInterval))
+      }
+      if (Array.isArray(cfg.config?.customDashboards)) setCustomDashboards(cfg.config.customDashboards)
+      if (Array.isArray(cfg.config?.tabOrder)) setTabOrder(cfg.config.tabOrder)
     }
   }, [cfg, order])
 
   const save = useMutation({
-    mutationFn: () => api.updateDashboardConfig({ order: order ?? DEFAULT_ORDER, hidden }),
+    mutationFn: () => api.updateDashboardConfig({ order: order ?? DEFAULT_ORDER, hidden, activeTab: dashboardTab, refreshInterval, customDashboards, tabOrder, dashboardConfigs: { ...dashboardConfigs, [dashboardTab]: { order: order ?? DEFAULT_ORDER, hidden } } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dashboard-config'] })
       setEditing(false)
@@ -121,18 +147,28 @@ export function DashboardPage() {
     },
   })
 
+  const persistConfig = useCallback((nextOrder: string[], nextHidden: string[], activeTab = dashboardTab, interval = refreshInterval, dashboards = customDashboards, tabs = tabOrder) => {
+    const nextConfigs = { ...dashboardConfigs, [dashboardTab]: { order: nextOrder, hidden: nextHidden } }
+    setDashboardConfigs(nextConfigs)
+    api.updateDashboardConfig({ order: nextOrder, hidden: nextHidden, activeTab, refreshInterval: interval, customDashboards: dashboards, tabOrder: tabs, dashboardConfigs: nextConfigs }).catch(() => {})
+  }, [dashboardTab, refreshInterval, customDashboards, tabOrder, dashboardConfigs])
+
   const dismissCard = useCallback((key: string) => {
-    setHidden(h => [...h, key])
-  }, [])
+    setHidden(h => {
+      const next = h.includes(key) ? h : [...h, key]
+      persistConfig(order ?? DEFAULT_ORDER, next)
+      return next
+    })
+  }, [order, persistConfig])
 
   const showCard = useCallback((key: string) => {
-    setHidden(h => h.filter(k => k !== key))
-    setOrder(o => {
-      const cur = o ? [...o] : []
-      if (!cur.includes(key)) cur.push(key)
-      return cur
-    })
-  }, [])
+    const nextHidden = hidden.filter(k => k !== key)
+    const nextOrder = [...(order ?? DEFAULT_ORDER)]
+    if (!nextOrder.includes(key)) nextOrder.push(key)
+    setHidden(nextHidden)
+    setOrder(nextOrder)
+    persistConfig(nextOrder, nextHidden)
+  }, [hidden, order, persistConfig])
 
   const toggleVisible = useCallback((key: string) => {
     setHidden(h => h.includes(key) ? h.filter(k => k !== key) : [...h, key])
@@ -152,8 +188,58 @@ export function DashboardPage() {
   }
 
   const persistOrder = (nextOrder: string[]) => {
-    api.updateDashboardConfig({ order: nextOrder, hidden }).catch(() => {})
+    persistConfig(nextOrder, hidden)
     queryClient.invalidateQueries({ queryKey: ['dashboard-config'] })
+  }
+
+  const refreshDashboard = useCallback(async () => {
+    setRefreshing(true)
+    await queryClient.invalidateQueries({ predicate: query => query.queryKey[0] !== 'dashboard-config' })
+    setLastRefreshed(new Date())
+    setRefreshing(false)
+  }, [queryClient])
+
+  useEffect(() => {
+    if (!refreshInterval) return
+    const timer = window.setInterval(refreshDashboard, refreshInterval * 1000)
+    return () => window.clearInterval(timer)
+  }, [refreshInterval, refreshDashboard])
+
+  const selectTab = (tab: string) => {
+    if (tab === 'admin' && !user?.isAdmin) return
+    const nextConfigs = { ...dashboardConfigs, [dashboardTab]: { order: order ?? [...DEFAULT_ORDER], hidden } }
+    const target = resolveConfig(nextConfigs[tab])
+    setDashboardConfigs(nextConfigs)
+    setOrder(target.order)
+    setHidden(target.hidden)
+    setDashboardTab(tab)
+    setShowCustomize(false)
+    api.updateDashboardConfig({ order: target.order, hidden: target.hidden, activeTab: tab, refreshInterval, customDashboards, tabOrder, dashboardConfigs: nextConfigs }).catch(() => {})
+  }
+
+  const addDashboard = () => {
+    const name = window.prompt(t('Dashboard name'))?.trim()
+    if (!name) return
+    const dashboard = { id: `custom-${Date.now()}`, name: name.slice(0, 40) }
+    const nextDashboards = [...customDashboards, dashboard]
+    const nextTabs = [...tabOrder, dashboard.id]
+    const nextConfigs = { ...dashboardConfigs, [dashboardTab]: { order: order ?? [...DEFAULT_ORDER], hidden }, [dashboard.id]: { order: [...DEFAULT_ORDER], hidden: [] } }
+    setCustomDashboards(nextDashboards); setTabOrder(nextTabs); setDashboardTab(dashboard.id); setDashboardConfigs(nextConfigs); setOrder([...DEFAULT_ORDER]); setHidden([])
+    api.updateDashboardConfig({ order: DEFAULT_ORDER, hidden: [], activeTab: dashboard.id, refreshInterval, customDashboards: nextDashboards, tabOrder: nextTabs, dashboardConfigs: nextConfigs }).catch(() => {})
+  }
+
+  const moveTab = (from: string, to: string) => {
+    if (from === to) return
+    const current = [...tabOrder]
+    const fromIndex = current.indexOf(from); const toIndex = current.indexOf(to)
+    if (fromIndex < 0 || toIndex < 0) return
+    const [moved] = current.splice(fromIndex, 1); current.splice(toIndex, 0, moved)
+    setTabOrder(current); persistConfig(order ?? DEFAULT_ORDER, hidden, dashboardTab, refreshInterval, customDashboards, current)
+  }
+
+  const changeRefreshInterval = (seconds: number) => {
+    setRefreshInterval(seconds)
+    persistConfig(order ?? DEFAULT_ORDER, hidden, dashboardTab, seconds)
   }
 
   const moveCard = (from: string, to: string) => {
@@ -186,6 +272,7 @@ export function DashboardPage() {
     if (dashboardTab === 'sales') return SALES_WIDGETS.has(widget.key)
     if (dashboardTab === 'service') return SERVICE_WIDGETS.has(widget.key)
     if (dashboardTab === 'admin') return !!user?.isAdmin && !PERSONAL_WIDGETS.has(widget.key)
+    if (dashboardTab.startsWith('custom-')) return true
     return false
   })
 
@@ -210,6 +297,29 @@ export function DashboardPage() {
                   <PlusCircle size={13} /> {t(a.label)}
                 </Link>
               ))}
+              <button
+                type="button"
+                onClick={refreshDashboard}
+                disabled={refreshing}
+                className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-60"
+                title={`${t('Last refreshed')} ${formatDateTime(lastRefreshed)}`}
+              >
+                <RefreshCw size={13} className={cn(refreshing && 'animate-spin')} /> {refreshing ? t('Refreshing...') : t('Refresh')}
+              </button>
+              <label className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-2 py-1 text-xs text-muted-foreground shadow-sm">
+                <span className="hidden sm:inline">{t('Auto refresh')}</span>
+                <select
+                  value={refreshInterval}
+                  onChange={e => changeRefreshInterval(Number(e.target.value))}
+                  className="bg-transparent text-xs font-medium text-foreground outline-none"
+                  aria-label={t('Auto refresh')}
+                >
+                  <option value={0}>{t('Off')}</option>
+                  <option value={60}>{t('1 min')}</option>
+                  <option value={300}>{t('5 min')}</option>
+                  <option value={900}>{t('15 min')}</option>
+                </select>
+              </label>
               {dashboardTab !== 'notices' && <button
                 type="button"
                 onClick={() => setShowCustomize(v => !v)}
@@ -225,21 +335,25 @@ export function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-1 overflow-x-auto rounded-xl border bg-card p-1 shadow-sm">
-        {[
+      <div className="flex items-center gap-1 overflow-x-auto rounded-xl border bg-card p-1 shadow-sm">
+        {tabOrder.map(key => ([
           { key: 'workspace', label: 'My Workspace', icon: BriefcaseBusiness },
           { key: 'sales', label: 'My Sales', icon: TrendingUp },
           { key: 'service', label: 'Service & Tasks', icon: LifeBuoy },
           { key: 'notices', label: 'Notice Board', icon: Megaphone },
           ...(user?.isAdmin ? [{ key: 'admin', label: 'Organization Overview', icon: ShieldCheck }] : []),
-        ].map(tab => (
-          <button key={tab.key} type="button" onClick={() => { setDashboardTab(tab.key as any); setShowCustomize(false) }} className={cn(
+          ...customDashboards.map(d => ({ key: d.id, label: d.name, icon: LayoutDashboard })),
+        ].find(tab => tab.key === key))).filter(Boolean).map((tab: any) => (
+          <button key={tab.key} type="button" draggable={rearrangingTabs} onDragStart={() => setDragTab(tab.key)} onDragOver={e => e.preventDefault()} onDrop={() => { if (dragTab) moveTab(dragTab, tab.key); setDragTab(null) }} onClick={() => selectTab(tab.key)} className={cn(
             'inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-            dashboardTab === tab.key ? 'bg-indigo-600 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            dashboardTab === tab.key ? 'bg-indigo-600 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            rearrangingTabs && 'cursor-grab border border-dashed'
           )}>
             <tab.icon size={15} /> {tab.label}
           </button>
         ))}
+        <button type="button" onClick={addDashboard} className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-2 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950"><Plus size={14} /> {t('New Dashboard')}</button>
+        <button type="button" onClick={() => setRearrangingTabs(v => !v)} className={cn('inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-muted', rearrangingTabs && 'bg-amber-100 text-amber-800')}><ArrowLeftRight size={14} /> {rearrangingTabs ? t('Done') : t('Rearrange Tabs')}</button>
       </div>
 
       {/* Customize Panel — slide down */}
@@ -351,7 +465,7 @@ export function DashboardPage() {
       >
         {widgets.map((w, idx) => (
           <div
-            key={w.key}
+            key={`${dashboardTab}:${w.key}`}
             draggable
             onDragStart={(e) => { dragRef.current = w.key; setDragKey(w.key); e.dataTransfer.effectAllowed = 'move' }}
             onDragOver={(e) => { e.preventDefault(); if (overKey !== w.key) setOverKey(w.key) }}
@@ -371,7 +485,7 @@ export function DashboardPage() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); dismissCard(w.key) }}
-              className="absolute top-2 right-2 z-20 rounded-full bg-white/80 dark:bg-slate-800/80 p-1 text-muted-foreground/50 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950 shadow-sm"
+              className={cn('absolute top-2 z-20 rounded-full bg-white/80 dark:bg-slate-800/80 p-1 text-muted-foreground/50 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950 shadow-sm', w.key === 'notebook' ? 'right-11' : 'right-2')}
               title={t('Dismiss')}
             >
               <X size={14} />
@@ -382,7 +496,7 @@ export function DashboardPage() {
               <GripVertical size={10} />
             </span>
 
-            {w.render()}
+            {w.key === 'notebook' ? <NotebookWidget dashboardId={dashboardTab} /> : w.render()}
           </div>
         ))}
       </div>
@@ -465,7 +579,7 @@ function NoticeBoard({ isAdmin }: { isAdmin: boolean }) {
 
 // ─── KPI Top Cards ─────────────────────────────────────────────────────────
 
-function RevenueOverviewWidget() {
+function KpiMetricWidget({ metric }: { metric: 'revenue' | 'pipeline' | 'leads' | 'tickets' }) {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard', 'kpis'],
     queryFn: () => fetch('/api/dashboard/kpis', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
@@ -499,10 +613,10 @@ function RevenueOverviewWidget() {
     },
   ]
 
+  const metricIndex = { revenue: 0, pipeline: 1, leads: 2, tickets: 3 }[metric]
+  const c = cards[metricIndex]
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-      {cards.map((c) => (
-        <Card key={c.label} className="overflow-hidden hover:shadow-md transition-shadow">
+        <Card className="h-full overflow-hidden hover:shadow-md transition-shadow">
           <CardContent className="p-4">
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
@@ -530,8 +644,6 @@ function RevenueOverviewWidget() {
           </CardContent>
           <div className={cn('h-1 bg-gradient-to-r', c.color)} />
         </Card>
-      ))}
-    </div>
   )
 }
 
@@ -708,6 +820,109 @@ function TicketStatsWidget() {
 
 // ─── Shared widget components ──────────────────────────────────────────────
 
+function NotebookWidget({ dashboardId = 'workspace' }: { dashboardId?: string }) {
+  const { user } = useAuthStore()
+  const key = `crm:notebook:${user?.companyId || 'company'}:${user?.id || 'user'}:${dashboardId}`
+  type Notepad = { id: string; name: string; content: string; updatedAt: string }
+  const [notepads, setNotepads] = useState<Notepad[]>(() => {
+    const stored = localStorage.getItem(key)
+    if (!stored) return []
+    try {
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) return parsed
+    } catch {
+      if (stored.trim()) return [{ id: `legacy-${Date.now()}`, name: 'My Notepad', content: stored, updatedAt: new Date().toISOString() }]
+    }
+    return []
+  })
+  const [editingNote, setEditingNote] = useState<Notepad | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [notepadName, setNotepadName] = useState('')
+  const [notepadContent, setNotepadContent] = useState('')
+
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(notepads))
+  }, [notepads, key])
+
+  const openNew = () => { setEditingNote(null); setNotepadName(''); setNotepadContent(''); setModalOpen(true) }
+  const openEdit = (note: Notepad) => { setEditingNote(note); setNotepadName(note.name); setNotepadContent(note.content); setModalOpen(true) }
+  const saveNotepad = () => {
+    const name = notepadName.trim()
+    if (!name) return
+    const updatedAt = new Date().toISOString()
+    if (editingNote) setNotepads(items => items.map(item => item.id === editingNote.id ? { ...item, name, content: notepadContent, updatedAt } : item))
+    else setNotepads(items => [{ id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name, content: notepadContent, updatedAt }, ...items])
+    setModalOpen(false)
+  }
+
+  return <>
+    <WidgetCard title="Notebook" icon={NotebookPen} tint="bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300" action={<button type="button" onClick={openNew} className="grid h-7 w-7 place-items-center rounded-lg bg-amber-100 text-amber-700 transition hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-300" title="Add Notepad" aria-label="Add Notepad"><Plus size={15}/></button>}>
+      {notepads.length === 0 ? <button type="button" onClick={openNew} className="flex min-h-40 w-full flex-col items-center justify-center gap-2 p-4 text-center text-sm text-muted-foreground transition hover:bg-amber-50/60 dark:hover:bg-amber-500/5"><NotebookPen size={28} className="text-amber-500/60"/><span>No notepads yet</span><span className="text-xs font-medium text-amber-700 dark:text-amber-300">Click + to add a notepad</span></button> : <div className="max-h-64 space-y-2 overflow-y-auto p-3">{notepads.map(note => <button type="button" key={note.id} onClick={() => openEdit(note)} className="block w-full rounded-xl border bg-background p-3 text-left transition hover:border-amber-300 hover:bg-amber-50/60 dark:hover:bg-amber-500/5"><span className="block truncate text-sm font-semibold">{note.name}</span><span className="mt-1 block line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground">{note.content || 'Empty notepad — click to edit'}</span><span className="mt-2 block text-[10px] text-muted-foreground">Editable · {formatDateTime(note.updatedAt)}</span></button>)}</div>}
+    </WidgetCard>
+    {modalOpen && <div className="fixed inset-0 z-[110] grid place-items-center bg-slate-950/45 p-3" onMouseDown={event => { if (event.target === event.currentTarget) setModalOpen(false) }}>
+      <section role="dialog" aria-modal="true" aria-label="Add Notepad" className="w-full max-w-xl overflow-hidden rounded-2xl border bg-background shadow-2xl">
+        <header className="flex items-center gap-3 border-b px-5 py-4"><span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"><NotebookPen size={18}/></span><div className="min-w-0 flex-1"><h2 className="font-semibold">{editingNote ? 'Edit Notepad' : 'Add Notepad'}</h2><p className="text-xs text-muted-foreground">Saved in this dashboard and always editable</p></div><button type="button" onClick={() => setModalOpen(false)} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-muted" aria-label="Close"><X size={18}/></button></header>
+        <div className="space-y-4 p-5"><label className="block"><span className="mb-1.5 block text-sm font-medium">Notepad Name</span><input autoFocus value={notepadName} onChange={event => setNotepadName(event.target.value)} placeholder="Enter notepad name" className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200"/></label><label className="block"><span className="mb-1.5 block text-sm font-medium">Notepad Content</span><textarea value={notepadContent} onChange={event => setNotepadContent(event.target.value)} placeholder="Write your notes here…" rows={8} className="w-full resize-y rounded-xl border bg-background p-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200"/></label></div>
+        <footer className="flex justify-end gap-2 border-t bg-muted/20 px-5 py-4"><button type="button" onClick={() => setModalOpen(false)} className="h-10 rounded-xl border bg-background px-4 text-sm font-medium hover:bg-muted">Cancel</button><button type="button" onClick={saveNotepad} disabled={!notepadName.trim()} className="h-10 rounded-xl bg-amber-600 px-5 text-sm font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50">Save</button></footer>
+      </section>
+    </div>}
+  </>
+}
+
+function OrganizationTodosWidget() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['dashboard', 'organization-todos'],
+    queryFn: () => fetch('/api/dashboard/assigned-to-me?scope=organization', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
+  })
+  const tasks = data?.data?.tasks || []
+  return <WidgetCard title="Organization To-Dos" icon={CheckCircle2} tint="bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+    {isLoading ? <WidgetEmpty label="Loading..." /> : tasks.length === 0 ? <WidgetEmpty label="No open organization to-dos" /> : tasks.map((task: any) => <WidgetRow key={task.id} to="/activities" primary={task.name} secondary={[task.status, task.dueAt ? formatDateTime(task.dueAt) : ''].filter(Boolean).join(' · ')} />)}
+    <Link to="/activities" className="block border-t px-4 py-2 text-center text-xs font-medium text-indigo-600 hover:bg-muted/40">View all to-dos</Link>
+  </WidgetCard>
+}
+
+function recordDisplayName(record: any, module: string, recordId: string) {
+  const value = record?.data || record || {}
+  const candidates = ['leadNo', 'firstName', 'lastName', 'accountName', 'contactName', 'potentialName', 'title', 'subject', 'productName', 'projectName', 'invoiceNo', 'quoteNo', 'salesOrderNo', 'purchaseOrderNo', 'name']
+  const parts = candidates.map(key => value[key]).filter(Boolean)
+  return parts.slice(0, 2).join(' · ') || `${module.replace(/_/g, ' ')} record ${recordId.slice(0, 8)}`
+}
+
+function TagCloudWidget() {
+  const { data, isLoading } = useQuery({ queryKey: ['tags', 'dashboard-usage'], queryFn: () => api.getTags({ includeAssignments: 'true' }) })
+  const [selectedTag, setSelectedTag] = useState<{ name: string; color?: string; count: number; assignments: any[] } | null>(null)
+  const counts = new Map<string, { name: string; color?: string; count: number; assignments: any[] }>()
+  for (const tag of data?.data || []) {
+    if (!tag.recordId) continue
+    const key = tag.parentTagId || tag.name.toLowerCase()
+    const current: { name: string; color?: string; count: number; assignments: any[] } = counts.get(key) || { name: tag.name, color: tag.color, count: 0, assignments: [] }
+    current.count += 1; current.assignments.push(tag); counts.set(key, current)
+  }
+  const tags = [...counts.values()].sort((a, b) => b.count - a.count).slice(0, 24)
+  const maxCount = Math.max(...tags.map(tag => tag.count), 1)
+  const { data: taggedRecords, isLoading: recordsLoading } = useQuery({
+    queryKey: ['tag-cloud-records', selectedTag?.name, selectedTag?.assignments.map(item => `${item.module}:${item.recordId}`).join(',')],
+    enabled: Boolean(selectedTag),
+    queryFn: async () => Promise.all((selectedTag?.assignments || []).map(async assignment => {
+      try {
+        const record = await api.get(assignment.module, assignment.recordId)
+        return { ...assignment, label: recordDisplayName(record, assignment.module, assignment.recordId) }
+      } catch { return { ...assignment, label: recordDisplayName(null, assignment.module, assignment.recordId) } }
+    })),
+  })
+  return <>
+    <WidgetCard title="Tag Cloud" icon={Tag} tint="bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-500/10 dark:text-fuchsia-300">
+      {isLoading ? <WidgetEmpty label="Loading..." /> : tags.length === 0 ? <WidgetEmpty label="No tagged records yet" /> : <div className="flex min-h-40 flex-wrap content-center items-center justify-center gap-x-3 gap-y-2 p-4">{tags.map(tag => <button type="button" key={`${tag.name}-${tag.color}`} onClick={() => setSelectedTag(tag)} title={`View ${tag.count} tagged record${tag.count === 1 ? '' : 's'}`} style={{ color: tag.color || undefined, fontSize: `${12 + Math.round((tag.count / maxCount) * 10)}px` }} className="rounded-lg px-2 py-1 font-semibold transition hover:-translate-y-0.5 hover:bg-fuchsia-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400 dark:hover:bg-fuchsia-500/10">{tag.name}<sup className="ml-1 text-[10px] opacity-65">{tag.count}</sup></button>)}</div>}
+    </WidgetCard>
+    {selectedTag && <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/45 p-3" onMouseDown={event => { if (event.target === event.currentTarget) setSelectedTag(null) }}>
+      <section role="dialog" aria-modal="true" aria-label={`${selectedTag.name} tagged records`} className="flex max-h-[min(680px,90dvh)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl">
+        <header className="flex items-center gap-3 border-b px-4 py-3"><span style={{ color: selectedTag.color, borderColor: selectedTag.color, backgroundColor: selectedTag.color ? `${selectedTag.color}14` : undefined }} className="rounded-full border px-3 py-1 text-sm font-semibold">{selectedTag.name}</span><p className="flex-1 text-sm text-muted-foreground">{selectedTag.count} relevant record{selectedTag.count === 1 ? '' : 's'}</p><button type="button" onClick={() => setSelectedTag(null)} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-muted" aria-label="Close"><X size={18}/></button></header>
+        <div className="overflow-y-auto p-3">{recordsLoading ? <WidgetEmpty label="Loading tagged records..." /> : (taggedRecords || []).length === 0 ? <WidgetEmpty label="No matching records" /> : <div className="space-y-2">{(taggedRecords || []).map((item: any) => <Link key={item.id} to={`/${item.module}/${item.recordId}`} onClick={() => setSelectedTag(null)} className="flex items-center gap-3 rounded-xl border p-3 transition hover:border-fuchsia-300 hover:bg-fuchsia-50/60 dark:hover:bg-fuchsia-500/10"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-500/15 dark:text-fuchsia-300"><Tag size={16}/></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{item.label}</span><span className="block text-xs capitalize text-muted-foreground">{String(item.module).replace(/_/g, ' ')}</span></span><ArrowUpRight size={16} className="shrink-0 text-muted-foreground"/></Link>)}</div>}</div>
+      </section>
+    </div>}
+  </>
+}
+
 function StatCardWidget({ module, label, icon: Icon, tile }: { module: string; label: string; icon: React.ElementType; tile: string }) {
   const { data } = useQuery({
     queryKey: [module, 'count'],
@@ -734,7 +949,7 @@ function StatCardWidget({ module, label, icon: Icon, tile }: { module: string; l
   )
 }
 
-function WidgetCard({ title, icon: Icon, tint, children }: { title: string; icon: React.ElementType; tint: string; children: React.ReactNode }) {
+function WidgetCard({ title, icon: Icon, tint, action, children }: { title: string; icon: React.ElementType; tint: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <Card className="h-full overflow-hidden border-0 shadow-none bg-transparent">
       <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-700/50 px-4 py-3">
@@ -742,6 +957,7 @@ function WidgetCard({ title, icon: Icon, tint, children }: { title: string; icon
           <Icon size={14} strokeWidth={1.75} />
         </span>
         <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{t(title)}</h3>
+        {action}
       </div>
       <CardContent className="p-0">{children}</CardContent>
     </Card>
@@ -762,12 +978,12 @@ function WidgetEmpty({ label }: { label: string }) {
 }
 
 function fmtMoney(v: any) {
-  if (v == null || v === '') return '$0'
+  if (v == null || v === '') return `${orgCurrencySymbol()}0`
   const n = Number(v)
-  if (isNaN(n)) return '$0'
-  if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
-  if (n >= 1000) return `$${(n / 1000).toFixed(1)}K`
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
+  if (isNaN(n)) return `${orgCurrencySymbol()}0`
+  if (n >= 1000000) return `${orgCurrencySymbol()}${(n / 1000000).toFixed(1)}M`
+  if (n >= 1000) return `${orgCurrencySymbol()}${(n / 1000).toFixed(1)}K`
+  return new Intl.NumberFormat(orgLocale(), { style: 'currency', currency: orgCurrency(), maximumFractionDigits: 0 }).format(n)
 }
 
 function OpenOpportunitiesWidget() {

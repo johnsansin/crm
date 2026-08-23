@@ -2,6 +2,7 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { AppBreadcrumbs, CrmFlowGuide } from './AppBreadcrumbs'
 import { LiveTranslation } from '@/components/LiveTranslation'
+import { SupportChatWidget } from '@/components/support/SupportChatWidget'
 import { useState, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/lib/auth'
@@ -203,15 +204,18 @@ export function AppLayout() {
   }, [])
 
   return (
-    <div className="h-screen overflow-hidden bg-background">
+    <div className="h-screen min-h-[100dvh] overflow-hidden bg-background">
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
+        onHoverChange={(hovered) => {
+          if (window.matchMedia('(min-width: 768px) and (hover: hover)').matches) setSidebarCollapsed(!hovered)
+        }}
       />
 
-      <div className={cn('h-screen flex flex-col overflow-hidden transition-all duration-300', 'ml-0 md:ml-64', sidebarCollapsed && 'md:ml-16')}>
+      <div className={cn('h-screen min-h-[100dvh] min-w-0 flex flex-col overflow-hidden transition-all duration-300', 'ml-0 md:ml-64', sidebarCollapsed && 'md:ml-16')}>
         {activeAnnouncements.map(a => (
           <div key={a.id} className="flex items-center gap-3 px-4 md:px-6 py-2 bg-primary text-primary-foreground text-sm shrink-0">
             <Megaphone size={15} className="shrink-0" />
@@ -224,7 +228,7 @@ export function AppLayout() {
             </button>
           </div>
         ))}
-        <header data-tour="header" className="shrink-0 h-16 bg-background/80 backdrop-blur-xl border-b border-border/60 shadow-sm flex items-center justify-between px-4 md:px-6 gap-2 md:gap-4 relative z-30">
+        <header data-tour="header" className="shrink-0 h-14 sm:h-16 bg-background/80 backdrop-blur-xl border-b border-border/60 shadow-sm flex items-center justify-between px-2.5 sm:px-4 md:px-6 gap-1.5 md:gap-4 relative z-30">
           <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
           <button
@@ -234,7 +238,7 @@ export function AppLayout() {
             <Menu size={20} />
           </button>
 
-          <div className="flex items-center gap-3 shrink-0 mr-3 min-w-0">
+          <div className="hidden sm:flex items-center gap-3 shrink-0 mr-3 min-w-0">
             {user?.company?.logo ? (
               <img src={user.company.logo} alt={user.company.name} className="h-9 w-9 rounded-lg object-contain p-0.5 bg-white dark:bg-white/10 ring-1 ring-border shrink-0" />
             ) : (
@@ -292,7 +296,7 @@ export function AppLayout() {
           </div>
 
           <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
-            <Button variant="ghost" size="icon" title={t('Chat')} className="relative rounded-full h-9 w-9" onClick={() => navigate('/chat')}>
+            <Button variant="ghost" size="icon" title={t('Chat')} className="relative hidden sm:inline-flex rounded-full h-9 w-9" onClick={() => navigate('/chat')}>
               <MessageSquare size={17} />
               {chatUnread > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center ring-2 ring-background">
@@ -359,12 +363,12 @@ export function AppLayout() {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="ghost" size="icon" onClick={toggleTheme} title={t('Toggle theme')} className="rounded-full h-9 w-9">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} title={t('Toggle theme')} className="hidden sm:inline-flex rounded-full h-9 w-9">
               {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1.5 px-2 rounded-full h-9" title={t('Language')} disabled={langSaving}>
+                <Button variant="ghost" size="sm" className="hidden sm:inline-flex gap-1.5 px-2 rounded-full h-9" title={t('Language')} disabled={langSaving}>
                   {langSaving ? <Loader2 size={15} className="animate-spin" /> : <Languages size={15} />}
                   <span className="hidden md:inline text-xs font-semibold uppercase">{currentLang.split('_')[0]}</span>
                 </Button>
@@ -422,7 +426,13 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-slate-100/80 dark:bg-slate-950/70 p-4 md:p-6">
+        <main
+          className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto bg-slate-100/80 dark:bg-slate-950/70 p-2.5 sm:p-4 md:p-6 overscroll-contain"
+          onPointerDown={() => {
+            if (mobileOpen) setMobileOpen(false)
+            if (!sidebarCollapsed && window.matchMedia('(min-width: 768px)').matches) setSidebarCollapsed(true)
+          }}
+        >
           <div className="mx-auto w-full max-w-[1600px]">
             <AppBreadcrumbs />
             <CrmFlowGuide />
@@ -432,6 +442,7 @@ export function AppLayout() {
       </div>
       {user && !user.hasCompletedQuickStart && <QuickStartModal />}
       {user && user.hasCompletedQuickStart && !user.hasCompletedOnboarding && <OnboardingTour />}
+      {user?.isAdmin && !user?.isSuperAdmin && <SupportChatWidget />}
       <LiveTranslation />
     </div>
   )

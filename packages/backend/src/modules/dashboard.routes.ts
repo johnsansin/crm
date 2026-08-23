@@ -377,34 +377,36 @@ dashboardRouter.get('/assigned-to-me', authMiddleware, async (req, res, next) =>
     const userId = req.user!.userId
     const companyId = req.user!.companyId
     const base = companyId ? { companyId } : {}
+    const organizationScope = req.query.scope === 'organization' && (req.user!.isAdmin || req.user!.isSuperAdmin)
+    const assigned = organizationScope ? {} : { assignedTo: userId }
 
     const [leads, potentials, tickets, tasks, projects] = await Promise.all([
       prisma.lead.findMany({
-        where: { ...base, assignedTo: userId, isActive: true },
+        where: { ...base, ...assigned, isActive: true },
         orderBy: { updatedAt: 'desc' },
         take: 5,
         select: { id: true, firstName: true, lastName: true, company: true, leadStatus: true, updatedAt: true },
       }),
       prisma.potential.findMany({
-        where: { ...base, assignedTo: userId, isActive: true, stage: { notIn: ['Closed Won', 'Closed Lost'] } },
+        where: { ...base, ...assigned, isActive: true, stage: { notIn: ['Closed Won', 'Closed Lost'] } },
         orderBy: { updatedAt: 'desc' },
         take: 5,
         select: { id: true, potentialName: true, stage: true, amount: true, closingDate: true, updatedAt: true },
       }),
       prisma.ticket.findMany({
-        where: { ...base, assignedTo: userId, isActive: true, status: { notIn: ['Closed', 'Resolved'] } },
+        where: { ...base, ...assigned, isActive: true, status: { notIn: ['Closed', 'Resolved'] } },
         orderBy: { updatedAt: 'desc' },
         take: 5,
         select: { id: true, title: true, status: true, priority: true, updatedAt: true },
       }),
       prisma.activity.findMany({
-        where: { ...base, assignedTo: userId, isActive: true, status: { notIn: ['Completed', 'Cancelled'] } },
+        where: { ...base, ...assigned, isActive: true, status: { notIn: ['Completed', 'Cancelled'] } },
         orderBy: { dueAt: 'asc' },
         take: 5,
         select: { id: true, subject: true, activityType: true, status: true, dueAt: true, updatedAt: true },
       }),
       prisma.project.findMany({
-        where: { ...base, assignedTo: userId, isActive: true, status: { notIn: ['Completed', 'Cancelled'] } },
+        where: { ...base, ...assigned, isActive: true, status: { notIn: ['Completed', 'Cancelled'] } },
         orderBy: { updatedAt: 'desc' },
         take: 5,
         select: { id: true, projectName: true, status: true, progress: true, updatedAt: true },

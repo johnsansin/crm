@@ -67,13 +67,59 @@
   }
   body {
     @apply bg-background text-foreground;
+    min-width: 320px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
   }
+  html { @apply scroll-smooth; text-size-adjust: 100%; -webkit-text-size-adjust: 100%; }
+  #root { min-height: 100vh; min-height: 100dvh; }
+  img, video, canvas, svg { max-width: 100%; }
+  main, section, article, aside, header, footer, nav, div { min-width: 0; }
   button, a, input, select, textarea { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background; }
 }
 
 @layer components {
   .page-surface { @apply rounded-2xl border border-border/70 bg-card shadow-sm; }
   .page-tabs { @apply flex w-full gap-1 overflow-x-auto rounded-xl border border-border/70 bg-card p-1 shadow-sm; }
+  .responsive-table { @apply w-full overflow-x-auto overscroll-x-contain; -webkit-overflow-scrolling: touch; }
+}
+
+/* Mobile defaults shared by every route. They prevent long content and controls
+   from widening the page while preserving horizontal scrolling where needed. */
+@media (max-width: 639px) {
+  input, select, textarea { font-size: 16px !important; }
+  .page-surface { border-radius: 0.75rem; }
+  [role="dialog"] { max-height: calc(100dvh - 1rem); overflow-y: auto; }
+  [role="tabpanel"] { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  table { font-size: 0.75rem; }
+  th, td { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Sidebar remains usable on landscape phones, split-screen tablets and short
+   browser windows. Its scrollbar is intentionally hidden but touch/wheel and
+   keyboard scrolling remain available. */
+@media (max-height: 700px) {
+  [data-crm-sidebar] .crm-sidebar-header { height: 3.25rem; }
+  [data-crm-sidebar] .crm-sidebar-scroll { gap: .5rem; padding-top: .5rem; padding-bottom: .5rem; }
+  [data-crm-sidebar] .crm-sidebar-groups button { padding-top: .35rem; padding-bottom: .35rem; }
+  [data-crm-sidebar] .crm-sidebar-footer { padding-top: .4rem; padding-bottom: max(.4rem, env(safe-area-inset-bottom)); }
+  [data-crm-sidebar] .crm-sidebar-footer > a { padding-top: .35rem; padding-bottom: .35rem; }
+}
+
+@media (max-height: 540px) and (max-width: 900px) {
+  [data-crm-sidebar] .crm-sidebar-footer [class*="text-xs"] { display: none; }
+  [data-crm-sidebar] .crm-sidebar-scroll { padding-top: .35rem; padding-bottom: .35rem; }
 }
 
 /* Hide scrollbar everywhere */

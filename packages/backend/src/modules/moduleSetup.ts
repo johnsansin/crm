@@ -407,7 +407,7 @@ const modules: Record<string, ModuleConfig> = {
     icon: 'BadgePercent',
     sequence: 52,
     searchFields: ['productId'],
-    listFields: ['minQty', 'maxQty', 'discountPercent'],
+    listFields: ['productId', 'minQty', 'maxQty', 'discountPercent', 'isActive'],
     relatedModules: ['products']
   },
   ticketcomments: {

@@ -31,6 +31,8 @@ const labelMap: Record<string, string> = {
   smsnotifier: 'SMS Notifier', receipts: 'Receipts', payments: 'Payments',
   recurringinvoices: 'Recurring Invoices', calllogs: 'Phone Calls',
   reports: 'Reports', mailboxes: 'Mailboxes', rssfeeds: 'RSS Feeds',
+  stageprobability: 'Stage Probabilities',
+  quantitydiscounts: 'Quantity Discounts',
 }
 
 const displayFields: Record<string, string[]> = {
@@ -66,6 +68,8 @@ const displayFields: Record<string, string[]> = {
   recurringinvoices: ['frequency', 'interval', 'nextRun', 'isActive'],
   calllogs: ['fromNumber', 'toNumber', 'direction', 'callTime', 'status'],
   reports: ['name', 'moduleName', 'reportType'],
+  stageprobability: ['stageName', 'probability', 'sequence', 'color'],
+  quantitydiscounts: ['productId', 'minQty', 'maxQty', 'discountPercent', 'isActive'],
   mailboxes: ['name', 'host', 'user', 'lastSyncAt'],
   rssfeeds: ['name', 'category', 'lastFetchedAt'],
 }
@@ -200,8 +204,19 @@ export function ModuleListPage() {
     })
   }
 
-  const fields = displayFields[mod] || ['id']
+  const fields = [...(displayFields[mod] || ['id']), '__tags']
   const label = t(labelMap[mod] || mod)
+
+  const { data: tagsData } = useQuery({
+    queryKey: ['tags', mod, 'list'],
+    queryFn: () => api.getTags({ module: mod }),
+    enabled: !!mod,
+  })
+  const tagsByRecord = new Map<string, any[]>()
+  for (const tag of tagsData?.data || []) {
+    if (!tag.recordId || tag.module !== mod) continue
+    tagsByRecord.set(tag.recordId, [...(tagsByRecord.get(tag.recordId) || []), tag])
+  }
 
   const monetaryColumns = ['amount', 'grandTotal', 'subTotal', 'unitPrice', 'costPrice', 'annualRevenue', 'expectedRevenue', 'budget', 'actualCost', 'shipping', 'shippingHandling', 'discount', 'adjustment', 'salesCommission', 'exciseDuty', 'targetBudget', 'actualBudget', 'paidAmount']
 
@@ -224,10 +239,12 @@ export function ModuleListPage() {
     .filter(f => f && !hiddenCols.includes(f))
     .map(f => ({
       key: f,
-      label: getFieldLabel(f),
-      sortable: true,
+      label: f === '__tags' ? 'Tags' : getFieldLabel(f),
+      sortable: f !== '__tags',
       className: monetaryColumns.includes(f) ? 'text-right' : '',
-      ...(f === 'invoiceId' && mod === 'receipts' ? {
+      ...(f === '__tags' ? {
+        render: (_val: any, record: any) => <div className="flex max-w-[220px] flex-wrap gap-1">{(tagsByRecord.get(record.id) || []).slice(0, 3).map((tag: any) => <span key={tag.id} style={tag.color ? { color: tag.color, borderColor: tag.color, backgroundColor: `${tag.color}12` } : undefined} className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700">{tag.name}</span>)}{(tagsByRecord.get(record.id) || []).length === 0 && <span className="text-xs text-muted-foreground">—</span>}</div>
+      } : f === 'invoiceId' && mod === 'receipts' ? {
         render: (val: string) => {
           const inv = invoicesMap[val]
           return inv ? `${inv.invoiceNo || 'No#'} — ${inv.subject}` : <span className="text-muted-foreground">-</span>
@@ -237,6 +254,10 @@ export function ModuleListPage() {
           const po = posMap[val]
           return po ? `${po.purchaseOrderNo || 'No#'} — ${po.subject}` : <span className="text-muted-foreground">-</span>
         }
+      } : f === 'probability' && mod === 'stageprobability' ? {
+        render: (val: any, record: any) => <div className="flex min-w-[150px] items-center gap-3"><div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"><div className="h-full rounded-full transition-all" style={{ width: `${Math.max(0, Math.min(100, Number(val) || 0))}%`, backgroundColor: record.color || '#2563eb' }} /></div><span className="w-10 text-right text-xs font-bold tabular-nums">{Number(val) || 0}%</span></div>
+      } : f === 'color' && mod === 'stageprobability' ? {
+        render: (val: any) => <span className="inline-flex items-center gap-2"><span className="h-5 w-5 rounded-md border shadow-sm" style={{ backgroundColor: val || '#2563eb' }} /><span className="font-mono text-xs text-muted-foreground">{val || '#2563eb'}</span></span>
       } : {}),
     }))
 
@@ -248,8 +269,14 @@ export function ModuleListPage() {
 
   return (
     <div className="space-y-4">
+      {mod === 'stageprobability' && (
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 p-5 text-white shadow-xl shadow-indigo-500/20 sm:p-6">
+          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative"><p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-100">Sales configuration</p><h1 className="mt-1 text-2xl font-bold">Stage Probability Matrix</h1><p className="mt-1 max-w-2xl text-sm text-indigo-100">Control opportunity forecasting by assigning a probability and colour to every sales stage.</p></div>
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl md:text-2xl font-bold tracking-tight">{label}</h1>
+        {mod !== 'stageprobability' && <h1 className="text-xl md:text-2xl font-bold tracking-tight">{label}</h1>}
         <div className="flex items-center gap-2">
           {hasKanban && (
             <Button

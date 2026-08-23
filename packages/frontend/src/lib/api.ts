@@ -119,6 +119,12 @@ export const api = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
+  logoutAllDevices: () =>
+    request<{ success: boolean }>('/auth/logout-all', { method: 'POST', body: JSON.stringify({}) }),
+
+  adminLogoutAllDevices: (userId: string) =>
+    request<{ success: boolean }>(`/users/${userId}/logout-all`, { method: 'POST', body: JSON.stringify({}) }),
+
   getCompany: () => request<any>('/company'),
 
   updateCompany: (data: any) =>
@@ -217,6 +223,8 @@ export const api = {
   },
   adminGetCompany: (id: string) => request<any>(`/admin/companies/${id}`),
   adminListUsers: () => request<{ data: any[] }>('/admin/users'),
+  superAdminLogoutUser: (userId: string) => request<{ success: boolean }>(`/admin/users/${userId}/logout-all`, { method: 'POST', body: JSON.stringify({}) }),
+  superAdminLogoutCompany: (companyId: string) => request<{ success: boolean; count: number; message: string }>(`/admin/companies/${companyId}/logout-all`, { method: 'POST', body: JSON.stringify({}) }),
   adminToggleCompany: (id: string) => request<any>(`/admin/companies/${id}/toggle`, { method: 'PUT' }),
   adminCreateUser: (data: { userName: string; email: string; firstName: string; lastName: string; password: string; companyId: string; isAdmin?: boolean; roleId?: string; phone?: string; department?: string; title?: string }) =>
     request<any>('/admin/users', { method: 'POST', body: JSON.stringify(data) }),
@@ -368,8 +376,9 @@ export const api = {
     request<any>(`/settings/holidays/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteHoliday: (id: string) => request<any>(`/settings/holidays/${id}`, { method: 'DELETE' }),
 
-  getCalendar: (from: string, to: string) =>
-    request<{ data: any[] }>(`/calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+  getCalendar: (from: string, to: string, kind?: 'event' | 'todo') =>
+    request<{ data: any[] }>(`/calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${kind ? `&kind=${kind}` : ''}`),
+  getCalendarUsers: () => request<{ data: any[]; groups: any[] }>('/calendar/users/active'),
   getUpcomingActivities: (limit?: number) =>
     request<{ data: any[] }>(`/calendar/upcoming${limit ? `?limit=${limit}` : ''}`),
   createCalendarActivity: (data: any) =>
@@ -394,7 +403,14 @@ export const api = {
 
   getSystemBackups: () => request<{ config: any; data: any[] }>('/admin/backups'),
   updateSystemBackupConfig: (config: any) => request<{ config: any; message: string }>('/admin/backups/config', { method: 'PUT', body: JSON.stringify(config) }),
-  runSystemBackup: () => request<{ backup: any; message: string }>('/admin/backups/run', { method: 'POST' }),
+  runSystemBackup: async () => {
+    try {
+      return await request<{ backup: any; message: string }>('/admin/backups/run', { method: 'POST' })
+    } catch (error: any) {
+      if (!String(error?.message || '').includes('(404)')) throw error
+      return request<{ backup: any; message: string }>('/admin/backups/create', { method: 'POST' })
+    }
+  },
   emailSystemBackup: (fileName: string, emailTo: string) => request<{ message: string }>(`/admin/backups/${encodeURIComponent(fileName)}/email`, { method: 'POST', body: JSON.stringify({ emailTo }) }),
   downloadSystemBackup: (fileName: string) => openAuthenticatedFile(`/admin/backups/${encodeURIComponent(fileName)}/download`, fileName),
 
@@ -457,7 +473,7 @@ export const api = {
     request<any>(`/settings/sequence-numbers/${moduleName}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   // ---- Tags (company-scoped) ----
-  getTags: () => request<{ data: any[] }>('/settings/tags'),
+  getTags: (params?: { module?: string; recordId?: string; includeAssignments?: string }) => request<{ data: any[] }>(`/settings/tags${params ? `?${new URLSearchParams(params as Record<string, string>)}` : ''}`),
   createTag: (data: any) =>
     request<any>('/settings/tags', { method: 'POST', body: JSON.stringify(data) }),
   updateTag: (id: string, name: string) =>
@@ -692,6 +708,29 @@ export const api = {
   // ---- Presence ----
   heartbeat: () => request<{ ok: boolean }>('/presence/heartbeat', { method: 'POST' }),
   getPresenceUsers: () => request<{ data: any[] }>('/presence'),
+
+  // Dedicated SaaS support (separate from organization chat)
+  supportList: () => request<any>('/support/conversations'),
+  supportCreate: (data: { subject?: string; message?: string }) => request<any>('/support/conversations', { method: 'POST', body: JSON.stringify(data) }),
+  supportGet: (id: string) => request<any>(`/support/conversations/${id}`),
+  supportMessages: (id: string) => request<any>(`/support/conversations/${id}/messages`),
+  supportSend: (id: string, content: string, clientMessageId: string) => request<any>(`/support/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ content, clientMessageId }) }),
+  supportRequestAgent: (id: string, priority = 'NORMAL') => request<any>(`/support/conversations/${id}/request-agent`, { method: 'POST', body: JSON.stringify({ priority }) }),
+  supportRead: (id: string) => request<any>(`/support/conversations/${id}/read`, { method: 'POST' }),
+  supportReopen: (id: string) => request<any>(`/support/conversations/${id}/reopen`, { method: 'POST' }),
+  supportClose: (id: string) => request<any>(`/support/conversations/${id}/close`, { method: 'POST' }),
+  adminSupportList: (params?: Record<string, string>) => request<any>(`/admin/support/conversations${params ? `?${new URLSearchParams(params)}` : ''}`),
+  adminSupportGet: (id: string) => request<any>(`/admin/support/conversations/${id}`),
+  adminSupportMessages: (id: string) => request<any>(`/admin/support/conversations/${id}/messages`),
+  adminSupportClaim: (id: string) => request<any>(`/admin/support/conversations/${id}/claim`, { method: 'POST' }),
+  adminSupportAccept: (id: string) => request<any>(`/admin/support/conversations/${id}/accept`, { method: 'POST' }),
+  adminSupportSend: (id: string, content: string, clientMessageId: string) => request<any>(`/admin/support/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ content, clientMessageId }) }),
+  adminSupportResolve: (id: string) => request<any>(`/admin/support/conversations/${id}/resolve`, { method: 'POST' }),
+  adminSupportPriority: (id: string, priority: string) => request<any>(`/admin/support/conversations/${id}/priority`, { method: 'POST', body: JSON.stringify({ priority }) }),
+  adminSupportTransfer: (id: string, agentId: string, reason = '') => request<any>(`/admin/support/conversations/${id}/transfer`, { method: 'POST', body: JSON.stringify({ agentId, reason }) }),
+  adminSupportReopen: (id: string) => request<any>(`/admin/support/conversations/${id}/reopen`, { method: 'POST' }),
+  adminSupportAgents: () => request<any>('/admin/support/agents'),
+  adminSupportStats: () => request<any>('/admin/support/stats'),
 
   // ---- Portal ----
   registerPortal: (contactId: string, accessCode?: string) =>

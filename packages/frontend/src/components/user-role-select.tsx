@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
-import { Search, X, Check, Users, ShieldCheck } from 'lucide-react'
+import { Search, X, Check, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useQuery } from '@tanstack/react-query'
+import { api } from '@/lib/api'
 
 interface UserRoleSelectProps {
   value: string
   users: any[]
   roles?: any[]
+  groups?: any[]
   onSelect: (value: string) => void
   placeholder?: string
 }
@@ -14,14 +17,23 @@ export function userDisplayName(u: any) {
   return `${u?.firstName || ''} ${u?.lastName || ''}`.trim() || u?.userName || u?.email || 'Unknown'
 }
 
-export function UserRoleSelect({ value, users, roles = [], onSelect, placeholder = 'Search users...' }: UserRoleSelectProps) {
+export function UserRoleSelect({ value, users, roles = [], groups, onSelect, placeholder = 'Search users or groups...' }: UserRoleSelectProps) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
+  const { data: groupsData } = useQuery({
+    queryKey: ['usergroups', 'assignment-picker'],
+    queryFn: () => api.listGroups().catch(() => ({ data: [] })),
+    enabled: groups === undefined,
+    staleTime: 60_000,
+  })
+  const availableGroups = groups ?? groupsData?.data ?? []
+
   const selectedUser = users.find(u => u.id === value)
+  const selectedGroup = availableGroups.find(g => g.id === value)
   const selectedRole = roles.find(r => r.id === value)
-  const selectedName = selectedUser ? userDisplayName(selectedUser) : selectedRole?.name || ''
+  const selectedName = selectedUser ? userDisplayName(selectedUser) : selectedGroup?.name || selectedRole?.name || ''
 
   useEffect(() => {
     if (value === '' && query) setQuery('')
@@ -37,8 +49,8 @@ export function UserRoleSelect({ value, users, roles = [], onSelect, placeholder
 
   const q = query.trim().toLowerCase()
   const filteredUsers = q ? users.filter(u => userDisplayName(u).toLowerCase().includes(q)) : users
-  const filteredRoles = q ? roles.filter(r => (r.name || '').toLowerCase().includes(q)) : roles
-  const hasResults = filteredUsers.length > 0 || filteredRoles.length > 0
+  const filteredGroups = q ? availableGroups.filter(g => (g.name || '').toLowerCase().includes(q)) : availableGroups
+  const hasResults = filteredUsers.length > 0 || filteredGroups.length > 0
 
   function handleSelect(id: string) {
     setQuery('')
@@ -106,26 +118,22 @@ export function UserRoleSelect({ value, users, roles = [], onSelect, placeholder
                   ))}
                 </>
               )}
-              {filteredRoles.length > 0 && (
+              {filteredGroups.length > 0 && (
                 <>
-                  <div className="sticky top-0 flex items-center gap-1 px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide bg-popover text-muted-foreground">
-                    <ShieldCheck size={11} /> Roles
+                  <div className="sticky top-0 flex items-center gap-1 border-t bg-popover px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <Users size={11} /> Groups
                   </div>
-                  {filteredRoles.map((r: any) => (
+                  {filteredGroups.map((g: any) => (
                     <button
                       type="button"
-                      key={r.id}
+                      key={g.id}
                       onMouseDown={e => e.preventDefault()}
-                      onClick={() => handleSelect(r.id)}
-                      className={cn(
-                        'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted',
-                        r.id === value && 'bg-muted/60'
-                      )}
+                      onClick={() => handleSelect(g.id)}
+                      className={cn('flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted', g.id === value && 'bg-primary/10 text-primary')}
                     >
-                      <span className="flex-1 min-w-0">
-                        <span className="block truncate font-medium">{r.name}</span>
-                      </span>
-                      {r.id === value && <Check size={13} className="mt-0.5 text-primary" />}
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300"><Users size={14} /></span>
+                      <span className="min-w-0 flex-1"><span className="block truncate font-medium">{g.name}</span><span className="block text-[11px] text-muted-foreground">{g.members?.length ?? 0} members</span></span>
+                      {g.id === value && <Check size={13} className="text-primary" />}
                     </button>
                   ))}
                 </>

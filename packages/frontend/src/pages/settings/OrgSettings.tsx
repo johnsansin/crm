@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Save, Loader2, KeyRound, ShieldCheck, GitBranch, Globe, Package, ArrowDownUp, Link2 } from 'lucide-react'
-import { TIMEZONES, DATE_FORMATS, LANGUAGES, HOUR_FORMATS } from '@/lib/constants'
+import { TIMEZONES, DATE_FORMATS, LANGUAGES, HOUR_FORMATS, CURRENCY_CATALOG } from '@/lib/constants'
+import { setOrgSettings } from '@/lib/org-format'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
@@ -87,7 +88,16 @@ export function OrgSettings() {
 
   const saveMutation = useMutation({
     mutationFn: (settings: any) => api.updateOrgSettings(settings),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['org-settings'] }); addToast({ title: 'Settings saved', variant: 'success' }) },
+    onSuccess: (_data, saved) => {
+      setOrgSettings({
+        language: saved.language, timezone: saved.timezone, dateFormat: saved.dateFormat,
+        hourFormat: saved.hourFormat, defaultCurrency: saved.defaultCurrency,
+        currencySymbol: saved.currencySymbol, calendar: saved.calendar,
+      })
+      queryClient.invalidateQueries({ queryKey: ['org-settings'] })
+      queryClient.invalidateQueries({ queryKey: ['preferences'] })
+      addToast({ title: 'Settings saved', description: 'Currency and regional formats are now active.', variant: 'success' })
+    },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
@@ -232,13 +242,22 @@ export function OrgSettings() {
                   </select>
                 </Field>
                 <Field label="Default Currency">
-                  <select className={inputCls} value={form.defaultCurrency || 'USD'} onChange={e => setForm((f: any) => ({ ...f, defaultCurrency: e.target.value }))}>
-                    {(currencyData?.data || []).map((c: any) => <option key={c.code} value={c.code}>{c.symbol} {c.code} — {c.name}</option>)}
+                  <select className={inputCls} value={form.defaultCurrency || 'USD'} onChange={e => {
+                    const currency = (currencyData?.data || []).find((c: any) => c.code === e.target.value) || CURRENCY_CATALOG.find(c => c.code === e.target.value)
+                    setForm((f: any) => ({ ...f, defaultCurrency: e.target.value, currencySymbol: currency?.symbol || f.currencySymbol }))
+                  }}>
+                    {(currencyData?.data || []).map((c: any) => <option key={c.code} value={c.code}>{c.symbol} {c.code} — {c.name}{c.isDefault ? ' (Default)' : ''}</option>)}
                   </select>
                 </Field>
                 <Field label="Currency Fallback Symbol">
                   <Input value={form.currencySymbol || '$'} maxLength={8} onChange={e => setForm((f: any) => ({ ...f, currencySymbol: e.target.value }))} />
+                  <p className="mt-1.5 text-xs text-muted-foreground">Used only if the selected ISO currency cannot be formatted by the browser. Valid currencies use their official localized symbol automatically.</p>
                 </Field>
+              </div>
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Currency preview</p>
+                <p className="mt-1 text-2xl font-bold text-primary">{(() => { try { return new Intl.NumberFormat((form.language || 'en_us').replace('_', '-'), { style: 'currency', currency: form.defaultCurrency || 'USD', currencyDisplay: 'narrowSymbol' }).format(123456.78) } catch { return `${form.currencySymbol || '$'}123,456.78` } })()}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Example using {form.defaultCurrency || 'USD'} and the organization locale.</p>
               </div>
               <div>
                 <div className="text-sm font-semibold mb-3">Calendar</div>

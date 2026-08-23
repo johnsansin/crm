@@ -61,6 +61,16 @@ settingsRouter.put('/', requireAdmin, async (req, res, next) => {
   try {
     const body = req.body
     const keys = body && body.settings ? body.settings : body
+    if (keys?.defaultCurrency) {
+      const selected = await prisma.currency.findFirst({ where: { companyId: req.user!.companyId, code: String(keys.defaultCurrency).toUpperCase(), isActive: true } })
+      if (!selected) return res.status(400).json({ error: 'Default currency must be one of the organisation’s active currencies' })
+      await prisma.$transaction([
+        prisma.currency.updateMany({ where: { companyId: req.user!.companyId, isDefault: true }, data: { isDefault: false } }),
+        prisma.currency.update({ where: { id: selected.id }, data: { isDefault: true } }),
+        prisma.company.updateMany({ where: { id: req.user!.companyId! }, data: { defaultCurrency: selected.code } }),
+      ])
+      keys.currencySymbol = selected.symbol
+    }
     for (const key of Object.keys(keys || {})) {
       if (key === 'smtp' && !keys[key]?.pass) {
         const current = await getOrgSetting(req.user!.companyId, 'smtp', {})
@@ -953,7 +963,21 @@ settingsRouter.put('/sequence-numbers/:moduleName', requireAdmin, async (req, re
 // ---- Tags (company-scoped) ----
 settingsRouter.get('/tags', async (req, res, next) => {
   try {
-    const where: any = req.user!.isSuperAdmin ? {} : { companyId: req.user!.companyId }
+    const { module, recordId, includeAssignments } = req.query as { module?: string; recordId?: string; includeAssignments?: string }
+    const where: any = req.user!.isSuperAdmin ? {} : {
+      companyId: req.user!.companyId,
+      OR: [{ isPrivate: false }, { userId: req.user!.userId }],
+    }
+    if (module && recordId) {
+      where.AND = [{ OR: [{ module: null, recordId: null }, { module, recordId }] }]
+    } else if (module) {
+      where.AND = [{ OR: [{ module: null, recordId: null }, { module }] }]
+    } else if (includeAssignments === 'true') {
+      // Return visible definitions and assignments for dashboard usage summaries.
+    } else {
+      where.module = null
+      where.recordId = null
+    }
     const data = await prisma.tag.findMany({ where, orderBy: { createdAt: 'desc' }, take: 500 })
     res.json({ data })
   } catch (err) { next(err) }
@@ -961,11 +985,16 @@ settingsRouter.get('/tags', async (req, res, next) => {
 
 settingsRouter.post('/tags', async (req, res, next) => {
   try {
-    const { name, module, recordId } = req.body
+    const { module, recordId, color, isPrivate, parentTagId } = req.body
+    const name = String(req.body.name || '').trim()
     if (!name) return res.status(400).json({ error: 'name is required' })
-    if ((!module || !recordId) && !req.user!.isAdmin && !req.user!.isSuperAdmin) return res.status(403).json({ error: 'Admin access required to manage organization tags' })
+    if (name.length > 100) return res.status(400).json({ error: 'Tag name must be 100 characters or fewer' })
+    if ((!module || !recordId) && !req.user!.isAdmin && !req.user!.isSuperAdmin && !isPrivate) return res.status(403).json({ error: 'Only private tags can be created by non-admin users' })
+    const companyId = req.user!.isSuperAdmin ? null : req.user!.companyId
+    const duplicate = await prisma.tag.findFirst({ where: { companyId, module: module || null, recordId: recordId || null, name: { equals: name, mode: 'insensitive' } } })
+    if (duplicate) return res.status(409).json({ error: module ? 'This tag is already attached to the record' : 'A tag with this name already exists' })
     const tag = await prisma.tag.create({
-      data: { name, module: module || null, recordId: recordId || null, userId: req.user!.userId, companyId: req.user!.isSuperAdmin ? null : req.user!.companyId },
+      data: { name, color: color || null, isPrivate: !req.user!.isAdmin && !req.user!.isSuperAdmin ? true : Boolean(isPrivate), parentTagId: parentTagId || null, module: module || null, recordId: recordId || null, userId: req.user!.userId, companyId },
     })
     await writeAudit({ moduleName: 'tags', recordId: tag.id, action: 'CREATE', newValue: name, userId: req.user!.userId, req })
     res.status(201).json(tag)
@@ -974,7 +1003,7 @@ settingsRouter.post('/tags', async (req, res, next) => {
 
 settingsRouter.put('/tags/:id', async (req, res, next) => {
   try {
-    const { name } = req.body
+    const name = String(req.body.name || '').trim()
     if (!name) return res.status(400).json({ error: 'name is required' })
     const owned = await prisma.tag.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId } })
     if (!owned) return res.status(404).json({ error: 'Tag not found' })
@@ -983,6 +1012,7 @@ settingsRouter.put('/tags/:id', async (req, res, next) => {
     if (!req.user!.isSuperAdmin) where.companyId = req.user!.companyId
     const tag = await prisma.tag.updateMany({ where, data: { name } })
     if (tag.count === 0) return res.status(404).json({ error: 'Tag not found' })
+    if (!owned.module && !owned.recordId) await prisma.tag.updateMany({ where: { parentTagId: owned.id }, data: { name } })
     await writeAudit({ moduleName: 'tags', recordId: req.params.id, action: 'UPDATE', newValue: name, userId: req.user!.userId, req })
     res.json({ success: true })
   } catch (err) { next(err) }
@@ -992,9 +1022,10 @@ settingsRouter.delete('/tags/:id', async (req, res, next) => {
   try {
     const owned = await prisma.tag.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId } })
     if (!owned) return res.status(404).json({ error: 'Tag not found' })
-    if (!req.user!.isAdmin && !req.user!.isSuperAdmin && (!owned.recordId || owned.userId !== req.user!.userId)) return res.status(403).json({ error: 'Not allowed to delete this tag' })
+    if (!req.user!.isAdmin && !req.user!.isSuperAdmin && !owned.recordId) return res.status(403).json({ error: 'Not allowed to delete this tag' })
     const where: any = { id: req.params.id }
     if (!req.user!.isSuperAdmin) where.companyId = req.user!.companyId
+    if (!owned.module && !owned.recordId) await prisma.tag.deleteMany({ where: { parentTagId: owned.id, ...(!req.user!.isSuperAdmin ? { companyId: req.user!.companyId } : {}) } })
     await prisma.tag.deleteMany({ where })
     await writeAudit({ moduleName: 'tags', recordId: req.params.id, action: 'DELETE', userId: req.user!.userId, req })
     res.json({ success: true })

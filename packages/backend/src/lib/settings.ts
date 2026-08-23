@@ -14,6 +14,11 @@ export const DEFAULT_ORG_SETTINGS: Record<string, any> = {
   leadConfig: { enableLeadConversion: true, defaultLeadStatus: 'New', defaultLeadSource: '', createOnContact: true },
   leadConversionMapping: { account: {}, contact: {}, potential: {} },
   terms: { quote: '', salesOrder: '', invoice: '', purchaseOrder: '' },
+  documentTemplate: {
+    isActive: true,
+    headerText: '', bodyText: '', footerText: 'Thank you for your business.',
+    accentColor: '#2563eb', fontFamily: 'Arial', showLogo: true, showCompanyName: true,
+  },
   language: 'en_us',
   timezone: 'Asia/Karachi',
   dateFormat: 'mm-dd-yyyy',

@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Card, CardContent } from '@/components/ui/card'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { ArrowLeft, Save, Loader2, Mail, Phone, MapPin, Shield, KeyRound, Camera, Smartphone, Unlink } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Mail, Phone, MapPin, Shield, KeyRound, Camera, Smartphone, Unlink, LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { TIMEZONES, LANGUAGES, COUNTRIES, DATE_FORMATS, HOUR_FORMATS } from '@/lib/constants'
 import { useQuery } from '@tanstack/react-query'
@@ -16,6 +17,13 @@ import { t } from '@/lib/i18n'
 import { setOrgSettings } from '@/lib/org-format'
 
 const WEEK_STARTS = ['Sunday', 'Monday']
+const SIDEBAR_COLORS = [
+  { value: 'vtiger', label: 'Vtiger Slate', color: '#2f3b46' },
+  { value: 'navy', label: 'Midnight Navy', color: '#172554' },
+  { value: 'graphite', label: 'Graphite', color: '#27272a' },
+  { value: 'emerald', label: 'Deep Emerald', color: '#064e3b' },
+  { value: 'burgundy', label: 'Burgundy', color: '#581c2d' },
+]
 
 const sectionMeta = {
   personal: { label: t('Personal'), icon: Shield, fields: [
@@ -59,11 +67,13 @@ export function ProfilePage() {
     firstName: '', lastName: '', email: '', phone: '', mobile: '', title: '', department: '',
     addressStreet: '', addressCity: '', addressState: '', addressCountry: '', addressPostalCode: '',
     timezone: '', language: '', dateFormat: '', hourFormat: '', startOfWeek: '', defaultModule: '', currencyCode: '',
-    password: '', avatar: ''
+    password: '', avatar: '', sidebarColor: 'vtiger'
   })
 
   const [pwd, setPwd] = useState({ current: '', next: '' })
   const [pwdBusy, setPwdBusy] = useState(false)
+  const [logoutAllOpen, setLogoutAllOpen] = useState(false)
+  const [logoutAllBusy, setLogoutAllBusy] = useState(false)
   const [twoFa, setTwoFa] = useState({ loading: false, enabled: false, secret: '', otpauthUri: '', setupOpen: false, code: '', disableCode: '' })
   const { data: currencyData } = useQuery({ queryKey: ['currencies'], queryFn: () => api.listAll('currencies').catch(() => ({ data: [] })) })
   const organizationCurrencies = (currencyData?.data || []).map((c: any) => ({ value: c.code, label: `${c.symbol || ''} ${c.code} — ${c.name}`.trim() }))
@@ -91,7 +101,9 @@ export function ProfilePage() {
         throw new Error(err.error || 'Failed to update profile')
       }
       const updated = await res.json()
-      useAuthStore.setState({ user: updated })
+      const savedUser = { ...updated, sidebarColor: form.sidebarColor || 'vtiger' }
+      useAuthStore.setState({ user: savedUser })
+      if (savedUser.id) localStorage.setItem(`sidebar-color:${savedUser.id}`, savedUser.sidebarColor)
       setOrgSettings({
         language: updated.language,
         timezone: updated.timezone,
@@ -159,7 +171,27 @@ export function ProfilePage() {
     }
   }
 
+  const logoutAllDevices = async () => {
+    setLogoutAllBusy(true)
+    try {
+      await api.logoutAllDevices()
+      localStorage.removeItem('token')
+      useAuthStore.setState({ token: null, user: null })
+      navigate('/login', { replace: true })
+    } catch (err: any) {
+      addToast({ title: 'Could not log out devices', description: err.message, variant: 'destructive' })
+      setLogoutAllOpen(false)
+    } finally {
+      setLogoutAllBusy(false)
+    }
+  }
+
   const handleChange = (field: string, value: string) => setForm((f: any) => ({ ...f, [field]: value }))
+  const selectSidebarColor = (value: string) => {
+    handleChange('sidebarColor', value)
+    if (user?.id) localStorage.setItem(`sidebar-color:${user.id}`, value)
+    useAuthStore.setState({ user: { ...user, sidebarColor: value } })
+  }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -268,6 +300,19 @@ export function ProfilePage() {
                       </div>
                     ))}
                   </div>
+                  {key === 'preferences' && (
+                    <div className="md:col-span-2">
+                      <label className="mb-2 block text-sm font-medium">Sidebar colour</label>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                        {SIDEBAR_COLORS.map(option => (
+                          <button key={option.value} type="button" onClick={() => selectSidebarColor(option.value)} className={`rounded-xl border-2 p-2 text-left transition-all ${form.sidebarColor === option.value ? 'border-primary ring-2 ring-primary/15' : 'border-border hover:border-primary/40'}`}>
+                            <span className="mb-2 block h-9 rounded-lg" style={{ backgroundColor: option.color }} />
+                            <span className="block text-[11px] font-semibold">{option.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </TabsContent>
               ))}
               <TabsContent value="security" className="px-6 pb-6">
@@ -338,6 +383,19 @@ export function ProfilePage() {
                       </Button>
                     )}
                   </div>
+
+                  <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="flex items-center gap-2 text-sm font-semibold"><LogOut size={16} className="text-destructive" /> Log out from all devices</h3>
+                        <p className="mt-1 text-xs text-muted-foreground">Immediately ends every active session, including this browser. You will need to sign in again.</p>
+                      </div>
+                      <Button type="button" variant="destructive" onClick={() => setLogoutAllOpen(true)} disabled={logoutAllBusy} className="shrink-0">
+                        {logoutAllBusy ? <Loader2 size={16} className="mr-2 animate-spin" /> : <LogOut size={16} className="mr-2" />}
+                        Log out all devices
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
             </TabsRoot>
@@ -352,6 +410,16 @@ export function ProfilePage() {
           </Button>
         </div>
       </form>
+
+      <ConfirmDialog
+        open={logoutAllOpen}
+        onOpenChange={setLogoutAllOpen}
+        onConfirm={logoutAllDevices}
+        title="Log out from all devices?"
+        description="All active sessions for your account will end immediately, including this one. You will need to sign in again on every device."
+        confirmLabel="Log out all devices"
+        variant="destructive"
+      />
 
       <div className="mt-6 pt-6 border-t">
         <Button

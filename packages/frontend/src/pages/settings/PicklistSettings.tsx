@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ListChecks, FormInput, LayoutGrid, Plus, Pencil, Trash2, ArrowUp, ArrowDown, Loader2, Save, Eye, EyeOff } from 'lucide-react'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
@@ -128,16 +129,20 @@ function PicklistEditor() {
         <CardContent className="p-4 grid md:grid-cols-3 gap-3">
           <div>
             <label className="text-sm font-medium block mb-1.5">Module</label>
-            <select className={inputCls} value={moduleName} onChange={e => { setModuleName(e.target.value); setCustomField(''); setFieldName((PICKLIST_FIELDS[e.target.value] || [{ field: '' }])[0]?.field || '') }}>
-              {MODULES.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
-            </select>
+            <Select value={moduleName} onValueChange={value => { setModuleName(value); setCustomField(''); setFieldName((PICKLIST_FIELDS[value] || [{ field: '' }])[0]?.field || '') }}>
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>{MODULES.map(m => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
           <div>
             <label className="text-sm font-medium block mb-1.5">Field</label>
-            <select className={inputCls} value={customField ? '__custom__' : fieldName} onChange={e => { if (e.target.value === '__custom__') setCustomField('cf_custom_picklist'); else { setCustomField(''); setFieldName(e.target.value) } }}>
-              {(PICKLIST_FIELDS[moduleName] || []).map(f => <option key={f.field} value={f.field}>{f.label}</option>)}
-              <option value="__custom__">Other field…</option>
-            </select>
+            <Select value={customField ? '__custom__' : fieldName} onValueChange={value => { if (value === '__custom__') setCustomField('cf_custom_picklist'); else { setCustomField(''); setFieldName(value) } }}>
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(PICKLIST_FIELDS[moduleName] || []).map(f => <SelectItem key={f.field} value={f.field}>{f.label}</SelectItem>)}
+                <SelectItem value="__custom__">Other field…</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           {customField && (
             <div>
@@ -254,9 +259,10 @@ function CustomFieldManager() {
         <CardContent className="p-4 flex flex-col md:flex-row md:items-end gap-3">
           <div className="flex-1">
             <label className="text-sm font-medium block mb-1.5">Module</label>
-            <select className={inputCls} value={moduleName} onChange={e => setModuleName(e.target.value)}>
-              {MODULES.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
-            </select>
+            <Select value={moduleName} onValueChange={setModuleName}>
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>{MODULES.map(m => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
           <Button onClick={() => { setEditId(null); setForm({ label: '', type: 'text', options: '', isRequired: false }); setShowForm(true) }}>
             <Plus size={16} className="mr-2" /> New Field
@@ -310,9 +316,10 @@ function CustomFieldManager() {
             </div>
             <div>
               <label className="text-sm font-medium block mb-1.5">Type *</label>
-              <select className={inputCls} value={form.type} onChange={e => setForm((f: any) => ({ ...f, type: e.target.value }))}>
-                {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+              <Select value={form.type} onValueChange={value => setForm((f: any) => ({ ...f, type: value }))}>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>{FIELD_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
             {['picklist', 'multiselect'].includes(form.type) && (
               <div>

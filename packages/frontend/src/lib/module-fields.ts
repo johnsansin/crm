@@ -560,4 +560,18 @@ export const fieldConfigs: Record<string, ModuleField[]> = {
     { name: 'reference', type: 'text' },
     { name: 'notes', type: 'textarea' },
   ],
+  stageprobability: [
+    { name: 'stageName', type: 'text', required: true },
+    { name: 'probability', type: 'number', required: true },
+    { name: 'sequence', type: 'number' },
+    { name: 'color', type: 'color' },
+    { name: 'isActive', type: 'checkbox' },
+  ],
+  quantitydiscounts: [
+    { name: 'productId', type: 'product-select', required: true },
+    { name: 'minQty', type: 'number', required: true },
+    { name: 'maxQty', type: 'number' },
+    { name: 'discountPercent', type: 'number', required: true },
+    { name: 'isActive', type: 'checkbox' },
+  ],
 }

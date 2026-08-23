@@ -32,7 +32,7 @@ export function LoginPage() {
         return
       }
       const u = useAuthStore.getState().user
-      navigate(u?.isSuperAdmin ? '/superadmin' : '/dashboard')
+      navigate(u?.isSuperAdmin ? '/superadmin' : u?.isAgent ? '/support-agent' : '/dashboard')
     } catch (err: any) {
       setError(err.message || 'Login failed')
       setLoading(false)
@@ -50,7 +50,7 @@ export function LoginPage() {
     try {
       await login2fa(twoFactorChallenge, code)
       const u = useAuthStore.getState().user
-      navigate(u?.isSuperAdmin ? '/superadmin' : '/dashboard')
+      navigate(u?.isSuperAdmin ? '/superadmin' : u?.isAgent ? '/support-agent' : '/dashboard')
     } catch (err: any) {
       setError(err.message || 'Verification failed')
       setLoading(false)
@@ -59,32 +59,32 @@ export function LoginPage() {
 
   return (
     <SiteLayout>
-      <section className="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 py-24 px-4">
+      <section className="relative flex min-h-[calc(100dvh-4rem)] items-center justify-center overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 px-3 pb-6 pt-20 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 sm:px-4 sm:py-24">
         {/* Decorative glossy blobs */}
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-gradient-to-br from-sky-300/50 to-blue-400/40 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -right-24 w-[28rem] h-[28rem] rounded-full bg-gradient-to-tl from-indigo-400/40 to-violet-300/40 blur-3xl pointer-events-none" />
         <div className="absolute top-1/3 right-10 w-40 h-40 rounded-full bg-gradient-to-b from-white/60 to-sky-200/40 blur-2xl pointer-events-none" />
 
-        <div className="relative w-full max-w-md">
+        <div className="relative w-full min-w-0 max-w-md">
         {/* Glossy card */}
-        <div className="overflow-hidden rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl shadow-sky-200/50 dark:shadow-indigo-950/60 border border-white/70 dark:border-white/10">
+        <div className="overflow-hidden rounded-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl shadow-sky-200/50 dark:shadow-indigo-950/60 border border-white/70 dark:border-white/10 sm:rounded-2xl sm:shadow-2xl">
           {/* Glossy header */}
-          <div className="relative bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 px-6 py-8 overflow-hidden">
+          <div className="relative bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 px-4 py-5 overflow-hidden sm:px-6 sm:py-8">
             {/* Shine sweep */}
             <div className="absolute inset-0 bg-gradient-to-b from-white/35 via-white/10 to-transparent" />
             <div className="absolute -top-1/2 left-1/4 w-1/2 h-[200%] rotate-12 bg-gradient-to-b from-white/25 to-transparent" />
             <div className="relative flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-white/30 to-white/5 border border-white/40 flex items-center justify-center shadow-lg shadow-blue-900/30 mb-4 relative overflow-hidden">
+              <div className="relative mb-3 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/40 bg-gradient-to-br from-white/30 to-white/5 shadow-lg shadow-blue-900/30 sm:mb-4 sm:h-16 sm:w-16 sm:rounded-2xl">
                 <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-transparent" />
                 <span className="relative text-white font-extrabold text-2xl">B</span>
               </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight drop-shadow-sm">Welcome back</h1>
+              <h1 className="text-xl font-bold text-white tracking-tight drop-shadow-sm sm:text-2xl">Welcome back</h1>
               <p className="text-sm text-blue-100 mt-1">Sign in to your BizForce account</p>
             </div>
           </div>
 
           {/* Form body */}
-          <div className="p-6 md:p-8">
+          <div className="p-4 sm:p-6 md:p-8">
             {twoFactorChallenge ? (
               <form onSubmit={handle2fa} className="space-y-4">
                 {error && (

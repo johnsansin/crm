@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { useOrgSettings, formatDate, formatDateTime } from '@/lib/org-format'
 import { cn } from '@/lib/utils'
@@ -87,6 +87,12 @@ export function DateField({ value, onChange, className, disabled, placeholder, m
   const [text, setText] = useState(value ? formatDate(value) : '')
   const iso = value ? String(value).slice(0, 10) : ''
 
+  // Preferences arrive asynchronously after the application shell mounts.
+  // Re-render the visible value when either the record or inherited format changes.
+  useEffect(() => {
+    setText(iso ? formatDate(iso) : '')
+  }, [iso, dateFormat])
+
   const handleChange = (t: string) => {
     setText(t)
     const parsed = parseDateText(t, dateFormat)
@@ -148,6 +154,10 @@ export function DateTimeField({ value, onChange, className, disabled }: {
   const pickerRef = useRef<HTMLInputElement>(null)
   const [text, setText] = useState(value ? formatDateTime(value) : '')
   const localVal = value ? (String(value).includes('T') ? String(value).slice(0, 16) : '') : ''
+
+  useEffect(() => {
+    setText(value ? formatDateTime(value) : '')
+  }, [value, dateFormat])
 
   const handleChange = (t: string) => {
     setText(t)

@@ -13,6 +13,8 @@ import { Share2, UserCog, Plus, Pencil, Trash2, Loader2, CheckCircle2, Save } fr
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
 const MODULES = [
+  { key: 'dashboard', label: 'Dashboards' }, { key: 'calendar', label: 'Calendar' }, { key: 'forecast', label: 'Forecasting' },
+  { key: 'reports', label: 'Reports' }, { key: 'activities', label: 'To-Dos & Activities' }, { key: 'ai', label: 'AI Assistant' },
   { key: 'accounts', label: 'Accounts' }, { key: 'contacts', label: 'Contacts' }, { key: 'leads', label: 'Leads' },
   { key: 'potentials', label: 'Potentials' }, { key: 'campaigns', label: 'Campaigns' }, { key: 'products', label: 'Products' },
   { key: 'services', label: 'Services' }, { key: 'vendors', label: 'Vendors' }, { key: 'pricebooks', label: 'Price Books' },

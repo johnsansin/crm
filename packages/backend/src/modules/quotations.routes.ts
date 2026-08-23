@@ -2,7 +2,9 @@ import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { requireModulePermission } from '../lib/module-permissions'
-import { renderReport, escapeHtml } from './report'
+import { renderReport, escapeHtml, resolveReportLogo } from './report'
+import { getOrgSetting } from '../lib/settings'
+import { sendMail, getSmtpConfig } from '../lib/mailer'
 
 export const quotationsRouter = Router()
 
@@ -393,12 +395,14 @@ quotationsRouter.get('/:id/pdf', async (req, res, next) => {
     })
     if (!quote) return res.status(404).json({ error: 'Not found' })
 
-    const [company, user] = await Promise.all([
+    const [company, user, template] = await Promise.all([
       req.user!.companyId ? prisma.company.findUnique({ where: { id: req.user!.companyId } }) : null,
       prisma.user.findUnique({ where: { id: req.user!.userId } }),
+      getOrgSetting(req.user!.companyId, 'documentTemplate', {}),
     ])
 
     const companyName = company?.name || 'BizForce CRM'
+    const logoUrl = await resolveReportLogo(company?.logo)
     const companyAddress = [company?.addressStreet, [company?.addressCity, company?.addressState].filter(Boolean).join(', '), company?.addressCountry, company?.addressPostalCode].filter(Boolean).map(escapeHtml).join('<br>')
     const preparedBy = user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.userName || user.email : req.user!.email
 
@@ -439,6 +443,8 @@ quotationsRouter.get('/:id/pdf', async (req, res, next) => {
         quote.terms ? `<div class="section"><span class="label">Terms &amp; Conditions:</span><p>${escapeHtml(quote.terms)}</p></div>` : '',
         quote.description ? `<div class="section"><span class="label">Description:</span><p>${escapeHtml(quote.description)}</p></div>` : '',
       ],
+      logoUrl,
+      template,
     })
 
     res.setHeader('Content-Type', 'text/html')
@@ -460,11 +466,10 @@ quotationsRouter.post('/:id/email', async (req, res, next) => {
     const to = req.body.to || ''
     const subject = `Quotation: ${quote.quoteNo || quote.subject}`
     const pdfLink = `/api/quotations/${quote.id}/pdf`
-    const text = `Dear Customer,\n\nPlease find attached quotation ${quote.quoteNo || ''} for ${quote.subject}.\n\nTotal Amount: ${Number(quote.grandTotal || 0).toFixed(2)} ${quote.currency || ''}\n\nYou can view the quotation PDF at: ${pdfLink}\n\nThank you,\n${companyName}`
-
-    // Email sending placeholder — logs to console with the PDF attachment link
-    console.log(`[EMAIL] To: ${to}, Subject: ${subject}, Body: ${text}`)
-    console.log(`[EMAIL] PDF attachment ready: ${pdfLink}`)
-    res.json({ message: 'Email sent successfully (logged to console; PDF attached)', to, subject, pdfLink })
+    const includePdf = req.body.attachPdf !== false
+    const text = `Dear Customer,\n\nQuotation ${quote.quoteNo || ''}: ${quote.subject}.\n\nTotal Amount: ${Number(quote.grandTotal || 0).toFixed(2)} ${quote.currency || ''}${includePdf ? `\n\nView / save the PDF: ${req.protocol}://${req.get('host')}${pdfLink}` : ''}\n\nThank you,\n${companyName}`
+    const result = await sendMail({ to, subject, text, fromOverride: await getSmtpConfig(req.user!.companyId) })
+    if (!result.delivered) return res.status(502).json({ error: result.error || 'Email could not be delivered' })
+    res.json({ message: 'Email sent successfully', to, subject, pdfLink: includePdf ? pdfLink : null })
   } catch (err) { next(err) }
 })

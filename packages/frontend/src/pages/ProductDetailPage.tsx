@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { useAuthStore } from '@/lib/auth'
 import { useToast } from '@/lib/toast'
 import { formatMoney, formatDate } from '@/lib/org-format'
 import { DateField } from '@/components/ui/date-field'
@@ -246,6 +247,7 @@ const SPAN_CLASS: Record<number, string> = {
 const ALL_FIELDS: FieldDef[] = [...DETAIL_FIELDS, ...STOCK_FIELDS, ...PRICE_FIELDS]
 
 export function ProductDetailPage() {
+  const { user } = useAuthStore()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -260,6 +262,7 @@ export function ProductDetailPage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const draftKey = `crm:draft:${user?.companyId || 'company'}:${user?.id || 'user'}:products:new`
 
   const { data: record, isLoading } = useQuery({
     queryKey: ['products', id],
@@ -292,13 +295,21 @@ export function ProductDetailPage() {
         ? record.images.map((i: any) => ({ url: i.imageUrl, isDefault: !!i.isDefault }))
         : []
       setDraft({ ...defaultDraft, ...record, images })
+    } else if (isNew) {
+      const saved = localStorage.getItem(draftKey)
+      if (saved) try { setDraft({ ...defaultDraft, ...JSON.parse(saved) }) } catch {}
     }
-  }, [record])
+  }, [record, isNew])
+
+  useEffect(() => {
+    if (isNew) localStorage.setItem(draftKey, JSON.stringify(draft))
+  }, [draft, isNew])
 
   const saveMutation = useMutation({
     mutationFn: (payload: Partial<ProductRecord>) =>
       isNew ? api.create('products', payload) : api.update('products', id as string, payload),
     onSuccess: (saved: any) => {
+      if (isNew) localStorage.removeItem(draftKey)
       queryClient.invalidateQueries({ queryKey: ['products'] })
       addToast({ title: isNew ? 'Product created' : 'Product updated', variant: 'success' })
       navigate(`/products/${saved.id}`, { replace: true })

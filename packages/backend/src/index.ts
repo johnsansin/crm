@@ -9,9 +9,10 @@ try {
   ;(net as any).setDefaultAutoSelectFamily?.(false)
 } catch { /* older runtime */ }
 import express from 'express'
+import http from 'node:http'
 import cors from 'cors'
 import helmet from 'helmet'
-import rateLimit from 'express-rate-limit'
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
 import path from 'path'
 import { authRouter } from './auth/auth.routes'
 import { entityRouter } from './modules/entity.routes'
@@ -45,13 +46,19 @@ import { webhooksRouter, incomingWebhookRouter } from './modules/webhooks.routes
 import { i18nRouter } from './modules/i18n.routes'
 import { portalRouter } from './modules/portal.routes'
 import { aiRouter } from './modules/ai.routes'
+import { supportRouter, adminSupportRouter } from './modules/support.routes'
 import { errorHandler } from './middleware/errorHandler'
 import { setupModules, getModuleConfig } from './modules/moduleSetup'
 import { startCron } from './lib/cron'
 import { prisma } from './lib/prisma'
 import { PERMISSION_MODULES } from './lib/module-permissions'
+import { setupSupportWebSocket } from './lib/support-websocket'
+import { authMiddleware } from './middleware/auth'
 
 const app = express()
+// Nginx is the single trusted reverse proxy. This keeps rate limiting keyed to
+// the real client address without trusting arbitrary forwarded-hop chains.
+app.set('trust proxy', 1)
 const PORT = process.env.PORT || 3000
 const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map(v => v.trim()).filter(Boolean)
 const isProduction = process.env.NODE_ENV === 'production'
@@ -61,7 +68,26 @@ app.use(cors({ origin: isProduction ? corsOrigins : true }))
 app.use(express.json({ limit: '15mb' }))
 app.use(express.urlencoded({ extended: true, limit: '15mb' }))
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 600, standardHeaders: 'draft-7', legacyHeaders: false }))
-app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false }))
+// Authentication traffic can originate from many users behind the same office/NAT
+// address. Scope login protection by client + account instead of blocking the
+// entire organisation after twenty combined auth requests.
+app.use('/api/auth/login', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 12,
+  skipSuccessfulRequests: true,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator: req => `${ipKeyGenerator(req.ip || '')}:${String(req.body?.email || req.body?.challenge || 'unknown').trim().toLowerCase()}`,
+  handler: (_req, res) => res.status(429).json({ error: 'Too many unsuccessful sign-in attempts for this account. Please wait a few minutes and try again.' }),
+}))
+app.use('/api/auth', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  skipSuccessfulRequests: true,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({ error: 'Too many unsuccessful authentication requests. Please wait a few minutes and try again.' }),
+}))
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
@@ -79,6 +105,17 @@ app.post('/api/contact', (req, res) => {
 })
 
 app.use('/api/auth', authRouter)
+// Support agents are platform staff, not CRM tenant users. Even if an agent was
+// accidentally linked to a company, their token is restricted to support-only APIs.
+app.use('/api', (req, res, next) => {
+  if (!req.headers.authorization) return next()
+  authMiddleware(req, res, () => {
+    if (!req.user?.isAgent || req.user.isSuperAdmin) return next()
+    const allowed = ['/support', '/admin/support', '/presence', '/settings/notifications']
+    if (allowed.some(prefix => req.path === prefix || req.path.startsWith(`${prefix}/`))) return next()
+    return res.status(403).json({ error: 'Support agents can only access the Support Workspace' })
+  })
+})
 app.use('/api', extrasRouter)
 app.use('/api/pbx', pbxRouter)
 app.use('/api/users', userRouter)
@@ -111,6 +148,8 @@ app.use('/api/webhooks', incomingWebhookRouter)
 app.use('/api/i18n', i18nRouter)
 app.use('/api/portal', portalRouter)
 app.use('/api/ai', aiRouter)
+app.use('/api/support', supportRouter)
+app.use('/api/admin/support', adminSupportRouter)
 // Legacy backup files may exist under uploads/backups. Never expose database dumps publicly.
 app.use('/uploads/backups', (_req, res) => res.status(404).json({ error: 'Not found' }))
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads'), {
@@ -167,7 +206,9 @@ for (const mod of moduleNames) {
 
 app.use(errorHandler)
 
-app.listen(PORT, () => {
+const server = http.createServer(app)
+setupSupportWebSocket(server)
+server.listen(PORT, () => {
   console.log(`BizForce CRM Backend running on port ${PORT}`)
   seedModules()
   startCron()

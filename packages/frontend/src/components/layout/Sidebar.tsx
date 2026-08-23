@@ -10,10 +10,11 @@ import {
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, Menu, X,
   ChevronDown, LogOut, Shield, CalendarDays, CreditCard, Repeat, Phone,
   BarChart3, Inbox, Rss, Trash2, LineChart, Zap, Send, MessageCircle,
-  Globe, Share2, Webhook, Sparkles, UserCog
+  Globe, Share2, Webhook, Sparkles, UserCog, Tag
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { t } from '@/lib/i18n'
+import { useViewableModules } from '@/lib/permissions'
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard, Building2, Users, UserPlus, TrendingUp, Megaphone, Swords,
@@ -21,7 +22,7 @@ const iconMap: Record<string, React.ElementType> = {
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, CalendarDays,
   CreditCard, Repeat, Phone, BarChart3, Inbox, Rss, Trash2, LineChart, Zap,
-  Send, MessageCircle, Globe, Share2, Webhook, Sparkles, UserCog
+  Send, MessageCircle, Globe, Share2, Webhook, Sparkles, UserCog, Tag
 }
 
 const GROUP_ORDER = ['Marketing', 'Sales', 'Inventory', 'Purchasing', 'Support', 'Projects', 'Tools']
@@ -117,6 +118,9 @@ function buildGroups(modules: any[] | null) {
   if (!byGroup['Tools']?.some((m: any) => m.module === 'trash')) {
     byGroup['Tools'] = [...(byGroup['Tools'] || []), { module: 'trash', label: 'Recycle Bin', icon: 'Trash2' }]
   }
+  if (!byGroup['Tools']?.some((m: any) => m.module === 'tags')) {
+    byGroup['Tools'] = [...(byGroup['Tools'] || []), { module: 'tags', label: 'Tags', icon: 'Tag' }]
+  }
   const groups: string[] = []
   for (const g of GROUP_ORDER) if (byGroup[g]) groups.push(g)
   for (const g of Object.keys(byGroup)) if (!groups.includes(g)) groups.push(g)
@@ -129,10 +133,21 @@ function buildGroups(modules: any[] | null) {
     .filter(g => g.items.length > 0)
 }
 
-export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { collapsed: boolean; onToggle: () => void; mobileOpen: boolean; onMobileClose: () => void }) {
+export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, onHoverChange }: { collapsed: boolean; onToggle: () => void; mobileOpen: boolean; onMobileClose: () => void; onHoverChange?: (hovered: boolean) => void }) {
   const location = useLocation()
   const currentModule = location.pathname.split('/')[1]
   const { user, logout } = useAuthStore()
+  const viewable = useViewableModules()
+  const canOpen = (module: string) => !!user?.isAdmin || !!user?.isSuperAdmin || viewable.has(module)
+  const sidebarPalette: Record<string, { background: string; border: string }> = {
+    vtiger: { background: '#2f3b46', border: '#42515d' },
+    navy: { background: '#172554', border: '#1e3a8a' },
+    graphite: { background: '#27272a', border: '#3f3f46' },
+    emerald: { background: '#064e3b', border: '#047857' },
+    burgundy: { background: '#581c2d', border: '#7f1d3f' },
+  }
+  const storedPalette = user?.id ? localStorage.getItem(`sidebar-color:${user.id}`) : null
+  const palette = sidebarPalette[storedPalette || user?.sidebarColor || 'vtiger'] || sidebarPalette.vtiger
   const [menuModules, setMenuModules] = useState<any[] | null>(null)
 
   useEffect(() => {
@@ -149,10 +164,24 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
     return () => window.removeEventListener('crm-menu-updated', refresh)
   }, [])
 
+  useEffect(() => {
+    if (!mobileOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onMobileClose()
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [mobileOpen, onMobileClose])
+
   const menuGroups = buildGroups(menuModules)
 
   const activeGroup = currentModule ? moduleToGroup[currentModule] || '' : ''
-  const [expandedGroup, setExpandedGroup] = useState(activeGroup || '')
+  const [expandedGroup, setExpandedGroup] = useState(activeGroup || 'Sales')
 
   useEffect(() => {
     if (activeGroup) setExpandedGroup(activeGroup)
@@ -162,102 +191,110 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
     <>
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-black/50 transition-opacity md:hidden',
+          'fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-sm transition-opacity duration-300 md:hidden',
           mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
         onClick={onMobileClose}
       />
       <aside
+        data-crm-sidebar
+        onMouseEnter={() => onHoverChange?.(true)}
+        onMouseLeave={() => onHoverChange?.(false)}
+        style={{ backgroundColor: palette.background, borderColor: palette.border }}
         className={cn(
-          'fixed left-0 top-0 z-50 h-screen bg-sidebar text-sidebar-foreground transition-all duration-300 flex flex-col',
-          'w-64',
+          'fixed left-0 top-0 z-50 flex h-screen min-h-[100dvh] flex-col overflow-hidden border-r text-sidebar-foreground shadow-2xl shadow-slate-950/50 transition-all duration-300',
+          'w-[min(92vw,20rem)] max-w-full md:w-64',
           collapsed && 'md:w-16',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
           'md:translate-x-0 md:z-40'
         )}
       >
-        <div className="flex items-center justify-between h-16 px-5 border-b border-sidebar-hover/50 shrink-0" data-tour="sidebar-logo">
-          <span className={cn('font-extrabold text-xl text-white tracking-tight', collapsed && 'md:hidden')}>BizForce</span>
-          <span className={cn('font-extrabold text-xl text-white tracking-tight hidden', collapsed && 'md:block')}>BF</span>
+        <div className="crm-sidebar-header relative flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-[max(1rem,env(safe-area-inset-left))]" data-tour="sidebar-logo">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/[0.04] to-transparent" />
+          <div className={cn('relative flex items-center gap-3', collapsed && 'md:mx-auto')}>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#2fa6a6] text-sm font-black text-white shadow-lg shadow-black/25 ring-1 ring-white/15">B</span>
+            <div className={cn('min-w-0', collapsed && 'md:hidden')}>
+              <span className="block text-base font-extrabold tracking-tight text-white">BizForce</span>
+              <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9cabb5]">Smart CRM</span>
+            </div>
+          </div>
           <button
             onClick={() => {
               if (window.innerWidth < 768) { onMobileClose() } else { onToggle() }
             }}
-            className="p-1 rounded hover:bg-sidebar-hover text-sidebar-foreground"
+            aria-label={collapsed ? t('Expand menu') : t('Collapse menu')}
+            className={cn('relative grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-white/5 text-slate-400 transition-all hover:bg-white/10 hover:text-white', collapsed && 'md:absolute md:-right-4 md:top-20 md:z-10 md:rounded-full md:bg-slate-800 md:shadow-lg')}
           >
             <X size={20} className="md:hidden" />
             {collapsed ? <Menu size={20} className="hidden md:block" /> : <X size={20} className="hidden md:block" />}
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5 scrollbar-hidden">
-          <NavItem module="" label={t('Dashboard')} icon="LayoutDashboard" collapsed={collapsed} dataTour="dashboard" />
-          <NavItem module="calendar" label={t('Calendar')} icon="CalendarDays" collapsed={collapsed} dataTour="calendar" />
-          <NavItem module="chat" label={t('Chat')} icon="MessageSquare" collapsed={collapsed} />
-          <NavItem module="forecast" label={t('Forecasting')} icon="LineChart" collapsed={collapsed} />
-          <NavItem module="reports" label={t('Reports')} icon="BarChart3" collapsed={collapsed} />
-          <NavItem module="ai-assistant" label={t('AI Assistant')} icon="Sparkles" collapsed={collapsed} dataTour="ai-assistant" />
-
-          <div className="pt-2 pb-1">
-            <div className="h-px bg-gradient-to-r from-transparent via-sidebar-hover to-transparent mx-1" />
+        <div className="crm-sidebar-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto overscroll-contain px-2.5 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className={cn(collapsed && 'md:hidden')}>
+            <div className="mb-2 flex items-center justify-between px-1">
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">{t('Quick access')}</p>
+              <span className="rounded-full bg-[#26323b] px-2 py-0.5 text-[9px] font-semibold text-[#aebbc4]">5 apps</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {canOpen('dashboard') && <NavItem module="" label={t('Dashboards')} icon="LayoutDashboard" collapsed={collapsed} dataTour="dashboard" onNavigate={onMobileClose} tile />}
+              {canOpen('calendar') && <NavItem module="calendar" label={t('Calendar')} icon="CalendarDays" collapsed={collapsed} dataTour="calendar" onNavigate={onMobileClose} tile />}
+              {canOpen('forecast') && <NavItem module="forecast" label={t('Forecasting')} icon="LineChart" collapsed={collapsed} onNavigate={onMobileClose} tile />}
+              {canOpen('reports') && <NavItem module="reports" label={t('Reports')} icon="BarChart3" collapsed={collapsed} onNavigate={onMobileClose} tile />}
+              {canOpen('calendar') && <NavItem module="activities" label={t('To-Dos')} icon="CheckSquare" collapsed={collapsed} onNavigate={onMobileClose} tile />}
+              {canOpen('ai') && <NavItem module="ai-assistant" label={t('AI Assistant')} icon="Sparkles" collapsed={collapsed} dataTour="ai-assistant" onNavigate={onMobileClose} tile />}
+            </div>
           </div>
 
-          <div data-tour="modules">
-          {menuGroups.map((group) => {
-            const isExpanded = collapsed ? false : expandedGroup === group.label
-            return (
-              <div key={group.label}>
-                <button
-                  onClick={() => setExpandedGroup(isExpanded ? '' : group.label)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-hover/50 transition-colors"
-                >
-                  <span className={cn(collapsed && 'md:hidden')}>{t(group.label)}</span>
-                  <ChevronDown
-                    size={14}
-                    className={cn(
-                      'transition-transform duration-200 shrink-0',
-                      collapsed && 'md:hidden',
-                      isExpanded && 'rotate-180'
-                    )}
-                  />
+          <div className={cn('min-h-0 flex-1', collapsed && 'md:hidden')} data-tour="modules">
+            <p className="mb-2 px-1 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">{t('Modules')}</p>
+            <div className="crm-sidebar-groups grid grid-cols-4 gap-1 rounded-lg border border-white/[0.07] bg-[#293640] p-1 shadow-inner max-[380px]:grid-cols-3">
+              {menuGroups.map(group => {
+                const selected = expandedGroup === group.label
+                return <button key={group.label} type="button" onClick={() => setExpandedGroup(group.label)} title={t(group.label)} className={cn('relative min-w-0 rounded-md border px-1 py-2 text-[9px] font-bold leading-tight transition-all', selected ? 'border-[#48aaaa]/35 bg-[#3b4a55] text-white shadow-sm' : 'border-transparent text-[#a7b3bc] hover:bg-[#35434e] hover:text-white')}>
+                  {selected && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#45b8b8]" />}
+                  <span className="block truncate">{t(group.label)}</span>
                 </button>
-                <div
-                  className={cn(
-                    'overflow-hidden transition-all duration-200',
-                    isExpanded || collapsed ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-                  )}
-                >
-                  <div className="space-y-0.5 mt-0.5">
-                    {group.items.map((item) => (
-                      <NavItem
-                        key={item.module}
-                        module={item.module}
-                        label={t(item.label)}
-                        icon={item.icon}
-                        collapsed={collapsed}
-                      />
-                    ))}
-                  </div>
-                </div>
+              })}
+            </div>
+
+            <div className="mt-2 rounded-lg border border-white/[0.07] bg-[#293640] p-1.5 shadow-inner shadow-black/15">
+              <div className="mb-1.5 flex items-center gap-2 px-1.5 py-1">
+                <span className="h-2 w-2 rounded-full bg-[#45b8b8]" />
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#dce4e9]">{t(expandedGroup)}</p>
               </div>
-            )
-          })}
+              <div className="crm-sidebar-items grid grid-cols-2 gap-1 max-[340px]:grid-cols-1">
+                {(menuGroups.find(group => group.label === expandedGroup)?.items || menuGroups[0]?.items || []).map(item => (
+                  <NavItem key={item.module} module={item.module} label={t(item.label)} icon={item.icon} collapsed={collapsed} onNavigate={onMobileClose} compact />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className={cn('hidden flex-col gap-1 md:flex', !collapsed && 'md:hidden')}>
+            {canOpen('dashboard') && <NavItem module="" label={t('Dashboards')} icon="LayoutDashboard" collapsed={collapsed} dataTour="dashboard" />}
+            {canOpen('calendar') && <NavItem module="calendar" label={t('Calendar')} icon="CalendarDays" collapsed={collapsed} />}
+            {canOpen('forecast') && <NavItem module="forecast" label={t('Forecasting')} icon="LineChart" collapsed={collapsed} />}
+            {canOpen('reports') && <NavItem module="reports" label={t('Reports')} icon="BarChart3" collapsed={collapsed} />}
+            {canOpen('calendar') && <NavItem module="activities" label={t('To-Dos')} icon="CheckSquare" collapsed={collapsed} />}
+            {canOpen('ai') && <NavItem module="ai-assistant" label={t('AI Assistant')} icon="Sparkles" collapsed={collapsed} />}
           </div>
         </div>
 
-        <div className={cn('shrink-0 border-t border-sidebar-hover/50 p-3 space-y-1', collapsed && 'md:p-2')}>
+        <div className={cn('crm-sidebar-footer shrink-0 space-y-1 border-t border-white/10 bg-black/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]', collapsed && 'md:p-2')}>
           {(user?.isAdmin || user?.isSuperAdmin) && (
-            <NavItem module="settings" label={t('Settings')} icon="Settings" collapsed={collapsed} />
+            <NavItem module="settings" label={t('Settings')} icon="Settings" collapsed={collapsed} onNavigate={onMobileClose} />
           )}
           {user?.isSuperAdmin && (
-            <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" collapsed={collapsed} />
+            <NavItem module="superadmin" label={t('Super Admin')} icon="Shield" collapsed={collapsed} onNavigate={onMobileClose} />
           )}
           <NavLink
             to="/profile"
+            onClick={onMobileClose}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-lg transition-colors',
-                isActive ? 'bg-sidebar-active text-white' : 'text-sidebar-foreground hover:bg-sidebar-hover hover:text-white',
+                'flex items-center gap-3 rounded-xl border transition-all',
+                isActive ? 'border-[#48aaaa]/30 bg-[#3b4a55] text-white' : 'border-transparent text-sidebar-foreground hover:border-white/10 hover:bg-white/5 hover:text-white',
                 collapsed && 'md:justify-center md:p-2',
                 'p-2'
               )
@@ -272,7 +309,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
           <div className={cn(collapsed && 'md:hidden')}>
             <button
               onClick={logout}
-              className="w-full flex items-center gap-3 px-2 py-1.5 mt-1 rounded-md text-xs text-sidebar-foreground/50 hover:text-destructive hover:bg-sidebar-hover transition-colors"
+              className="mt-1 flex w-full items-center gap-3 rounded-lg px-2 py-2 text-xs text-sidebar-foreground/50 transition-colors hover:bg-red-500/10 hover:text-red-300"
             >
               <LogOut size={14} />
               <span>{t('Sign out')}</span>
@@ -284,7 +321,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: { co
   )
 }
 
-function NavItem({ module, label, icon, collapsed, dataTour }: { module: string; label: string; icon: string; collapsed: boolean; dataTour?: string }) {
+function NavItem({ module, label, icon, collapsed, dataTour, onNavigate, tile, compact }: { module: string; label: string; icon: string; collapsed: boolean; dataTour?: string; onNavigate?: () => void; tile?: boolean; compact?: boolean }) {
   const Icon = iconMap[icon] || FileText
   const href = module === '' ? '/dashboard' : `/${module}`
   return (
@@ -292,17 +329,21 @@ function NavItem({ module, label, icon, collapsed, dataTour }: { module: string;
       to={href}
       end
       data-tour={dataTour}
+      title={collapsed ? label : undefined}
+      onClick={onNavigate}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150',
+          'group relative flex min-h-10 items-center gap-3 overflow-hidden rounded-xl border px-3 py-2.5 text-[13px] font-semibold transition-all duration-200',
+          tile && 'min-h-[62px] flex-col justify-center gap-1 px-1 py-2 text-[10px]',
+          compact && 'min-h-9 gap-2 rounded-lg px-2 py-2 text-[11px]',
           isActive
-            ? 'bg-sidebar-active text-white shadow-sm shadow-sidebar-active/30'
-            : 'text-sidebar-foreground/80 hover:bg-sidebar-hover hover:text-white',
+            ? 'border-[#4badad]/30 bg-[#3d4c57] text-white shadow-md shadow-black/20 before:absolute before:inset-y-1 before:left-0 before:w-1 before:rounded-r-full before:bg-[#45b8b8]'
+            : 'border-transparent text-[#c5ced4] hover:border-white/10 hover:bg-[#394752] hover:text-white',
           collapsed && 'md:justify-center md:px-2'
         )
       }
     >
-      <Icon size={19} strokeWidth={1.8} className="shrink-0" />
+      <Icon size={tile ? 17 : compact ? 15 : 18} strokeWidth={2.15} className="relative shrink-0 text-[#8fcaca] transition-all duration-200 group-hover:scale-110 group-hover:text-white" />
       <span className={cn('truncate leading-tight', collapsed && 'md:hidden')}>{label}</span>
     </NavLink>
   )

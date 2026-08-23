@@ -10,6 +10,11 @@ import { Switch } from '@/components/ui/switch'
 
 const inputCls = 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const DEFAULT_FORM = {
+  enabled: false, frequency: 'daily', hour: 2, minute: 0, dayOfWeek: 0, dayOfMonth: 1,
+  retentionCount: 14, emailEnabled: false, emailTo: '', nextRunAt: null,
+  lastRunAt: null, lastStatus: null, lastMessage: null, lastFileName: null,
+}
 
 function size(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
@@ -24,9 +29,9 @@ function date(value?: string | null) {
 export function SystemBackupSettings() {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
-  const [form, setForm] = useState<any>(null)
-  const query = useQuery({ queryKey: ['system-backups'], queryFn: api.getSystemBackups })
-  useEffect(() => { if (query.data?.config) setForm((current: any) => current || query.data!.config) }, [query.data])
+  const [form, setForm] = useState<any>(DEFAULT_FORM)
+  const query = useQuery({ queryKey: ['system-backups'], queryFn: api.getSystemBackups, retry: 1 })
+  useEffect(() => { if (query.data?.config) setForm({ ...DEFAULT_FORM, ...query.data.config }) }, [query.data])
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['system-backups'] })
   const save = useMutation({
     mutationFn: () => api.updateSystemBackupConfig(form),
@@ -43,12 +48,12 @@ export function SystemBackupSettings() {
     onSuccess: data => addToast({ title: 'Backup email sent', description: data.message, variant: 'success' }),
     onError: (e: Error) => addToast({ title: 'Backup email failed', description: e.message, variant: 'destructive' }),
   })
-  if (query.isLoading || !form) return <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="animate-spin" size={16} /> Loading backup settings…</div>
-  if (query.isError) return <p className="text-sm text-destructive">Backup settings could not be loaded.</p>
   const set = (key: string, value: any) => setForm((old: any) => ({ ...old, [key]: value }))
   const backups = query.data?.data || []
 
   return <div className="space-y-4">
+    {query.isLoading && <div className="flex items-center gap-2 rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground"><Loader2 className="animate-spin" size={16} /> Loading saved backup configuration…</div>}
+    {query.isError && <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3"><p className="text-sm text-destructive">Saved backup settings could not be loaded. You can retry without leaving this page.</p><Button size="sm" variant="outline" onClick={() => query.refetch()}>Retry</Button></div>}
     <div className="grid gap-3 sm:grid-cols-3">
       <Card className="border-emerald-200/70 dark:border-emerald-900"><CardContent className="p-4 flex gap-3"><ShieldCheck className="text-emerald-600 shrink-0" /><div><p className="font-semibold text-sm">Private & protected</p><p className="text-xs text-muted-foreground mt-1">Only Superadmins can create, download, or email system backups.</p></div></CardContent></Card>
       <Card><CardContent className="p-4 flex gap-3"><Clock3 className="text-blue-600 shrink-0" /><div><p className="font-semibold text-sm">Next backup</p><p className="text-xs text-muted-foreground mt-1">{form.enabled ? date(form.nextRunAt) : 'Scheduling disabled'}</p></div></CardContent></Card>

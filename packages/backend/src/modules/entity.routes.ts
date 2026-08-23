@@ -4,7 +4,7 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { requireTenant } from '../lib/module-permissions'
 import { getModuleConfig } from './moduleSetup'
-import { runWorkflows, nextSequenceNumber } from '../lib/settings'
+import { runWorkflows, nextSequenceNumber, setOrgSetting } from '../lib/settings'
 import { writeAudit, writeAuditFields, auditSummary } from '../lib/audit'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { notifyFollowersAndAssignee } from '../lib/notify'
@@ -61,6 +61,11 @@ async function sharedUserIds(companyId: string | undefined, moduleName: string, 
   if (!companyId) return ids
   const me = await prisma.user.findUnique({ where: { id: selfId }, select: { roleId: true } }).catch(() => null)
   if (me?.roleId) ids.add(me.roleId)
+  const memberships = await prisma.userGroupMember.findMany({
+    where: { userId: selfId, group: { companyId, isActive: true } },
+    select: { groupId: true },
+  }).catch(() => [])
+  for (const membership of memberships) ids.add(membership.groupId)
   const rule = await getSharingAccess(companyId, moduleName)
   if (!rule) return ids
   const roleIds: string[] = (rule.roleIds as any[]) || []
@@ -223,6 +228,10 @@ function fixDecimals(data: any) {
 }
 
 const dmmfModels = () => Prisma.dmmf?.datamodel?.models || []
+function modelHasScalarField(modelName: string, fieldName: string): boolean {
+  const model = dmmfModels().find((m) => m.name.toLowerCase() === modelName.toLowerCase())
+  return !!model?.fields.some((field) => field.kind === 'scalar' && field.name === fieldName)
+}
 function requiredModelFields(modelName: string): string[] {
   const model = dmmfModels().find((m) => m.name.toLowerCase() === modelName.toLowerCase())
   if (!model) return []
@@ -350,6 +359,29 @@ async function validateProjectLinks(modelName: string, data: any, companyId: str
   if (data.startDate && data.endDate && new Date(data.endDate) < new Date(data.startDate)) throw Object.assign(new Error('End date cannot be before start date'), { status: 400 })
 }
 
+async function validateQuantityDiscount(data: any, companyId: string, excludeId?: string) {
+  const product = await prisma.product.findFirst({
+    where: { id: data.productId, companyId, isActive: true, isDeleted: false },
+    select: { id: true },
+  })
+  if (!product) return 'Select an active product from this organization'
+  const minQty = Number(data.minQty)
+  const maxQty = data.maxQty == null || data.maxQty === '' ? null : Number(data.maxQty)
+  const discount = Number(data.discountPercent)
+  if (!Number.isFinite(minQty) || minQty <= 0) return 'Minimum quantity must be greater than 0'
+  if (maxQty != null && (!Number.isFinite(maxQty) || maxQty < minQty)) return 'Maximum quantity must be at least the minimum quantity'
+  if (!Number.isFinite(discount) || discount <= 0 || discount > 100) return 'Discount must be greater than 0 and no more than 100%'
+  const existing = await prisma.quantityDiscount.findMany({
+    where: { productId: data.productId, companyId, isActive: true, ...(excludeId ? { id: { not: excludeId } } : {}) },
+    select: { minQty: true, maxQty: true },
+  })
+  const overlaps = existing.some((range) => {
+    const existingMax = range.maxQty == null ? Infinity : Number(range.maxQty)
+    return minQty <= existingMax && Number(range.minQty) <= (maxQty ?? Infinity)
+  })
+  return overlaps ? 'This quantity range overlaps an active discount for the selected product' : null
+}
+
 async function syncProjectSummary(projectId?: string | null) {
   if (!projectId) return
   const [project, tasks, milestones, time, resources] = await Promise.all([
@@ -475,6 +507,7 @@ export function entityRouter(moduleName: string): Router {
       const config = getModuleConfig(moduleName)
 
       let where: any = TRASH_BY_IS_DELETED.has(modelName) ? { isDeleted: false } : { isActive: true }
+      if (modelName === 'currency' && req.user!.isAdmin && req.query.includeInactive === 'true') where = {}
       if (isScoped) addScope(where, req.user!.companyId)
       if (search && config) {
         where.OR = config.searchFields.map((f: string) => ({
@@ -528,9 +561,18 @@ export function entityRouter(moduleName: string): Router {
   router.get('/all', async (req, res, next) => {
     try {
       if (!(await checkPermission(req, 'view'))) return res.status(403).json({ error: 'Access denied' })
+      if (modelName === 'currency' && req.user!.companyId) {
+        const currencyCount = await prisma.currency.count({ where: { companyId: req.user!.companyId } })
+        if (currencyCount === 0) {
+          const code = 'USD'
+          const symbols: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', PKR: '₨', INR: '₹', AED: 'د.إ', SAR: '﷼', JPY: '¥', CNY: '¥', CAD: 'C$', AUD: 'A$' }
+          await prisma.currency.create({ data: { companyId: req.user!.companyId, code, name: code, symbol: symbols[code] || code, rate: 1, isDefault: true, isActive: true } })
+        }
+      }
       const { search, sortBy, sortOrder, filter } = req.query
       const config = getModuleConfig(moduleName)
       let where: any = { isActive: true }
+      if (modelName === 'currency' && req.user!.isAdmin && req.query.includeInactive === 'true') where = {}
       if (isScoped) addScope(where, req.user!.companyId)
       if (search && config) {
         where.OR = config.searchFields.map((f: string) => ({
@@ -665,8 +707,16 @@ export function entityRouter(moduleName: string): Router {
       if (!(await checkPermission(req, 'view'))) return res.status(403).json({ error: 'Access denied' })
       let where: any = { id: req.params.id }
       if (isScoped) addScope(where, req.user!.companyId)
-      const record = await prismaModel.findFirst({ where, include: buildInclude(moduleName) })
+      let record = await prismaModel.findFirst({ where, include: buildInclude(moduleName) })
       if (!record) return res.status(404).json({ error: 'Not found' })
+      // Repair legacy leads created before organization-scoped auto numbering
+      // was enabled. New leads receive the number during creation above.
+      if (modelName === 'lead' && !record.leadNo) {
+        record = await prisma.lead.update({
+          where: { id: record.id },
+          data: { leadNo: await nextSequenceNumber('Lead', req.user!.companyId) },
+        })
+      }
       const merged = await mergeCustomValues(moduleName, [record])
       if (record.assignedTo || record.createdBy) {
         const uids = [...new Set([record.assignedTo, record.createdBy].filter(Boolean))]
@@ -680,11 +730,16 @@ export function entityRouter(moduleName: string): Router {
           select: { id: true, name: true },
         })
         const rmap = new Map(roles.map(r => [r.id, r.name]))
+        const groups = await prisma.userGroup.findMany({
+          where: { id: { in: uids }, companyId: req.user!.companyId, isActive: true },
+          select: { id: true, name: true },
+        })
+        const gmap = new Map(groups.map(g => [g.id, g.name]))
         const name = (id?: string | null) => {
           if (!id) return null
           const u = umap.get(id)
           if (u) return `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email
-          return rmap.get(id) || null
+          return gmap.get(id) || rmap.get(id) || null
         }
         merged[0].ownerName = name(record.assignedTo) || name(record.createdBy)
         merged[0].createdByName = name(record.createdBy)
@@ -706,10 +761,10 @@ export function entityRouter(moduleName: string): Router {
         if (data[k] === '') data[k] = null
       }
       if (modelName === 'purchaseOrder' && (data.conversionRate == null || data.conversionRate === '')) data.conversionRate = 1
-      if (modelName !== 'role' && modelName !== 'currency' && modelName !== 'taxInfo') {
+      if (modelHasScalarField(modelName, 'createdBy')) {
         data.createdBy = req.user!.userId
-        if (!NO_ASSIGNED_TO.has(modelName)) data.assignedTo = req.body.assignedTo || req.user!.userId
       }
+      if (modelHasScalarField(modelName, 'assignedTo') && !NO_ASSIGNED_TO.has(modelName)) data.assignedTo = req.body.assignedTo || req.user!.userId
       if (modelName === 'timeEntry') {
         if (!req.user!.isAdmin && !req.user!.isSuperAdmin) data.userId = req.user!.userId
         data.approved = false
@@ -717,6 +772,9 @@ export function entityRouter(moduleName: string): Router {
       }
       if (modelName === 'product' && !data.productNo) {
         data.productNo = await nextSequenceNumber('Product', req.user!.companyId)
+      }
+      if (modelName === 'lead' && !data.leadNo) {
+        data.leadNo = await nextSequenceNumber('Lead', req.user!.companyId)
       }
       if (modelName === 'product' && data.productNo) {
         const dupErr = await ensureUniqueProductNo(String(data.productNo))
@@ -731,6 +789,10 @@ export function entityRouter(moduleName: string): Router {
       fixBooleans(data)
       fixDecimals(data)
       await validateProjectLinks(modelName, data, req.user!.companyId!)
+      if (modelName === 'quantityDiscount') {
+        const validationError = await validateQuantityDiscount(data, req.user!.companyId!)
+        if (validationError) return res.status(400).json({ error: validationError })
+      }
       if (modelName === 'projectTask' && data.status === 'Completed') { data.progress = 100; data.completedAt = data.completedAt || new Date() }
       if (modelName === 'projectMilestone' && data.status === 'Completed') data.progress = 100
       delete data.products
@@ -742,10 +804,19 @@ export function entityRouter(moduleName: string): Router {
       if (missing.length) {
         return res.status(400).json({ error: `Missing required field(s): ${missing.join(', ')}` })
       }
-      if (modelName === 'currency' && data.isDefault) {
-        await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
+      if (modelName === 'currency') {
+        const activeCount = await prisma.currency.count({ where: { companyId: req.user!.companyId, isActive: true } })
+        if (data.isDefault || activeCount === 0) { data.isDefault = true; data.isActive = true }
+        if (data.isDefault) {
+          await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
+        }
       }
       const record = await prismaModel.create({ data })
+      if (modelName === 'currency' && record.isDefault) {
+        await setOrgSetting(req.user!.companyId, 'defaultCurrency', record.code)
+        await setOrgSetting(req.user!.companyId, 'currencySymbol', record.symbol)
+        await prisma.company.updateMany({ where: { id: req.user!.companyId! }, data: { defaultCurrency: record.code } })
+      }
       if (['projectTask', 'projectMilestone', 'timeEntry', 'projectResource'].includes(modelName)) await syncProjectSummary(record.projectId)
       if (custom) await saveCustomData(moduleName, record.id, custom)
       if (modelName === 'product' && Array.isArray(req.body.images)) {
@@ -821,6 +892,10 @@ export function entityRouter(moduleName: string): Router {
       fixBooleans(data)
       fixDecimals(data)
       await validateProjectLinks(modelName, { ...before, ...data }, req.user!.companyId!)
+      if (modelName === 'quantityDiscount') {
+        const validationError = await validateQuantityDiscount({ ...before, ...data }, req.user!.companyId!, req.params.id)
+        if (validationError) return res.status(400).json({ error: validationError })
+      }
       if (modelName === 'projectTask' && data.status === 'Completed') { data.progress = 100; data.completedAt = data.completedAt || new Date() }
       if (modelName === 'projectMilestone' && data.status === 'Completed') data.progress = 100
       delete data.products
@@ -832,10 +907,19 @@ export function entityRouter(moduleName: string): Router {
       if (emptyReq.length) {
         return res.status(400).json({ error: `Field(s) cannot be empty: ${emptyReq.join(', ')}` })
       }
-      if (modelName === 'currency' && data.isDefault) {
-        await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
+      if (modelName === 'currency') {
+        if (before.isDefault && data.isActive === false) return res.status(400).json({ error: 'Set another active currency as default before deactivating this currency' })
+        if (data.isDefault) {
+          data.isActive = true
+          await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
+        }
       }
       const record = await prismaModel.update({ where, data })
+      if (modelName === 'currency' && record.isDefault) {
+        await setOrgSetting(req.user!.companyId, 'defaultCurrency', record.code)
+        await setOrgSetting(req.user!.companyId, 'currencySymbol', record.symbol)
+        await prisma.company.updateMany({ where: { id: req.user!.companyId! }, data: { defaultCurrency: record.code } })
+      }
       if (['projectTask', 'projectMilestone', 'timeEntry', 'projectResource'].includes(modelName)) await syncProjectSummary(record.projectId || before.projectId)
       if (custom) await saveCustomData(moduleName, record.id, custom)
       if (modelName === 'product' && Array.isArray(req.body.images)) {
@@ -895,6 +979,7 @@ export function entityRouter(moduleName: string): Router {
       if (isScoped) addScope(where, req.user!.companyId)
       const before = await prismaModel.findFirst({ where })
       if (!before) return res.status(404).json({ error: 'Not found' })
+      if (modelName === 'currency' && before.isDefault) return res.status(400).json({ error: 'The default currency cannot be deactivated. Set another currency as default first.' })
       if (!(await canMutateRecord(req, before, moduleName))) return res.status(403).json({ error: 'Access denied by sharing rules' })
       await prismaModel.update({ where, data: TRASH_BY_IS_DELETED.has(modelName) ? { isDeleted: true } : { isActive: false } })
       await writeAudit({ moduleName, recordId: before.id, action: 'DELETE', oldValue: auditSummary(before), userId: req.user!.userId, req })

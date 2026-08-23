@@ -89,9 +89,9 @@ function labelFromName(name: string): string {
     rating: 'Rating', interest: 'Interest', sponsor: 'Sponsor',
     carrier: 'Carrier', weight: 'Weight', manufacturer: 'Manufacturer',
     doNotCall: 'Do Not Call', portal: 'Portal',
-    discountPercent: 'Discount (%)', taxAmount: 'Tax Amount', contactId: 'Contact',
+    discountPercent: 'Discount (%)', minQty: 'Minimum Quantity', maxQty: 'Maximum Quantity', productId: 'Product', taxAmount: 'Tax Amount', contactId: 'Contact',
     potentialId: 'Potential', accountId: 'Account', quoteId: 'Quote', salesOrderId: 'Sales Order',
-    currency: 'Currency', conversionRate: 'Conversion Rate',
+    currency: 'Currency', conversionRate: 'Conversion Rate', stageName: 'Sales Stage', color: 'Stage Colour',
   }
   return labels[name] || name.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
 }

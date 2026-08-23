@@ -1,11 +1,12 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Menu, X, ChevronUp } from 'lucide-react'
+import { Menu, X, ChevronUp, Home, Sparkles, CircleHelp, Mail, BadgeDollarSign, ArrowRight, LayoutDashboard } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/lib/auth'
 
 export function SiteHeader() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [mobileMenu, setMobileMenu] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [showBackToTop, setShowBackToTop] = useState(false)
@@ -20,10 +21,39 @@ export function SiteHeader() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  useEffect(() => {
+    setMobileMenu(false)
+  }, [location.pathname, location.hash])
+
+  useEffect(() => {
+    if (!mobileMenu) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenu(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [mobileMenu])
+
   const displayName = user?.firstName
     ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
     : user?.userName || user?.email || ''
   const initial = (user?.firstName || user?.userName || user?.email || 'U')?.[0]?.toUpperCase()
+  const menuItems = [
+    { to: '/', label: 'Home', description: 'Your CRM overview', icon: Home },
+    { to: '/#features', label: 'Features', description: 'Explore what BizForce can do', icon: Sparkles },
+    { to: '/#about', label: 'About', description: 'Why teams choose BizForce', icon: CircleHelp },
+    { to: '/contact', label: 'Contact', description: 'Talk with our team', icon: Mail },
+    { to: '/pricing', label: 'Pricing', description: 'Simple plans that scale', icon: BadgeDollarSign },
+  ]
+  const isActive = (to: string) => {
+    const [pathname, hash = ''] = to.split('#')
+    return location.pathname === pathname && (!hash || location.hash === `#${hash}`)
+  }
 
   return (
     <>
@@ -37,12 +67,12 @@ export function SiteHeader() {
             <span className="font-bold text-xl text-slate-900 dark:text-white">BizForce</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
-            <Link to="/" className="text-sm text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 dark:after:bg-blue-400 hover:after:w-full after:transition-all after:duration-300">Home</Link>
-            <Link to="/#features" className="text-sm text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 dark:after:bg-blue-400 hover:after:w-full after:transition-all after:duration-300">Features</Link>
-            <Link to="/#about" className="text-sm text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 dark:after:bg-blue-400 hover:after:w-full after:transition-all after:duration-300">About</Link>
-            <Link to="/contact" className="text-sm text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 dark:after:bg-blue-400 hover:after:w-full after:transition-all after:duration-300">Contact</Link>
-            <Link to="/pricing" className="text-sm text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 dark:after:bg-blue-400 hover:after:w-full after:transition-all after:duration-300">Pricing</Link>
+          <nav aria-label="Main navigation" className="hidden items-center gap-1 rounded-full border border-white/70 bg-white/55 p-1 shadow-sm dark:border-white/10 dark:bg-slate-950/30 md:flex">
+            {menuItems.map(item => (
+              <Link key={item.to} to={item.to} className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-all ${isActive(item.to) ? 'bg-white text-blue-700 shadow-sm dark:bg-slate-800 dark:text-blue-300' : 'text-slate-600 hover:bg-white/70 hover:text-blue-700 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-blue-300'}`}>
+                {item.label}
+              </Link>
+            ))}
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
@@ -69,46 +99,44 @@ export function SiteHeader() {
             )}
           </div>
 
-          <button className="md:hidden p-2 text-slate-700 dark:text-slate-200 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors" onClick={() => setMobileMenu(!mobileMenu)}>
+          <button aria-label={mobileMenu ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileMenu} aria-controls="mobile-navigation" className={`md:hidden grid h-10 w-10 place-items-center rounded-xl border transition-all ${mobileMenu ? 'border-blue-200 bg-blue-600 text-white shadow-lg shadow-blue-500/25 dark:border-blue-500/40' : 'border-white/70 bg-white/70 text-slate-700 shadow-sm hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10'}`} onClick={() => setMobileMenu(!mobileMenu)}>
             {mobileMenu ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
 
-        {/* Mobile menu overlay */}
-        {mobileMenu && (
-          <div className="md:hidden fixed inset-0 top-16 bg-black/20 backdrop-blur-sm -z-10" onClick={() => setMobileMenu(false)} />
-        )}
+        {mobileMenu && <button type="button" aria-label="Close navigation menu" className="fixed inset-0 top-16 -z-10 cursor-default bg-slate-950/35 backdrop-blur-[2px] md:hidden" onClick={() => setMobileMenu(false)} />}
 
-        <div className={`md:hidden border-t border-white/60 dark:border-white/10 px-4 py-4 space-y-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl transition-all duration-300 ${mobileMenu ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
-          {[
-            { to: '/', label: 'Home' },
-            { to: '/#features', label: 'Features' },
-            { to: '/#about', label: 'About' },
-            { to: '/contact', label: 'Contact' },
-            { to: '/pricing', label: 'Pricing' },
-          ].map(link => (
-            <Link key={link.to} to={link.to} className="block py-2.5 px-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-white/5 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-colors" onClick={() => setMobileMenu(false)}>{link.label}</Link>
-          ))}
-          <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-white/10 mt-2">
+        {mobileMenu && <div id="mobile-navigation" className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-white/60 bg-white/95 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/95 md:hidden">
+          <div className="mx-auto max-w-lg space-y-1">
+          {menuItems.map(item => {
+            const Icon = item.icon
+            const active = isActive(item.to)
+            return (
+            <Link key={item.to} to={item.to} aria-current={active ? 'page' : undefined} className={`group flex min-h-14 items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${active ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 ring-1 ring-blue-100 dark:from-blue-950/60 dark:to-indigo-950/40 dark:text-blue-300 dark:ring-blue-900' : 'text-slate-700 hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-white/5'}`} onClick={() => setMobileMenu(false)}>
+              <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors ${active ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-blue-600 dark:bg-white/5 dark:text-slate-400'}`}><Icon size={18} /></span>
+              <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{item.label}</span><span className="block truncate text-xs text-slate-500 dark:text-slate-400">{item.description}</span></span>
+              <ArrowRight size={16} className={`shrink-0 transition-transform group-hover:translate-x-0.5 ${active ? 'text-blue-500' : 'text-slate-300 dark:text-slate-600'}`} />
+            </Link>
+          )})}
+          <div className="mt-3 border-t border-slate-200/80 pt-3 dark:border-white/10">
             {token && user ? (
-              <Button className="relative flex-1 overflow-hidden rounded-lg text-white text-sm font-semibold border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/40" onClick={() => { setMobileMenu(false); navigate('/dashboard') }}>
-                <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
-                <span className="relative">{displayName || 'Dashboard'}</span>
+              <Button className="h-12 w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-semibold text-white shadow-lg shadow-blue-500/25" onClick={() => { setMobileMenu(false); navigate('/dashboard') }}>
+                <LayoutDashboard size={17} className="mr-2" /> {displayName || 'Open Dashboard'}
               </Button>
             ) : (
-              <>
-                <Button variant="outline" className="flex-1" onClick={() => { setMobileMenu(false); navigate('/login') }}>Sign In</Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="h-12 rounded-xl bg-white/70 font-semibold dark:bg-white/5" onClick={() => { setMobileMenu(false); navigate('/login') }}>Sign In</Button>
                 <Button
-                  className="relative flex-1 overflow-hidden rounded-lg text-white text-sm font-semibold border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/40"
+                  className="h-12 rounded-xl border-none bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-semibold text-white shadow-lg shadow-blue-500/25"
                   onClick={() => { setMobileMenu(false); navigate('/signup') }}
                 >
-                  <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
-                  <span className="relative">Get Started</span>
+                  Get Started <ArrowRight size={16} className="ml-1.5" />
                 </Button>
-              </>
+              </div>
             )}
           </div>
-        </div>
+          </div>
+        </div>}
       </header>
 
       {/* Back to top button */}

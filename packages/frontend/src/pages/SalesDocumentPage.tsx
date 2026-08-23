@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, Fragment } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
+import { useAuthStore } from '@/lib/auth'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -145,12 +146,14 @@ function calcItem(item: any) {
 }
 
 export function SalesDocumentPage({ module }: { module: DocModule }) {
+  const { user } = useAuthStore()
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToast } = useToast()
   useOrgSettings()
   const cfg = CONFIGS[module]
   const isNew = !id || id === 'new'
+  const draftKey = `crm:draft:${user?.companyId || 'company'}:${user?.id || 'user'}:${module}:new`
 
   const [mode, setMode] = useState<'list' | 'form' | 'view'>(id === 'new' ? 'form' : id ? 'view' : 'list')
   const [records, setRecords] = useState<any[]>([])
@@ -178,6 +181,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
   const [related, setRelated] = useState<any>({ invoices: [], comments: [] })
   const [comment, setComment] = useState('')
   const [addingComment, setAddingComment] = useState(false)
+  const [attachPdf, setAttachPdf] = useState(true)
 
   const [payments, setPayments] = useState<any[]>([])
   const [paymentTotal, setPaymentTotal] = useState(0)
@@ -322,6 +326,8 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
     if (id && id !== 'new') loadRecord(id)
     else if (id === 'new') {
       setMode('form')
+      const saved = localStorage.getItem(draftKey)
+      if (saved) try { const draft = JSON.parse(saved); setForm(draft.form); setLineItems(draft.lineItems); return } catch {}
       setForm((prev: any) => {
         if (Object.keys(prev).length) return prev
         const f = emptyForm()
@@ -331,6 +337,8 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
       })
     }
   }, [id])
+
+  useEffect(() => { if (isNew && mode === 'form' && Object.keys(form).length) localStorage.setItem(draftKey, JSON.stringify({ form, lineItems })) }, [form, lineItems, isNew, mode, draftKey])
 
   function updateForm(field: string, value: any) {
     setForm((prev: any) => ({ ...prev, [field]: value }))
@@ -441,6 +449,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
       const payload = JSON.stringify({ ...form, lineItems: lineItems.map((i: any) => ({ ...i, id: undefined, kind: undefined })) })
       if (isNew) {
         await api.request(`/${module}`, { method: 'POST', body: payload })
+        localStorage.removeItem(draftKey)
         addToast({ title: 'Created', description: `${cfg.label} created successfully`, variant: 'success' })
       } else {
         await api.request(`/${module}/${id}`, { method: 'PUT', body: payload })
@@ -517,7 +526,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
     const to = prompt('Send to email:')
     if (!to) return
     try {
-      await api.request(`/${module}/${id}/email`, { method: 'POST', body: JSON.stringify({ to }) })
+      await api.request(`/${module}/${id}/email`, { method: 'POST', body: JSON.stringify({ to, attachPdf }) })
       addToast({ title: 'Sent', description: `Email logged to console for ${to}` })
     } catch { addToast({ title: 'Error', description: 'Failed to send email', variant: 'destructive' }) }
   }
@@ -905,6 +914,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
             <Button variant="outline" size="sm" onClick={() => setMode('form')}><FileText className="mr-1 h-4 w-4" />Edit</Button>
             <Button variant="outline" size="sm" onClick={handlePdf}><FileDown className="mr-1 h-4 w-4" />PDF</Button>
             <Button variant="outline" size="sm" onClick={handleEmail}><Mail className="mr-1 h-4 w-4" />Email</Button>
+            <label className="inline-flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs font-medium"><input type="checkbox" checked={attachPdf} onChange={e => setAttachPdf(e.target.checked)} /> Attach PDF</label>
             {module === 'salesorders' && (
               <Button variant="outline" size="sm" onClick={handleConvertInvoice}><Receipt className="mr-1 h-4 w-4" />Invoice</Button>
             )}

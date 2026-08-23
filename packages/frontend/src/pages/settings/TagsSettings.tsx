@@ -14,6 +14,7 @@ export function TagsSettings() {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const [name, setName] = useState('')
+  const [color, setColor] = useState('#4f46e5')
   const [editing, setEditing] = useState<any | null>(null)
   const [editName, setEditName] = useState('')
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -21,7 +22,7 @@ export function TagsSettings() {
   const { data, isLoading } = useQuery({ queryKey: ['tags'], queryFn: () => api.getTags() })
 
   const createMutation = useMutation({
-    mutationFn: () => api.createTag({ name: name.trim() }),
+    mutationFn: () => api.createTag({ name: name.trim(), color, isPrivate: false }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] })
       setName('')
@@ -57,7 +58,7 @@ export function TagsSettings() {
       <Card>
         <CardHeader><CardTitle className="text-sm">Create a Tag</CardTitle></CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Input
               placeholder="Tag name (e.g. VIP Customer, Follow-up needed)"
               value={name}
@@ -65,6 +66,9 @@ export function TagsSettings() {
               onKeyDown={e => { if (e.key === 'Enter' && name.trim()) createMutation.mutate() }}
               className="max-w-sm"
             />
+            <label className="inline-flex h-10 items-center gap-2 rounded-md border px-3 text-xs font-medium text-muted-foreground">
+              Colour <input type="color" value={color} onChange={e => setColor(e.target.value)} className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" aria-label="Tag colour" />
+            </label>
             <Button onClick={() => createMutation.mutate()} disabled={!name.trim() || createMutation.isPending}>
               {createMutation.isPending ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Plus size={14} className="mr-1.5" />}
               Add Tag
@@ -84,8 +88,8 @@ export function TagsSettings() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {items.map((t: any) => (
-                <span key={t.id} className="inline-flex items-center gap-2 rounded-full border bg-primary/5 px-3 py-1.5 text-sm">
-                  <Tag size={13} className="text-primary" />
+                <span key={t.id} style={t.color ? { borderColor: t.color, color: t.color, backgroundColor: `${t.color}12` } : undefined} className="inline-flex items-center gap-2 rounded-full border bg-primary/5 px-3 py-1.5 text-sm">
+                  <Tag size={13} />
                   {editing?.id === t.id ? (
                     <Input
                       value={editName}

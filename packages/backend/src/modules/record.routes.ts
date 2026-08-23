@@ -540,8 +540,10 @@ recordRouter.post('/:module/:id/products', async (req, res, next) => {
     const created = []
     for (const item of items) {
       if (!item.productId || !priceMap.has(item.productId)) continue
-      const qty = item.qty == null || isNaN(Number(item.qty)) ? 1 : Math.max(1, Number(item.qty))
+      const qty = item.qty == null || isNaN(Number(item.qty)) ? 1 : Number(item.qty)
       const listPrice = item.listPrice == null || isNaN(Number(item.listPrice)) ? priceMap.get(item.productId) : Number(item.listPrice)
+      if (qty <= 0) return res.status(400).json({ error: 'Product quantity must be greater than zero' })
+      if (listPrice != null && Number(listPrice) < 0) return res.status(400).json({ error: 'Product selling price cannot be negative' })
       if (existingSet.has(item.productId)) {
         created.push(await prisma.leadProduct.update({
           where: { leadId_productId: { leadId: req.params.id, productId: item.productId } },
@@ -569,8 +571,10 @@ recordRouter.put('/:module/:id/products/:productId', async (req, res, next) => {
       where: { leadId: req.params.id, productId: req.params.productId, ...scopedWhere(req.user!.companyId) },
     })
     if (!link) return res.status(404).json({ error: 'Product not linked to this record' })
-    const qty = req.body.qty == null || isNaN(Number(req.body.qty)) ? link.qty : Math.max(1, Number(req.body.qty))
+    const qty = req.body.qty == null || isNaN(Number(req.body.qty)) ? link.qty : Number(req.body.qty)
     const listPrice = req.body.listPrice == null || isNaN(Number(req.body.listPrice)) ? link.listPrice : Number(req.body.listPrice)
+    if (Number(qty) <= 0) return res.status(400).json({ error: 'Product quantity must be greater than zero' })
+    if (listPrice != null && Number(listPrice) < 0) return res.status(400).json({ error: 'Product selling price cannot be negative' })
     await prisma.leadProduct.update({
       where: { id: link.id },
       data: { qty, listPrice },

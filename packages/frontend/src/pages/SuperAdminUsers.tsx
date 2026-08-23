@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import {
   Users, Mail, Shield, Search, Building2, LayoutGrid, Table2,
-  Calendar, Phone, MapPin, IdCard, Clock, Globe, ChevronRight, Plus, X
+  Calendar, Phone, MapPin, IdCard, Clock, Globe, ChevronRight, Plus, X, LogOut
 } from 'lucide-react'
 import { formatDate, useOrgSettings } from '@/lib/org-format'
+import { useToast } from '@/lib/toast'
 
 type ViewMode = 'table' | 'cards' | 'kanban'
 
 export function SuperAdminUsers() {
   useOrgSettings()
+  const { addToast } = useToast()
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -73,6 +75,16 @@ export function SuperAdminUsers() {
       setCreateError(err.message || 'Failed to create user')
     } finally {
       setCreating(false)
+    }
+  }
+
+  const logoutUserDevices = async (user: any) => {
+    if (!window.confirm(`Log out ${user.firstName} ${user.lastName} from all devices?`)) return
+    try {
+      await api.superAdminLogoutUser(user.id)
+      addToast({ title: 'Sessions ended', description: `${user.firstName} ${user.lastName} has been logged out from all devices.`, variant: 'success' })
+    } catch (error: any) {
+      addToast({ title: 'Could not end sessions', description: error.message, variant: 'destructive' })
     }
   }
 
@@ -310,6 +322,9 @@ export function SuperAdminUsers() {
                   <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mt-0.5 truncate">{i.value}</p>
                 </div>
               ))}
+            </div>
+            <div className="mt-4 flex justify-end border-t border-slate-100 pt-4 dark:border-slate-800">
+              <button onClick={() => logoutUserDevices(selectedUser)} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"><LogOut size={15} /> Logout from all devices</button>
             </div>
           </div>
         </div>

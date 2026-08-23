@@ -8,10 +8,11 @@ import { getModuleConfig, setupModules } from './moduleSetup'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { writeAudit } from '../lib/audit'
 import { syncMailbox, generateRecurringInvoice, fetchRssFeed, applyEmailToTicketRule } from '../lib/automation'
-import { renderReport, escapeHtml } from './report'
+import { renderReport, escapeHtml, resolveReportLogo } from './report'
 import { renderReportHtml, renderReportCsv } from '../lib/report-runner'
 import { dialViaPbx } from './pbx.routes'
 import { evaluateConditions } from '../lib/settings'
+import { getOrgSetting } from '../lib/settings'
 import { requireModulePermission, requireTenant } from '../lib/module-permissions'
 
 export const extrasRouter = Router()
@@ -33,7 +34,7 @@ function trashByIsDeleted(modelName: string): boolean {
 // =====================================================================
 // Opportunity Forecasting
 // =====================================================================
-extrasRouter.get('/forecast/opportunities', authMiddleware, requireTenant, requireModulePermission('potentials', 'view'), async (req, res, next) => {
+extrasRouter.get('/forecast/opportunities', authMiddleware, requireTenant, requireModulePermission('forecast', 'view'), async (req, res, next) => {
   try {
     const { range = 'quarter' } = req.query
     const where: any = { isActive: true }
@@ -105,7 +106,7 @@ extrasRouter.get('/forecast/opportunities', authMiddleware, requireTenant, requi
   } catch (err) { next(err) }
 })
 
-extrasRouter.post('/forecast/recalculate', authMiddleware, requireTenant, requireModulePermission('potentials', 'edit'), async (req, res, next) => {
+extrasRouter.post('/forecast/recalculate', authMiddleware, requireTenant, requireModulePermission('forecast', 'edit'), async (req, res, next) => {
   try {
     const where: any = { isActive: true }
     if (req.user!.companyId) where.companyId = req.user!.companyId
@@ -885,7 +886,10 @@ extrasRouter.get('/portal/invoices/:id/pdf', async (req: any, res, next) => {
       include: { lineItems: { orderBy: { sequence: 'asc' } } },
     })
     if (!inv) return res.status(404).json({ error: 'Invoice not found' })
-    const company = req.portal.companyId ? await prisma.company.findUnique({ where: { id: req.portal.companyId } }) : null
+    const [company, template] = await Promise.all([
+      req.portal.companyId ? prisma.company.findUnique({ where: { id: req.portal.companyId } }) : null,
+      getOrgSetting(req.portal.companyId, 'documentTemplate', {}),
+    ])
     const companyName = company?.name || 'BizForce CRM'
     const cur = inv.currency ? ` (${inv.currency})` : ''
     const billTo = [inv.billingStreet, inv.billingCity, inv.billingState, inv.billingPostalCode, inv.billingCountry].filter(Boolean).map(escapeHtml).join('<br>')
@@ -894,7 +898,7 @@ extrasRouter.get('/portal/invoices/:id/pdf', async (req: any, res, next) => {
       docNo: inv.invoiceNo || '',
       fileNamePrefix: 'invoice',
       companyName,
-      companyAddress: '',
+      companyAddress: [company?.addressStreet, [company?.addressCity, company?.addressState].filter(Boolean).join(', '), company?.addressCountry, company?.addressPostalCode].filter(Boolean).map(escapeHtml).join('<br>'),
       billToLabel: 'Bill To:',
       billTo,
       metaLines: [
@@ -913,6 +917,8 @@ extrasRouter.get('/portal/invoices/:id/pdf', async (req: any, res, next) => {
         { label: `Grand Total${cur}`, value: inv.grandTotal, grand: true },
       ],
       sections: [],
+      logoUrl: await resolveReportLogo(company?.logo),
+      template,
     })
     res.setHeader('Content-Type', 'text/html')
     res.setHeader('Content-Disposition', `inline; filename="${inv.invoiceNo || inv.id}.html"`)

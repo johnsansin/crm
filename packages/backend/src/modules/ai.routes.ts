@@ -422,7 +422,30 @@ aiRouter.post('/chat', authMiddleware, async (req: any, res) => {
     const lowerMsg = message.toLowerCase()
     let response = ''
 
-    if (/lead|leads/.test(lowerMsg)) {
+    if (/today|to-?do|task|overdue|prioriti[sz]e my work/.test(lowerMsg)) {
+      const now = new Date()
+      const end = new Date(now); end.setHours(23, 59, 59, 999)
+      const activities = await prisma.activity.findMany({
+        where: { companyId: req.user?.companyId, isActive: true, status: { notIn: ['Completed', 'Cancelled'] }, dueAt: { lte: end } },
+        orderBy: [{ dueAt: 'asc' }, { priority: 'desc' }], take: 10,
+      }).catch(() => [])
+      const overdue = activities.filter((a: any) => a.dueAt && new Date(a.dueAt) < now)
+      const lines = activities.slice(0, 6).map((a: any, i: number) => `${i + 1}. ${a.subject || 'Untitled task'}${a.dueAt ? ` — due ${new Date(a.dueAt).toLocaleDateString()}` : ''}${a.priority ? ` (${a.priority})` : ''}`)
+      response = activities.length ? `You have ${activities.length} due or overdue activities, including ${overdue.length} overdue.\n\n${lines.join('\n')}\n\nStart with overdue and high-priority items, then update their status when completed.` : 'You have no due or overdue activities today. Your immediate task queue is clear.'
+    } else if (/forecast|weighted|closing this month/.test(lowerMsg)) {
+      const opportunities = await prisma.potential.findMany({ where: { companyId: req.user?.companyId, isActive: true, stage: { notIn: ['Closed Won', 'Closed Lost'] } }, orderBy: { closingDate: 'asc' }, take: 100 }).catch(() => [])
+      const weighted = opportunities.reduce((sum: number, item: any) => sum + (Number(item.amount) || 0) * (Number(item.probability) || 0) / 100, 0)
+      response = `Your active forecast contains ${opportunities.length} opportunities with a probability-weighted value of $${Math.round(weighted).toLocaleString()}. Review deals with near closing dates and low probability first.`
+    } else if (/inventory|stock|reorder|product/.test(lowerMsg)) {
+      const products = await prisma.product.findMany({ where: { companyId: req.user?.companyId, isActive: true }, take: 500 }).catch(() => [])
+      const lowStock = products.filter((p: any) => Number(p.reorderLevel) > 0 && Number(p.qtyInStock) <= Number(p.reorderLevel))
+      response = `You have ${products.length} active products and ${lowStock.length} at or below their reorder level.${lowStock.length ? `\n\nPriority restock: ${lowStock.slice(0, 6).map((p: any) => `${p.productName} (${p.qtyInStock || 0} available)`).join(', ')}.` : ' Inventory levels currently look healthy.'}`
+    } else if (/tag|segment|label/.test(lowerMsg)) {
+      const tags = await prisma.tag.findMany({ where: { companyId: req.user?.companyId, recordId: { not: null }, OR: [{ isPrivate: false }, { userId: req.user?.userId }] }, take: 1000 }).catch(() => [])
+      const usage = new Map<string, number>(); tags.forEach((tag: any) => usage.set(tag.name, (usage.get(tag.name) || 0) + 1))
+      const top = [...usage.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
+      response = top.length ? `Your most-used visible tags are:\n\n${top.map(([name, count], i) => `${i + 1}. ${name} — ${count} record${count === 1 ? '' : 's'}`).join('\n')}\n\nUse these tags to open focused record segments and identify follow-up groups.` : 'No visible record tags are in use yet. Create organisation tags from Tools → Tags, then attach them from record pages.'
+    } else if (/lead|leads/.test(lowerMsg)) {
       const count = await prisma.lead.count({ where: { companyId: req.user?.companyId, isActive: true } }).catch(() => 0)
       const converted = await prisma.lead.count({ where: { companyId: req.user?.companyId, isActive: true, isConverted: true } }).catch(() => 0)
       response = `You have ${count} total leads, ${converted} of which have been converted. ${converted > 0 ? `That's a ${Math.round((converted / count) * 100)}% conversion rate.` : 'Consider qualifying and converting promising leads.'}`

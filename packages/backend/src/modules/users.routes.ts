@@ -76,6 +76,22 @@ userRouter.put('/:id', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+userRouter.post('/:id/logout-all', async (req, res, next) => {
+  try {
+    if (!req.user!.companyId) return res.status(400).json({ error: 'No company' })
+    const target = await prisma.user.findFirst({
+      where: { id: req.params.id, companyId: req.user!.companyId },
+      select: { id: true, email: true },
+    })
+    if (!target) return res.status(404).json({ error: 'User not found' })
+    await prisma.user.update({
+      where: { id: target.id },
+      data: { tokenVersion: { increment: 1 }, lastActiveAt: null },
+    })
+    res.json({ success: true })
+  } catch (err) { next(err) }
+})
+
 userRouter.delete('/:id', async (req, res, next) => {
   try {
     if (!req.user!.companyId) return res.status(400).json({ error: 'No company' })

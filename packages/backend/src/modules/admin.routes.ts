@@ -108,12 +108,16 @@ adminRouter.put('/backups/config', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-adminRouter.post('/backups/run', async (_req, res, next) => {
+async function runBackupNow(_req: Request, res: Response, next: NextFunction) {
   try {
     const backup = await createDatabaseBackup()
     res.json({ backup, message: 'Database backup completed successfully' })
   } catch (err) { next(err) }
-})
+}
+
+adminRouter.post('/backups/run', runBackupNow)
+// Compatibility endpoint for deployments/proxies that reserve the `/run` suffix.
+adminRouter.post('/backups/create', runBackupNow)
 
 adminRouter.post('/backups/:fileName/email', async (req, res, next) => {
   try {
@@ -168,6 +172,18 @@ adminRouter.get('/companies', async (_req, res, next) => {
       return { ...c, _count: c._count, recordCounts: counts }
     }))
     res.json({ data: withStats })
+  } catch (err) { next(err) }
+})
+
+adminRouter.post('/companies/:id/logout-all', async (req, res, next) => {
+  try {
+    const company = await prisma.company.findUnique({ where: { id: req.params.id }, select: { id: true, name: true } })
+    if (!company) return res.status(404).json({ error: 'Organization not found' })
+    const result = await prisma.user.updateMany({
+      where: { companyId: company.id },
+      data: { tokenVersion: { increment: 1 }, lastActiveAt: null },
+    })
+    res.json({ success: true, count: result.count, message: `${result.count} user session(s) ended for ${company.name}` })
   } catch (err) { next(err) }
 })
 
@@ -241,6 +257,15 @@ adminRouter.get('/users', async (_req, res, next) => {
     })
     const safe = users.map(({ password, profile, ...u }) => ({ ...u, isSuperAdmin: profile?.isSuperAdmin || false }))
     res.json({ data: safe })
+  } catch (err) { next(err) }
+})
+
+adminRouter.post('/users/:id/logout-all', async (req, res, next) => {
+  try {
+    const target = await prisma.user.findUnique({ where: { id: req.params.id }, select: { id: true } })
+    if (!target) return res.status(404).json({ error: 'User not found' })
+    await prisma.user.update({ where: { id: target.id }, data: { tokenVersion: { increment: 1 }, lastActiveAt: null } })
+    res.json({ success: true })
   } catch (err) { next(err) }
 })
 

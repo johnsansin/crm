@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
+import { useAuthStore } from '@/lib/auth'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,11 +44,13 @@ function calcTotals(items: any[]) {
 }
 
 export function QuotationsPage() {
+  const { user } = useAuthStore()
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToast } = useToast()
-  useOrgSettings()
+  const orgSettings = useOrgSettings()
   const isNew = !id || id === 'new'
+  const draftKey = `crm:draft:${user?.companyId || 'company'}:${user?.id || 'user'}:quotes:new`
 
   const [mode, setMode] = useState<'list' | 'form' | 'view'>(id === 'new' ? 'form' : id ? 'view' : 'list')
   const [records, setRecords] = useState<any[]>([])
@@ -78,10 +81,14 @@ export function QuotationsPage() {
   const [team, setTeam] = useState<any[]>([])
   const [roles, setRoles] = useState<any[]>([])
   const [currencies, setCurrencies] = useState<any[]>([])
+  const quoteCurrencies = useMemo(() => {
+    return currencies.filter((currency: any) => currency.isActive !== false)
+  }, [currencies])
 
   const [related, setRelated] = useState<any>({ stageHistory: [], salesOrders: [], invoices: [], comments: [] })
   const [comment, setComment] = useState('')
   const [addingComment, setAddingComment] = useState(false)
+  const [attachPdf, setAttachPdf] = useState(true)
 
   useEffect(() => {
     Promise.all([
@@ -150,21 +157,46 @@ export function QuotationsPage() {
   useEffect(() => {
     api.getOrgSettings().then((s: any) => {
       const t = s?.terms?.quote || ''
-      if (id === 'new') setForm((prev: any) => ({ ...prev, terms: prev.terms || t }))
+      const defaultCurrency = s?.defaultCurrency || orgSettings.defaultCurrency || 'USD'
+      if (id === 'new') setForm((prev: any) => ({
+        ...prev,
+        terms: prev.terms || t,
+        currency: prev.currency || defaultCurrency,
+      }))
     }).catch(() => {})
-  }, [])
+  }, [id, orgSettings.defaultCurrency])
 
   useEffect(() => {
     if (id && id !== 'new') loadRecord(id)
-    else if (id === 'new') { setMode('form'); setForm((prev: any) => ({ ...prev, quoteNo: 'QUO-' + Date.now(), currency: orgCurrency() })) }
+    else if (id === 'new') {
+      setMode('form')
+      const saved = localStorage.getItem(draftKey)
+      if (saved) try { const draft = JSON.parse(saved); setForm(draft.form); setLineItems(draft.lineItems); return } catch {}
+      setForm((prev: any) => ({ ...prev, quoteNo: prev.quoteNo || 'QUO-' + Date.now(), currency: prev.currency || orgSettings.defaultCurrency || orgCurrency() }))
+    }
   }, [id])
+
+  useEffect(() => { if (isNew && mode === 'form') localStorage.setItem(draftKey, JSON.stringify({ form, lineItems })) }, [form, lineItems, isNew, mode])
+
+  useEffect(() => {
+    if (!isNew || form.currency) return
+    setForm((prev: any) => ({ ...prev, currency: orgSettings.defaultCurrency || 'USD' }))
+  }, [isNew, form.currency, orgSettings.defaultCurrency])
+
+  useEffect(() => {
+    if (!isNew || !form.currency) return
+    const configured = currencies.find((currency: any) => currency.code === form.currency)
+    if (configured && Number(configured.rate) > 0 && Number(form.conversionRate) === 1) {
+      setForm((prev: any) => ({ ...prev, conversionRate: Number(configured.rate) }))
+    }
+  }, [currencies, form.currency, isNew])
 
   function updateForm(field: string, value: any) {
     setForm((prev: any) => ({ ...prev, [field]: value }))
   }
 
   function handleCurrencyChange(code: string) {
-    const cur = currencies.find(c => (c.code || c.name) === code)
+    const cur = quoteCurrencies.find(c => (c.code || c.name) === code)
     const rate = cur && Number(cur.rate) > 0 ? Number(cur.rate) : 1
     setForm((prev: any) => ({ ...prev, currency: code, conversionRate: rate }))
   }
@@ -280,6 +312,7 @@ export function QuotationsPage() {
       const payload = JSON.stringify({ ...form, lineItems: lineItems.map((i: any) => ({ ...i, id: undefined, kind: undefined })) })
       if (isNew) {
         await api.request('/quotations', { method: 'POST', body: payload })
+        localStorage.removeItem(draftKey)
         addToast({ title: 'Created', description: 'Quotation created successfully', variant: 'success' })
       } else {
         await api.request(`/quotations/${id}`, { method: 'PUT', body: payload })
@@ -365,7 +398,7 @@ export function QuotationsPage() {
     const to = prompt('Send to email:')
     if (!to) return
     try {
-      await api.request(`/quotations/${id}/email`, { method: 'POST', body: JSON.stringify({ to }) })
+      await api.request(`/quotations/${id}/email`, { method: 'POST', body: JSON.stringify({ to, attachPdf }) })
       addToast({ title: 'Sent', description: `Email logged to console for ${to}` })
     } catch { addToast({ title: 'Error', description: 'Failed to send email', variant: 'destructive' }) }
   }
@@ -431,7 +464,7 @@ export function QuotationsPage() {
               <FormField {...fieldProps} field="carrier" type="text" />
               <FormField {...fieldProps} field="inventoryManager" type="text" />
               <FormField {...fieldProps} field="taxType" type="select" options={TAX_TYPES} />
-              <FormField {...fieldProps} field="currency" type="select" options={currencies.map((c: any) => c.code || c.name)} onSelect={handleCurrencyChange} />
+              <FormField {...fieldProps} field="currency" type="select" options={quoteCurrencies.map((c: any) => c.code)} onSelect={handleCurrencyChange} />
               <FormField {...fieldProps} field="conversionRate" type="number" />
               <FormField {...fieldProps} field="accountId" type="lookup" />
               <FormField {...fieldProps} field="contactId" type="lookup" />
@@ -623,6 +656,7 @@ export function QuotationsPage() {
             <Button variant="outline" size="sm" onClick={() => setMode('form')}><FileText className="mr-1 h-4 w-4" />Edit</Button>
             <Button variant="outline" size="sm" onClick={handlePdf}><FileDown className="mr-1 h-4 w-4" />PDF</Button>
             <Button variant="outline" size="sm" onClick={handleEmail}><Mail className="mr-1 h-4 w-4" />Email</Button>
+            <label className="inline-flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs font-medium"><input type="checkbox" checked={attachPdf} onChange={e => setAttachPdf(e.target.checked)} /> Attach PDF</label>
             <Button variant="outline" size="sm" onClick={handleConvertSalesOrder}><ShoppingCart className="mr-1 h-4 w-4" />Sales Order</Button>
             <Button variant="outline" size="sm" onClick={handleConvertInvoice}><Printer className="mr-1 h-4 w-4" />Invoice</Button>
             <Button variant="outline" size="sm" className="text-red-500" onClick={handleDelete}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>

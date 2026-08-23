@@ -6,6 +6,7 @@ dist/
 .spc.cache.php
 data/pg/
 uploads/
+packages/backend/private/
 data/*.sql
 data/*.dump
 *.tsbuildinfo

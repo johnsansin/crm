@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, Fragment } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api } from '@/lib/api'
+import { useAuthStore } from '@/lib/auth'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -64,11 +65,13 @@ function calcItem(item: any) {
 }
 
 export function PurchaseOrderDetailPage() {
+  const { user } = useAuthStore()
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToast } = useToast()
   useOrgSettings()
   const isNew = !id || id === 'new'
+  const draftKey = `crm:draft:${user?.companyId || 'company'}:${user?.id || 'user'}:purchaseorders:new`
   const [mode, setMode] = useState<'list' | 'form' | 'view'>(id === 'new' ? 'form' : id ? 'view' : 'list')
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -91,6 +94,7 @@ export function PurchaseOrderDetailPage() {
   const [currencies, setCurrencies] = useState<any[]>([])
 
   const [defaultTerms, setDefaultTerms] = useState('')
+  const [attachPdf, setAttachPdf] = useState(true)
 
   function handleCurrencyChange(code: string) {
     const cur = currencies.find(c => (c.code || c.name) === code)
@@ -169,6 +173,8 @@ export function PurchaseOrderDetailPage() {
     if (id && id !== 'new') loadRecord(id)
     else if (id === 'new') {
       setMode('form')
+      const saved = localStorage.getItem(draftKey)
+      if (saved) try { const draft = JSON.parse(saved); setForm(draft.form); setLineItems(draft.lineItems); return } catch {}
       setForm((prev: any) => {
         if (Object.keys(prev).length) return prev
         const f = emptyForm()
@@ -178,6 +184,8 @@ export function PurchaseOrderDetailPage() {
       })
     }
   }, [id])
+
+  useEffect(() => { if (isNew && mode === 'form' && Object.keys(form).length) localStorage.setItem(draftKey, JSON.stringify({ form, lineItems })) }, [form, lineItems, isNew, mode])
 
   useEffect(() => {
     if (mode === 'list') {
@@ -296,6 +304,7 @@ export function PurchaseOrderDetailPage() {
       const payload = JSON.stringify({ ...form, lineItems: lineItems.map((i: any) => ({ ...i, id: undefined, kind: undefined })) })
       if (isNew) {
         await api.request('/purchaseorders', { method: 'POST', body: payload })
+        localStorage.removeItem(draftKey)
         addToast({ title: 'Created', description: 'Purchase Order created successfully', variant: 'success' })
       } else {
         await api.request(`/purchaseorders/${id}`, { method: 'PUT', body: payload })
@@ -327,7 +336,7 @@ export function PurchaseOrderDetailPage() {
     const to = prompt('Send to email:')
     if (!to) return
     try {
-      await api.request(`/purchaseorders/${id}/email`, { method: 'POST', body: JSON.stringify({ to }) })
+      await api.request(`/purchaseorders/${id}/email`, { method: 'POST', body: JSON.stringify({ to, attachPdf }) })
       addToast({ title: 'Sent', description: `Email sent to ${to}`, variant: 'success' })
     } catch { addToast({ title: 'Error', description: 'Failed to send email', variant: 'destructive' }) }
   }
@@ -631,6 +640,7 @@ export function PurchaseOrderDetailPage() {
             <Button variant="outline" size="sm" onClick={() => setMode('form')}><FileText className="mr-1 h-4 w-4" />Edit</Button>
             <Button variant="outline" size="sm" onClick={handlePdf}><FileDown className="mr-1 h-4 w-4" />PDF</Button>
             <Button variant="outline" size="sm" onClick={handleEmail}><Mail className="mr-1 h-4 w-4" />Email</Button>
+            <label className="inline-flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs font-medium"><input type="checkbox" checked={attachPdf} onChange={e => setAttachPdf(e.target.checked)} /> Attach PDF</label>
             <Button variant="outline" size="sm" className="text-red-500" onClick={() => setDeleteTarget(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
           </div>
         </div>

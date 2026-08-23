@@ -24,11 +24,27 @@ let lastOverdueInvoiceCheck = 0
 let lastAssetMaintenanceCheck = 0
 let lastProjectHealthCheck = 0
 
+async function sendActivityReminders(now: Date) {
+  const activities = await prisma.activity.findMany({ where: { isActive: true, reminderAt: { lte: now }, reminderSentAt: null, OR: [{ assignedTo: { not: null } }, { assignedGroupId: { not: null } }], status: { notIn: ['Completed', 'Held', 'Cancelled'] } }, take: 100 })
+  for (const activity of activities) {
+    const claimed = await prisma.activity.updateMany({ where: { id: activity.id, reminderSentAt: null }, data: { reminderSentAt: now } })
+    if (!claimed.count) continue
+    const isTodo = activity.activityType === 'Task'
+    let userIds = activity.assignedTo ? [activity.assignedTo] : []
+    if (activity.assignedGroupId) {
+      const members = await prisma.userGroupMember.findMany({ where: { groupId: activity.assignedGroupId, user: { isActive: true } }, select: { userId: true } })
+      userIds = members.map(member => member.userId)
+    }
+    if (userIds.length) await prisma.notification.createMany({ data: userIds.map(userId => ({ userId, companyId: activity.companyId, title: isTodo ? 'To-Do reminder' : 'Calendar reminder', message: activity.subject, link: isTodo ? '/activities' : '/calendar' })) }).catch(() => {})
+  }
+}
+
 export async function runDueTasks(): Promise<void> {
   if (running) return
   running = true
   try {
     const now = new Date()
+    await sendActivityReminders(now)
     const tasks = await prisma.scheduledTask.findMany({
       where: { isActive: true, OR: [{ nextRun: { lte: now } }, { nextRun: null }] },
       take: 50,

@@ -2,13 +2,13 @@ import { NextFunction, Request, Response } from 'express'
 import { prisma } from './prisma'
 
 export const PERMISSION_MODULES = [
-  'dashboard', 'calendar', 'accounts', 'contacts', 'leads', 'potentials', 'campaigns',
+  'dashboard', 'calendar', 'forecast', 'activities', 'accounts', 'contacts', 'leads', 'potentials', 'campaigns',
   'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders',
   'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails',
   'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets',
   'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices',
   'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'timeentries', 'projectresources', 'chat', 'ai', 'landingpages',
-  'social', 'webhooks',
+  'social', 'webhooks', 'support',
 ] as const
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'import' | 'export'
