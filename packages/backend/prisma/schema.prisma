@@ -1807,6 +1807,7 @@ model Activity {
   @@index([companyId])
   @@index([startAt])
   @@index([dueAt])
+  @@index([reminderAt, reminderSentAt])
   @@index([assignedGroupId])
   @@index([parentModule, parentId])
 }
