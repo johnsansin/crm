@@ -1,4 +1,8 @@
-const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, '') ?? '/api'
+const viteApiBase = (import.meta as ImportMeta & {
+  env?: { VITE_API_BASE?: string }
+}).env?.VITE_API_BASE
+
+const API_BASE = viteApiBase?.replace(/\/$/, '') ?? '/api'
 
 const origin = API_BASE === '/api' ? '' : API_BASE.replace(/\/api\/?$/, '')
 export function publicUrl(path: string): string {

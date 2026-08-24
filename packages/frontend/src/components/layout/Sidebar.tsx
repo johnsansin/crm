@@ -140,7 +140,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, onHove
   const viewable = useViewableModules()
   const canOpen = (module: string) => !!user?.isAdmin || !!user?.isSuperAdmin || viewable.has(module)
   const sidebarPalette: Record<string, { background: string; border: string }> = {
-    vtiger: { background: '#2f3b46', border: '#42515d' },
+    vtiger: { background: '#15171a', border: '#2a2e33' },
     navy: { background: '#172554', border: '#1e3a8a' },
     graphite: { background: '#27272a', border: '#3f3f46' },
     emerald: { background: '#064e3b', border: '#047857' },
@@ -203,16 +203,16 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, onHove
         style={{ backgroundColor: palette.background, borderColor: palette.border }}
         className={cn(
           'fixed left-0 top-0 z-50 flex h-screen min-h-[100dvh] flex-col overflow-hidden border-r text-sidebar-foreground shadow-2xl shadow-slate-950/50 transition-all duration-300',
-          'w-[min(92vw,20rem)] max-w-full md:w-64',
+          'w-[min(92vw,20rem)] max-w-full md:w-[236px]',
           collapsed && 'md:w-16',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
           'md:translate-x-0 md:z-40'
         )}
       >
-        <div className="crm-sidebar-header relative flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-[max(1rem,env(safe-area-inset-left))]" data-tour="sidebar-logo">
+        <div className="crm-sidebar-header relative flex h-14 shrink-0 items-center justify-between border-b border-white/10 px-[max(0.875rem,env(safe-area-inset-left))]" data-tour="sidebar-logo">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/[0.04] to-transparent" />
           <div className={cn('relative flex items-center gap-3', collapsed && 'md:mx-auto')}>
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#2fa6a6] text-sm font-black text-white shadow-lg shadow-black/25 ring-1 ring-white/15">B</span>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-[#8e2a3c] to-[#5b1826] text-sm font-black text-white shadow-lg shadow-black/25 ring-1 ring-white/10">B</span>
             <div className={cn('min-w-0', collapsed && 'md:hidden')}>
               <span className="block text-base font-extrabold tracking-tight text-white">BizForce</span>
               <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9cabb5]">Smart CRM</span>
@@ -230,7 +230,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, onHove
           </button>
         </div>
 
-        <div className="crm-sidebar-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto overscroll-contain px-2.5 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="crm-sidebar-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto overscroll-contain px-2 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className={cn(collapsed && 'md:hidden')}>
             <div className="mb-2 flex items-center justify-between px-1">
               <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">{t('Quick access')}</p>
@@ -248,22 +248,22 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, onHove
 
           <div className={cn('min-h-0 flex-1', collapsed && 'md:hidden')} data-tour="modules">
             <p className="mb-2 px-1 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">{t('Modules')}</p>
-            <div className="crm-sidebar-groups grid grid-cols-4 gap-1 rounded-lg border border-white/[0.07] bg-[#293640] p-1 shadow-inner max-[380px]:grid-cols-3">
+            <div className="crm-sidebar-groups grid grid-cols-3 gap-1 rounded-lg border border-white/[0.07] bg-white/[0.035] p-1 shadow-inner max-[380px]:grid-cols-3">
               {menuGroups.map(group => {
                 const selected = expandedGroup === group.label
-                return <button key={group.label} type="button" onClick={() => setExpandedGroup(group.label)} title={t(group.label)} className={cn('relative min-w-0 rounded-md border px-1 py-2 text-[9px] font-bold leading-tight transition-all', selected ? 'border-[#48aaaa]/35 bg-[#3b4a55] text-white shadow-sm' : 'border-transparent text-[#a7b3bc] hover:bg-[#35434e] hover:text-white')}>
-                  {selected && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#45b8b8]" />}
+                return <button key={group.label} type="button" onClick={() => setExpandedGroup(group.label)} title={t(group.label)} className={cn('relative min-w-0 rounded-md border px-1 py-1.5 text-[9px] font-bold leading-tight transition-all', selected ? 'border-[#8e2a3c]/60 bg-[#251b1e] text-white shadow-sm' : 'border-transparent text-[#9aa0a6] hover:bg-white/[0.06] hover:text-white')}>
+                  {selected && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#c9566a]" />}
                   <span className="block truncate">{t(group.label)}</span>
                 </button>
               })}
             </div>
 
-            <div className="mt-2 rounded-lg border border-white/[0.07] bg-[#293640] p-1.5 shadow-inner shadow-black/15">
+            <div className="mt-2 rounded-lg border border-white/[0.07] bg-white/[0.025] p-1.5 shadow-inner shadow-black/15">
               <div className="mb-1.5 flex items-center gap-2 px-1.5 py-1">
-                <span className="h-2 w-2 rounded-full bg-[#45b8b8]" />
+                <span className="h-2 w-2 rounded-full bg-[#c9566a]" />
                 <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#dce4e9]">{t(expandedGroup)}</p>
               </div>
-              <div className="crm-sidebar-items grid grid-cols-2 gap-1 max-[340px]:grid-cols-1">
+              <div className="crm-sidebar-items grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-1">
                 {(menuGroups.find(group => group.label === expandedGroup)?.items || menuGroups[0]?.items || []).map(item => (
                   <NavItem key={item.module} module={item.module} label={t(item.label)} icon={item.icon} collapsed={collapsed} onNavigate={onMobileClose} compact />
                 ))}
@@ -333,18 +333,18 @@ function NavItem({ module, label, icon, collapsed, dataTour, onNavigate, tile, c
       onClick={onNavigate}
       className={({ isActive }) =>
         cn(
-          'group relative flex min-h-10 items-center gap-3 overflow-hidden rounded-xl border px-3 py-2.5 text-[13px] font-semibold transition-all duration-200',
+          'group relative flex min-h-9 min-w-0 items-center gap-2.5 rounded-md border px-2.5 py-2 text-[13px] font-medium transition-all duration-150',
           tile && 'min-h-[62px] flex-col justify-center gap-1 px-1 py-2 text-[10px]',
-          compact && 'min-h-9 gap-2 rounded-lg px-2 py-2 text-[11px]',
+          compact && 'min-h-8 gap-2 rounded-md px-2 py-1.5 text-[11.5px]',
           isActive
-            ? 'border-[#4badad]/30 bg-[#3d4c57] text-white shadow-md shadow-black/20 before:absolute before:inset-y-1 before:left-0 before:w-1 before:rounded-r-full before:bg-[#45b8b8]'
-            : 'border-transparent text-[#c5ced4] hover:border-white/10 hover:bg-[#394752] hover:text-white',
+            ? 'border-white/[0.06] bg-white/[0.055] text-white before:absolute before:inset-y-1 before:-left-2 before:w-[3px] before:rounded-r-full before:bg-[#c9566a]'
+            : 'border-transparent text-[#b9bec4] hover:border-white/[0.04] hover:bg-white/[0.045] hover:text-white',
           collapsed && 'md:justify-center md:px-2'
         )
       }
     >
-      <Icon size={tile ? 17 : compact ? 15 : 18} strokeWidth={2.15} className="relative shrink-0 text-[#8fcaca] transition-all duration-200 group-hover:scale-110 group-hover:text-white" />
-      <span className={cn('truncate leading-tight', collapsed && 'md:hidden')}>{label}</span>
+      <Icon size={tile ? 17 : compact ? 15 : 17} strokeWidth={1.75} className="relative shrink-0 text-[#9aa0a6] transition-colors duration-150 group-hover:text-white" />
+      <span className={cn('min-w-0 break-words leading-tight', (tile || compact) ? 'line-clamp-2 text-center sm:text-left md:text-left' : 'whitespace-normal', collapsed && 'md:hidden')}>{label}</span>
     </NavLink>
   )
 }

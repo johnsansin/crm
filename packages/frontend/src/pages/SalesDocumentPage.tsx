@@ -9,7 +9,7 @@ import { DateField } from '@/components/ui/date-field'
 import { DataTable } from '@/components/ui/data-table'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { ArrowLeft, Save, Loader2, Trash2, Plus, FileDown, Mail, Search, Copy, Building2, Users, ShoppingCart, MessageSquare, FileText, Receipt, CreditCard } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Trash2, Plus, FileDown, Mail, Search, Copy, Building2, Users, ShoppingCart, MessageSquare, FileText, Receipt, CreditCard, Eye, MoreHorizontal, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDate, formatDateTime, orgCurrency, useOrgSettings } from '@/lib/org-format'
 import { ProductSearchSelect } from '@/components/product-search-select'
@@ -160,6 +160,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
+  const [listStatus, setListStatus] = useState('All')
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<any>(null)
   const [activeTab, setActiveTab] = useState('details')
@@ -1092,6 +1093,71 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
   }
 
   const handleSearch = () => { setPage(1); loadList() }
+
+  if (module === 'salesorders') {
+    const statusCounts = records.reduce((result: Record<string, number>, record: any) => {
+      const status = record.soStatus || 'Created'
+      result[status] = (result[status] || 0) + 1
+      return result
+    }, {})
+    const shown = listStatus === 'All' ? records : records.filter(record => (record.soStatus || 'Created') === listStatus)
+    const totalValue = shown.reduce((sum, record) => sum + (Number(record.grandTotal) || 0), 0)
+    const allValue = records.reduce((sum, record) => sum + (Number(record.grandTotal) || 0), 0)
+    const open = records.filter(record => !['Delivered', 'Cancelled', 'Invoiced'].includes(record.soStatus || 'Created'))
+    const openValue = open.reduce((sum, record) => sum + (Number(record.grandTotal) || 0), 0)
+    const missingDates = records.filter(record => !record.validUntil).length
+    const awaitingInvoice = records.filter(record => ['Approved', 'Confirmed'].includes(record.soStatus)).length
+    const currency = records.find(record => record.currency)?.currency || orgCurrency()
+    const total = pagination?.total ?? records.length
+    const currentPage = pagination?.page || page
+    const totalPages = Math.max(1, pagination?.totalPages || 1)
+    const limit = pagination?.limit || 25
+    const from = total ? (currentPage - 1) * limit + 1 : 0
+    const to = Math.min(currentPage * limit, total)
+    const accountName = (record: any) => accounts.find(account => account.id === record.accountId)?.accountName || record.accountName || 'Direct order'
+    const stampClass = (status: string) => status === 'Approved' || status === 'Confirmed' ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300' : status === 'Delivered' || status === 'Invoiced' ? 'bg-rose-50 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300' : status === 'Cancelled' ? 'border border-dashed bg-transparent text-muted-foreground' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+
+    return (
+      <div className="mx-auto w-full max-w-[1440px] space-y-3">
+        <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
+          <div className="flex flex-wrap items-end gap-4 border-b px-4 py-3 sm:px-5">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">Sales orders</h1>
+              <p className="mt-0.5 text-xs text-muted-foreground">Orders confirmed from quotes, ready to fulfil and invoice.</p>
+            </div>
+            <div className="ml-auto hidden items-end gap-6 md:flex">
+              <div><p className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted-foreground">Open value</p><p className="mt-0.5 text-base font-semibold"><span className="mr-1 font-mono text-[9px] text-muted-foreground">{currency}</span>{openValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p></div>
+              <div><p className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted-foreground">Awaiting invoice</p><p className="mt-0.5 text-base font-semibold">{awaitingInvoice} <span className="text-[10px] font-normal text-muted-foreground">orders</span></p></div>
+            </div>
+            <Button onClick={() => navigate('/salesorders/new')} className="h-9 rounded-md bg-[#6e1f2e] px-3 text-xs text-white shadow-sm hover:bg-[#571825]"><Plus size={14} className="mr-1.5" />New sales order</Button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2.5">
+            <div className="relative min-w-[220px] max-w-sm flex-1"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => event.key === 'Enter' && handleSearch()} placeholder="Filter by SO number, subject or account" className="h-9 rounded-md bg-muted/30 pl-9 text-sm shadow-none" /></div>
+            <div className="flex gap-1 overflow-x-auto">{['All', 'Created', 'Approved', 'Delivered', 'Cancelled'].map(status => <button key={status} type="button" onClick={() => setListStatus(status)} className={cn('whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium text-muted-foreground', listStatus === status && 'border-foreground bg-foreground text-background')} >{status}<span className="ml-1 font-mono text-[9px] opacity-60">{status === 'All' ? records.length : statusCounts[status] || 0}</span></button>)}</div>
+            <button type="button" onClick={handleSearch} className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-xs text-muted-foreground hover:text-foreground"><SlidersHorizontal size={14} />Filter</button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px]">
+              <thead><tr className="border-b bg-muted/25 text-left font-mono text-[9px] uppercase tracking-[0.1em] text-muted-foreground"><th className="px-3 py-2.5">SO no.</th><th className="px-3 py-2.5">Subject</th><th className="px-3 py-2.5 text-right">Amount</th><th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Valid till</th><th className="px-3 py-2.5">Created</th><th className="w-20 px-3 py-2.5" /></tr></thead>
+              <tbody>{loading ? <tr><td colSpan={7} className="py-12 text-center text-sm text-muted-foreground"><Loader2 size={16} className="mr-2 inline animate-spin" />Loading sales orders…</td></tr> : shown.length === 0 ? <tr><td colSpan={7} className="py-12 text-center text-sm text-muted-foreground">No sales orders match this filter.</td></tr> : shown.map(record => {
+                const status = record.soStatus || 'Created'
+                return <tr key={record.id} onClick={() => navigate(`/salesorders/${record.id}`)} className="group cursor-pointer border-b last:border-0 hover:bg-muted/25"><td className="px-3 py-2.5 font-mono text-xs font-medium group-hover:text-[#6e1f2e]">{record.salesOrderNo || '—'}</td><td className="px-3 py-2.5"><p className="text-[13px] font-medium leading-tight">{record.subject || 'Untitled order'}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{accountName(record)}</p></td><td className="px-3 py-2.5 text-right text-sm font-semibold"><span className="mr-1 font-mono text-[9px] font-normal text-muted-foreground">{record.currency || currency}</span>{Number(record.grandTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td className="px-3 py-2.5"><span className={cn('inline-flex items-center gap-1 rounded px-2 py-1 font-mono text-[9px] uppercase tracking-wide', stampClass(status))}><span className="h-1 w-1 rounded-full bg-current" />{status}</span></td><td className="px-3 py-2.5 font-mono text-[11px] text-muted-foreground">{record.validUntil ? formatDate(record.validUntil) : <span className="rounded bg-amber-50 px-1.5 py-0.5 font-sans text-[10px] text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">Set date</span>}</td><td className="px-3 py-2.5 font-mono text-[11px] text-muted-foreground">{record.createdAt ? formatDate(record.createdAt) : '—'}</td><td onClick={event => event.stopPropagation()} className="px-3 py-2.5"><div className="flex justify-end gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"><button title="View" onClick={() => navigate(`/salesorders/${record.id}`)} className="grid h-7 w-7 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"><Eye size={14} /></button><button title="More" className="grid h-7 w-7 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"><MoreHorizontal size={14} /></button></div></td></tr>
+              })}</tbody>
+              {!loading && shown.length > 0 && <tfoot><tr className="border-t bg-muted/20"><td colSpan={2} className="px-3 py-2.5 text-xs text-muted-foreground">Total, {shown.length} orders</td><td className="px-3 py-2.5 text-right text-sm font-semibold"><span className="mr-1 font-mono text-[9px] text-muted-foreground">{currency}</span>{totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td colSpan={4} /></tr></tfoot>}
+            </table>
+          </div>
+          {total > 0 && <div className="flex items-center border-t px-3 py-2 text-[11px] text-muted-foreground"><span>Showing {from}–{to} of {total} orders</span><div className="ml-auto flex gap-1"><button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)} className="grid h-7 w-7 place-items-center rounded disabled:opacity-30 hover:bg-muted"><ChevronLeft size={14} /></button><span className="grid h-7 min-w-7 place-items-center rounded bg-foreground px-2 text-background">{currentPage}</span><button disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)} className="grid h-7 w-7 place-items-center rounded disabled:opacity-30 hover:bg-muted"><ChevronRight size={14} /></button></div></div>}
+        </section>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          <section className="rounded-lg border bg-card px-4 py-3"><div className="flex items-center justify-between"><p className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted-foreground">Order value</p><p className="text-[10px] text-muted-foreground">Current page</p></div><div className="mt-2 flex items-baseline justify-between"><span className="text-xs text-muted-foreground">Total booked</span><span className="text-xl font-semibold"><small className="mr-1 font-mono text-[9px] text-muted-foreground">{currency}</small>{allValue.toLocaleString()}</span></div><div className="mt-2 h-1.5 overflow-hidden rounded bg-muted"><div className="h-full bg-[#6e1f2e]" style={{ width: `${allValue ? Math.min(100, openValue / allValue * 100) : 0}%` }} /></div></section>
+          <section className="rounded-lg border bg-card px-4 py-3"><p className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted-foreground">Needs attention</p><div className="mt-2 flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-500" /><div><p className="text-xs font-medium">{missingDates} {missingDates === 1 ? 'order has' : 'orders have'} no valid-till date</p><p className="text-[11px] text-muted-foreground">Add dates to enable expiry and follow-up reminders.</p></div></div></section>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">

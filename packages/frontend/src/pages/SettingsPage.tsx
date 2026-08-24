@@ -14,6 +14,7 @@ import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/ta
 import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, Target, Languages, LogOut, type LucideIcon } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth'
 import { useTheme, type Accent } from '@/lib/theme'
+import { withAppBasePath } from '@/lib/base-path'
 import { TIMEZONES, DATE_FORMATS, COUNTRIES, SOCIAL_FIELDS, CURRENCY_CATALOG } from '@/lib/constants'
 import { OrgSettings } from '@/pages/settings/OrgSettings'
 import { AccessSettings } from '@/pages/settings/AccessSettings'
@@ -610,7 +611,7 @@ function UsersSettings() {
       if (isCurrentUser) {
         localStorage.removeItem('token')
         useAuthStore.setState({ token: null, user: null })
-        window.location.assign('/login')
+        window.location.assign(withAppBasePath('/login'))
       }
     },
     onError: (e: Error) => { addToast({ title: 'Could not end sessions', description: e.message, variant: 'destructive' }); setLogoutUser(null) },

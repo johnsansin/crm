@@ -24,7 +24,7 @@ import {
   ArrowLeft, Star, Pencil, Mail, RefreshCcw, Loader2, Plus, Trash2, Check, X, Clock,
   Paperclip, MessageSquare, Phone, Globe, AlertCircle, FileText, TrendingUp, ChevronRight,
   CalendarDays, Send, Users, Activity as ActivityIcon, CheckCircle2, Search,
-  History, LayoutGrid, List, Package, Megaphone, Wrench, Sparkles, Target, type LucideIcon,
+  History, LayoutGrid, List, Package, Megaphone, Wrench, Sparkles, Target, Bell, MapPin, type LucideIcon,
 } from 'lucide-react'
 
 const inputCls = 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
@@ -838,6 +838,8 @@ export function LeadDetailPage() {
   const initials = ((lead.firstName?.[0] || '') + (lead.lastName?.[0] || '')).toUpperCase() || '?'
   const recentActivities = (activitiesData?.data || []).slice(0, 5)
   const recentComments = (commentsData?.data || []).slice(0, 5)
+  const daysInPipeline = lead.createdAt ? Math.max(0, Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / 86400000)) : 0
+  const leadScore = Math.max(0, Math.min(10, Number(lead.leadScore ?? lead.score ?? lead.rating) || 0))
 
   const openActivityDialog = (a: any | null) => {
     if (a) {
@@ -1057,7 +1059,28 @@ export function LeadDetailPage() {
         </div>
       )}
 
-      <Card>
+      {!lead.isConverted && (
+        <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-slate-950 to-indigo-950 px-5 py-4 text-white shadow-lg sm:flex-row sm:items-center">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 text-amber-300"><Bell size={18}/></span>
+          <div className="min-w-0 flex-1"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-indigo-200">Next best action</p><p className="mt-1 text-sm text-slate-100">{recentActivities[0] ? <>Review <b>{recentActivities[0].subject}</b> and schedule the next touchpoint while this lead is active.</> : <>No activity is logged yet. Start with a call, email, or follow-up task.</>}</p></div>
+          <div className="flex shrink-0 gap-2"><Button variant="outline" size="sm" className="border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={()=>setActivityOpen(true)}>Schedule follow-up</Button><Button size="sm" className="bg-white font-semibold text-slate-950 hover:bg-slate-100" onClick={()=>setActivityOpen(true)}>Log activity</Button></div>
+        </div>
+      )}
+
+      <div className="grid items-start gap-5 lg:grid-cols-[308px_minmax(0,1fr)]">
+        <aside className="space-y-4 lg:sticky lg:top-5">
+          <div className="rounded-2xl border bg-card p-5 text-center shadow-sm">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-500 text-xl font-bold text-white shadow-lg shadow-indigo-500/20">{initials}</div>
+            <h2 className="mt-3 text-base font-bold">{fullName}</h2><p className="mt-1 text-xs text-muted-foreground">{lead.company || 'No company'}{lead.industry ? ` · ${lead.industry}` : ''}</p>
+            <div className="mt-3 flex flex-wrap justify-center gap-1.5">{lead.leadStatus&&<span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">{lead.leadStatus}</span>}{lead.leadSource&&<span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700">{lead.leadSource}</span>}</div>
+            <div className="mt-5 flex items-center gap-4 border-t border-b py-4 text-left"><div className="relative h-16 w-16 shrink-0"><svg className="-rotate-90" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" className="text-muted" strokeWidth="7"/><circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" className="text-indigo-600" strokeWidth="7" strokeLinecap="round" strokeDasharray="169.6" strokeDashoffset={169.6-(169.6*leadScore/10)}/></svg><span className="absolute inset-0 grid place-items-center text-sm font-bold">{leadScore ? leadScore.toFixed(1) : '—'}</span></div><div><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Lead score</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{leadScore >= 7 ? 'Strong fit — prioritize this lead.' : leadScore >= 4 ? 'Mid-tier fit — keep nurturing.' : 'Score this lead to assess fit.'}</p></div></div>
+            <div className="pt-4 text-left"><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Contact</p><div className="mt-3 space-y-3 text-xs">{lead.email?<a href={`mailto:${lead.email}`} className="flex items-center gap-2 hover:text-indigo-600"><Mail size={14}/><span className="truncate">{lead.email}</span></a>:<p className="flex items-center gap-2 text-muted-foreground"><Mail size={14}/>Email not provided</p>}{lead.phone||lead.mobile?<a href={`tel:${lead.phone||lead.mobile}`} className="flex items-center gap-2 hover:text-indigo-600"><Phone size={14}/>{lead.phone||lead.mobile}</a>:<p className="flex items-center gap-2 text-muted-foreground"><Phone size={14}/>Phone not provided</p>}<p className="flex items-center gap-2 text-muted-foreground"><MapPin size={14}/>{[lead.city,lead.country].filter(Boolean).join(', ')||'Location not set'}</p></div></div>
+          </div>
+          <div className="rounded-2xl border bg-card p-5 shadow-sm"><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Pipeline stage</p><div className="mt-4 space-y-0">{['New lead','Follow up','Qualified','Converted'].map((stage,index)=>{const status=String(lead.leadStatus||'').toLowerCase();const active=lead.isConverted?3:/qualif/.test(status)?2:/follow|contact|warm|hot/.test(status)?1:0;return <div key={stage} className="relative flex gap-3 pb-5 last:pb-0"><span className={cn('relative z-10 grid h-5 w-5 place-items-center rounded-full border-2 text-[9px]',index<active?'border-indigo-600 bg-indigo-600 text-white':index===active?'border-indigo-600 bg-background ring-4 ring-indigo-50':'border-border bg-muted')}>{index<active?'✓':''}</span>{index<3&&<span className={cn('absolute left-[9px] top-5 h-full w-0.5',index<active?'bg-indigo-600':'bg-border')}/>}<span className={cn('pt-0.5 text-xs font-semibold',index<=active?'text-foreground':'text-muted-foreground')}>{stage}</span></div>})}</div></div>
+          <div className="rounded-2xl border bg-card p-5 shadow-sm"><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Owner & source</p><div className="mt-3 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-xs font-bold text-indigo-700">{String(lead.ownerName||currentUser?.name||'AU').split(/\s+/).map((v:string)=>v[0]).join('').slice(0,2).toUpperCase()}</span><div><p className="text-sm font-semibold">{lead.ownerName||currentUser?.name||'Admin User'}</p><p className="text-xs text-muted-foreground">Lead owner</p></div></div></div>
+        </aside>
+
+      <Card className="min-w-0 overflow-hidden rounded-2xl">
         <CardContent className="p-0">
           <TabsRoot value={activeTab} onValueChange={setActiveTab}>
             <div className="overflow-x-auto border-b px-2 pt-3 sm:px-6 sm:pt-4">
@@ -1076,7 +1099,7 @@ export function LeadDetailPage() {
             {/* Summary */}
             <TabsContent value="Summary" className="px-3 py-4 sm:px-6 sm:py-6">
               {/* Header card */}
-              <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:mb-6">
+              <div className="hidden">
                 <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
                 <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-6">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 text-xl font-bold text-white shadow-lg shadow-indigo-500/30 sm:h-20 sm:w-20 sm:text-2xl">
@@ -1126,6 +1149,13 @@ export function LeadDetailPage() {
                   <div className="border-t px-4 py-3 sm:border-t-0"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Source</p><p className="mt-0.5 truncate text-sm font-semibold">{lead.leadSource || '—'}</p></div>
                   <div className="border-t px-4 py-3 sm:border-t-0"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Rating</p><p className="mt-0.5 truncate text-sm font-semibold">{lead.rating || '—'}</p></div>
                 </div>
+              </div>
+
+              <div className="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
+                <div className="rounded-xl bg-muted/60 p-4"><p className="text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground">Days in pipeline</p><p className="mt-2 text-xl font-bold">{daysInPipeline}</p><p className="mt-1 text-[11px] text-muted-foreground">since this lead was created</p></div>
+                <div className="rounded-xl bg-muted/60 p-4"><p className="text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground">Touchpoints</p><p className="mt-2 text-xl font-bold">{activitiesData?.data?.length || 0}</p><p className="mt-1 text-[11px] text-muted-foreground">logged activities</p></div>
+                <div className="rounded-xl bg-muted/60 p-4"><p className="text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground">Comments</p><p className="mt-2 text-xl font-bold">{commentsData?.data?.length || 0}</p><p className="mt-1 text-[11px] text-muted-foreground">internal team notes</p></div>
+                <div className="rounded-xl bg-muted/60 p-4"><p className="text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground">Lead score</p><p className="mt-2 text-xl font-bold">{leadScore ? leadScore.toFixed(1) : '—'}</p><p className="mt-1 text-[11px] text-muted-foreground">qualification strength</p></div>
               </div>
 
               {/* Information (inline editable) */}
@@ -1473,6 +1503,7 @@ export function LeadDetailPage() {
           </TabsRoot>
         </CardContent>
       </Card>
+      </div>
 
       {/* Activity dialog (vTiger-style: separate Event and Task forms) */}
       <Dialog open={activityOpen} onOpenChange={setActivityOpen}>

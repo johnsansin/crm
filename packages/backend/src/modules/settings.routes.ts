@@ -13,6 +13,35 @@ import { getModuleConfig } from './moduleSetup'
 export const settingsRouter = Router()
 settingsRouter.use(authMiddleware)
 
+const STANDARD_LEAD_STATUSES = [
+  'New',
+  'Attempted to Contact',
+  'Not Contacted',
+  'Contact in Future',
+  'Contacted',
+  'Follow Up',
+  'Cold',
+  'Warm',
+  'Hot',
+  'Pre Qualified',
+  'Qualified',
+  'Unqualified',
+  'Junk Lead',
+  'Lost Lead',
+  'Converted',
+]
+
+async function ensureStandardLeadStatuses(companyId?: string | null) {
+  if (!companyId) return
+  await Promise.all(STANDARD_LEAD_STATUSES.map((label, sequence) =>
+    prisma.picklistOption.upsert({
+      where: { companyId_moduleName_fieldName_label: { companyId, moduleName: 'leads', fieldName: 'leadStatus', label } },
+      create: { companyId, moduleName: 'leads', fieldName: 'leadStatus', label, sequence },
+      update: { isActive: true },
+    })
+  ))
+}
+
 const userOnly = (fn: (req: Request, res: Response, next: NextFunction) => void) => fn
 
 async function requireOwnedRecord(model: any, id: string, req: Request, res: Response): Promise<boolean> {
@@ -89,6 +118,7 @@ settingsRouter.put('/', requireAdmin, async (req, res, next) => {
 settingsRouter.get('/picklists', async (req, res, next) => {
   try {
     const { module, field } = req.query
+    if (module === 'leads' && field === 'leadStatus') await ensureStandardLeadStatuses(req.user!.companyId)
     const where: any = { isActive: true }
     if (req.user!.companyId) where.companyId = req.user!.companyId
     if (module) where.moduleName = module as string
@@ -101,6 +131,7 @@ settingsRouter.get('/picklists', async (req, res, next) => {
 settingsRouter.get('/picklists/all', async (req, res, next) => {
   try {
     const { module } = req.query
+    if (!module || module === 'leads') await ensureStandardLeadStatuses(req.user!.companyId)
     const where: any = { isActive: true }
     if (req.user!.companyId) where.companyId = req.user!.companyId
     if (module) where.moduleName = module as string

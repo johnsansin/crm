@@ -215,7 +215,7 @@ export function AppLayout() {
         }}
       />
 
-      <div className={cn('h-screen min-h-[100dvh] min-w-0 flex flex-col overflow-hidden transition-all duration-300', 'ml-0 md:ml-64', sidebarCollapsed && 'md:ml-16')}>
+      <div className={cn('h-screen min-h-[100dvh] min-w-0 flex flex-col overflow-hidden transition-all duration-300', 'ml-0 md:ml-[236px]', sidebarCollapsed && 'md:ml-16')}>
         {activeAnnouncements.map(a => (
           <div key={a.id} className="flex items-center gap-3 px-4 md:px-6 py-2 bg-primary text-primary-foreground text-sm shrink-0">
             <Megaphone size={15} className="shrink-0" />
@@ -228,41 +228,42 @@ export function AppLayout() {
             </button>
           </div>
         ))}
-        <header data-tour="header" className="shrink-0 h-14 sm:h-16 bg-background/80 backdrop-blur-xl border-b border-border/60 shadow-sm flex items-center justify-between px-2.5 sm:px-4 md:px-6 gap-1.5 md:gap-4 relative z-30">
-          <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+        <header data-tour="header" className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 md:gap-5 md:px-6">
 
           <button
-            className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-lg transition-colors"
+            className="relative z-10 md:hidden grid h-10 w-10 shrink-0 place-items-center text-foreground hover:bg-accent rounded-lg transition-colors"
             onClick={() => setMobileOpen(true)}
+            aria-label={t('Open menu')}
+            aria-expanded={mobileOpen}
           >
-            <Menu size={20} />
+            <Menu size={22} />
           </button>
 
-          <div className="hidden sm:flex items-center gap-3 shrink-0 mr-3 min-w-0">
+          <div className="hidden shrink-0 items-center gap-2.5 sm:flex md:min-w-[190px]">
             {user?.company?.logo ? (
-              <img src={user.company.logo} alt={user.company.name} className="h-9 w-9 rounded-lg object-contain p-0.5 bg-white dark:bg-white/10 ring-1 ring-border shrink-0" />
+              <img src={user.company.logo} alt={user.company.name} className="h-8 w-8 shrink-0 rounded-lg bg-white object-contain p-0.5 ring-1 ring-border" />
             ) : (
-              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground flex items-center justify-center shadow-sm shrink-0">
-                <Building2 size={18} />
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-500 font-bold text-white shadow-sm shadow-indigo-500/20">
+                B
               </div>
             )}
             <div className="hidden sm:block min-w-0 leading-tight">
-              <p className="text-sm font-bold text-foreground truncate max-w-[160px]">{user?.company?.name || 'BizForce'}</p>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="max-w-[160px] truncate text-sm font-bold tracking-tight text-foreground">{user?.company?.name || 'BizForce Online'}</p>
+              <p className="text-[10px] font-medium text-muted-foreground">
                 {user?.isAdmin ? t('Organization Admin') : t('Workspace')}
               </p>
             </div>
           </div>
 
-          <div className="relative flex-1 max-w-md" ref={searchRef}>
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <div className="relative min-w-0 max-w-[420px] flex-1" ref={searchRef}>
+            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               ref={searchInputRef}
               placeholder={t('Search records...')}
               value={searchQuery}
               onChange={e => { setSearchQuery(e.target.value); setShowSearch(true) }}
               onFocus={() => setShowSearch(true)}
-              className="h-9 pl-9 pr-14 rounded-full border-border/70 bg-muted/40 shadow-none focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-ring/40 transition-all"
+              className="h-9 rounded-[10px] border-border bg-muted/55 pl-9 pr-14 text-[13px] shadow-none transition-all focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-indigo-500/20"
             />
             <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground rounded border border-border bg-background shadow-sm">
               <Command size={10} />K
@@ -296,7 +297,7 @@ export function AppLayout() {
           </div>
 
           <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
-            <Button variant="ghost" size="icon" title={t('Chat')} className="relative hidden sm:inline-flex rounded-full h-9 w-9" onClick={() => navigate('/chat')}>
+            <Button variant="ghost" size="icon" title={t('Chat')} className="relative hidden h-9 w-9 rounded-lg text-muted-foreground sm:inline-flex" onClick={() => navigate('/chat')}>
               <MessageSquare size={17} />
               {chatUnread > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center ring-2 ring-background">
@@ -306,7 +307,7 @@ export function AppLayout() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" title={t('Notifications')} className="relative rounded-full h-9 w-9">
+                <Button variant="ghost" size="icon" title={t('Notifications')} className="relative h-9 w-9 rounded-lg text-muted-foreground">
                   <Bell size={17} />
                   {unreadCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center ring-2 ring-background">
@@ -363,12 +364,12 @@ export function AppLayout() {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="ghost" size="icon" onClick={toggleTheme} title={t('Toggle theme')} className="hidden sm:inline-flex rounded-full h-9 w-9">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} title={t('Toggle theme')} className="hidden h-9 w-9 rounded-lg text-muted-foreground sm:inline-flex">
               {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="hidden sm:inline-flex gap-1.5 px-2 rounded-full h-9" title={t('Language')} disabled={langSaving}>
+                <Button variant="ghost" size="sm" className="hidden h-9 gap-1.5 rounded-lg px-2 text-muted-foreground sm:inline-flex" title={t('Language')} disabled={langSaving}>
                   {langSaving ? <Loader2 size={15} className="animate-spin" /> : <Languages size={15} />}
                   <span className="hidden md:inline text-xs font-semibold uppercase">{currentLang.split('_')[0]}</span>
                 </Button>
@@ -385,8 +386,8 @@ export function AppLayout() {
             <div className="hidden md:block w-px h-6 bg-border mx-1" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2 pl-1.5 pr-2.5 h-11 rounded-full" data-tour="profile">
-                  <UserAvatar user={user} size={30} className="ring-2 ring-primary/20" />
+                <Button variant="ghost" className="h-10 gap-2 rounded-lg py-1 pl-1.5 pr-2.5" data-tour="profile">
+                  <UserAvatar user={user} size={30} className="rounded-lg ring-1 ring-indigo-200" />
                   <span className="hidden md:block text-left leading-tight">
                     <span className="block text-xs font-semibold max-w-[110px] truncate">{user?.firstName} {user?.lastName}</span>
                     <span className="block text-[10px] text-muted-foreground">{user?.isAdmin ? t('Admin') : t('Member')}</span>

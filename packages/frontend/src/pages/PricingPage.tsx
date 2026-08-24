@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Check, ChevronDown } from 'lucide-react'
 import { SiteLayout } from '@/components/SiteLayout'
 import { useState } from 'react'
+import { withAppBasePath } from '@/lib/base-path'
 
 const plans = [
   {
@@ -111,9 +112,9 @@ export function PricingPage() {
                   }`}
                   onClick={() => {
                     if (plan.name === 'Enterprise') {
-                      window.location.href = '/contact'
+                      window.location.href = withAppBasePath('/contact')
                     } else {
-                      window.location.href = '/signup'
+                      window.location.href = withAppBasePath('/signup')
                     }
                   }}
                 >

@@ -27,6 +27,7 @@ import { fieldConfigs } from '@/lib/module-fields'
 import { t } from '@/lib/i18n'
 import { RecordTags } from '@/components/record-tags'
 import { useAuthStore } from '@/lib/auth'
+import { appBasePath } from '@/lib/base-path'
 
 const labelMap: Record<string, string> = {
   accounts: 'Account', contacts: 'Contact', leads: 'Lead',
@@ -228,7 +229,10 @@ export function ModuleDetailPage() {
   const { addToast } = useToast()
   const isNew = !id || id === 'new'
   const isEditMode = isNew || searchParams.get('edit') === 'true' || window.location.pathname.endsWith('/edit')
-  const mod = module || (window.location.pathname.split('/').filter(Boolean)[0] || '')
+  const routePath = appBasePath && window.location.pathname.startsWith(appBasePath)
+    ? window.location.pathname.slice(appBasePath.length)
+    : window.location.pathname
+  const mod = module || (routePath.split('/').filter(Boolean)[0] || '')
 
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -884,7 +888,9 @@ export function ModuleDetailPage() {
                 <ChevronRight size={12} /> {isNew ? 'New Record' : 'Edit Record'}
               </p>
               <h1 className="text-xl md:text-2xl font-bold tracking-tight truncate">
-                {isNew ? `Create New ${label}` : `Edit ${label}`}
+                {mod === 'potentials' && formData.potentialName
+                  ? formData.potentialName
+                  : isNew ? `Create New ${label}` : `Edit ${label}`}
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5">Fill in the details below and save to {isNew ? 'create this' : 'update the'} record.</p>
             </div>
@@ -896,7 +902,20 @@ export function ModuleDetailPage() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <Card>
+        {mod === 'potentials' ? (
+          <OpportunityEditor
+            formData={formData}
+            errors={errors}
+            handleChange={handleChange}
+            currencies={currencies}
+            stageOptions={dynamicOptions.potentials?.stage || SELECT_OPTIONS.potentials.stage}
+            leadSourceOptions={dynamicOptions.potentials?.leadSource || SELECT_OPTIONS.potentials.leadSource}
+            typeOptions={dynamicOptions.potentials?.type || SELECT_OPTIONS.potentials.type}
+            forecastOptions={dynamicOptions.potentials?.forecastCategory || SELECT_OPTIONS.potentials.forecastCategory}
+          />
+        ) : mod === 'leads' ? (
+          <LeadEditor formData={formData} errors={errors} handleChange={handleChange} users={users} roles={roles} options={dynamicOptions.leads || SELECT_OPTIONS.leads} />
+        ) : <Card>
           <CardContent className="p-0">
             <FormTabs
               module={mod}
@@ -933,9 +952,9 @@ export function ModuleDetailPage() {
               customFields={customFields}
             />
           </CardContent>
-        </Card>
+        </Card>}
 
-        <div className="flex justify-end gap-2 mt-4">
+        <div className={cn('flex justify-end gap-2 mt-4', mod === 'potentials' && 'sticky bottom-0 z-20 -mx-4 border-t bg-background/95 px-4 py-3 shadow-[0_-4px_18px_rgba(15,23,42,0.06)] backdrop-blur sm:-mx-6 sm:px-6')}>
           <Button type="button" variant="outline" onClick={() => { localStorage.removeItem(DRAFT_KEY); navigate(isNew ? `/${mod}` : `/${mod}/${id}`) }}>Cancel</Button>
           {!isNew && (
             <Button type="button" variant="destructive" onClick={() => setShowDelete(true)}>
@@ -1006,6 +1025,144 @@ export function ModuleDetailPage() {
         confirmLabel={t('Delete')}
         variant="destructive"
       />
+    </div>
+  )
+}
+
+function LeadEditor({ formData, errors, handleChange, users, roles, options }: { formData: Record<string, any>; errors: Record<string,string>; handleChange:(name:string,value:any)=>void; users:any[]; roles:any[]; options:Record<string,string[]> }) {
+  const labelClass = 'mb-1.5 block text-[11px] font-bold uppercase tracking-[.045em] text-muted-foreground'
+  const inputClass = 'h-10 rounded-lg bg-background shadow-none focus-visible:ring-indigo-500/20 focus-visible:ring-offset-0'
+  const required = ['firstName','lastName','company','assignedTo']
+  const complete = required.filter(key => String(formData[key] || '').trim()).length
+  const percent = Math.round((complete / required.length) * 100)
+  const NativeSelect = ({ name }: { name:string }) => <select value={formData[name] || ''} onChange={e=>handleChange(name,e.target.value)} className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"><option value="">— None —</option>{(options[name]||[]).filter(v=>!/^--/.test(v)).map(v=><option key={v}>{v}</option>)}</select>
+  const Field = ({ name, type='text', placeholder='' }: { name:string; type?:string; placeholder?:string }) => <div><label className={labelClass}>{getFieldLabel(name)} {required.includes(name)&&<span className="text-destructive">*</span>}</label><Input type={type} value={formData[name] ?? ''} onChange={e=>handleChange(name,e.target.value)} placeholder={placeholder} className={cn(inputClass,errors[name]&&'border-destructive')}/>{errors[name]&&<p className="mt-1 text-xs text-destructive">{errors[name]}</p>}</div>
+  const Section = ({ number,title,description,children }: { number:number; title:string; description:string; children:React.ReactNode }) => <section className="border-b p-5 last:border-0 sm:p-6"><div className="mb-5 flex gap-2.5"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-indigo-50 text-xs font-bold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{number}</span><div><h2 className="text-sm font-bold">{title}</h2><p className="mt-0.5 text-xs text-muted-foreground">{description}</p></div></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</div></section>
+  return <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+    <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+      <Section number={1} title="Contact" description="The person your sales team will contact."><div><label className={labelClass}>Salutation</label><NativeSelect name="salutation"/></div><Field name="firstName" placeholder="e.g. Ali"/><Field name="lastName" placeholder="e.g. Hassan"/><Field name="email" type="email" placeholder="name@company.com"/><Field name="secondaryEmail" type="email"/><Field name="phone" placeholder="+92 300 0000000"/><Field name="mobile"/><Field name="fax"/><Field name="website" placeholder="https://"/></Section>
+      <Section number={2} title="Company" description="Firmographic details used for qualification and reporting."><div className="sm:col-span-2"><Field name="company" placeholder="Company name"/></div><Field name="title" placeholder="Owner, purchasing manager…"/><div><label className={labelClass}>Industry</label><NativeSelect name="industry"/></div><Field name="noOfEmployees" type="number"/><Field name="annualRevenue" type="number"/><Field name="interest" placeholder="Products or services of interest"/></Section>
+      <Section number={3} title="Lead details" description="Ownership, source, status, and qualification context."><div><label className={labelClass}>Lead source</label><NativeSelect name="leadSource"/></div><div><label className={labelClass}>Lead status</label><NativeSelect name="leadStatus"/></div><Field name="rating"/><div className="sm:col-span-2 xl:col-span-3"><label className={labelClass}>Assigned to <span className="text-destructive">*</span></label><UserRoleSelect value={formData.assignedTo||''} users={users} roles={roles} onSelect={v=>handleChange('assignedTo',v)}/>{errors.assignedTo&&<p className="mt-1 text-xs text-destructive">{errors.assignedTo}</p>}</div></Section>
+      <Section number={4} title="Address & notes" description="Location and context for the next person working this lead."><Field name="street"/><Field name="city"/><Field name="state"/><Field name="country"/><Field name="postalCode"/><Field name="poBox"/><div className="sm:col-span-2 xl:col-span-3"><label className={labelClass}>Description</label><textarea value={formData.description||''} onChange={e=>handleChange('description',e.target.value)} placeholder="Anything the next rep should know before contacting this lead…" className="min-h-28 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"/></div></Section>
+    </div>
+    <aside className="space-y-4 lg:sticky lg:top-5"><div className="rounded-2xl border bg-card p-5 shadow-sm"><div className="flex items-center justify-between"><div><p className="text-sm font-bold">Profile completeness</p><p className="mt-1 text-xs text-muted-foreground">Complete the essentials before saving.</p></div><span className="text-xl font-bold text-indigo-700">{percent}%</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-indigo-600 transition-all" style={{width:`${percent}%`}}/></div><div className="mt-4 space-y-2">{required.map(key=><div key={key} className="flex items-center gap-2 text-xs"><span className={cn('grid h-4 w-4 place-items-center rounded-full border text-[9px]',formData[key]?'border-emerald-600 bg-emerald-600 text-white':'text-transparent')}>✓</span><span className={formData[key]?'text-foreground':'text-muted-foreground'}>{getFieldLabel(key)}</span></div>)}</div></div><div className="rounded-2xl bg-indigo-50 p-4 text-indigo-900 dark:bg-indigo-500/10 dark:text-indigo-200"><p className="text-sm font-bold">Build momentum early</p><p className="mt-1 text-xs leading-5 opacity-75">After saving, open the lead workspace to schedule a follow-up, log activity, send email, or convert the record.</p></div></aside>
+  </div>
+}
+
+function OpportunityEditor({ formData, errors, handleChange, currencies, stageOptions, leadSourceOptions, typeOptions, forecastOptions }: {
+  formData: Record<string, any>
+  errors: Record<string, string>
+  handleChange: (name: string, value: any) => void
+  currencies: any[]
+  stageOptions: string[]
+  leadSourceOptions: string[]
+  typeOptions: string[]
+  forecastOptions: string[]
+}) {
+  const [tab, setTab] = useState<'details' | 'description'>('details')
+  const amount = Number(formData.amount) || 0
+  const probability = Math.max(0, Math.min(100, Number(formData.probability) || 0))
+  const weightedValue = amount * probability / 100
+  const currency = formData.currency || 'USD'
+  const activeStages = stageOptions.filter(stage => stage && stage !== '--None--' && stage !== 'Closed Lost')
+  const selectedStageIndex = activeStages.indexOf(formData.stage)
+  const closed = formData.stage === 'Closed Won' || formData.stage === 'Closed Lost'
+  const completedStages = closed ? activeStages.length : Math.max(0, selectedStageIndex + 1)
+  const closeDate = formData.closingDate ? new Date(`${String(formData.closingDate).slice(0, 10)}T12:00:00`) : null
+  const daysToClose = closeDate && !Number.isNaN(closeDate.getTime())
+    ? Math.ceil((closeDate.getTime() - Date.now()) / 86400000)
+    : null
+  const currencySymbol = new Intl.NumberFormat(undefined, { style: 'currency', currency }).formatToParts(0).find(part => part.type === 'currency')?.value || currency
+  const inputClass = 'h-10 rounded-lg border-border bg-background shadow-none focus-visible:ring-indigo-500/20 focus-visible:ring-offset-0'
+  const labelClass = 'mb-1.5 block text-[11px] font-bold uppercase tracking-[0.045em] text-muted-foreground'
+
+  const NativeSelect = ({ name, options }: { name: string; options: string[] }) => (
+    <select
+      value={formData[name] || ''}
+      onChange={event => handleChange(name, event.target.value === '--None--' ? '' : event.target.value)}
+      className={cn('h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10', errors[name] && 'border-destructive')}
+    >
+      {options.map(option => <option key={option} value={option === '--None--' ? '' : option}>{option}</option>)}
+    </select>
+  )
+
+  const Section = ({ number, title, description, children }: { number: number; title: string; description: string; children: React.ReactNode }) => (
+    <section className="border-b border-border p-5 last:border-b-0 sm:p-6">
+      <div className="mb-5 flex gap-2.5">
+        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-indigo-50 font-mono text-[10px] font-bold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{number}</span>
+        <div>
+          <h2 className="text-sm font-bold tracking-tight">{title}</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</div>
+    </section>
+  )
+
+  return (
+    <div>
+      <div className="mb-5 inline-flex rounded-xl border bg-card p-1 shadow-sm">
+        <button type="button" onClick={() => setTab('details')} className={cn('rounded-lg px-4 py-2 text-sm font-semibold transition', tab === 'details' ? 'bg-indigo-700 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted')}>Details</button>
+        <button type="button" onClick={() => setTab('description')} className={cn('flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition', tab === 'description' ? 'bg-indigo-700 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted')}><span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />Description</button>
+      </div>
+
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+          {tab === 'details' ? <>
+            <Section number={1} title="Opportunity overview" description="What the deal is and where it came from.">
+              <div className="sm:col-span-2 xl:col-span-3">
+                <label className={labelClass}>Opportunity name <span className="text-destructive">*</span></label>
+                <Input value={formData.potentialName || ''} onChange={e => handleChange('potentialName', e.target.value)} placeholder="e.g. Acme Corp — Annual license renewal" className={cn(inputClass, errors.potentialName && 'border-destructive')} />
+                {errors.potentialName && <p className="mt-1 text-xs text-destructive">{errors.potentialName}</p>}
+              </div>
+              <div><label className={labelClass}>Type</label><NativeSelect name="type" options={typeOptions} /></div>
+              <div><label className={labelClass}>Lead source</label><NativeSelect name="leadSource" options={leadSourceOptions} /></div>
+              <div><label className={labelClass}>Forecast category</label><NativeSelect name="forecastCategory" options={forecastOptions} /></div>
+            </Section>
+
+            <Section number={2} title="Deal value" description="Amount, currency, and how likely it is to close.">
+              <div><label className={labelClass}>Amount</label><div className="relative"><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm text-muted-foreground">{currencySymbol}</span><Input type="number" min="0" step="0.01" value={formData.amount ?? ''} onChange={e => handleChange('amount', e.target.value)} className={cn(inputClass, 'pl-8 font-mono font-semibold')} /></div></div>
+              <div><label className={labelClass}>Currency</label><NativeSelect name="currency" options={['--None--', ...currencies.map(c => c.code || c.name).filter(Boolean)]} /></div>
+              <div><label className={labelClass}>Probability (%)</label><Input type="number" min="0" max="100" value={formData.probability ?? ''} onChange={e => handleChange('probability', e.target.value)} className={inputClass} /></div>
+            </Section>
+
+            <Section number={3} title="Timeline & stage" description="Where this deal sits in the pipeline and what's next.">
+              <div><label className={labelClass}>Closing date <span className="text-destructive">*</span></label><DateField value={formData.closingDate || ''} onChange={value => handleChange('closingDate', value)} className={cn(inputClass, errors.closingDate && 'border-destructive')} /></div>
+              <div><label className={labelClass}>Stage <span className="text-destructive">*</span></label><NativeSelect name="stage" options={stageOptions} /></div>
+              <div className="sm:col-span-2 xl:col-span-3"><label className={labelClass}>Next step <span className="normal-case font-medium tracking-normal text-muted-foreground/70">optional</span></label><Input value={formData.nextStep || ''} onChange={e => handleChange('nextStep', e.target.value)} placeholder="e.g. Send signed contract for countersignature" className={inputClass} /></div>
+            </Section>
+
+            <Section number={4} title="Analysis & notes" description="Context for anyone reviewing this deal later.">
+              <div className="sm:col-span-2 xl:col-span-3"><label className={labelClass}>Outcome analysis <span className="normal-case font-medium tracking-normal text-muted-foreground/70">optional</span></label><textarea value={formData.outcomeAnalysis || ''} onChange={e => handleChange('outcomeAnalysis', e.target.value)} placeholder="Why this deal is expected to win or lose..." className="min-h-24 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10" /><p className="mt-1 text-[11px] text-muted-foreground">Visible to your team on the deal timeline.</p></div>
+            </Section>
+          </> : (
+            <section className="p-5 sm:p-6">
+              <div className="mb-5 flex gap-2.5"><span className="grid h-5 w-5 place-items-center rounded-md bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15"><FileText size={12} /></span><div><h2 className="text-sm font-bold">Description</h2><p className="mt-0.5 text-xs text-muted-foreground">Add supporting context and background for this opportunity.</p></div></div>
+              <label className={labelClass}>Opportunity description</label>
+              <textarea value={formData.description || ''} onChange={e => handleChange('description', e.target.value)} placeholder="Add deal context, customer requirements, risks, or other notes..." className="min-h-48 w-full resize-y rounded-lg border bg-background px-3 py-3 text-sm leading-relaxed outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10" />
+            </section>
+          )}
+        </div>
+
+        <aside className="space-y-4 lg:sticky lg:top-5">
+          <div className="rounded-xl border bg-card p-5 shadow-sm">
+            <div className="mb-5 flex items-center justify-between"><h3 className="text-sm font-bold">Deal summary</h3><span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />Live</span></div>
+            <p className="font-mono text-3xl font-semibold tracking-tight">{new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(weightedValue)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Weighted value (amount × probability)</p>
+            <div className="mt-5 flex justify-between text-xs font-semibold"><span className="text-muted-foreground">Win probability</span><span className="font-mono text-indigo-700 dark:text-indigo-300">{probability}%</span></div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full border bg-muted"><div className="h-full rounded-full bg-gradient-to-r from-indigo-700 to-violet-500 transition-all" style={{ width: `${probability}%` }} /></div>
+            <div className="mt-5 flex items-center justify-between gap-3 text-xs font-semibold"><span className="text-muted-foreground">Pipeline stage</span><span className="max-w-[150px] truncate rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">{formData.stage || 'Not selected'}</span></div>
+            <div className="mt-3 flex gap-1">{activeStages.map((stage, index) => <span key={stage} className={cn('h-1.5 flex-1 rounded-full border bg-muted transition-colors', index < completedStages && 'border-emerald-500 bg-emerald-500')} />)}</div>
+            <p className="mt-2 text-[11px] text-muted-foreground">{completedStages} of {activeStages.length} stages complete</p>
+            <div className="mt-5 divide-y border-t text-xs">
+              <div className="flex justify-between py-3"><span className="text-muted-foreground">Days to close</span><span className="font-mono font-semibold">{daysToClose == null ? '—' : daysToClose < 0 ? `${Math.abs(daysToClose)} overdue` : daysToClose}</span></div>
+              <div className="flex justify-between py-3"><span className="text-muted-foreground">Currency</span><span className="font-mono font-semibold">{formData.currency || 'None'}</span></div>
+              <div className="flex justify-between py-3"><span className="text-muted-foreground">Amount</span><span className="font-mono font-semibold">{amount.toLocaleString()}</span></div>
+            </div>
+          </div>
+          <div className="rounded-xl border bg-card p-5 shadow-sm"><h4 className="flex items-center gap-2 text-xs font-bold"><Star size={14} className="text-indigo-600" />Why weighted value matters</h4><p className="mt-2 text-xs leading-relaxed text-muted-foreground">Forecast rollups use amount × probability, not the raw deal amount. Keeping probability accurate makes team forecasts more trustworthy.</p></div>
+        </aside>
+      </div>
     </div>
   )
 }

@@ -90,7 +90,26 @@
 @media (max-width: 639px) {
   input, select, textarea { font-size: 16px !important; }
   .page-surface { border-radius: 0.75rem; }
-  [role="dialog"] { max-height: calc(100dvh - 1rem); overflow-y: auto; }
+  [role="dialog"] { max-height: calc(100dvh - 1rem); overflow-y: auto; scroll-padding-bottom: max(5rem, env(safe-area-inset-bottom)); }
+  [role="dialog"] .grid-cols-2,
+  [role="dialog"] .grid-cols-3,
+  [role="dialog"] .grid-cols-4 { grid-template-columns: minmax(0, 1fr); }
+  [role="dialog"] form > .flex.justify-end:last-child,
+  [role="dialog"] form > .flex.items-center.justify-end:last-child {
+    position: sticky;
+    bottom: calc(-1rem - env(safe-area-inset-bottom));
+    z-index: 5;
+    flex-wrap: wrap;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    margin-bottom: calc(-1rem - env(safe-area-inset-bottom));
+    padding: .75rem 1rem max(.75rem, env(safe-area-inset-bottom));
+    border-top: 1px solid hsl(var(--border));
+    background: hsl(var(--background) / .96);
+    backdrop-filter: blur(10px);
+  }
+  [role="dialog"] form > .flex.justify-end:last-child > button,
+  [role="dialog"] form > .flex.items-center.justify-end:last-child > button { flex: 1 1 7rem; }
   [role="tabpanel"] { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
   table { font-size: 0.75rem; }
   th, td { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }

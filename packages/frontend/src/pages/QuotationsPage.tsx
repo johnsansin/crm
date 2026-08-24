@@ -5,10 +5,9 @@ import { useAuthStore } from '@/lib/auth'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { DataTable } from '@/components/ui/data-table'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { ArrowLeft, Save, Loader2, Trash2, Plus, FileText, Mail, FileDown, Printer, Search, Copy, ShoppingCart, History, MessageSquare, Building2, Users } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Trash2, Plus, FileText, Mail, FileDown, Printer, Search, Copy, ShoppingCart, History, MessageSquare, Building2, Users, DollarSign, Clock3, CheckCircle2, Eye, Pencil, MoreVertical, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, SlidersHorizontal } from 'lucide-react'
 import { FormField } from '@/components/form-field'
 import { ProductSearchSelect } from '@/components/product-search-select'
 import { ServiceSearchSelect } from '@/components/service-search-select'
@@ -57,6 +56,7 @@ export function QuotationsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
+  const [stageFilter, setStageFilter] = useState('All')
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<any>(null)
   const [activeTab, setActiveTab] = useState('details')
@@ -149,7 +149,7 @@ export function QuotationsPage() {
         invoices: r.invoices || [],
         comments: r.comments || [],
       })
-      setMode('view')
+      setMode(new URLSearchParams(window.location.search).get('edit') === 'true' ? 'form' : 'view')
     } catch { addToast({ title: 'Error', description: 'Failed to load quotation', variant: 'destructive' }) }
     setLoading(false)
   }
@@ -808,51 +808,95 @@ export function QuotationsPage() {
     )
   }
 
-  const listColumns = [
-    { key: 'quoteNo', label: 'Quote No', render: (v: any) => <span className="font-medium">{v || '-'}</span> },
-    { key: 'subject', label: 'Subject' },
-    { key: 'grandTotal', label: 'Amount', render: (v: any, row: any) => <span className="font-medium">{Number(v || 0).toFixed(2)} {row.currency || ''}</span> },
-    { key: 'quoteStage', label: 'Stage', render: (v: any) => (
-      <span className={`text-xs px-2 py-0.5 rounded-full ${v === 'Accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : v === 'Rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'}`}>
-        {v || 'Draft'}
-      </span>
-    )},
-    { key: 'validUntil', label: 'Valid Until', render: (v: any) => <span className="text-muted-foreground">{v ? formatDate(v) : '-'}</span> },
-    { key: 'createdAt', label: 'Created', render: (v: any) => <span className="text-muted-foreground">{formatDate(v)}</span> },
-  ]
-
   const handleSearch = () => { setPage(1); loadList() }
+  const stageCounts = records.reduce((counts: Record<string, number>, record: any) => {
+    const stage = record.quoteStage || 'Draft'
+    counts[stage] = (counts[stage] || 0) + 1
+    return counts
+  }, {})
+  const visibleRecords = stageFilter === 'All' ? records : records.filter(record => (record.quoteStage || 'Draft') === stageFilter)
+  const totalQuotes = pagination?.total ?? records.length
+  const pipelineValue = records.reduce((sum, record) => sum + (Number(record.grandTotal) || 0), 0)
+  const draftCount = stageCounts.Draft || 0
+  const now = Date.now()
+  const weekFromNow = now + 7 * 86400000
+  const expiringCount = records.filter(record => {
+    const due = record.validUntil ? new Date(record.validUntil).getTime() : NaN
+    return Number.isFinite(due) && due >= now && due <= weekFromNow
+  }).length
+  const currencyLabel = records.find(record => record.currency)?.currency || orgSettings.defaultCurrency || orgCurrency()
+  const currentPage = pagination?.page || page
+  const totalPages = Math.max(1, pagination?.totalPages || 1)
+  const pageLimit = pagination?.limit || 25
+  const firstRecord = totalQuotes === 0 ? 0 : (currentPage - 1) * pageLimit + 1
+  const lastRecord = Math.min(currentPage * pageLimit, totalQuotes)
+
+  const stageStyle = (stage: string) => {
+    if (stage === 'Accepted') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+    if (stage === 'Rejected') return 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300'
+    if (stage === 'Draft') return 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
+    if (stage === 'Delivered') return 'bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300'
+    return 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
+  }
+
+  const avatarStyle = (index: number) => [
+    'from-indigo-500 to-indigo-700', 'from-amber-400 to-orange-600', 'from-emerald-400 to-teal-600', 'from-violet-500 to-purple-700',
+  ][index % 4]
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto w-full max-w-[1320px] space-y-5 p-4 md:p-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Quotations</h1>
-          <p className="text-sm text-muted-foreground">Manage quotations</p>
+          <h1 className="text-2xl font-extrabold tracking-tight">Quotations</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Track every quote from first draft to signed deal.</p>
         </div>
-        <Button onClick={() => navigate('/quotes/new')}><Plus className="mr-1 h-4 w-4" />New Quotation</Button>
+        <Button onClick={() => navigate('/quotes/new')} className="h-10 rounded-lg bg-gradient-to-b from-indigo-600 to-indigo-700 px-4 shadow-lg shadow-indigo-500/20 hover:from-indigo-700 hover:to-indigo-800"><Plus className="mr-1.5 h-4 w-4" />New Quotation</Button>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative max-w-sm flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search by quote no or subject..." value={search}
-            onChange={e => setSearch(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            className="pl-9 h-9" />
-        </div>
-        <Button variant="outline" size="sm" onClick={handleSearch}>Search</Button>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: 'Total quotations', value: totalQuotes.toLocaleString(), note: 'All time', icon: FileText, iconClass: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300' },
+          { label: 'Pipeline value', value: `${pipelineValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currencyLabel}`, note: 'Current page', icon: DollarSign, iconClass: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' },
+          { label: 'Still in draft', value: draftCount.toLocaleString(), note: draftCount ? 'Needs action' : 'Up to date', icon: Clock3, iconClass: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300' },
+          { label: 'Expiring this week', value: expiringCount ? expiringCount.toLocaleString() : '—', note: expiringCount ? 'Review soon' : 'No due dates', icon: CheckCircle2, iconClass: 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300' },
+        ].map(({ label, value, note, icon: Icon, iconClass }) => <div key={label} className="rounded-xl border bg-card p-4 shadow-sm"><div className="mb-3 flex items-center justify-between"><span className={cn('grid h-8 w-8 place-items-center rounded-lg', iconClass)}><Icon size={16} /></span><span className="rounded-md bg-muted px-2 py-1 text-[10px] font-bold text-muted-foreground">{note}</span></div><p className="text-xl font-extrabold tracking-tight">{value}</p><p className="mt-0.5 text-xs font-medium text-muted-foreground">{label}</p></div>)}
       </div>
 
-      <DataTable
-        columns={listColumns}
-        data={records}
-        loading={loading}
-        pagination={pagination}
-        onPageChange={setPage}
-        onRowClick={(r) => navigate(`/quotes/${r.id}`)}
-        emptyMessage="No quotations found"
-      />
+      <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 border-b p-4">
+          <div className="relative min-w-[240px] flex-1">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Search by quote no. or subject…" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} className="h-10 rounded-lg bg-muted/40 pl-9 shadow-none" />
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            {['All', 'Created', 'Draft'].map(filter => <button key={filter} type="button" onClick={() => setStageFilter(filter)} className={cn('whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:border-indigo-500 hover:text-indigo-700', stageFilter === filter && 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300')} >{filter} <span className="ml-1 opacity-60">{filter === 'All' ? records.length : stageCounts[filter] || 0}</span></button>)}
+          </div>
+          <button type="button" title="Apply search" onClick={handleSearch} className="grid h-10 w-10 place-items-center rounded-lg border text-muted-foreground transition hover:border-indigo-500 hover:text-indigo-700"><SlidersHorizontal size={16} /></button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[920px]">
+            <thead><tr className="border-b bg-muted/40 text-left text-[10px] font-bold uppercase tracking-[0.07em] text-muted-foreground"><th className="px-5 py-3.5">Quote No.</th><th className="px-5 py-3.5">Subject</th><th className="px-5 py-3.5 text-right">Amount</th><th className="px-5 py-3.5">Stage</th><th className="px-5 py-3.5">Valid Until</th><th className="px-5 py-3.5">Created</th><th className="w-32 px-5 py-3.5" /></tr></thead>
+            <tbody>
+              {loading ? <tr><td colSpan={7} className="py-16 text-center"><span className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Loader2 size={18} className="animate-spin" />Loading quotations…</span></td></tr> : visibleRecords.length === 0 ? <tr><td colSpan={7} className="py-16 text-center text-sm text-muted-foreground">No quotations found</td></tr> : visibleRecords.map((record, index) => {
+                const stage = record.quoteStage || 'Draft'
+                const initials = String(record.subject || 'Quotation').split(/\s+/).slice(0, 2).map((word: string) => word[0]).join('').toUpperCase()
+                return <tr key={record.id} onClick={() => navigate(`/quotes/${record.id}`)} className="group cursor-pointer border-b last:border-0 transition hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5">
+                  <td className="px-5 py-3.5"><span className="rounded-md bg-indigo-50 px-2.5 py-1.5 font-mono text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{record.quoteNo || '—'}</span></td>
+                  <td className="px-5 py-3.5"><div className="flex items-center gap-3"><span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br text-xs font-bold text-white', avatarStyle(index))}>{initials || 'Q'}</span><div><p className="text-sm font-semibold">{record.subject || 'Untitled quotation'}</p><p className="mt-0.5 text-xs text-muted-foreground">{record.accountName || record.contactName || 'Direct quote'}</p></div></div></td>
+                  <td className="px-5 py-3.5 text-right font-mono text-sm font-semibold">{Number(record.grandTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] font-medium text-muted-foreground">{record.currency || ''}</span></td>
+                  <td className="px-5 py-3.5"><span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold', stageStyle(stage))}><span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />{stage}</span></td>
+                  <td className="px-5 py-3.5 text-sm text-muted-foreground">{record.validUntil ? formatDate(record.validUntil) : '—'}</td>
+                  <td className="px-5 py-3.5 text-sm text-muted-foreground">{record.createdAt ? formatDate(record.createdAt) : '—'}</td>
+                  <td className="px-5 py-3.5" onClick={event => event.stopPropagation()}><div className="flex justify-end gap-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100"><button title="View" onClick={() => navigate(`/quotes/${record.id}`)} className="grid h-8 w-8 place-items-center rounded-lg border text-muted-foreground hover:border-indigo-500 hover:bg-indigo-50 hover:text-indigo-700"><Eye size={14} /></button><button title="Edit" onClick={() => navigate(`/quotes/${record.id}?edit=true`)} className="grid h-8 w-8 place-items-center rounded-lg border text-muted-foreground hover:border-indigo-500 hover:bg-indigo-50 hover:text-indigo-700"><Pencil size={14} /></button><button title="More" className="grid h-8 w-8 place-items-center rounded-lg border text-muted-foreground hover:border-indigo-500 hover:bg-indigo-50 hover:text-indigo-700"><MoreVertical size={14} /></button></div></td>
+                </tr>
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {totalQuotes > 0 && <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3.5"><p className="text-xs text-muted-foreground">Showing <b className="text-foreground">{firstRecord}–{lastRecord}</b> of <b className="text-foreground">{totalQuotes}</b> records</p><div className="flex items-center gap-1">{[{ icon: ChevronsLeft, page: 1, label: 'First' }, { icon: ChevronLeft, page: currentPage - 1, label: 'Previous' }].map(({ icon: Icon, page: target, label }) => <button key={label} type="button" title={label} disabled={currentPage <= 1} onClick={() => setPage(target)} className="grid h-8 w-8 place-items-center rounded-lg border text-muted-foreground disabled:opacity-40"><Icon size={14} /></button>)}<span className="grid h-8 min-w-8 place-items-center rounded-lg bg-indigo-700 px-2 text-xs font-bold text-white">{currentPage}</span>{[{ icon: ChevronRight, page: currentPage + 1, label: 'Next' }, { icon: ChevronsRight, page: totalPages, label: 'Last' }].map(({ icon: Icon, page: target, label }) => <button key={label} type="button" title={label} disabled={currentPage >= totalPages} onClick={() => setPage(target)} className="grid h-8 w-8 place-items-center rounded-lg border text-muted-foreground disabled:opacity-40"><Icon size={14} /></button>)}</div></div>}
+      </div>
     </div>
   )
 }

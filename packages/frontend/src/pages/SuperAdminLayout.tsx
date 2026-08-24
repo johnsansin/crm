@@ -50,6 +50,18 @@ export function SuperAdminLayout() {
   }, [user])
 
   useEffect(() => {
+    if (!mobileOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const closeOnEscape = (event: KeyboardEvent) => event.key === 'Escape' && setMobileOpen(false)
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [mobileOpen])
+
+  useEffect(() => {
     if (searchQuery.length < 2) {
       setSearchResults({ companies: [], users: [] })
       setSearching(false)
@@ -103,7 +115,7 @@ export function SuperAdminLayout() {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 flex">
+    <div className="h-screen min-h-[100dvh] overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 flex">
       {mobileOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
@@ -111,7 +123,7 @@ export function SuperAdminLayout() {
       <aside className={`
         fixed inset-y-0 left-0 z-50 flex flex-col
         transition-all duration-300 ease-in-out
-        ${collapsed ? 'w-[72px]' : 'w-64'}
+        ${collapsed ? 'w-[72px]' : 'w-[min(92vw,20rem)] lg:w-72'}
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800
         shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50
@@ -179,21 +191,22 @@ export function SuperAdminLayout() {
         </div>
       </aside>
 
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-30 lg:hidden p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md"
-      >
-        <Menu size={20} className="text-slate-600 dark:text-slate-400" />
-      </button>
-
-      <main className={`flex-1 h-screen flex flex-col overflow-hidden transition-all duration-300 ${collapsed ? 'lg:ml-[72px]' : 'lg:ml-64'}`}>
-        <header className="shrink-0 h-14 border-b bg-background/95 backdrop-blur flex items-center px-4 md:px-6 gap-3 relative z-30">
+      <main className={`min-w-0 flex-1 h-screen min-h-[100dvh] flex flex-col overflow-hidden transition-all duration-300 ${collapsed ? 'lg:ml-[72px]' : 'lg:ml-72'}`}>
+        <header className="shrink-0 h-14 border-b bg-background/95 backdrop-blur flex items-center pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] md:px-6 gap-2 sm:gap-3 relative z-30">
+          <button
+            onClick={() => { setCollapsed(false); setMobileOpen(true) }}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-foreground hover:bg-accent lg:hidden"
+            aria-label="Open menu"
+            aria-expanded={mobileOpen}
+          >
+            <Menu size={22} />
+          </button>
           <div className="flex items-center gap-2 shrink-0 mr-2">
             <Shield size={20} className="text-primary" />
             <span className="text-sm font-bold text-foreground hidden sm:inline">SuperAdmin</span>
           </div>
 
-          <div className="flex-1 max-w-xl relative" ref={searchRef}>
+          <div className="min-w-0 flex-1 max-w-xl relative" ref={searchRef}>
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <input
               ref={searchInputRef}
@@ -317,7 +330,7 @@ export function SuperAdminLayout() {
             </button>
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto bg-slate-100/80 dark:bg-slate-950/70 p-4 md:p-6 lg:p-8">
+        <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-slate-100/80 dark:bg-slate-950/70 p-2.5 sm:p-4 md:p-6 lg:p-8">
           <div className="mx-auto max-w-[1600px]">
             <AppBreadcrumbs />
             <Outlet />
