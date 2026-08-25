@@ -1,0 +1,17 @@
+.git
+.gitignore
+.agents
+.codex
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+*.log
+data
+packages/backend/private
+packages/backend/uploads
+

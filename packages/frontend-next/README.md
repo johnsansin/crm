@@ -16,3 +16,16 @@ there is no React Router SPA or catch-all runtime.
 The backend defaults to `http://127.0.0.1:3000`. Set `BACKEND_ORIGIN` when the
 API is hosted elsewhere. Browser API requests use the same-origin `/api` proxy
 unless `NEXT_PUBLIC_API_BASE` is configured.
+
+## Docker deployment
+
+From the repository root:
+
+1. Copy `.env.docker.example` to `.env` and replace all placeholder secrets.
+2. Run `docker compose up -d --build`.
+3. Open `http://localhost:3001` (or the configured `FRONTEND_PORT`).
+
+The Compose stack runs the frontend, backend, and PostgreSQL. PostgreSQL data,
+uploaded files, and private database backups are stored in named Docker volumes.
+Only the frontend port is published; API and upload requests are proxied to the
+backend over the private Compose network.
