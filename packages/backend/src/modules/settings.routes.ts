@@ -60,7 +60,7 @@ settingsRouter.get('/preferences', async (req, res, next) => {
       getAllOrgSettings(req.user!.companyId),
       prisma.user.findUnique({
         where: { id: req.user!.userId },
-        select: { language: true, timezone: true, dateFormat: true, hourFormat: true, startOfWeek: true, currencyCode: true, defaultModule: true },
+        select: { language: true, timezone: true, dateFormat: true, hourFormat: true, startOfWeek: true, defaultModule: true },
       }),
     ])
     const calendar = { ...(org.calendar || {}) }
@@ -70,7 +70,7 @@ settingsRouter.get('/preferences', async (req, res, next) => {
       timezone: user?.timezone || org.timezone || 'UTC',
       dateFormat: user?.dateFormat || org.dateFormat || 'mm-dd-yyyy',
       hourFormat: user?.hourFormat || org.hourFormat || '12h',
-      defaultCurrency: user?.currencyCode || org.defaultCurrency || 'USD',
+      defaultCurrency: org.defaultCurrency || 'USD',
       currencySymbol: org.currencySymbol || '$',
       defaultModule: user?.defaultModule || 'dashboard',
       calendar,

@@ -25,7 +25,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "../frontend/src/*"
+        "./src/*"
       ]
     }
   },
@@ -34,12 +34,11 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "../frontend/src/**/*.ts",
-    "../frontend/src/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "../frontend/src/main.tsx"
+    "node_modules"
   ]
 }

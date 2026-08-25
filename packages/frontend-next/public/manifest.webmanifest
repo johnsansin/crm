@@ -1,0 +1,23 @@
+{
+  "name": "BizForce CRM",
+  "short_name": "BizForce",
+  "description": "BizForce CRM — accounts, contacts, leads, opportunities, tickets and more, on the go.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1677ff",
+  "orientation": "any",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Dashboard", "url": "/dashboard", "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }] },
+    { "name": "New Lead", "url": "/leads/new", "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }] },
+    { "name": "New Opportunity", "url": "/potentials/new", "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }] },
+    { "name": "New Ticket", "url": "/tickets/new", "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }] }
+  ]
+}

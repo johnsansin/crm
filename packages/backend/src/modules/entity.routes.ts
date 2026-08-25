@@ -292,6 +292,7 @@ async function checkPermission(req: any, action: string): Promise<boolean> {
   if (user?.isSuperAdmin || user?.isAdmin) return true
 
   const moduleName = req.moduleName || ''
+  if (moduleName === 'currencies' && action === 'view') return true
   if (settingsModules.has(moduleName)) return false
 
   if (!permissionModules.has(moduleName)) return true

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start the BizForce CRM API (:3000). The production frontend is served by nginx.
+# Start the BizForce CRM API (:3000) and Next.js frontend (:3001).
 # Survives reboots via @reboot crontab entry. Logs to /tmp/*.log
 export PATH=/home/ubuntu/.nvm/versions/node/v20.20.2/bin:$PATH
 export NVM_DIR="/home/ubuntu/.nvm"
@@ -12,4 +12,13 @@ else
   cd /home/ubuntu/crm/packages/backend || exit 1
   setsid nohup npm run dev > /tmp/backend.log 2>&1 < /dev/null &
   echo "backend started (pid $!)"
+fi
+
+# Next.js frontend on :3001
+if ss -tln | grep -q ':3001 '; then
+  echo "frontend already running"
+else
+  cd /home/ubuntu/crm/packages/frontend-next || exit 1
+  setsid nohup npm run start > /tmp/frontend.log 2>&1 < /dev/null &
+  echo "frontend started (pid $!)"
 fi

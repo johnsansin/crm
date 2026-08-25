@@ -74,9 +74,21 @@ function aiAnswer(message: string) {
 async function notifyStaff(conversation: any) {
   const staff = await prisma.user.findMany({
     where: { isActive: true, OR: [{ isAgent: true }, { profile: { is: { isSuperAdmin: true } } }] },
-    select: { id: true },
+    select: { id: true, isAgent: true, profile: { select: { isSuperAdmin: true } } },
   })
-  if (staff.length) await prisma.notification.createMany({ data: staff.map(user => ({ userId: user.id, title: 'New support request', message: conversation.subject || 'An organization requested a support agent', link: `/superadmin/support?id=${conversation.id}`, companyId: conversation.companyId })) }).catch(() => {})
+  if (staff.length) await prisma.notification.createMany({ data: staff.map(user => ({
+    userId: user.id,
+    title: conversation.assignedAgentId === user.id ? 'Support request assigned to you' : 'New support request',
+    message: conversation.subject || 'An organization requested a support agent',
+    link: user.profile?.isSuperAdmin ? `/superadmin/support?id=${conversation.id}` : `/support-agent?id=${conversation.id}`,
+    companyId: conversation.companyId,
+  })) }).catch(() => {})
+}
+
+async function notifyAssignedAgent(conversation: any, agentId: string, title = 'Support request assigned to you') {
+  await prisma.notification.create({
+    data: { userId: agentId, title, message: conversation.subject || 'Open the conversation to respond', link: `/support-agent?id=${conversation.id}`, companyId: conversation.companyId },
+  }).catch(() => {})
 }
 
 async function nextAvailableAgent() {
@@ -247,7 +259,7 @@ adminSupportRouter.get('/conversations', async (req, res, next) => {
       where.AND = [{ OR: [{ id: { contains: search, mode: 'insensitive' } }, { subject: { contains: search, mode: 'insensitive' } }, { companyId: { in: companies.map(c => c.id) } }, { createdByUserId: { in: users.map(u => u.id) } }, { id: { in: messageConversations.map(m => m.conversationId) } }] }]
     }
     const [rows, total] = await Promise.all([
-      prisma.supportConversation.findMany({ where, orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }], skip: (page - 1) * limit, take: limit, include: { messages: { orderBy: { createdAt: 'desc' }, take: 1 } } }),
+      prisma.supportConversation.findMany({ where, orderBy: [{ lastMessageAt: 'desc' }, { updatedAt: 'desc' }], skip: (page - 1) * limit, take: limit, include: { messages: { orderBy: { createdAt: 'desc' }, take: 1 } } }),
       prisma.supportConversation.count({ where }),
     ])
     res.json({ data: await enrich(rows), pagination: { page, limit, total, pages: Math.ceil(total / limit) } })
@@ -357,6 +369,7 @@ adminSupportRouter.post('/conversations/:id/transfer', async (req, res, next) =>
     const sourceName = [source?.firstName, source?.lastName].filter(Boolean).join(' ') || 'Support'
     const targetName = [target.firstName, target.lastName].filter(Boolean).join(' ') || 'another agent'
     const message = await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'SYSTEM', messageType: 'SYSTEM', content: `Conversation transferred from ${sourceName} to ${targetName}.` } })
+    await notifyAssignedAgent(updated, target.id, 'A support conversation was transferred to you')
     await audit(updated.id, updated.companyId, req.user!.userId, 'CONVERSATION_TRANSFERRED', { toAgentId: target.id, reason: cleanText(req.body.reason, 500) })
     publishSupportEvent({ event: 'conversation.assigned', conversationId: updated.id, companyId: updated.companyId, userId: target.id, payload: { conversation: updated, systemMessage: message } })
     res.json({ data: updated, systemMessage: message })
@@ -383,9 +396,10 @@ adminSupportRouter.get('/agents', async (_req, res, next) => {
   } catch (err) { next(err) }
 })
 
-adminSupportRouter.get('/stats', async (_req, res, next) => {
+adminSupportRouter.get('/stats', async (req, res, next) => {
   try {
-    const grouped = await prisma.supportConversation.groupBy({ by: ['status'], _count: { _all: true } })
+    const where = req.user!.isSuperAdmin ? {} : { OR: [{ assignedAgentId: req.user!.userId }, { status: 'WAITING_FOR_AGENT' as const, assignedAgentId: null }] }
+    const grouped = await prisma.supportConversation.groupBy({ by: ['status'], where, _count: { _all: true } })
     res.json({ data: Object.fromEntries(grouped.map(row => [row.status, row._count._all])) })
   } catch (err) { next(err) }
 })

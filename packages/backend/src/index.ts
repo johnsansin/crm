@@ -67,22 +67,40 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }))
 app.use(cors({ origin: isProduction ? corsOrigins : true }))
 app.use(express.json({ limit: '15mb' }))
 app.use(express.urlencoded({ extended: true, limit: '15mb' }))
-app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 600, standardHeaders: 'draft-7', legacyHeaders: false }))
+app.use('/api', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  // The CRM performs background presence, notification and chat refreshes. A
+  // modest IP-only limit incorrectly groups every user behind an office NAT.
+  limit: 5000,
+  skip: req => req.path === '/health' || req.path.startsWith('/auth/login'),
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  handler: (req, res) => {
+    console.warn('[RATE_LIMIT] general API limit reached', { ip: req.ip, path: req.path })
+    res.status(429).json({ error: 'Request limit reached. Please retry shortly.', retryAfterSeconds: 60 })
+  },
+}))
 // Authentication traffic can originate from many users behind the same office/NAT
 // address. Scope login protection by client + account instead of blocking the
 // entire organisation after twenty combined auth requests.
 app.use('/api/auth/login', rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 12,
+  limit: 30,
   skipSuccessfulRequests: true,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: req => `${ipKeyGenerator(req.ip || '')}:${String(req.body?.email || req.body?.challenge || 'unknown').trim().toLowerCase()}`,
-  handler: (_req, res) => res.status(429).json({ error: 'Too many unsuccessful sign-in attempts for this account. Please wait a few minutes and try again.' }),
+  handler: (req, res) => {
+    console.warn('[RATE_LIMIT] login protection triggered', { ip: req.ip, accountProvided: !!req.body?.email, twoFactor: !!req.body?.challenge })
+    res.status(429).json({ error: 'Too many unsuccessful sign-in attempts for this account. Please wait a few minutes and try again.', retryAfterSeconds: 60 })
+  },
 }))
 app.use('/api/auth', rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 120,
+  // Login and 2FA already have the account-aware limiter above. Keeping them
+  // in this IP-only bucket would couple unrelated users behind the same NAT.
+  skip: req => req.path === '/login' || req.path === '/login/2fa',
   skipSuccessfulRequests: true,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
@@ -122,6 +140,10 @@ app.use('/api/users', userRouter)
 app.use('/api/company', companyRouter)
 app.use('/api', rbacRouter)
 app.use('/api', uploadRouter)
+// Mount the staff support inbox before the generic /api/admin router. Express
+// matches middleware in declaration order and the generic router is restricted
+// to super admins, while this inbox must also be accessible to support agents.
+app.use('/api/admin/support', adminSupportRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api/agents', agentsRouter)
 app.use('/api/settings', settingsRouter)
@@ -149,7 +171,6 @@ app.use('/api/i18n', i18nRouter)
 app.use('/api/portal', portalRouter)
 app.use('/api/ai', aiRouter)
 app.use('/api/support', supportRouter)
-app.use('/api/admin/support', adminSupportRouter)
 // Legacy backup files may exist under uploads/backups. Never expose database dumps publicly.
 app.use('/uploads/backups', (_req, res) => res.status(404).json({ error: 'Not found' }))
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads'), {

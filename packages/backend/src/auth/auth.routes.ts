@@ -79,7 +79,9 @@ async function verifyCredentials(user: any, password: string, req?: any) {
 
 authRouter.post('/login', async (req, res, next) => {
   try {
-    const { email, password } = req.body
+    const email = String(req.body?.email || '').trim().toLowerCase()
+    const password = typeof req.body?.password === 'string' ? req.body.password : ''
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required' })
     const user = await prisma.user.findUnique({
       where: { email },
       include: { company: true, profile: true }
@@ -388,7 +390,7 @@ authRouter.post('/forgot-password', async (req, res, next) => {
       where: { id: user.id },
       data: { resetToken: token, resetTokenExpires: expires }
     })
-    const baseUrl = req.headers.origin || 'http://localhost:5173'
+    const baseUrl = req.headers.origin || 'http://localhost:3001'
     const resetLink = `${baseUrl}/reset-password?token=${token}`
     const sent = await sendMail({
       to: raw,
@@ -424,7 +426,7 @@ authRouter.post('/reset-password', async (req, res, next) => {
 
 authRouter.put('/me', authMiddleware, async (req, res, next) => {
   try {
-    const { firstName, lastName, email, phone, mobile, title, department, timezone, language, password, avatar, addressStreet, addressCity, addressState, addressCountry, addressPostalCode, dateFormat, hourFormat, startOfWeek, defaultModule, currencyCode, pbxExtension, sidebarColor } = req.body
+    const { firstName, lastName, email, phone, mobile, title, department, timezone, language, password, avatar, addressStreet, addressCity, addressState, addressCountry, addressPostalCode, dateFormat, hourFormat, startOfWeek, defaultModule, pbxExtension, sidebarColor } = req.body
     const sidebarColors = new Set(['vtiger', 'navy', 'graphite', 'emerald', 'burgundy'])
     if (sidebarColor !== undefined && !sidebarColors.has(sidebarColor)) return res.status(400).json({ error: 'Invalid sidebar color' })
     const data: any = {
@@ -447,7 +449,6 @@ authRouter.put('/me', authMiddleware, async (req, res, next) => {
       ...(hourFormat !== undefined && { hourFormat }),
       ...(startOfWeek !== undefined && { startOfWeek }),
       ...(defaultModule !== undefined && { defaultModule }),
-      ...(currencyCode !== undefined && { currencyCode }),
       ...(pbxExtension !== undefined && { pbxExtension }),
       ...(sidebarColor !== undefined && { sidebarColor }),
     }
@@ -518,5 +519,24 @@ authRouter.put('/me/dashboard', authMiddleware, async (req, res, next) => {
       data: { dashboardConfig: config == null ? null : config }
     })
     res.json({ success: true })
+  } catch (err) { next(err) }
+})
+
+authRouter.get('/me/favorites', authMiddleware, async (req, res, next) => {
+  try {
+    const rows = await prisma.$queryRaw<Array<{ favoriteModules: unknown }>>`SELECT "favoriteModules" FROM "User" WHERE id = ${req.user!.userId} LIMIT 1`
+    const favorites = rows[0]?.favoriteModules
+    const configured = Array.isArray(favorites)
+    res.json({ data: configured ? favorites : [], configured })
+  } catch (err) { next(err) }
+})
+
+authRouter.put('/me/favorites', authMiddleware, async (req, res, next) => {
+  try {
+    const requested = Array.isArray(req.body?.modules) ? req.body.modules : null
+    if (!requested) return res.status(400).json({ error: 'Modules must be an array' })
+    const modules = [...new Set(requested.map((value: unknown) => String(value).trim().toLowerCase()).filter((value: string) => /^[a-z][a-z0-9_-]{0,49}$/.test(value)))].slice(0, 30)
+    await prisma.$executeRaw`UPDATE "User" SET "favoriteModules" = ${JSON.stringify(modules)}::jsonb, "updatedAt" = NOW() WHERE id = ${req.user!.userId}`
+    res.json({ data: modules })
   } catch (err) { next(err) }
 })

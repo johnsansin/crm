@@ -48,6 +48,7 @@ model User {
   sidebarColor           String?   @default("vtiger") @db.VarChar(30)
   dashboardEnabled       Boolean   @default(true)
   dashboardConfig        Json?
+  favoriteModules        Json?
   tokenVersion           Int       @default(0)
   roleId                 String?
   companyId              String?

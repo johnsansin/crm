@@ -5,7 +5,7 @@ echo "=== BizForce domain setup for bizforce.online ==="
 
 # 1. Build frontend for production
 echo "[1/5] Building frontend production bundle..."
-cd /home/ubuntu/crm/packages/frontend
+cd /home/ubuntu/crm/packages/frontend-next
 npm run build 2>&1 | tail -3
 
 # 2. Enable Apache modules
@@ -19,26 +19,16 @@ cat > /etc/apache2/sites-available/bizforce.conf <<'EOF'
     ServerName bizforce.online
     ServerAlias www.bizforce.online
 
-    DocumentRoot /home/ubuntu/crm/packages/frontend/dist
-
-    <Directory /home/ubuntu/crm/packages/frontend/dist>
-        AllowOverride All
-        Require all granted
-        Options -Indexes
-    </Directory>
-
-    # SPA fallback
-    RewriteEngine On
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^ /index.html [L]
-
     # API + uploads -> backend
     ProxyPreserveHost On
     ProxyPass /api http://localhost:3000/api
     ProxyPassReverse /api http://localhost:3000/api
     ProxyPass /uploads http://localhost:3000/uploads
     ProxyPassReverse /uploads http://localhost:3000/uploads
+
+    # Application -> Next.js
+    ProxyPass / http://localhost:3001/
+    ProxyPassReverse / http://localhost:3001/
 
     ErrorLog ${APACHE_LOG_DIR}/bizforce-error.log
     CustomLog ${APACHE_LOG_DIR}/bizforce-access.log combined

@@ -12,7 +12,6 @@ const nextConfig: NextConfig = {
   experimental: { useTypeScriptCli: false },
   basePath,
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
-  transpilePackages: ['@bizforce/frontend'],
   async rewrites() {
     return [
       { source: '/api/:path*', destination: `${backendOrigin}/api/:path*`, basePath: false },
