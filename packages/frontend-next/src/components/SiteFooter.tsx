@@ -16,8 +16,10 @@ const socials = [
 const productLinks = [
   { label: 'Features', to: '/#features' },
   { label: 'Pricing', to: '/pricing' },
-  { label: 'About', to: '/#about' },
+  { label: 'FAQ', to: '/faq' },
+  { label: 'Blog', to: '/blog' },
   { label: 'Contact', to: '/contact' },
+  { label: 'About', to: '/#about' },
 ]
 
 const companyLinks = [
@@ -25,6 +27,8 @@ const companyLinks = [
   { label: 'Terms of Service', to: '/terms' },
   { label: 'Cookie Policy', to: '/cookie-policy' },
   { label: 'Refund Policy', to: '/refund-policy' },
+  { label: 'Get Started', to: '/signup' },
+  { label: 'Sign In', to: '/login' },
 ]
 
 const modules = [

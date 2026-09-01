@@ -341,7 +341,7 @@ extrasRouter.get('/google/auth-url', authMiddleware, requireTenant, async (req, 
     const google = (row?.value as any) || {}
     const clientId = google.clientId || process.env.GOOGLE_CLIENT_ID || ''
     const redirectUri = google.redirectUri || `${req.protocol}://${req.get('host')}/api/google/callback`
-    const scope = google.scope || 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/contacts'
+    const scope = google.scope || 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/contacts https://www.googleapis.com/auth/gmail.send'
     const authUrl = clientId
       ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`
       : ''
