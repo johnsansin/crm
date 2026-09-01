@@ -5,7 +5,7 @@ import { useSearchParams } from '@/lib/navigation'
 import { api } from '@/lib/api'
 import {
   Building2, Users, ToggleLeft, ToggleRight, Search,
-  LayoutGrid, Table2, X, Mail, Globe, Phone, MapPin, Clock, ChevronRight, User, Pencil, Trash2, LogOut
+  LayoutGrid, Table2, X, Mail, Globe, Phone, MapPin, Clock, LogOut, Save, Sparkles
 } from 'lucide-react'
 import { useToast } from '@/lib/toast'
 import { formatDate, useOrgSettings } from '@/lib/org-format'
@@ -31,8 +31,11 @@ export function SuperAdminOrgs() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [sortBy, setSortBy] = useState<'newest' | 'name' | 'users'>('newest')
-  const [view, setView] = useState<ViewMode>('cards')
+  const [view, setView] = useState<ViewMode>('table')
   const [selectedOrg, setSelectedOrg] = useState<any>(null)
+  const [subscriptionForm, setSubscriptionForm] = useState<any>({})
+  const [subscriptionSaving, setSubscriptionSaving] = useState(false)
+  const [subscriptionModels, setSubscriptionModels] = useState<any[]>([])
   const [searchParams, setSearchParams] = useSearchParams()
 
   const load = () => {
@@ -40,15 +43,61 @@ export function SuperAdminOrgs() {
     api.adminListCompanies().then(res => { setCompanies(res.data); setLoading(false) }).catch(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(); api.adminListSubscriptionModels().then(r => setSubscriptionModels(r.data || [])).catch(() => {}) }, [])
   useEffect(() => {
     const id = searchParams.get('id')
     if (!id) { setSelectedOrg(null); return }
-    api.adminGetCompany(id).then(response => setSelectedOrg(response.data || response)).catch(() => setSelectedOrg(null))
+    api.adminGetCompany(id).then(response => {
+      const org = response.data || response
+      setSelectedOrg(org)
+      setSubscriptionForm({
+        subscriptionModelId: org.subscriptionModelId || '', subscriptionPlan: org.subscriptionPlan || 'STARTER', subscriptionStatus: org.subscriptionStatus || 'ACTIVE',
+        userLimit: org.userLimit || 3, contactLimit: org.contactLimit || 2000,
+        trialEndsAt: org.trialEndsAt ? new Date(org.trialEndsAt).toISOString().slice(0, 10) : '',
+        subscriptionEndsAt: org.subscriptionEndsAt ? new Date(org.subscriptionEndsAt).toISOString().slice(0, 10) : '',
+      })
+    }).catch(() => setSelectedOrg(null))
   }, [searchParams])
 
   const openOrganization = (id: string) => setSearchParams({ id })
   const closeOrganization = () => { setSelectedOrg(null); setSearchParams({}) }
+
+  const refreshSelectedOrganization = async () => {
+    if (!selectedOrg) return
+    const response = await api.adminGetCompany(selectedOrg.id)
+    const org = response.data || response
+    setSelectedOrg(org)
+    setCompanies(current => current.map(item => item.id === org.id ? { ...item, ...org } : item))
+  }
+
+  const issueTrial = async () => {
+    if (!selectedOrg) return
+    const days = Number(window.prompt('Trial length in days', '14'))
+    if (!Number.isFinite(days) || days < 1) return
+    setSubscriptionSaving(true)
+    try {
+      await api.adminIssueCompanyTrial(selectedOrg.id, { days, userLimit: 50, contactLimit: 50000 })
+      await refreshSelectedOrganization()
+      addToast({ title: 'Growth trial issued', description: `${days}-day trial with 50 users and 50,000 contacts.`, variant: 'success' })
+    } catch (error: any) { addToast({ title: 'Could not issue trial', description: error.message, variant: 'destructive' }) }
+    finally { setSubscriptionSaving(false) }
+  }
+
+  const saveSubscription = async () => {
+    if (!selectedOrg) return
+    setSubscriptionSaving(true)
+    try {
+      await api.adminUpdateCompanySubscription(selectedOrg.id, {
+        ...subscriptionForm,
+        userLimit: Number(subscriptionForm.userLimit), contactLimit: Number(subscriptionForm.contactLimit),
+        trialEndsAt: subscriptionForm.trialEndsAt ? `${subscriptionForm.trialEndsAt}T23:59:59.999Z` : null,
+        subscriptionEndsAt: subscriptionForm.subscriptionEndsAt ? `${subscriptionForm.subscriptionEndsAt}T23:59:59.999Z` : null,
+      })
+      await refreshSelectedOrganization()
+      addToast({ title: 'Subscription updated', variant: 'success' })
+    } catch (error: any) { addToast({ title: 'Could not update subscription', description: error.message, variant: 'destructive' }) }
+    finally { setSubscriptionSaving(false) }
+  }
 
   const toggleOrg = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
@@ -238,6 +287,7 @@ export function SuperAdminOrgs() {
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
                   <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Organization</th>
+                  <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Registration Date</th>
                   <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Phone</th>
                   <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Address</th>
                   <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Language</th>
@@ -256,10 +306,11 @@ export function SuperAdminOrgs() {
                         <OrgLogo org={org} size="sm" />
                         <div>
                           <button onClick={() => openOrganization(org.id)} className="font-semibold text-sky-700 hover:underline dark:text-sky-300">{org.name}</button>
-                          <p className="text-xs text-slate-400">{formatDate(org.createdAt)}</p>
+                          {org.email && <p className="text-xs text-slate-400">{org.email}</p>}
                         </div>
                       </div>
                     </td>
+                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">{formatDate(org.createdAt)}</td>
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{org.phone || '-'}</td>
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-300 max-w-[160px] truncate">{[org.addressCity, org.addressCountry].filter(Boolean).join(', ') || '-'}</td>
                     <td className="px-5 py-3"><span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">{langLabel(org.language)}</span></td>
@@ -304,6 +355,21 @@ export function SuperAdminOrgs() {
               ['Registered', formatDate(selectedOrg.createdAt), Clock],
             ].map(([label, value, Icon]: any) => <div key={label} className="rounded-2xl border bg-slate-50 p-4 dark:bg-slate-950/40"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"><Icon size={14}/>{label}</div><p className="mt-2 break-words text-sm font-semibold">{value || 'Not provided'}</p></div>)}
           </div>
+          <section className="mx-5 mb-5 overflow-hidden rounded-2xl border sm:mx-6 sm:mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-slate-50 p-4 dark:bg-slate-950/40">
+              <div><h3 className="font-bold">Plan, trial and limits</h3><p className="mt-0.5 text-xs text-muted-foreground">Limits are enforced by the server for this organization.</p></div>
+              <button disabled={subscriptionSaving} onClick={issueTrial} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"><Sparkles size={14}/>Issue Growth trial</button>
+            </div>
+            <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="text-xs font-semibold text-muted-foreground">Plan<select value={subscriptionForm.subscriptionModelId || ''} onChange={event => { const model = subscriptionModels.find(item => item.id === event.target.value); setSubscriptionForm({ ...subscriptionForm, subscriptionModelId: event.target.value, subscriptionPlan: model?.code || subscriptionForm.subscriptionPlan, userLimit: model?.userLimit || subscriptionForm.userLimit, contactLimit: model?.contactLimit || subscriptionForm.contactLimit }) }} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground"><option value="" disabled>Select a plan</option>{subscriptionModels.filter(model => model.isActive || model.id === subscriptionForm.subscriptionModelId).map(model => <option key={model.id} value={model.id}>{model.name}</option>)}</select></label>
+              <label className="text-xs font-semibold text-muted-foreground">Status<select value={subscriptionForm.subscriptionStatus || 'ACTIVE'} onChange={event => setSubscriptionForm({ ...subscriptionForm, subscriptionStatus: event.target.value })} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground">{['ACTIVE','TRIAL','EXPIRED','SUSPENDED','CANCELLED'].map(value => <option key={value}>{value}</option>)}</select></label>
+              <label className="text-xs font-semibold text-muted-foreground">User limit<input type="number" min="1" value={subscriptionForm.userLimit || ''} onChange={event => setSubscriptionForm({ ...subscriptionForm, userLimit: event.target.value })} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground"/><span className="mt-1 block font-normal">Using {selectedOrg.usage?.users ?? selectedOrg.users?.filter((item: any) => item.isActive).length ?? 0}</span></label>
+              <label className="text-xs font-semibold text-muted-foreground">Contact limit<input type="number" min="1" value={subscriptionForm.contactLimit || ''} onChange={event => setSubscriptionForm({ ...subscriptionForm, contactLimit: event.target.value })} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground"/><span className="mt-1 block font-normal">Using {selectedOrg.usage?.contacts ?? 0}</span></label>
+              <label className="text-xs font-semibold text-muted-foreground sm:col-span-1 lg:col-span-2">Trial end date<input type="date" value={subscriptionForm.trialEndsAt || ''} onChange={event => setSubscriptionForm({ ...subscriptionForm, trialEndsAt: event.target.value })} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground"/></label>
+              <label className="text-xs font-semibold text-muted-foreground sm:col-span-1 lg:col-span-2">Subscription end date<input type="date" value={subscriptionForm.subscriptionEndsAt || ''} onChange={event => setSubscriptionForm({ ...subscriptionForm, subscriptionEndsAt: event.target.value })} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground"/></label>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3"><p className="text-xs text-muted-foreground">Setting status to Expired, Suspended or Cancelled blocks organization access.</p><button disabled={subscriptionSaving} onClick={saveSubscription} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900"><Save size={14}/>{subscriptionSaving ? 'Saving…' : 'Save plan settings'}</button></div>
+          </section>
           <div className="flex flex-wrap items-center justify-between gap-3 border-t p-5"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusColors[selectedOrg.isActive !== false ? 'active' : 'inactive']}`}>{selectedOrg.isActive !== false ? 'Active organisation' : 'Inactive organisation'}</span><button onClick={closeOrganization} className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white dark:bg-white dark:text-slate-900">Close</button></div>
         </section>
       </div>}

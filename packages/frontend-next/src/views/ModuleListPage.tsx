@@ -149,23 +149,20 @@ export function ModuleListPage() {
 
   const handleBulkPdf = () => {
     const ids = Array.from(selectedIds)
-    ids.forEach(id => {
-      const token = localStorage.getItem('token')
-      window.open(`/api/${mod}/${id}/pdf?token=${encodeURIComponent(token || '')}`, '_blank')
-    })
+    ids.forEach(id => { void api.openAuthenticatedFile(`/${mod}/${id}/pdf`) })
   }
 
   const handleRowEmail = (record: any) => {
     const to = prompt('Send to email:')
     if (!to) return
-    api.request(`/${mod}/${record.id}/email`, { method: 'POST', body: JSON.stringify({ to }) })
+    const attachPdf = window.confirm('Attach the PDF to this email?')
+    api.request(`/${mod}/${record.id}/email`, { method: 'POST', body: JSON.stringify({ to, attachPdf }) })
       .then(() => addToast({ title: 'Sent', description: `Email sent to ${to}`, variant: 'success' }))
       .catch(() => addToast({ title: 'Error', description: 'Failed to send email', variant: 'destructive' }))
   }
 
   const handleRowPdf = (record: any) => {
-    const token = localStorage.getItem('token')
-    window.open(`/api/${mod}/${record.id}/pdf?token=${encodeURIComponent(token || '')}`, '_blank')
+    void api.openAuthenticatedFile(`/${mod}/${record.id}/pdf`)
   }
 
   const handleRowDuplicate = (record: any) => {

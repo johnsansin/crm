@@ -5,6 +5,7 @@ import { renderReport, escapeHtml, resolveReportLogo } from './report'
 import { getOrgSetting } from '../lib/settings'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { requireModulePermission } from '../lib/module-permissions'
+import { pdfAttachmentFromRoute } from '../lib/pdf'
 
 export const invoicesRouter = Router()
 
@@ -233,10 +234,29 @@ invoicesRouter.delete('/:id', async (req, res, next) => {
   try {
     const existing = await prisma.invoice.findFirst({
       where: { id: req.params.id, companyId: req.user!.companyId },
+      include: { lineItems: true },
     })
     if (!existing) return res.status(404).json({ error: 'Not found' })
-    await prisma.invoice.update({ where: { id: req.params.id }, data: { isActive: false } })
-    res.json({ success: true })
+    if (!existing.isActive) return res.json({ success: true, stockRestored: false })
+    const isPosInvoice = existing.subject.startsWith('POS Sale ') || Boolean(existing.notes?.startsWith('POS payment:'))
+    await prisma.$transaction(async tx => {
+      await tx.invoice.update({ where: { id: req.params.id }, data: { isActive: false } })
+      if (isPosInvoice) {
+        for (const item of existing.lineItems) {
+          if (item.productId && Number(item.qty) > 0) {
+            await tx.product.updateMany({
+              where: { id: item.productId, companyId: req.user!.companyId },
+              data: { qtyInStock: { increment: item.qty } },
+            })
+          }
+        }
+        await tx.receipt.updateMany({
+          where: { invoiceId: existing.id, companyId: req.user!.companyId, isActive: true },
+          data: { isActive: false },
+        })
+      }
+    })
+    res.json({ success: true, stockRestored: isPosInvoice })
   } catch (err) { next(err) }
 })
 
@@ -399,7 +419,8 @@ invoicesRouter.post('/:id/email', async (req, res, next) => {
     const pdfLink = `/api/invoices/${inv.id}/pdf`
     const includePdf = req.body.attachPdf !== false
     const text = `Dear Customer,\n\nInvoice ${inv.invoiceNo || ''}: ${inv.subject}.\n\nTotal Amount: ${Number(inv.grandTotal || 0).toFixed(2)} ${inv.currency || ''}${includePdf ? `\n\nView / save the PDF: ${req.protocol}://${req.get('host')}${pdfLink}` : ''}\n\nThank you,\n${companyName}`
-    const result = await sendMail({ to, subject, text, fromOverride: await getSmtpConfig(req.user!.companyId) })
+    const attachments = includePdf ? [await pdfAttachmentFromRoute(req, `/invoices/${inv.id}/pdf`, `${inv.invoiceNo || 'invoice'}.pdf`)] : undefined
+    const result = await sendMail({ to, subject, text, attachments, fromOverride: await getSmtpConfig(req.user!.companyId) })
     if (!result.delivered) return res.status(502).json({ error: result.error || 'Email could not be delivered' })
     res.json({ message: 'Email sent successfully', to, subject, pdfLink: includePdf ? pdfLink : null })
   } catch (err) { next(err) }

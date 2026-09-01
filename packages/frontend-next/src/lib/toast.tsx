@@ -7,6 +7,7 @@ export interface Toast {
   title: string
   description?: string
   variant?: 'default' | 'destructive' | 'success'
+  duration?: number
 }
 
 interface ToastContextType {
@@ -33,7 +34,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts(prev => [...prev, { ...t, id }])
     setTimeout(() => {
       setToasts(prev => prev.filter(toast => toast.id !== id))
-    }, 4000)
+    }, t.duration ?? (t.variant === 'destructive' ? 12000 : 5000))
   }, [])
 
   const removeToast = useCallback((id: string) => {
@@ -58,7 +59,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="font-semibold">{toast.title}</p>
-                {toast.description && <p className="text-xs opacity-90">{toast.description}</p>}
+                {toast.description && <p className="mt-1 text-xs leading-relaxed opacity-95">{toast.description}</p>}
               </div>
               <button onClick={() => removeToast(toast.id)} className="opacity-70 hover:opacity-100">&times;</button>
             </div>

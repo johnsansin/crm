@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import { validatePassword } from '../lib/settings'
 import { ONLINE_WINDOW_MS } from './presence.routes'
 import { publicUser } from '../lib/public-user'
+import { checkOrganizationLimit } from '../lib/organization-limits'
 
 export const userRouter = Router()
 
@@ -35,13 +36,19 @@ userRouter.get('/', async (req, res, next) => {
 userRouter.post('/', async (req, res, next) => {
   try {
     if (!req.user!.companyId) return res.status(400).json({ error: 'No company' })
+    const capacity = await checkOrganizationLimit(req.user!.companyId, 'users')
+    if (!capacity.allowed) return res.status(409).json({ error: `User limit reached (${capacity.used}/${capacity.limit}). Contact your super admin to change the organization limit.` })
     const { userName, email, firstName, lastName, password, isAdmin, roleId, pbxExtension, dashboardEnabled } = req.body
+    if (![userName, email, firstName, lastName, password].every(value => typeof value === 'string' && value.trim())) {
+      return res.status(400).json({ error: 'Username, email, first name, last name, and password are required.' })
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return res.status(400).json({ error: 'Enter a valid email address.' })
     const policyError = await validatePassword(req.user!.companyId, password)
     if (policyError) return res.status(400).json({ error: policyError })
     const hashed = await bcrypt.hash(password, 10)
     const user = await prisma.user.create({
       data: {
-        userName, email, firstName, lastName,
+        userName: userName.trim(), email: email.trim().toLowerCase(), firstName: firstName.trim(), lastName: lastName.trim(),
         password: hashed,
         isAdmin: isAdmin || false,
         roleId: roleId || null,
@@ -61,6 +68,10 @@ userRouter.put('/:id', async (req, res, next) => {
       where: { id: req.params.id, companyId: req.user!.companyId }
     })
     if (!existing) return res.status(404).json({ error: 'User not found' })
+    if (!existing.isActive && req.body.isActive === true) {
+      const capacity = await checkOrganizationLimit(req.user!.companyId, 'users')
+      if (!capacity.allowed) return res.status(409).json({ error: `User limit reached (${capacity.used}/${capacity.limit}). Contact your super admin to change the organization limit.` })
+    }
     const allowed = ['userName', 'email', 'firstName', 'lastName', 'phone', 'mobile', 'title', 'department', 'roleId', 'pbxExtension', 'dashboardEnabled', 'isAdmin', 'isActive']
     const data: any = {}
     for (const key of allowed) {

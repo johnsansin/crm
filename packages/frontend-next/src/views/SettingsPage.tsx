@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { api, apiErrorMessage } from '@/lib/api'
 import { useToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, Target, Languages, LogOut, type LucideIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, Target, Languages, LogOut, CreditCard, type LucideIcon } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth'
 import { useTheme, type Accent } from '@/lib/theme'
 import { withAppBasePath } from '@/lib/base-path'
@@ -34,6 +34,7 @@ import { TagsSettings } from '@/views/settings/TagsSettings'
 import { MenuSettings } from '@/views/settings/MenuSettings'
 import { LanguageSettings } from '@/views/settings/LanguageSettings'
 import { RecycleBinPage } from '@/views/RecycleBinPage'
+import { SubscriptionSettings } from '@/views/settings/SubscriptionSettings'
 
 const TINTS: Record<string, string> = {
   users: 'from-sky-500 to-blue-600',
@@ -58,6 +59,7 @@ const TINTS: Record<string, string> = {
   menu: 'from-violet-500 to-indigo-700',
   trash: 'from-red-500 to-rose-700',
   language: 'from-cyan-500 to-blue-600',
+  subscription: 'from-violet-500 to-indigo-700',
 }
 
 const CATEGORIES = [
@@ -69,7 +71,7 @@ const CATEGORIES = [
   {
     label: 'Organization',
     blurb: 'Company branding, regional, financial and document defaults',
-    keys: ['company', 'org', 'currencies', 'tax', 'terms', 'leads', 'potentials'],
+    keys: ['subscription', 'company', 'org', 'currencies', 'tax', 'terms', 'leads', 'potentials'],
   },
   {
     label: 'Data & Automation',
@@ -94,6 +96,7 @@ const CATEGORIES = [
 ]
 
 const settingSections = [
+  { key: 'subscription', label: 'Subscription', icon: CreditCard, desc: 'View your organisation plan, status, features, and usage limits' },
   { key: 'users', label: 'Users', icon: Users, desc: 'Manage CRM users and their access' },
   { key: 'roles', label: 'Roles', icon: Shield, desc: 'Define role hierarchy and module permissions' },
   { key: 'groups', label: 'Groups', icon: UserCircle, desc: 'Organize users into groups' },
@@ -175,6 +178,7 @@ export function SettingsPage() {
         {activeSection === 'menu' && <MenuSettings />}
         {activeSection === 'trash' && <RecycleBinPage />}
         {activeSection === 'language' && <LanguageSettings onBack={() => setActiveSection(null)} />}
+        {activeSection === 'subscription' && <SubscriptionSettings />}
       </div>
     )
   }
@@ -545,6 +549,7 @@ function UsersSettings() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [logoutUser, setLogoutUser] = useState<any | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [formError, setFormError] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const emptyUserForm = { userName: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false, roleId: '', groupId: '', pbxExtension: '', dashboardEnabled: true }
   const [form, setForm] = useState(emptyUserForm)
@@ -563,27 +568,23 @@ function UsersSettings() {
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       const { groupId, ...userData } = data
-      const user = await fetch('/api/users', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(userData),
-      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() })
+      const user = await api.request<any>('/users', { method: 'POST', body: JSON.stringify(userData) })
       if (groupId && user.id) await api.addGroupMember(groupId, user.id)
       return user
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); queryClient.invalidateQueries({ queryKey: ['usergroups'] }); addToast({ title: 'User created', variant: 'success' }); setShowForm(false); setForm(emptyUserForm) },
-    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); queryClient.invalidateQueries({ queryKey: ['usergroups'] }); addToast({ title: 'User created', variant: 'success' }); setFormError(''); setShowForm(false); setForm(emptyUserForm) },
+    onError: (e: Error) => { const message = e.message || 'Please check the entered details and try again.'; setFormError(message); addToast({ title: 'Could not create user', description: message, variant: 'destructive', duration: 15000 }) },
   })
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
       const { groupId, ...userData } = data
-      const user = await fetch(`/api/users/${editId}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(userData),
-      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() })
+      const user = await api.request<any>(`/users/${editId}`, { method: 'PUT', body: JSON.stringify(userData) })
       if (groupId && editId) await api.addGroupMember(groupId, editId).catch(() => null)
       return user
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User updated', variant: 'success' }); setEditId(null); setShowForm(false) },
-    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => addToast({ title: 'Could not update user', description: e.message || 'Please check the entered details and try again.', variant: 'destructive' }),
   })
 
   const deleteMutation = useMutation({
@@ -594,13 +595,9 @@ function UsersSettings() {
   })
 
   const toggleActiveMutation = useMutation({
-    mutationFn: (u: any) =>
-      fetch(`/api/users/${u.id}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ isActive: u.isActive === false }),
-      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
+    mutationFn: (u: any) => api.request<any>(`/users/${u.id}`, { method: 'PUT', body: JSON.stringify({ isActive: u.isActive === false }) }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['all-users'] }); addToast({ title: 'User status updated', variant: 'success' }) },
-    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => addToast({ title: 'Could not update user status', description: e.message, variant: 'destructive' }),
   })
 
   const logoutAllMutation = useMutation({
@@ -644,7 +641,7 @@ function UsersSettings() {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-          <Button onClick={() => { setShowForm(true); setEditId(null); setForm(emptyUserForm) }}>
+          <Button onClick={() => { setFormError(''); setShowForm(true); setEditId(null); setForm(emptyUserForm) }}>
             <Plus size={16} className="mr-2" /> New User
           </Button>
         </div>
@@ -701,7 +698,7 @@ function UsersSettings() {
         </CardContent>
       </Card>
 
-      <Dialog open={showForm} onOpenChange={(o) => { if (!o) setEditId(null); setShowForm(o) }}>
+      <Dialog open={showForm} onOpenChange={(o) => { if (!o) { setEditId(null); setFormError('') }; setShowForm(o) }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{editId ? 'Edit User' : 'New User'}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => {
@@ -710,6 +707,7 @@ function UsersSettings() {
             if (editId) updateMutation.mutate(payload)
             else createMutation.mutate(payload)
           }} className="space-y-3">
+            {formError && <div role="alert" className="rounded-lg border border-red-300 bg-red-50 px-3 py-2.5 text-sm leading-relaxed text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"><span className="font-semibold">Could not create user:</span> {formError}</div>}
             <div>
               <label className="text-sm font-medium">Username *</label>
               <Input value={form.userName} onChange={e => setForm(f => ({ ...f, userName: e.target.value }))} required />
@@ -1362,7 +1360,7 @@ function CompanySettings() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)
       })
-      if (!res.ok) throw new Error('Failed')
+      if (!res.ok) throw new Error(await apiErrorMessage(res))
       addToast({ title: 'Company settings updated', variant: 'success' })
       refetch()
     } catch (err: any) {

@@ -67,10 +67,10 @@ const pricingPlans = [
   },
   {
     name: 'Growth',
-    price: '$29',
-    period: '/user/month',
+    price: '$10',
+    period: '/organisation/month',
     description: 'For growing teams that need more power.',
-    features: ['Up to 20 users', '50,000 contacts', 'All CRM modules', 'Workflow automation', 'Custom reports', 'Priority support'],
+    features: ['Up to 50 users', '50,000 contacts', 'All CRM modules', 'Workflow automation', 'Custom reports', 'Priority support'],
     cta: 'Start Free Trial',
     highlight: true,
   },

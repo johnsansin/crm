@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '../generated/prisma-client'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { requireTenant } from '../lib/module-permissions'
@@ -8,6 +8,8 @@ import { runWorkflows, nextSequenceNumber, setOrgSetting } from '../lib/settings
 import { writeAudit, writeAuditFields, auditSummary } from '../lib/audit'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { notifyFollowersAndAssignee } from '../lib/notify'
+import { checkOrganizationLimit } from '../lib/organization-limits'
+import { runLeadAgent } from '../lib/lead-agent'
 
 async function syncInvoiceBalance(invoiceId: string, companyId: string) {
   try {
@@ -752,6 +754,10 @@ export function entityRouter(moduleName: string): Router {
   router.post('/', async (req, res, next) => {
     try {
       if (!(await checkPermission(req, 'create'))) return res.status(403).json({ error: 'Access denied' })
+      if (modelName === 'contact' && req.user!.companyId) {
+        const capacity = await checkOrganizationLimit(req.user!.companyId, 'contacts')
+        if (!capacity.allowed) return res.status(409).json({ error: `Contact limit reached (${capacity.used}/${capacity.limit}). Contact your super admin to change the organization limit.` })
+      }
       const body: any = { ...req.body }
       if (isScoped) body.companyId = req.user!.companyId
       const { data, custom } = splitCustomData(body)
@@ -846,6 +852,7 @@ export function entityRouter(moduleName: string): Router {
           message: `A new lead "${label}" has been assigned to you.`,
           link: `/leads/${record.id}`, companyId: req.user!.companyId, actorId: req.user!.userId,
         }).catch(() => {})
+        runLeadAgent(req.user!.companyId!, req.user!.userId, [record.id]).catch(error => console.error('[LEAD AGENT] create decision failed', error))
       }
 
       if (moduleName === 'emails' && record.toEmails && record.subject) {
@@ -871,6 +878,10 @@ export function entityRouter(moduleName: string): Router {
       if (isScoped) addScope(where, req.user!.companyId)
       const before = await prismaModel.findFirst({ where })
       if (!before) return res.status(404).json({ error: 'Not found' })
+      if (modelName === 'contact' && before.isActive === false && req.body.isActive === true && req.user!.companyId) {
+        const capacity = await checkOrganizationLimit(req.user!.companyId, 'contacts')
+        if (!capacity.allowed) return res.status(409).json({ error: `Contact limit reached (${capacity.used}/${capacity.limit}). Contact your super admin to change the organization limit.` })
+      }
       if (!(await canMutateRecord(req, before, moduleName))) return res.status(403).json({ error: 'Access denied by sharing rules' })
       const body: any = { ...req.body }
       const { data, custom } = splitCustomData(body)
@@ -967,6 +978,7 @@ export function entityRouter(moduleName: string): Router {
             actorId: req.user!.userId,
           }).catch(() => {})
         }
+        runLeadAgent(req.user!.companyId!, req.user!.userId, [record.id]).catch(error => console.error('[LEAD AGENT] update decision failed', error))
       }
       const merged = await mergeCustomValues(moduleName, [record])
       res.json(merged[0])

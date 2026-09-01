@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { DataTable } from '@/components/ui/data-table'
 import { ArrowLeft, Save, Loader2, Trash2, Plus, FileText, Mail, FileDown, Printer, Search, Copy, ShoppingCart, History, MessageSquare, Building2, Users, DollarSign, Clock3, CheckCircle2, Eye, Pencil, MoreVertical, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, SlidersHorizontal } from 'lucide-react'
 import { FormField } from '@/components/form-field'
 import { ProductSearchSelect } from '@/components/product-search-select'
@@ -152,7 +153,7 @@ export function QuotationsPage() {
         comments: r.comments || [],
       })
       setMode(new URLSearchParams(window.location.search).get('edit') === 'true' ? 'form' : 'view')
-    } catch { addToast({ title: 'Error', description: 'Failed to load quotation', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not load quotation', description: e?.message || 'Refresh the page and try again.', variant: 'destructive' }) }
     setLoading(false)
   }
 
@@ -333,7 +334,7 @@ export function QuotationsPage() {
       await api.request(`/quotations/${id}`, { method: 'DELETE' })
       addToast({ title: 'Deleted', description: 'Quotation deleted' })
       navigate('/quotes')
-    } catch { addToast({ title: 'Error', description: 'Failed to delete', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not delete quotation', description: e?.message || 'It may be referenced by another record.', variant: 'destructive' }) }
   }
 
   async function handleConvertInvoice() {
@@ -342,7 +343,7 @@ export function QuotationsPage() {
       const inv = await api.request(`/quotations/${id}/convert-invoice`, { method: 'POST' })
       addToast({ title: 'Invoice Created', description: `Invoice ${inv.invoiceNo || ''} created` })
       loadRecord(id!)
-    } catch { addToast({ title: 'Error', description: 'Failed to convert', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not convert quotation', description: e?.message || 'Check that the quotation has complete customer and line-item information.', variant: 'destructive' }) }
   }
 
   async function handleConvertSalesOrder() {
@@ -351,7 +352,7 @@ export function QuotationsPage() {
       const so = await api.request(`/quotations/${id}/convert-salesorder`, { method: 'POST' })
       addToast({ title: 'Sales Order Created', description: `Sales Order ${so.salesOrderNo || ''} created` })
       loadRecord(id!)
-    } catch { addToast({ title: 'Error', description: 'Failed to convert', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not convert quotation', description: e?.message || 'Check that the quotation has complete customer and line-item information.', variant: 'destructive' }) }
   }
 
   async function handleAddComment() {
@@ -362,7 +363,7 @@ export function QuotationsPage() {
       setRelated((prev: any) => ({ ...prev, comments: [created, ...prev.comments] }))
       setComment('')
       addToast({ title: 'Comment added' })
-    } catch { addToast({ title: 'Error', description: 'Failed to add comment', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not add comment', description: e?.message || 'Enter a comment and try again.', variant: 'destructive' }) }
     setAddingComment(false)
   }
 
@@ -402,7 +403,7 @@ export function QuotationsPage() {
     try {
       await api.request(`/quotations/${id}/email`, { method: 'POST', body: JSON.stringify({ to, attachPdf }) })
       addToast({ title: 'Sent', description: `Email logged to console for ${to}` })
-    } catch { addToast({ title: 'Error', description: 'Failed to send email', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not send email', description: e?.message || 'Check the recipient and outgoing mail settings, then try again.', variant: 'destructive' }) }
   }
 
   async function handlePdf() {
@@ -832,6 +833,31 @@ export function QuotationsPage() {
   const pageLimit = pagination?.limit || 25
   const firstRecord = totalQuotes === 0 ? 0 : (currentPage - 1) * pageLimit + 1
   const lastRecord = Math.min(currentPage * pageLimit, totalQuotes)
+
+  const standardColumns = [
+    { key: 'quoteNo', label: 'Quote No', sortable: true, render: (value: any) => <span className="font-semibold">{value || '—'}</span> },
+    { key: 'subject', label: 'Subject', sortable: true },
+    { key: 'grandTotal', label: 'Amount', sortable: true, className: 'text-right', render: (value: any, row: any) => <span className="font-semibold tabular-nums">{Number(value || 0).toFixed(2)} {row.currency || ''}</span> },
+    { key: 'quoteStage', label: 'Stage', sortable: true, render: (value: any) => <span className="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">{value || 'Draft'}</span> },
+    { key: 'validUntil', label: 'Valid Until', sortable: true, render: (value: any) => <span className="text-muted-foreground">{value ? formatDate(value) : '—'}</span> },
+    { key: 'createdAt', label: 'Created', sortable: true, render: (value: any) => <span className="text-muted-foreground">{value ? formatDate(value) : '—'}</span> },
+  ]
+
+  return (
+    <div className="w-full min-w-0 space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div><h1 className="text-xl font-bold tracking-tight md:text-2xl">Quotations</h1><p className="mt-1 text-sm text-muted-foreground">Manage quotations</p></div>
+        <Button size="sm" onClick={() => navigate('/quotes/new')}><Plus className="mr-1.5 h-4 w-4" />New Quotation</Button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-3 shadow-sm">
+        <div className="relative min-w-[220px] max-w-sm flex-1"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/><Input value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => event.key === 'Enter' && handleSearch()} placeholder="Search quote number or subject…" className="h-9 pl-9"/></div>
+        <Button variant="outline" size="sm" onClick={handleSearch}>Search</Button>
+      </div>
+      <DataTable columns={standardColumns} data={records} loading={loading} pagination={pagination} onPageChange={setPage} onRowClick={record => navigate(`/quotes/${record.id}`)} emptyMessage="No quotations found" />
+    </div>
+  )
+
+  /* Legacy presentation retained below for reference while all modules use the standard table above. */
 
   const stageStyle = (stage: string) => {
     if (stage === 'Accepted') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'

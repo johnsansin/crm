@@ -60,6 +60,7 @@ export interface ReportOptions {
   items: ReportItem[]
   totals: ReportTotalsRow[]
   sections: string[]
+  showItems?: boolean
   logoUrl?: string | null
   template?: {
     isActive?: boolean
@@ -114,28 +115,28 @@ export function renderReport(opts: ReportOptions): string {
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(opts.docNo || opts.title)}</title>
 <style>
 *{box-sizing:border-box}
-body{font-family:'${font}',Arial,sans-serif;margin:24px;color:#333;line-height:1.5}
-.report{max-width:920px;margin:0 auto}
+body{font-family:'${font}',Arial,sans-serif;margin:0;padding:28px;background:#f4f6f9;color:#172033;line-height:1.5}
+.report{max-width:920px;margin:0 auto;background:#fff;border:1px solid #e5e9f0;border-radius:18px;padding:38px;box-shadow:0 18px 50px rgba(23,32,51,.10);overflow:hidden}
 .document-actions{position:sticky;top:0;z-index:20;display:flex;justify-content:flex-end;gap:8px;max-width:920px;margin:0 auto 16px;padding:10px;background:rgba(255,255,255,.96);border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 18px rgba(15,23,42,.08)}
 .document-actions button{appearance:none;border:0;border-radius:7px;padding:9px 15px;background:${accent};color:#fff;font:600 13px '${font}',Arial,sans-serif;cursor:pointer}
 .document-actions button.secondary{background:#fff;color:${accent};border:1px solid ${accent}}
 .print-letterhead,.print-footer{display:none}
-.header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
-.company{font-size:22px;font-weight:bold;color:${accent};word-break:break-word}
+.header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:24px;margin:-38px -38px 26px;padding:34px 38px 30px;border-top:7px solid ${accent};border-bottom:1px solid #e7ebf1;background:linear-gradient(135deg,#fff 0%,#f8fafc 100%)}
+.company{font-size:22px;font-weight:800;color:#172033;word-break:break-word;letter-spacing:-.02em}
 .company-logo{display:block;max-width:180px;max-height:70px;object-fit:contain;margin-bottom:8px}
 .letterhead-text{font-size:12px;color:#666;white-space:pre-wrap;margin-top:5px}
 .body-note{margin:4px 0 6px;white-space:pre-wrap;font-size:13px}
 .company-address{font-size:12px;color:#666;margin-top:4px;word-break:break-word}
-.brand{text-align:right}
-.title{font-size:26px;font-weight:bold;color:${accent};margin-bottom:4px}
-.meta{color:#666;font-size:14px;word-break:break-word}
-.meta-box{width:100%;border-collapse:collapse;margin:0 0 6px}
-.meta-box td{vertical-align:top;padding:5px 8px;word-break:break-word}
+.brand{text-align:right;min-width:210px}
+.title{font-size:28px;font-weight:800;color:${accent};margin-bottom:8px;letter-spacing:.045em}
+.meta{display:inline-block;color:#475569;font-size:13px;font-weight:700;word-break:break-word;background:#fff;border:1px solid #dfe4ec;border-radius:999px;padding:5px 12px}
+.meta-box{width:100%;border-collapse:separate;border-spacing:14px 0;margin:0 -14px 24px}
+.meta-box td{vertical-align:top;padding:18px 20px;word-break:break-word;background:#f8fafc;border:1px solid #e6eaf0;border-radius:12px}
 .meta-box td.meta-left{width:50%}
 .meta-box td.meta-right{width:50%}
 .meta-box .label{font-weight:bold}
-.items-table{width:100%;border-collapse:collapse;margin:6px 0 10px;table-layout:fixed}
-.items-table th{background:${accent};color:#fff;padding:8px 6px;text-align:left;font-size:12px}
+.items-table{width:100%;border-collapse:separate;border-spacing:0;margin:8px 0 18px;table-layout:fixed;border:1px solid #e2e7ee;border-radius:12px;overflow:hidden}
+.items-table th{background:${accent};color:#fff;padding:11px 9px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.045em}
 .items-table th:nth-child(1){width:5%}
 .items-table th:nth-child(2){width:36%}
 .items-table th:nth-child(3){width:9%}
@@ -146,21 +147,24 @@ body{font-family:'${font}',Arial,sans-serif;margin:24px;color:#333;line-height:1
 .items-table th.num{text-align:right}
 .items-table th:nth-child(1),.items-table th:nth-child(3){text-align:center}
 .items-table th:nth-child(n+4){text-align:right}
-.items-table td{padding:7px 6px;border-bottom:1px solid #eee;word-break:break-word;overflow-wrap:break-word;vertical-align:top}
+.items-table td{padding:11px 9px;border-bottom:1px solid #edf0f4;word-break:break-word;overflow-wrap:break-word;vertical-align:top;font-size:12px}
+.items-table tbody tr:nth-child(even){background:#fafbfd}.items-table tbody tr:last-child td{border-bottom:0}
 .items-table td:first-child{text-align:center}
 .items-table td:nth-child(3){text-align:center}
 .items-table .item-name{font-weight:600}
 .items-table .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .item-desc{font-size:11px;color:#666;font-weight:normal;margin-top:2px;word-break:break-word}
-.totals{width:100%;max-width:300px;margin-left:auto;border-collapse:collapse}
-.totals td{padding:5px 10px;border:none;word-break:break-word}
-.totals tr.grand td{font-size:17px;font-weight:bold;color:${accent};border-top:2px solid ${accent}}
-.section{margin-top:22px;word-break:break-word}
+.totals{width:100%;max-width:340px;margin:4px 0 4px auto;border-collapse:separate;border-spacing:0;background:#f8fafc;border:1px solid #e3e8ef;border-radius:12px;overflow:hidden}
+.totals td{padding:8px 14px;border:none;border-bottom:1px solid #e8ecf2;word-break:break-word}
+.totals tr:last-child td{border-bottom:0}.totals td:last-child{font-weight:700}
+.totals tr.grand td{font-size:17px;font-weight:bold;color:#fff;background:${accent};border-top:0;padding-top:12px;padding-bottom:12px}
+.section{margin-top:18px;padding:17px 19px;border:1px solid #e5e9f0;border-radius:12px;background:#fbfcfd;word-break:break-word}
 .section .label{font-weight:bold}
 .section p{margin:6px 0 0;white-space:pre-wrap;word-break:break-word}
-.footer{margin-top:30px;border-top:2px solid ${accent};padding-top:12px;font-size:12px;color:#666;white-space:pre-wrap}
+.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.detail{padding:12px;border:1px solid #e5e9f0;border-radius:10px;background:#fff}.detail .k{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#768196;font-weight:700}.detail .v{display:block;margin-top:3px;font-size:13px;font-weight:600;color:#172033}
+.footer{margin-top:30px;border-top:2px solid ${accent};padding-top:12px;font-size:11px;color:#758095;white-space:pre-wrap}
 @media(max-width:600px){
-body{margin:10px}
+body{padding:10px}.report{padding:22px;border-radius:12px}.header{margin:-22px -22px 20px;padding:24px 22px}
 .header{flex-direction:column}
 .brand{text-align:left}
 .title{font-size:22px}
@@ -171,22 +175,21 @@ body{margin:10px}
 .items-table th:nth-child(7){width:15%}
 .meta-box td{display:block;width:100%!important;padding:4px 8px}
 .totals{max-width:100%}
+.detail-grid{grid-template-columns:1fr}
 }
 @media print{
-@page{size:A4;margin:12mm 12mm 16mm}
-body{margin:0;font-size:12px}
+@page{size:A4;margin:10mm}
+html,body{width:auto;height:auto;overflow:visible}
+body{margin:0;padding:0;background:#fff;font-size:10.5px;line-height:1.35}.report{max-width:none;margin:0;border:0;border-radius:0;box-shadow:none;padding:0;overflow:visible}
 .document-actions{display:none!important}
-.print-letterhead{display:block;position:fixed;left:0;right:0;top:0;height:28mm;border-bottom:1px solid #ddd;padding-bottom:3mm;background:#fff}
-.print-letterhead .company-logo{max-width:120px;max-height:14mm;margin-bottom:3px}
-.print-letterhead .company{font-size:16px}
-.print-letterhead .company-address,.print-letterhead .letterhead-text{font-size:9px;line-height:1.25}
-.print-footer{display:block;position:fixed;left:0;right:0;bottom:0;min-height:10mm;border-top:1px solid ${accent};padding-top:2mm;font-size:9px;color:#666;white-space:pre-wrap;background:#fff}
-.report{padding-top:29mm;padding-bottom:12mm}
-.header>div:first-child{visibility:hidden}
-.header{min-height:0;margin-bottom:3mm;page-break-inside:avoid}
-.footer{display:none}
-.items-table tr{page-break-inside:avoid}
-.totals{page-break-inside:avoid}
+.print-letterhead,.print-footer{display:none!important}
+.header{margin:0 0 5mm;padding:5mm 5mm 4mm;border-top-width:2mm;page-break-inside:avoid;break-inside:avoid}
+.company-logo{max-width:42mm;max-height:17mm}.company{font-size:17px}.title{font-size:21px}.brand{min-width:45mm}
+.meta-box{margin:0 0 5mm;border-spacing:3mm 0}.meta-box td{padding:3.5mm}
+.items-table{margin:0 0 4mm;border-radius:2mm}.items-table thead{display:table-header-group}.items-table th{padding:2.5mm 1.5mm;font-size:8px}.items-table td{padding:2.5mm 1.5mm;font-size:9px}
+.items-table tr,.section,.totals{page-break-inside:avoid;break-inside:avoid}
+.totals{max-width:82mm}.totals td{padding:2mm 3mm}.totals tr.grand td{font-size:13px;padding-top:2.5mm;padding-bottom:2.5mm}
+.section{margin-top:4mm;padding:3.5mm}.footer{margin-top:6mm;padding-top:3mm;font-size:8px}
 *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 </style></head><body>
@@ -206,8 +209,7 @@ ${letterhead}
 <td class="meta-right">${metaHtml}</td>
 </tr></table>
 ${bodyText}
-<table class="items-table"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th class="num">Rate</th><th class="num">Disc</th><th class="num">Tax</th><th class="num">Total</th></tr></thead><tbody>${itemsHtml}</tbody></table>
-<table class="totals">${totalsHtml}</table>
+${opts.showItems === false ? '' : `<table class="items-table"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th class="num">Rate</th><th class="num">Disc</th><th class="num">Tax</th><th class="num">Total</th></tr></thead><tbody>${itemsHtml}</tbody></table><table class="totals">${totalsHtml}</table>`}
 ${sectionsHtml}
 <div class="footer">${escapeHtml(footerText)}</div>
 </div>

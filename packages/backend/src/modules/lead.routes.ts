@@ -5,6 +5,10 @@ import { requireModulePermission } from '../lib/module-permissions'
 import { writeAudit } from '../lib/audit'
 import { nextSequenceNumber, getOrgSetting } from '../lib/settings'
 import { notifyFollowersAndAssignee } from '../lib/notify'
+import { checkOrganizationLimit } from '../lib/organization-limits'
+import { renderReport, escapeHtml, resolveReportLogo } from './report'
+import { sendMail, getSmtpConfig } from '../lib/mailer'
+import { pdfAttachmentFromRoute } from '../lib/pdf'
 
 export const leadRouter = Router()
 
@@ -20,6 +24,59 @@ leadRouter.get('/users', async (req, res, next) => {
       orderBy: { firstName: 'asc' },
     })
     res.json({ data: users })
+  } catch (err) { next(err) }
+})
+
+leadRouter.get('/:id/pdf', async (req, res, next) => {
+  try {
+    const lead: any = await prisma.lead.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId, isActive: true } })
+    if (!lead) return res.status(404).json({ error: 'Lead not found' })
+    const [company, template, owner] = await Promise.all([
+      req.user!.companyId ? prisma.company.findUnique({ where: { id: req.user!.companyId } }) : null,
+      getOrgSetting(req.user!.companyId, 'documentTemplate', {}),
+      lead.assignedTo ? prisma.user.findUnique({ where: { id: lead.assignedTo }, select: { firstName: true, lastName: true, email: true } }) : null,
+    ])
+    const name = [lead.salutation, lead.firstName, lead.lastName].filter(Boolean).join(' ') || lead.company || 'Lead'
+    const address = [lead.street, lead.city, lead.state, lead.postalCode, lead.country].filter(Boolean).map(escapeHtml).join('<br>')
+    const detail = (key: string, value: any) => `<div class="detail"><span class="k">${escapeHtml(key)}</span><span class="v">${escapeHtml(value || '—')}</span></div>`
+    const html = renderReport({
+      title: 'LEAD PROFILE', docNo: lead.leadNo || '', fileNamePrefix: 'lead',
+      companyName: company?.name || 'BizForce CRM',
+      companyAddress: [company?.addressStreet, company?.addressCity, company?.addressCountry].filter(Boolean).map(escapeHtml).join('<br>'),
+      billToLabel: 'Lead Contact', billTo: `<strong>${escapeHtml(name)}</strong>${address ? `<br>${address}` : ''}`,
+      metaLines: [
+        `<span class="label">Status:</span> ${escapeHtml(lead.leadStatus || 'New')}`,
+        `<span class="label">Source:</span> ${escapeHtml(lead.leadSource || 'N/A')}`,
+        `<span class="label">Owner:</span> ${escapeHtml(owner ? [owner.firstName, owner.lastName].filter(Boolean).join(' ') || owner.email : 'Unassigned')}`,
+        `<span class="label">Created:</span> ${lead.createdAt ? escapeHtml(new Date(lead.createdAt).toLocaleDateString()) : 'N/A'}`,
+      ],
+      items: [], totals: [], showItems: false,
+      sections: [
+        `<div class="section"><span class="label">Contact &amp; qualification</span><div class="detail-grid" style="margin-top:12px">${detail('Company', lead.company)}${detail('Email', lead.email)}${detail('Phone', lead.phone || lead.mobile)}${detail('Industry', lead.industry)}${detail('Rating', lead.rating)}${detail('Annual revenue', lead.annualRevenue)}</div></div>`,
+        lead.description ? `<div class="section"><span class="label">Notes</span><p>${escapeHtml(lead.description)}</p></div>` : '',
+      ],
+      logoUrl: await resolveReportLogo(company?.logo), template,
+    })
+    res.setHeader('Content-Type', 'text/html; charset=utf-8')
+    res.setHeader('Content-Disposition', `inline; filename="${lead.leadNo || lead.id}.html"`)
+    res.send(html)
+  } catch (err) { next(err) }
+})
+
+leadRouter.post('/:id/email', async (req, res, next) => {
+  try {
+    const lead: any = await prisma.lead.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId, isActive: true } })
+    if (!lead) return res.status(404).json({ error: 'Lead not found' })
+    const to = String(req.body.to || lead.email || '').trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return res.status(400).json({ error: 'A valid recipient email is required' })
+    const includePdf = req.body.attachPdf !== false
+    const name = [lead.firstName, lead.lastName].filter(Boolean).join(' ') || lead.company || 'Lead'
+    const subject = `Lead profile: ${name}`
+    const text = `Hello,\n\nPlease find the lead profile for ${name}${includePdf ? ' attached as a PDF.' : '.'}\n\nThank you.`
+    const attachments = includePdf ? [await pdfAttachmentFromRoute(req, `/leads/${lead.id}/pdf`, `${lead.leadNo || name || 'lead'}.pdf`)] : undefined
+    const result = await sendMail({ to, subject, text, attachments, companyId: req.user!.companyId, fromOverride: await getSmtpConfig(req.user!.companyId) })
+    if (!result.delivered) return res.status(502).json({ error: result.error || 'Email could not be delivered' })
+    res.json({ message: 'Email sent successfully', to, subject, attachedPdf: includePdf })
   } catch (err) { next(err) }
 })
 
@@ -76,6 +133,11 @@ leadRouter.post('/:id/convert', async (req, res, next) => {
         if (src && typeof src === 'string' && (lead as any)[src] != null) out[target] = (lead as any)[src]
       }
       return out
+    }
+
+    if (createContact && companyId) {
+      const capacity = await checkOrganizationLimit(companyId, 'contacts')
+      if (!capacity.allowed) return res.status(409).json({ error: `Contact limit reached (${capacity.used}/${capacity.limit}). Increase the organization limit before converting this lead.` })
     }
 
     const result = await prisma.$transaction(async (tx) => {

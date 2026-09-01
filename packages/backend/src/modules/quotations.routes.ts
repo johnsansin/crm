@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { requireModulePermission } from '../lib/module-permissions'
+import { pdfAttachmentFromRoute } from '../lib/pdf'
 import { renderReport, escapeHtml, resolveReportLogo } from './report'
 import { getOrgSetting } from '../lib/settings'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
@@ -468,7 +469,8 @@ quotationsRouter.post('/:id/email', async (req, res, next) => {
     const pdfLink = `/api/quotations/${quote.id}/pdf`
     const includePdf = req.body.attachPdf !== false
     const text = `Dear Customer,\n\nQuotation ${quote.quoteNo || ''}: ${quote.subject}.\n\nTotal Amount: ${Number(quote.grandTotal || 0).toFixed(2)} ${quote.currency || ''}${includePdf ? `\n\nView / save the PDF: ${req.protocol}://${req.get('host')}${pdfLink}` : ''}\n\nThank you,\n${companyName}`
-    const result = await sendMail({ to, subject, text, fromOverride: await getSmtpConfig(req.user!.companyId) })
+    const attachments = includePdf ? [await pdfAttachmentFromRoute(req, `/quotations/${quote.id}/pdf`, `${quote.quoteNo || 'quotation'}.pdf`)] : undefined
+    const result = await sendMail({ to, subject, text, attachments, fromOverride: await getSmtpConfig(req.user!.companyId) })
     if (!result.delivered) return res.status(502).json({ error: result.error || 'Email could not be delivered' })
     res.json({ message: 'Email sent successfully', to, subject, pdfLink: includePdf ? pdfLink : null })
   } catch (err) { next(err) }

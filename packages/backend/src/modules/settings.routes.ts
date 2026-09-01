@@ -9,6 +9,7 @@ import { sendMail, testSmtpConnection, getSmtpConfig } from '../lib/mailer'
 import { generateSecret, verifyTotp, otpauthUri } from '../lib/otp'
 import { writeAudit, getClientIp } from '../lib/audit'
 import { getModuleConfig } from './moduleSetup'
+import { getOrganizationUsage } from '../lib/organization-limits'
 
 export const settingsRouter = Router()
 settingsRouter.use(authMiddleware)
@@ -74,6 +75,25 @@ settingsRouter.get('/preferences', async (req, res, next) => {
       currencySymbol: org.currencySymbol || '$',
       defaultModule: user?.defaultModule || 'dashboard',
       calendar,
+    })
+  } catch (err) { next(err) }
+})
+
+settingsRouter.get('/subscription', requireAdmin, async (req, res, next) => {
+  try {
+    const company = await prisma.company.findUnique({
+      where: { id: req.user!.companyId! },
+      include: { subscriptionModel: true },
+    })
+    if (!company) return res.status(404).json({ error: 'Organisation not found' })
+    const usage = await getOrganizationUsage(company.id)
+    res.json({
+      plan: company.subscriptionModel || { code: company.subscriptionPlan, name: company.subscriptionPlan },
+      status: company.subscriptionStatus,
+      userLimit: company.userLimit, contactLimit: company.contactLimit,
+      trialStartsAt: company.trialStartsAt, trialEndsAt: company.trialEndsAt,
+      subscriptionStartsAt: company.subscriptionStartsAt, subscriptionEndsAt: company.subscriptionEndsAt,
+      usage: { users: usage.users, contacts: usage.contacts },
     })
   } catch (err) { next(err) }
 })
@@ -305,7 +325,7 @@ settingsRouter.get('/modules', requireAdmin, async (req, res, next) => {
 function getModuleConfigCache() {
   // @ts-ignore - imported lazily to avoid circular dep at module load time
   const configs: Record<string, any> = {}
-  for (const mod of ['accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'currencies', 'taxinfo', 'roles', 'usergroups', 'rolepermissions']) {
+  for (const mod of ['pos', 'accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'currencies', 'taxinfo', 'roles', 'usergroups', 'rolepermissions']) {
     const c = getModuleConfig(mod)
     if (c) configs[mod] = c
   }
@@ -794,8 +814,11 @@ settingsRouter.post('/import/:module', requireAdmin, upload.single('file'), asyn
     let created = 0
     let failed = 0
     const limit = (await getOrgSetting(req.user!.companyId, 'importExport')).maxRows || 1000
+    const contactCapacity = config.modelName === 'contact' && req.user!.companyId ? await getOrganizationUsage(req.user!.companyId) : null
+    const contactRemaining = contactCapacity ? Math.max(0, contactCapacity.company.contactLimit - contactCapacity.contacts) : Number.POSITIVE_INFINITY
     for (const line of lines.slice(1, limit + 1)) {
       try {
+        if (created >= contactRemaining) throw new Error('Organization contact limit reached')
         const cells = parseRow(line)
         const data: any = {}
         header.forEach((h, i) => {
@@ -847,6 +870,8 @@ settingsRouter.post('/import/:module/rows', requireAdmin, async (req, res, next)
     const errors: { row: number; error: string }[] = []
     let created = 0
     let updated = 0
+    const contactCapacity = config.modelName === 'contact' && req.user!.companyId ? await getOrganizationUsage(req.user!.companyId) : null
+    const contactRemaining = contactCapacity ? Math.max(0, contactCapacity.company.contactLimit - contactCapacity.contacts) : Number.POSITIVE_INFINITY
     for (let i = 0; i < rows.length && i < limit; i++) {
       const row = rows[i]
       if (!row || typeof row !== 'object') { errors.push({ row: i + 1, error: 'Invalid row' }); continue }
@@ -876,6 +901,7 @@ settingsRouter.post('/import/:module/rows', requireAdmin, async (req, res, next)
             continue
           }
         }
+        if (created >= contactRemaining) throw new Error('Organization contact limit reached')
         await model.create({ data })
         created++
       } catch (e: any) {

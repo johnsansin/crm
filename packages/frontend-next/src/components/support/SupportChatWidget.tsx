@@ -1,14 +1,19 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Bot, CheckCircle2, ChevronLeft, Headphones, Loader2, MessageCircle, Plus, Send, UserRound, Wifi, WifiOff, X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { createSupportMessageId, useSupportSocket } from '@/hooks/useSupportSocket'
+import { useAuthStore } from '@/lib/auth'
 
 const openStatuses = ['AI_ACTIVE', 'WAITING_FOR_AGENT', 'AGENT_ASSIGNED', 'AGENT_ACTIVE', 'RESOLVED']
 const suggestions = ['How can I add a user?', 'How do I configure currencies?', 'My PDF logo is missing']
 
 export function SupportChatWidget() {
+  const router = useRouter()
+  const { user } = useAuthStore()
+  const isSuperAdmin = !!user?.isSuperAdmin
   const [open, setOpen] = useState(false)
   const [history, setHistory] = useState<any[]>([])
   const [conversation, setConversation] = useState<any>(null)
@@ -49,7 +54,7 @@ export function SupportChatWidget() {
     }
     if (event.event?.startsWith('message.') || event.event?.startsWith('conversation.')) refresh(conversation?.id).catch(() => {})
   }, [conversation?.id, refresh])
-  const { connected, sendTyping } = useSupportSocket(conversation?.id || null, onSocketEvent)
+  const { connected, sendTyping } = useSupportSocket(conversation?.id || null, onSocketEvent, open && !isSuperAdmin)
 
   useEffect(() => {
     if (!open || connected) return
@@ -101,10 +106,10 @@ export function SupportChatWidget() {
   const agentName = [conversation?.assignedAgent?.firstName, conversation?.assignedAgent?.lastName].filter(Boolean).join(' ')
 
   return <>
-    <button type="button" onClick={() => setOpen(true)} className="group fixed bottom-20 right-4 z-50 grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/30 transition hover:-translate-y-0.5 hover:shadow-xl md:bottom-6 md:right-6" aria-label="Open AI and live support" title="AI & Live Support">
+    <button data-tour="support-desk" type="button" onClick={() => isSuperAdmin ? router.push('/superadmin/support') : setOpen(true)} className="group fixed bottom-20 right-4 z-50 grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/30 transition hover:-translate-y-0.5 hover:shadow-xl md:bottom-6 md:right-6" aria-label={isSuperAdmin ? 'Open support inbox' : 'Open AI and live support'} title={isSuperAdmin ? 'Open Support Inbox' : 'AI & Live Support'}>
       <span className="relative"><Headphones size={19}/><span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-indigo-600"/></span>
     </button>
-    {open && <div className="fixed inset-0 z-[70] bg-slate-950/25 sm:bg-transparent" onMouseDown={e => { if (e.target === e.currentTarget) setOpen(false) }}>
+    {!isSuperAdmin && open && <div className="fixed inset-0 z-[70] bg-slate-950/25 sm:bg-transparent" onMouseDown={e => { if (e.target === e.currentTarget) setOpen(false) }}>
       <section className="absolute inset-x-0 bottom-0 flex h-[min(720px,92dvh)] flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl dark:bg-slate-900 sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[680px] sm:w-[410px] sm:rounded-3xl">
         <header className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 px-4 pb-4 pt-4 text-white">
           <div className="flex items-center gap-3">

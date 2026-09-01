@@ -7,9 +7,21 @@ export interface ModuleConfig {
   searchFields: string[]
   listFields: string[]
   relatedModules: string[]
+  defaultActive?: boolean
 }
 
 const modules: Record<string, ModuleConfig> = {
+  pos: {
+    modelName: 'invoice',
+    label: 'Point of Sale',
+    parent: 'POS',
+    icon: 'Store',
+    sequence: 1,
+    searchFields: ['invoiceNo', 'subject'],
+    listFields: ['invoiceNo', 'subject', 'grandTotal', 'invoiceStatus', 'createdAt'],
+    relatedModules: ['products', 'invoices'],
+    defaultActive: false,
+  },
   accounts: {
     modelName: 'account',
     label: 'Accounts',

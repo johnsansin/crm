@@ -162,20 +162,26 @@ export function renderReportHtml(report: any, rows: any[], companyName?: string 
   return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(report.name || 'Report')}</title>
 <style>
   * { box-sizing: border-box; }
-  body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #1e293b; margin: 0; padding: 32px; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .meta { color: #64748b; font-size: 12px; margin-bottom: 20px; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
-  th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
-  th { background: #f1f5f9; font-weight: 600; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #172033; margin: 0; padding: 32px; background:#f4f6f9; }
+  body:before { content:''; display:block; height:7px; max-width:1180px; margin:0 auto; border-radius:18px 18px 0 0; background:#1a1a2e; }
+  h1,.meta,body>table,body>p { max-width:1180px; margin-left:auto; margin-right:auto; }
+  h1 { font-size: 26px; margin-top:0; margin-bottom:5px; padding:28px 30px 0; background:#fff; letter-spacing:-.02em; }
+  .meta { color: #64748b; font-size: 12px; margin-bottom:0; padding:0 30px 24px; background:#fff; border-bottom:1px solid #e5e9f0; }
+  table { width: calc(100% - 60px); border-collapse:separate; border-spacing:0; font-size: 12px; margin-bottom:18px; background:#fff; border:1px solid #e1e6ed; border-radius:11px; overflow:hidden; }
+  body>table:first-of-type { margin-top:26px; }
+  th, td { border:0; border-bottom:1px solid #e8ecf1; padding:10px 12px; text-align: left; }
+  tr:last-child>th,tr:last-child>td { border-bottom:0; }
+  th { background: #1a1a2e; color:#fff; font-weight: 700; font-size:11px; text-transform:uppercase; letter-spacing:.035em; }
+  tbody tr:nth-child(even) td { background:#fafbfd; }
   th.rowh { text-align: left; }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  td.total, td.grand { font-weight: 600; background: #f8fafc; }
-  td.grand { background: #eef2ff; }
+  td.total, td.grand { font-weight: 700; background: #f1f4f8; }
+  td.grand { background: #1a1a2e; color:#fff; }
   table.totals td { border: none; background: #f8fafc; font-weight: 600; text-align: right; }
   table.totals th { border: none; background: transparent; }
   caption.mc { caption-side: top; text-align: left; font-size: 11px; color: #64748b; padding-bottom: 6px; }
-  @media print { body { padding: 8px; } }
+  @media(max-width:700px){body{padding:10px;overflow-x:auto}h1{font-size:21px;padding:20px 18px 0}.meta{padding:0 18px 18px}table{width:calc(100% - 20px);font-size:10px}th,td{padding:7px 8px}}
+  @media print { @page{size:A4 landscape;margin:10mm} body { padding: 0; background:#fff } body:before{border-radius:0} h1,.meta{padding-left:12px;padding-right:12px} table{width:100%;page-break-inside:auto} tr{page-break-inside:avoid} *{-webkit-print-color-adjust:exact;print-color-adjust:exact} }
 </style></head><body>
 <h1>${escapeHtml(report.name || 'Report')}</h1>
 <div class="meta">Module: ${escapeHtml(report.moduleName || '')} · Type: ${escapeHtml(report.reportType || 'tabular')} · Generated: ${escapeHtml(new Date().toLocaleString())} · By: ${escapeHtml(companyName || 'BizForce CRM')}</div>

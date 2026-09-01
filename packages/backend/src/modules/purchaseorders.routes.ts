@@ -5,6 +5,7 @@ import { requireModulePermission } from '../lib/module-permissions'
 import { renderReport, escapeHtml, resolveReportLogo } from './report'
 import { getOrgSetting } from '../lib/settings'
 import { sendMail, getSmtpConfig } from '../lib/mailer'
+import { pdfAttachmentFromRoute } from '../lib/pdf'
 
 const purchaseOrdersRouter = Router()
 
@@ -65,7 +66,8 @@ purchaseOrdersRouter.post('/:id/email', async (req, res, next) => {
     const pdfLink = `/api/purchaseorders/${po.id}/pdf`
     const includePdf = req.body.attachPdf !== false
     const text = `Dear Vendor,\n\nPurchase order ${po.purchaseOrderNo || ''}: ${po.subject}.\n\nTotal Amount: ${Number(po.grandTotal || 0).toFixed(2)} ${po.currency || ''}${includePdf ? `\n\nView / save the PDF: ${req.protocol}://${req.get('host')}${pdfLink}` : ''}\n\nThank you,\n${company?.name || 'BizForce CRM'}`
-    const result = await sendMail({ to, subject, text, fromOverride: await getSmtpConfig(req.user!.companyId) })
+    const attachments = includePdf ? [await pdfAttachmentFromRoute(req, `/purchaseorders/${po.id}/pdf`, `${po.purchaseOrderNo || 'purchase-order'}.pdf`)] : undefined
+    const result = await sendMail({ to, subject, text, attachments, fromOverride: await getSmtpConfig(req.user!.companyId) })
     if (!result.delivered) return res.status(502).json({ error: result.error || 'Email could not be delivered' })
     res.json({ message: 'Email sent successfully', to, subject, pdfLink: includePdf ? pdfLink : null })
   } catch (err) { next(err) }

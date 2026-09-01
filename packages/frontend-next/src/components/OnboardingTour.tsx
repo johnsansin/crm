@@ -1,45 +1,45 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/lib/auth'
 import { useTranslation } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import {
-  LayoutDashboard, Users, TrendingUp, Calendar, UserCog,
-  ChevronRight, ChevronLeft, X, Sparkles, BarChart3
+  Menu, Search, MessageSquare, Bell, Headphones, UserCog,
+  ChevronRight, ChevronLeft, X, Sparkles, Check
 } from 'lucide-react'
 
 const steps = [
   {
-    icon: LayoutDashboard,
+    icon: Menu,
     titleKey: 'onboard.step1.title',
     descKey: 'onboard.step1.desc',
-    target: '[data-tour="sidebar-logo"]',
+    target: '[data-tour="navigation"]',
   },
   {
-    icon: BarChart3,
+    icon: Search,
     titleKey: 'onboard.step2.title',
     descKey: 'onboard.step2.desc',
-    target: '[data-tour="modules"]',
+    target: '[data-tour="search"]',
   },
   {
-    icon: TrendingUp,
+    icon: MessageSquare,
     titleKey: 'onboard.step3.title',
     descKey: 'onboard.step3.desc',
-    target: '[data-tour="dashboard"]',
+    target: '[data-tour="communication"], [data-tour="workspace-actions"]',
   },
   {
-    icon: Calendar,
+    icon: Bell,
     titleKey: 'onboard.step4.title',
     descKey: 'onboard.step4.desc',
-    target: '[data-tour="calendar"]',
+    target: '[data-tour="notifications"]',
   },
   {
-    icon: Sparkles,
+    icon: Headphones,
     titleKey: 'onboard.step5.title',
     descKey: 'onboard.step5.desc',
-    target: '[data-tour="ai-assistant"]',
+    target: '[data-tour="support-desk"]',
   },
   {
     icon: UserCog,
@@ -68,7 +68,6 @@ export function OnboardingTour() {
   const [step, setStep] = useState(0)
   const [closing, setClosing] = useState(false)
   const [spotRect, setSpotRect] = useState<DOMRect | null>(null)
-  const rafRef = useRef<number>(0)
 
   const current = steps[step]
   const Icon = current.icon
@@ -82,11 +81,24 @@ export function OnboardingTour() {
   }, [current.target])
 
   useEffect(() => {
-    let running = true
-    const tick = () => { if (!running) return; updateSpot(); rafRef.current = requestAnimationFrame(tick) }
-    rafRef.current = requestAnimationFrame(tick)
-    return () => { running = false; cancelAnimationFrame(rafRef.current) }
+    updateSpot()
+    const target = current.target ? document.querySelector(current.target) as HTMLElement | null : null
+    const observer = target && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateSpot) : null
+    if (target) observer?.observe(target)
+    window.addEventListener('resize', updateSpot)
+    window.addEventListener('scroll', updateSpot, true)
+    return () => { observer?.disconnect(); window.removeEventListener('resize', updateSpot); window.removeEventListener('scroll', updateSpot, true) }
   }, [updateSpot])
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') handleClose()
+      if (event.key === 'ArrowLeft' && !isFirst) handleBack()
+      if (event.key === 'ArrowRight') handleNext()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   const handleClose = async () => {
     setClosing(true)
@@ -170,37 +182,37 @@ export function OnboardingTour() {
       )}
 
       <div style={tooltipStyle} className="animate-in fade-in zoom-in-95 duration-200">
-        <div className="bg-card rounded-2xl shadow-2xl border overflow-hidden relative">
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-card shadow-2xl relative">
           <button onClick={handleClose} disabled={closing} className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors z-10">
             <X size={15} />
           </button>
 
-          <div className="px-5 pt-5 pb-3 sm:px-6 sm:pt-6">
+          <div className="bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 px-5 pb-5 pt-5 text-white sm:px-6 sm:pt-6">
             <div className="flex items-start gap-3 mb-3">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 text-primary flex items-center justify-center shrink-0 shadow-sm">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-sm ring-1 ring-white/20">
                 <Icon size={22} strokeWidth={2} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-primary/80 mb-0.5">
-                  Step {step + 1} / {steps.length}
+                <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-violet-100">
+                  Quick tour · Task {step + 1} of {steps.length}
                 </p>
-                <h2 className="text-base sm:text-lg font-bold leading-snug text-foreground">
+                <h2 className="text-base font-bold leading-snug text-white sm:text-lg">
                   {t(current.titleKey)}
                 </h2>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm leading-relaxed text-violet-100">
               {t(current.descKey)}
             </p>
           </div>
 
-          <div className="px-5 sm:px-6">
-            <div className="h-1 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-300" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+          <div className="border-b bg-muted/30 px-5 py-3 sm:px-6">
+            <div className="flex items-center justify-between gap-1" aria-label="Tour tasks">
+              {steps.map((item, index) => <button key={item.titleKey} type="button" onClick={() => setStep(index)} aria-label={`Go to task ${index + 1}`} className={`grid h-7 w-7 place-items-center rounded-full text-[10px] font-bold transition ${index < step ? 'bg-emerald-600 text-white' : index === step ? 'bg-primary text-primary-foreground ring-4 ring-primary/15' : 'bg-muted text-muted-foreground'}`}>{index < step ? <Check size={13}/> : index + 1}</button>)}
             </div>
           </div>
 
-          <div className="px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 px-5 py-4 sm:px-6 sm:py-5">
             <div className="flex items-center gap-2">
               {isFirst ? (
                 <Button variant="ghost" size="sm" onClick={handleClose} disabled={closing} className="text-muted-foreground hover:text-foreground gap-1.5">
@@ -217,6 +229,7 @@ export function OnboardingTour() {
               {!isLast && <ChevronRight size={15} />}
             </Button>
           </div>
+          <p className="pb-3 text-center text-[10px] text-muted-foreground">Use ← → to move between tasks · Esc to finish</p>
         </div>
       </div>
     </>

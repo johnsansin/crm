@@ -14,6 +14,7 @@ import { dialViaPbx } from './pbx.routes'
 import { evaluateConditions } from '../lib/settings'
 import { getOrgSetting } from '../lib/settings'
 import { requireModulePermission, requireTenant } from '../lib/module-permissions'
+import { htmlToPdf } from '../lib/pdf'
 
 export const extrasRouter = Router()
 const JWT_SECRET = signingSecret('JWT_SECRET', 'bizforce-jwt-secret-dev-2026')
@@ -947,6 +948,29 @@ extrasRouter.post('/reports/export', authMiddleware, requireTenant, requireModul
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
     res.setHeader('Content-Disposition', `inline; filename="${(name || 'report').replace(/[^a-zA-Z0-9-_]/g, '_')}.html"`)
     res.send(html)
+  } catch (err) { next(err) }
+})
+
+extrasRouter.post('/reports/email', authMiddleware, requireTenant, requireModulePermission('reports', 'export'), async (req: any, res, next) => {
+  try {
+    const { name, moduleName, reportType, columns, grouping, filters, rows, to, attachPdf = true } = req.body || {}
+    const recipient = String(to || '').trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) return res.status(400).json({ error: 'A valid recipient email is required' })
+    const company = await prisma.company.findUnique({ where: { id: req.user!.companyId } })
+    const report = { name, moduleName, reportType: reportType || 'tabular', columns, grouping, filters }
+    const html = renderReportHtml(report, Array.isArray(rows) ? rows : [], company?.name || 'BizForce CRM')
+    const safeName = String(name || 'report').replace(/[^a-zA-Z0-9._-]/g, '_')
+    const attachments = attachPdf ? [{ filename: `${safeName}.pdf`, content: await htmlToPdf(html), contentType: 'application/pdf' }] : undefined
+    const result = await sendMail({
+      to: recipient,
+      subject: `Report: ${name || 'CRM report'}`,
+      text: `Please find the ${name || 'CRM'} report${attachPdf ? ' attached as a PDF' : ''}.`,
+      attachments,
+      companyId: req.user!.companyId,
+      fromOverride: await getSmtpConfig(req.user!.companyId),
+    })
+    if (!result.delivered) return res.status(502).json({ error: result.error || 'Email could not be delivered' })
+    res.json({ message: 'Report emailed successfully', to: recipient, attachedPdf: !!attachPdf })
   } catch (err) { next(err) }
 })
 

@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { TabsRoot, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { Plus, Pencil, Trash2, Loader2, BarChart3, Play, Printer, Table2, ChartPie, Download, Folder, Clock, TrendingUp, DollarSign, UserPlus, CalendarDays, LifeBuoy, Receipt, Users, Megaphone } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2, BarChart3, Play, Printer, Table2, ChartPie, Download, Folder, Clock, TrendingUp, DollarSign, UserPlus, CalendarDays, LifeBuoy, Receipt, Users, Megaphone, Mail } from 'lucide-react'
 import { getFieldLabel, formatFieldValue } from '@/lib/field-utils'
 import { formatDate } from '@/lib/org-format'
 
@@ -656,7 +656,7 @@ function ReportRunner({ report }: { report: any }) {
 
   const totals = (key: string) => NUMERIC_FIELDS.includes(key) ? rows.reduce((s, r) => s + Number(r[key] || 0), 0) : null
 
-  const [busy, setBusy] = useState<'pdf' | 'csv' | null>(null)
+  const [busy, setBusy] = useState<'pdf' | 'csv' | 'email' | null>(null)
   const { addToast } = useToast()
 
   const exportPdf = () => {
@@ -677,10 +677,27 @@ function ReportRunner({ report }: { report: any }) {
       .finally(() => setBusy(null))
   }
 
+  const emailPdf = async () => {
+    const to = window.prompt('Send report to email:')
+    if (!to) return
+    const attachPdf = window.confirm('Attach the report PDF to this email?')
+    setBusy('email')
+    try {
+      await api.request('/reports/email', { method: 'POST', body: JSON.stringify({ ...report, rows, to, attachPdf }) })
+      addToast({ title: 'Report sent', description: `Email sent to ${to}`, variant: 'success' })
+    } catch (error: any) {
+      addToast({ title: 'Email failed', description: error.message, variant: 'destructive' })
+    } finally { setBusy(null) }
+  }
+
   if (isLoading) return <div className="flex justify-center py-10"><Loader2 className="animate-spin text-muted-foreground" /></div>
 
   const exportBtns = (
     <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm" onClick={emailPdf} disabled={busy !== null}>
+        {busy === 'email' ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Mail size={14} className="mr-1.5" />}
+        Email
+      </Button>
       <Button variant="outline" size="sm" onClick={exportCsv} disabled={busy !== null}>
         {busy === 'csv' ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
         CSV

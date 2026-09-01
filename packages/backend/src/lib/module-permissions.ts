@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express'
 import { prisma } from './prisma'
 
 export const PERMISSION_MODULES = [
-  'dashboard', 'calendar', 'forecast', 'activities', 'accounts', 'contacts', 'leads', 'potentials', 'campaigns',
+  'dashboard', 'calendar', 'forecast', 'activities', 'pos', 'accounts', 'contacts', 'leads', 'potentials', 'campaigns',
   'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders',
   'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails',
   'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets',
@@ -29,6 +29,7 @@ export function requireTenant(req: Request, res: Response, next: NextFunction) {
 export function requireModulePermission(moduleName: string, fixedAction?: PermissionAction) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      if (req.user?.isSuperAdmin) return next()
       if (!req.user?.companyId) return res.status(403).json({ error: 'Organization access required' })
       if (req.user.isAdmin) return next()
       if (!req.user.roleId) return res.status(403).json({ error: 'No active role assigned' })

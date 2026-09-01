@@ -9,7 +9,7 @@ const LABELS: Record<string, string> = {
   'email-campaigns': 'Email Campaigns', campaigns: 'Campaigns', leads: 'Leads', potentials: 'Opportunities',
   contacts: 'Contacts', accounts: 'Accounts', quotes: 'Quotations', salesorders: 'Sales Orders', invoices: 'Invoices',
   purchaseorders: 'Purchase Orders', tickets: 'Support Tickets', projects: 'Projects', calendar: 'Calendar',
-  'ai-assistant': 'AI Assistant', new: 'New', edit: 'Edit', superadmin: 'Superadmin', organizations: 'Organizations', users: 'Users',
+  'ai-assistant': 'AI Assistant', help: 'Help Center', new: 'New', edit: 'Edit', superadmin: 'Superadmin', organizations: 'Organizations', users: 'Users',
 }
 
 function label(segment: string) {

@@ -11,6 +11,7 @@ import { getClientIp, writeAudit } from '../lib/audit'
 import { signingSecret } from '../lib/secrets'
 import { publicUser } from '../lib/public-user'
 import { PERMISSION_MODULES } from '../lib/module-permissions'
+import { organizationAccessError } from '../lib/organization-limits'
 
 const JWT_SECRET = signingSecret('JWT_SECRET', 'bizforce-jwt-secret-dev-2026')
 const TWO_FACTOR_CHALLENGE_TTL = '5m'
@@ -47,6 +48,26 @@ async function issueToken(user: any) {
     { expiresIn: '7d' }
   )
   return { token, isSuperAdmin }
+}
+
+async function notifySuperAdminsOfRegistration(user: any) {
+  const superAdmins = await prisma.user.findMany({
+    where: { isActive: true, profile: { is: { isSuperAdmin: true } } },
+    select: { id: true },
+  })
+  if (!superAdmins.length) return
+
+  const companyName = user.company?.name || 'A new organisation'
+  const adminName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.userName || user.email
+  await prisma.notification.createMany({
+    data: superAdmins.map(superAdmin => ({
+      userId: superAdmin.id,
+      companyId: user.companyId,
+      title: 'New organisation registered',
+      message: `${companyName} was registered by ${adminName} (${user.email}).`,
+      link: `/superadmin/organizations?id=${user.companyId}`,
+    })),
+  })
 }
 
 function issueTwoFactorChallenge(userId: string): string {
@@ -99,6 +120,10 @@ authRouter.post('/login', async (req, res, next) => {
       if (company && !company.isActive) {
         return res.status(403).json({ error: 'Organization is deactivated. Contact your super admin.' })
       }
+      if (company) {
+        const accessError = organizationAccessError(company)
+        if (accessError) return res.status(403).json({ error: accessError })
+      }
     }
     const result = await verifyCredentials(user, password, req)
     if (!result.ok) return res.status(401).json({ error: result.error })
@@ -138,6 +163,10 @@ authRouter.post('/login/2fa', async (req, res, next) => {
       const company = await prisma.company.findUnique({ where: { id: user.companyId } })
       if (company && !company.isActive) {
         return res.status(403).json({ error: 'Organization is deactivated. Contact your super admin.' })
+      }
+      if (company) {
+        const accessError = organizationAccessError(company)
+        if (accessError) return res.status(403).json({ error: accessError })
       }
     }
     if (!user.twoFactorSecret || !verifyTotp(user.twoFactorSecret, code)) {
@@ -303,6 +332,12 @@ authRouter.post('/register/verify', async (req, res, next) => {
     const payload = pending.payload as any
     const user = await createCompanyForRegistration(payload)
     await prisma.pendingRegistration.delete({ where: { id: pending.id } })
+
+    // Registration is already complete at this point, so notification delivery
+    // must never prevent the new organisation admin from signing in.
+    await notifySuperAdminsOfRegistration(user).catch(error => {
+      console.error('Failed to notify SuperAdmins of a new organisation registration', error)
+    })
 
     await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date(), lastActiveAt: new Date() } })
     await recordLogin(req, user)

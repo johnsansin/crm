@@ -16,6 +16,7 @@ import { useNavigate } from '@/lib/navigation'
 import { TIMEZONES, LANGUAGES, COUNTRIES, DATE_FORMATS, HOUR_FORMATS } from '@/lib/constants'
 import { t } from '@/lib/i18n'
 import { setOrgSettings } from '@/lib/org-format'
+import QRCode from 'qrcode'
 
 const WEEK_STARTS = ['Sunday', 'Monday']
 const SIDEBAR_COLORS = [
@@ -75,6 +76,15 @@ export function ProfilePage() {
   const [logoutAllOpen, setLogoutAllOpen] = useState(false)
   const [logoutAllBusy, setLogoutAllBusy] = useState(false)
   const [twoFa, setTwoFa] = useState({ loading: false, enabled: false, secret: '', otpauthUri: '', setupOpen: false, code: '', disableCode: '' })
+  const [twoFaQr, setTwoFaQr] = useState('')
+  useEffect(() => {
+    let active = true
+    if (!twoFa.otpauthUri) { setTwoFaQr(''); return () => { active = false } }
+    QRCode.toDataURL(twoFa.otpauthUri, { width: 240, margin: 2, errorCorrectionLevel: 'M', color: { dark: '#172554', light: '#ffffff' } })
+      .then(url => { if (active) setTwoFaQr(url) })
+      .catch(() => { if (active) setTwoFaQr('') })
+    return () => { active = false }
+  }, [twoFa.otpauthUri])
   useEffect(() => {
     if (user) {
       setForm((prev: any) => ({ ...prev, ...user }))
@@ -349,7 +359,11 @@ export function ProfilePage() {
 
                     {twoFa.setupOpen && (
                       <div className="space-y-3 p-4 rounded-lg border bg-muted/40">
-                        <p className="text-sm">Scan this URI with your authenticator app (or enter the secret manually):</p>
+                        <p className="text-sm font-medium">Scan this QR code with your authenticator app:</p>
+                        <div className="flex justify-center rounded-xl border bg-white p-4 sm:justify-start">
+                          {twoFaQr ? <img src={twoFaQr} alt="Two-factor authentication setup QR code" className="h-52 w-52 max-w-full" /> : <div className="grid h-52 w-52 place-items-center text-sm text-muted-foreground"><Loader2 className="animate-spin" /></div>}
+                        </div>
+                        <p className="text-xs text-muted-foreground">If scanning is unavailable, enter the secret manually:</p>
                         <code className="block text-xs break-all bg-background border rounded p-2">{twoFa.otpauthUri}</code>
                         <p className="text-xs text-muted-foreground">Secret: <code className="font-mono">{twoFa.secret}</code></p>
                         <div className="flex flex-wrap items-end gap-2">
