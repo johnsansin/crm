@@ -296,7 +296,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
         api.getInvoicePayments(recordId).then(res => { setPayments(res.data || []); setPaymentTotal(res.total || 0) }).catch(() => {})
         api.getInvoiceBalance(recordId).then(res => setBalanceInfo(res)).catch(() => {})
       }
-    } catch { addToast({ title: 'Error', description: 'Failed to load record', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not load record', description: e?.message || 'Refresh the page and try again.', variant: 'destructive' }) }
     setLoading(false)
   }
 
@@ -471,7 +471,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
       await api.request(`/${module}/${id}`, { method: 'DELETE' })
       addToast({ title: 'Deleted', description: `${cfg.label} deleted` })
       navigate(`/${module}`)
-    } catch { addToast({ title: 'Error', description: 'Failed to delete', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: `Could not delete ${cfg.label.toLowerCase()}`, description: e?.message || 'It may be referenced by another record.', variant: 'destructive' }) }
   }
 
   async function handleConvertInvoice() {
@@ -480,7 +480,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
       const inv = await api.request(`/${module}/${id}/convert-invoice`, { method: 'POST' })
       addToast({ title: 'Invoice Created', description: `Invoice ${inv.invoiceNo || ''} created` })
       loadRecord(id!)
-    } catch { addToast({ title: 'Error', description: 'Failed to convert', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not convert record', description: e?.message || 'Check that all required customer and line-item information is complete.', variant: 'destructive' }) }
   }
 
   async function handleAddComment() {
@@ -491,7 +491,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
       setRelated((prev: any) => ({ ...prev, comments: [created, ...prev.comments] }))
       setComment('')
       addToast({ title: 'Comment added' })
-    } catch { addToast({ title: 'Error', description: 'Failed to add comment', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not add comment', description: e?.message || 'Enter a comment and try again.', variant: 'destructive' }) }
     setAddingComment(false)
   }
 
@@ -531,7 +531,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
     try {
       await api.request(`/${module}/${id}/email`, { method: 'POST', body: JSON.stringify({ to, attachPdf }) })
       addToast({ title: 'Sent', description: `Email logged to console for ${to}` })
-    } catch { addToast({ title: 'Error', description: 'Failed to send email', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not send email', description: e?.message || 'Check the recipient and outgoing mail settings, then try again.', variant: 'destructive' }) }
   }
 
   async function handlePdf() {
@@ -1096,7 +1096,7 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
 
   const handleSearch = () => { setPage(1); loadList() }
 
-  if (module === 'salesorders') {
+  if (false && module === 'salesorders') {
     const statusCounts = records.reduce((result: Record<string, number>, record: any) => {
       const status = record.soStatus || 'Created'
       result[status] = (result[status] || 0) + 1
@@ -1162,22 +1162,22 @@ export function SalesDocumentPage({ module }: { module: DocModule }) {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="w-full min-w-0 space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">{cfg.listTitle}</h1>
-          <p className="text-sm text-muted-foreground">Manage {cfg.listTitle.toLowerCase()}</p>
+          <h1 className="text-xl font-bold tracking-tight md:text-2xl">{cfg.listTitle}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage {cfg.listTitle.toLowerCase()}</p>
         </div>
-        <Button onClick={() => navigate(`/${module}/new`)}><Plus className="mr-1 h-4 w-4" />New {cfg.label}</Button>
+        <Button size="sm" onClick={() => navigate(`/${module}/new`)}><Plus className="mr-1.5 h-4 w-4" />New {cfg.label}</Button>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative max-w-sm flex-1">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-3 shadow-sm">
+        <div className="relative min-w-[220px] max-w-sm flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder={`Search by ${cfg.noField === 'invoiceNo' ? 'invoice no' : 'SO no'} or subject...`} value={search}
             onChange={e => setSearch(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            className="pl-9 h-9" />
+            className="h-9 pl-9" />
         </div>
         <Button variant="outline" size="sm" onClick={handleSearch}>Search</Button>
       </div>

@@ -19,10 +19,10 @@ const plans = [
   },
   {
     name: 'Growth',
-    price: '$29',
-    period: '/user/month',
+    price: '$10',
+    period: '/organisation/month',
     description: 'For growing teams that need more power.',
-    features: ['Up to 20 users', '50,000 contacts', 'All CRM modules', 'Workflow automation', 'Custom reports', 'Priority support'],
+    features: ['Up to 50 users', '50,000 contacts', 'All CRM modules', 'Workflow automation', 'Custom reports', 'Priority support'],
     cta: 'Start Free Trial',
     highlight: true,
   },
@@ -41,7 +41,7 @@ const faqs = [
   { q: 'Can I switch plans at any time?', a: 'Yes. You can upgrade or downgrade at any time. When you upgrade, you are billed the prorated difference immediately. When you downgrade, the change takes effect at the end of your current billing period.' },
   { q: 'Is there a free trial for paid plans?', a: 'Yes! All paid plans come with a 14-day free trial. No credit card required to start. You can explore all features and decide if BizForce is the right fit for your team.' },
   { q: 'What payment methods do you accept?', a: 'We accept all major credit cards (Visa, Mastercard, American Express) as well as bank transfers for annual Enterprise plans.' },
-  { q: 'How does the per-user pricing work?', a: 'You only pay for active users in your organization. You can add or remove users at any time and your bill adjusts automatically at the next billing cycle.' },
+  { q: 'How does organization pricing work?', a: 'The Growth plan is billed at $10 per organization each month and includes up to 50 users. User and contact limits are managed at the organization level.' },
   { q: 'Do you offer discounts for nonprofits?', a: 'Yes, we offer special pricing for registered nonprofits and educational institutions. Contact our sales team to learn more about our nonprofit discount program.' },
 ]
 

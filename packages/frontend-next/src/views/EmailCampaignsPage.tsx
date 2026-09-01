@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useToast } from '@/lib/toast'
@@ -8,7 +8,9 @@ import { t } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Loader2, Plus, Send, Trash2, BarChart3, Mail, TestTube, X } from 'lucide-react'
+import { Loader2, Plus, Send, Trash2, BarChart3, Mail, TestTube, ShieldCheck, X } from 'lucide-react'
+import { useNavigate } from '@/lib/navigation'
+import { useAuthStore } from '@/lib/auth'
 
 const statusColors: Record<string, string> = {
   Draft: 'bg-muted text-muted-foreground',
@@ -18,6 +20,8 @@ const statusColors: Record<string, string> = {
 
 export function EmailCampaignsPage() {
   const { addToast } = useToast()
+  const navigate = useNavigate()
+  const user = useAuthStore(state => state.user)
   const qc = useQueryClient()
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -29,6 +33,12 @@ export function EmailCampaignsPage() {
   const [saving, setSaving] = useState(false)
   const [recipientEmail, setRecipientEmail] = useState('')
   const [recipientName, setRecipientName] = useState('')
+  const [termsOpen, setTermsOpen] = useState(false)
+  const termsKey = `bizforce-email-campaign-terms:${user?.companyId || 'default'}`
+
+  useEffect(() => {
+    setTermsOpen(localStorage.getItem(termsKey) !== 'accepted')
+  }, [termsKey])
 
   const { data, isLoading } = useQuery({
     queryKey: ['email-campaigns'],
@@ -114,6 +124,21 @@ export function EmailCampaignsPage() {
 
   return (
     <div className="space-y-6">
+      <Dialog open={termsOpen} onOpenChange={() => {}}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <div className="mb-2 grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950"><ShieldCheck size={22}/></div>
+            <DialogTitle>Email Campaigns — Important Terms</DialogTitle>
+            <DialogDescription>Confirm responsible and consent-based use before accessing email campaigns.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm leading-6 text-muted-foreground">
+            <p>Emails sent through BizForce may be monitored for spam, abuse, delivery failures and inappropriate content.</p>
+            <p>You are responsible for ensuring every recipient consented to receive the communication and that campaigns follow applicable privacy and anti-spam laws.</p>
+            <p>Unsubscribes, hard bounces, suppression lists and email opt-in values must be honored. Violations may result in campaign delivery being suspended.</p>
+          </div>
+          <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button variant="outline" onClick={() => navigate('/dashboard')}>Decline</Button><Button onClick={() => { localStorage.setItem(termsKey, 'accepted'); setTermsOpen(false) }}>Accept and continue</Button></div>
+        </DialogContent>
+      </Dialog>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('Email Campaigns')}</h1>
         <Button onClick={() => openForm()} className="gap-1.5"><Plus size={16} />{t('New Campaign')}</Button>

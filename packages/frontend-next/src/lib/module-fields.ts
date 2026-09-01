@@ -89,6 +89,7 @@ export const fieldConfigs: Record<string, ModuleField[]> = {
     { name: 'website', type: 'text' },
     { name: 'leadSource', type: 'select' },
     { name: 'leadStatus', type: 'select' },
+    { name: 'campaignId', type: 'text' },
     { name: 'industry', type: 'select' },
     { name: 'annualRevenue', type: 'number' },
     { name: 'noOfEmployees', type: 'number' },

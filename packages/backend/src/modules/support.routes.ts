@@ -66,7 +66,7 @@ function aiAnswer(message: string) {
   if (/add.*user|create.*user|invite/.test(lower)) return 'Open Settings → Users and select New User. Complete the user details, assign a role and group, then save. Confirm that the selected role has the required module permissions.'
   if (/currency/.test(lower)) return 'Organisation currencies are managed in Settings → Currencies. The active default currency is used on new quotes and sales documents, while other active currencies remain selectable.'
   if (/pdf|letter.?head|logo/.test(lower)) return 'Configure the active master document in Settings → Master Documents. Its organisation logo, header and footer are then used by supported quotation, order and invoice print views.'
-  if (/backup/.test(lower)) return 'Database backups are available to Super Admins from Super Admin → Settings → System Backups.'
+  if (/backup/.test(lower)) return 'Full system backups (database, uploaded files and configuration) are available to Super Admins from Super Admin → Settings → System Backups.'
   if (/error|failed|not working|technical|bug/.test(lower)) return 'I can help troubleshoot this. Please include the page address, the action you attempted, and the exact error message. You can also select “Talk to an Agent” at any time.'
   return 'I can help with users, permissions, currencies, PDF templates, reports, backups and common CRM workflows. If you need hands-on assistance, select “Talk to an Agent” and the complete conversation will be transferred.'
 }

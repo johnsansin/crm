@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import { prisma } from '../lib/prisma'
+import { organizationAccessError } from '../lib/organization-limits'
 import { signingSecret } from '../lib/secrets'
 
 const JWT_SECRET = signingSecret('JWT_SECRET', 'bizforce-jwt-secret-dev-2026')
@@ -36,6 +37,10 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     }
     if (fresh.companyId && fresh.company && !fresh.company.isActive) {
       return res.status(403).json({ error: 'Organization is deactivated. Contact your super admin.' })
+    }
+    if (fresh.companyId && fresh.company) {
+      const accessError = organizationAccessError(fresh.company)
+      if (accessError) return res.status(403).json({ error: accessError })
     }
     req.user = {
       userId: fresh.id,

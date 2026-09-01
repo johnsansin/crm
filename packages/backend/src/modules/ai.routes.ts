@@ -2,10 +2,11 @@ import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { requireModulePermission } from '../lib/module-permissions'
+import { getLeadAgentConfig, runLeadAgent, saveLeadAgentConfig } from '../lib/lead-agent'
 
 export const aiRouter = Router()
 aiRouter.use(authMiddleware)
-aiRouter.use(requireModulePermission('ai'))
+aiRouter.use(requireModulePermission('ai', 'view'))
 
 async function logAi(req: any, input: any, output: any, moduleName?: string, recordId?: string) {
   try {
@@ -259,10 +260,61 @@ aiRouter.post('/lead-score/batch', authMiddleware, async (req: any, res) => {
   }
 })
 
+aiRouter.get('/lead-agent/config', async (req: any, res) => {
+  try {
+    if (!req.user?.companyId) return res.status(400).json({ error: 'Organization is required' })
+    res.json({ data: await getLeadAgentConfig(req.user.companyId) })
+  } catch (err: any) { res.status(500).json({ error: err.message }) }
+})
+
+aiRouter.put('/lead-agent/config', async (req: any, res) => {
+  try {
+    if (!req.user?.isAdmin && !req.user?.isSuperAdmin) return res.status(403).json({ error: 'Administrator access required' })
+    if (!req.user?.companyId) return res.status(400).json({ error: 'Organization is required' })
+    res.json({ data: await saveLeadAgentConfig(req.user.companyId, req.body || {}) })
+  } catch (err: any) { res.status(400).json({ error: err.message }) }
+})
+
+aiRouter.post('/lead-agent/run', async (req: any, res) => {
+  try {
+    if (!req.user?.isAdmin && !req.user?.isSuperAdmin) return res.status(403).json({ error: 'Administrator access required' })
+    if (!req.user?.companyId) return res.status(400).json({ error: 'Organization is required' })
+    res.json({ data: await runLeadAgent(req.user.companyId, req.user.userId) })
+  } catch (err: any) { res.status(500).json({ error: err.message }) }
+})
+
 // ===== 1e. AI SALES OPPORTUNITY PREDICTION =====
 
-aiRouter.post('/opportunity-prediction', authMiddleware, async (req: any, res) => {
+aiRouter.post('/predictions', authMiddleware, async (req: any, res) => {
   try {
+    const companyId = req.user!.companyId
+    const opportunities = await prisma.potential.findMany({
+      where: { isActive: true, stage: { notIn: ['Closed Won', 'Closed Lost'] }, ...(companyId ? { companyId } : {}) },
+      orderBy: { closingDate: 'asc' },
+      take: 10,
+    })
+    const data = await Promise.all(opportunities.map(async (potential: any) => {
+      const [activities, stageHistory, competitors] = await Promise.all([
+        prisma.activity.findMany({ where: { companyId: potential.companyId, parentModule: 'potentials', parentId: potential.id } }),
+        prisma.potentialStageHistory.findMany({ where: { potentialId: potential.id } } as any),
+        prisma.potentialCompetitor.findMany({ where: { potentialId: potential.id }, include: { competitor: true } }),
+      ])
+      return {
+        id: potential.id,
+        potentialName: potential.potentialName,
+        stage: potential.stage,
+        amount: potential.amount,
+        prediction: computeOpportunityPrediction(potential, activities, stageHistory, competitors),
+      }
+    }))
+    await logAi(req, {}, { count: data.length }, 'potentials')
+    res.json({ data })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+aiRouter.post('/opportunity-prediction', authMiddleware, async (req: any, res) => {  try {
     const { potentialId } = req.body
     if (!potentialId) { res.status(400).json({ error: 'potentialId required' }); return }
 

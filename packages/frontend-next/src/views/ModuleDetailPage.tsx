@@ -338,6 +338,13 @@ export function ModuleDetailPage() {
   })
   const currencies = (currenciesData?.data || [])
 
+  const { data: campaignsData } = useQuery({
+    queryKey: ['lead-form-campaigns'],
+    queryFn: () => api.listAll('campaigns'),
+    enabled: mod === 'leads',
+  })
+  const campaigns = (campaignsData?.data || []).filter((campaign: any) => campaign.isActive !== false)
+
   const [vendorModalOpen, setVendorModalOpen] = useState(false)
   const [vendorForm, setVendorForm] = useState<Record<string, string>>({})
   const [savingVendor, setSavingVendor] = useState(false)
@@ -916,7 +923,7 @@ export function ModuleDetailPage() {
             forecastOptions={dynamicOptions.potentials?.forecastCategory || SELECT_OPTIONS.potentials.forecastCategory}
           />
         ) : mod === 'leads' ? (
-          <LeadEditor formData={formData} errors={errors} handleChange={handleChange} users={users} roles={roles} options={dynamicOptions.leads || SELECT_OPTIONS.leads} />
+          <LeadEditor formData={formData} errors={errors} handleChange={handleChange} users={users} roles={roles} campaigns={campaigns} options={dynamicOptions.leads || SELECT_OPTIONS.leads} />
         ) : <Card>
           <CardContent className="p-0">
             <FormTabs
@@ -1031,7 +1038,7 @@ export function ModuleDetailPage() {
   )
 }
 
-function LeadEditor({ formData, errors, handleChange, users, roles, options }: { formData: Record<string, any>; errors: Record<string,string>; handleChange:(name:string,value:any)=>void; users:any[]; roles:any[]; options:Record<string,string[]> }) {
+function LeadEditor({ formData, errors, handleChange, users, roles, campaigns, options }: { formData: Record<string, any>; errors: Record<string,string>; handleChange:(name:string,value:any)=>void; users:any[]; roles:any[]; campaigns:any[]; options:Record<string,string[]> }) {
   const labelClass = 'mb-1.5 block text-[11px] font-bold uppercase tracking-[.045em] text-muted-foreground'
   const inputClass = 'h-10 rounded-lg bg-background shadow-none focus-visible:ring-indigo-500/20 focus-visible:ring-offset-0'
   const required = ['firstName','lastName','company','assignedTo']
@@ -1044,7 +1051,7 @@ function LeadEditor({ formData, errors, handleChange, users, roles, options }: {
     <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
       <Section number={1} title="Contact" description="The person your sales team will contact."><div><label className={labelClass}>Salutation</label><NativeSelect name="salutation"/></div><Field name="firstName" placeholder="e.g. Ali"/><Field name="lastName" placeholder="e.g. Hassan"/><Field name="email" type="email" placeholder="name@company.com"/><Field name="secondaryEmail" type="email"/><Field name="phone" placeholder="+92 300 0000000"/><Field name="mobile"/><Field name="fax"/><Field name="website" placeholder="https://"/></Section>
       <Section number={2} title="Company" description="Firmographic details used for qualification and reporting."><div className="sm:col-span-2"><Field name="company" placeholder="Company name"/></div><Field name="title" placeholder="Owner, purchasing manager…"/><div><label className={labelClass}>Industry</label><NativeSelect name="industry"/></div><Field name="noOfEmployees" type="number"/><Field name="annualRevenue" type="number"/><Field name="interest" placeholder="Products or services of interest"/></Section>
-      <Section number={3} title="Lead details" description="Ownership, source, status, and qualification context."><div><label className={labelClass}>Lead source</label><NativeSelect name="leadSource"/></div><div><label className={labelClass}>Lead status</label><NativeSelect name="leadStatus"/></div><Field name="rating"/><div className="sm:col-span-2 xl:col-span-3"><label className={labelClass}>Assigned to <span className="text-destructive">*</span></label><UserRoleSelect value={formData.assignedTo||''} users={users} roles={roles} onSelect={v=>handleChange('assignedTo',v)}/>{errors.assignedTo&&<p className="mt-1 text-xs text-destructive">{errors.assignedTo}</p>}</div></Section>
+      <Section number={3} title="Lead details" description="Ownership, source, campaign, status, and qualification context."><div><label className={labelClass}>Lead source</label><NativeSelect name="leadSource"/></div><div><label className={labelClass}>Lead status</label><NativeSelect name="leadStatus"/></div><div><label className={labelClass}>Campaign</label><select value={formData.campaignId || ''} onChange={event => handleChange('campaignId', event.target.value)} className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"><option value="">— No campaign —</option>{campaigns.map(campaign => <option key={campaign.id} value={campaign.id}>{campaign.campaignName}{campaign.status ? ` · ${campaign.status}` : ''}</option>)}</select></div><Field name="rating"/><div className="sm:col-span-2 xl:col-span-3"><label className={labelClass}>Assigned to <span className="text-destructive">*</span></label><UserRoleSelect value={formData.assignedTo||''} users={users} roles={roles} onSelect={v=>handleChange('assignedTo',v)}/>{errors.assignedTo&&<p className="mt-1 text-xs text-destructive">{errors.assignedTo}</p>}</div></Section>
       <Section number={4} title="Address & notes" description="Location and context for the next person working this lead."><Field name="street"/><Field name="city"/><Field name="state"/><Field name="country"/><Field name="postalCode"/><Field name="poBox"/><div className="sm:col-span-2 xl:col-span-3"><label className={labelClass}>Description</label><textarea value={formData.description||''} onChange={e=>handleChange('description',e.target.value)} placeholder="Anything the next rep should know before contacting this lead…" className="min-h-28 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"/></div></Section>
     </div>
     <aside className="space-y-4 lg:sticky lg:top-5"><div className="rounded-2xl border bg-card p-5 shadow-sm"><div className="flex items-center justify-between"><div><p className="text-sm font-bold">Profile completeness</p><p className="mt-1 text-xs text-muted-foreground">Complete the essentials before saving.</p></div><span className="text-xl font-bold text-indigo-700">{percent}%</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-indigo-600 transition-all" style={{width:`${percent}%`}}/></div><div className="mt-4 space-y-2">{required.map(key=><div key={key} className="flex items-center gap-2 text-xs"><span className={cn('grid h-4 w-4 place-items-center rounded-full border text-[9px]',formData[key]?'border-emerald-600 bg-emerald-600 text-white':'text-transparent')}>✓</span><span className={formData[key]?'text-foreground':'text-muted-foreground'}>{getFieldLabel(key)}</span></div>)}</div></div><div className="rounded-2xl bg-indigo-50 p-4 text-indigo-900 dark:bg-indigo-500/10 dark:text-indigo-200"><p className="text-sm font-bold">Build momentum early</p><p className="mt-1 text-xs leading-5 opacity-75">After saving, open the lead workspace to schedule a follow-up, log activity, send email, or convert the record.</p></div></aside>

@@ -8,6 +8,11 @@ import { sendMail } from './mailer'
 const execFileAsync = promisify(execFile)
 export const BACKUP_SETTING_KEY = 'databaseBackup'
 export const BACKUP_DIR = path.resolve(process.cwd(), 'private', 'backups')
+const UPLOAD_DIR = path.resolve(process.cwd(), 'uploads')
+const ENV_PATH = path.resolve(process.cwd(), '.env')
+const PRISMA_SCHEMA_PATH = path.resolve(process.cwd(), 'prisma', 'schema.prisma')
+const PACKAGE_JSON_PATH = path.resolve(process.cwd(), 'package.json')
+export const BACKUP_FILE_PATTERN = /^bizforce-backup-[\w.-]+(\.tar\.gz|\.dump)$/
 
 export type BackupFrequency = 'daily' | 'weekly' | 'monthly'
 export interface DatabaseBackupConfig {
@@ -84,7 +89,7 @@ export async function saveDatabaseBackupConfig(input: Partial<DatabaseBackupConf
 export async function listDatabaseBackups() {
   await fs.promises.mkdir(BACKUP_DIR, { recursive: true, mode: 0o700 })
   const names = await fs.promises.readdir(BACKUP_DIR)
-  const files = await Promise.all(names.filter(name => /^bizforce-backup-[\w.-]+\.dump$/.test(name)).map(async fileName => {
+  const files = await Promise.all(names.filter(name => BACKUP_FILE_PATTERN.test(name)).map(async fileName => {
     const stat = await fs.promises.stat(path.join(BACKUP_DIR, fileName))
     return { fileName, size: stat.size, modifiedAt: stat.mtime.toISOString() }
   }))
@@ -92,7 +97,7 @@ export async function listDatabaseBackups() {
 }
 
 export function resolveBackupFile(fileName: string): string | null {
-  if (path.basename(fileName) !== fileName || !/^bizforce-backup-[\w.-]+\.dump$/.test(fileName)) return null
+  if (path.basename(fileName) !== fileName || !BACKUP_FILE_PATTERN.test(fileName)) return null
   return path.join(BACKUP_DIR, fileName)
 }
 
@@ -108,8 +113,8 @@ export async function emailDatabaseBackup(fileName: string, emailTo: string) {
   if (!filePath || !fs.existsSync(filePath)) throw new Error('Backup file not found')
   const result = await sendMail({
     to: emailTo,
-    subject: `BizForce CRM database backup — ${fileName}`,
-    text: `The requested BizForce CRM system database backup is attached. Created: ${new Date().toISOString()}`,
+    subject: `BizForce CRM full system backup — ${fileName}`,
+    text: `The requested BizForce CRM full system backup is attached (database, uploaded files and configuration). Created: ${new Date().toISOString()}`,
     attachments: [{ filename: fileName, path: filePath }],
   })
   if (!result.delivered) throw new Error(result.error || 'SMTP is not configured; backup email was not delivered')
@@ -122,17 +127,48 @@ export async function createDatabaseBackup(configOverride?: DatabaseBackupConfig
   backupRunning = true
   const startedAt = new Date()
   let tempPath: string | null = null
+  let stagingDir: string | null = null
   let config = configOverride || await getDatabaseBackupConfig()
   try {
     const dbUrl = process.env.DATABASE_URL
     if (!dbUrl) throw new Error('DATABASE_URL is not configured')
     await fs.promises.mkdir(BACKUP_DIR, { recursive: true, mode: 0o700 })
     const stamp = startedAt.toISOString().replace(/[:.]/g, '-')
-    const fileName = `bizforce-backup-${stamp}.dump`
+    const fileName = `bizforce-backup-${stamp}.tar.gz`
     const filePath = path.join(BACKUP_DIR, fileName)
     tempPath = `${filePath}.tmp`
-    await execFileAsync('pg_dump', ['--dbname', dbUrl, '--no-owner', '--no-privileges', '--format=custom', '--file', tempPath], { timeout: 30 * 60 * 1000 })
+    stagingDir = path.join(BACKUP_DIR, `.staging-${stamp}`)
+    await fs.promises.mkdir(stagingDir, { recursive: true, mode: 0o700 })
+
+    await fs.promises.mkdir(path.join(stagingDir, 'database'), { recursive: true })
+    await execFileAsync('pg_dump', ['--dbname', dbUrl, '--no-owner', '--no-privileges', '--format=custom', '--file', path.join(stagingDir, 'database', 'postgres.dump')], { timeout: 30 * 60 * 1000 })
+
+    if (fs.existsSync(UPLOAD_DIR)) {
+      await fs.promises.cp(UPLOAD_DIR, path.join(stagingDir, 'uploads'), {
+        recursive: true,
+        filter: src => path.basename(src) !== 'backups',
+      })
+    }
+
+    await fs.promises.mkdir(path.join(stagingDir, 'config'), { recursive: true })
+    if (fs.existsSync(ENV_PATH)) await fs.promises.copyFile(ENV_PATH, path.join(stagingDir, 'config', 'env'))
+    if (fs.existsSync(PRISMA_SCHEMA_PATH)) await fs.promises.copyFile(PRISMA_SCHEMA_PATH, path.join(stagingDir, 'config', 'schema.prisma'))
+
+    const entries = (await fs.promises.readdir(stagingDir)).filter(name => !name.startsWith('.'))
+    let appVersion: string | null = null
+    try { appVersion = JSON.parse(await fs.promises.readFile(PACKAGE_JSON_PATH, 'utf-8'))?.version || null } catch { appVersion = null }
+    const manifest = {
+      kind: 'bizforce-full-system-backup',
+      appVersion,
+      createdAt: startedAt.toISOString(),
+      contents: [...entries, 'manifest.json'],
+    }
+    entries.push('manifest.json')
+    await fs.promises.writeFile(path.join(stagingDir, 'manifest.json'), JSON.stringify(manifest, null, 2))
+
+    await execFileAsync('tar', ['-czf', tempPath, '-C', stagingDir, ...entries], { timeout: 30 * 60 * 1000 })
     await fs.promises.rename(tempPath, filePath)
+    tempPath = null
     await fs.promises.chmod(filePath, 0o600)
     await enforceRetention(config.retentionCount)
     let emailDelivered: boolean | null = null
@@ -148,7 +184,7 @@ export async function createDatabaseBackup(configOverride?: DatabaseBackupConfig
     }
     config = {
       ...config,
-      lastRunAt: startedAt.toISOString(), lastStatus: 'success', lastMessage: emailError ? `Backup created; email failed: ${emailError}` : 'Database backup completed successfully',
+      lastRunAt: startedAt.toISOString(), lastStatus: 'success', lastMessage: emailError ? `Backup created; email failed: ${emailError}` : 'Full system backup completed successfully',
       lastFileName: fileName, lastEmailDelivered: emailDelivered,
     }
     config.nextRunAt = calculateNextBackup(config, new Date())
@@ -162,6 +198,7 @@ export async function createDatabaseBackup(configOverride?: DatabaseBackupConfig
     await setGlobalSetting(BACKUP_SETTING_KEY, config).catch(() => {})
     throw error
   } finally {
+    if (stagingDir) await fs.promises.rm(stagingDir, { recursive: true, force: true }).catch(() => {})
     backupRunning = false
   }
 }

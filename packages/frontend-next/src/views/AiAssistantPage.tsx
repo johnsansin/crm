@@ -10,6 +10,8 @@ import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/ta
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Sparkles, Send, Loader2, Plus, Trash2, Brain, Lightbulb, BarChart3, History, Save, Mail, Target, AlertTriangle, TrendingUp, Users, MessageSquare, Copy, Check, RotateCcw, ShieldCheck, WandSparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/lib/auth'
+import { apiErrorMessage } from '@/lib/api'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -45,6 +47,7 @@ function SuggestionsList({ suggestions }: { suggestions: any[] }) {
 
 export function AiAssistantPage() {
   const { addToast } = useToast()
+  const { user } = useAuthStore()
   const queryClient = useQueryClient()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -58,6 +61,7 @@ export function AiAssistantPage() {
   const [showSearch, setShowSearch] = useState(false)
   const [assistantContext, setAssistantContext] = useState('all')
   const [responseStyle, setResponseStyle] = useState('actionable')
+  const [leadAgentForm, setLeadAgentForm] = useState<any>({ enabled: false, mode: 'review', highThreshold: 75, lowThreshold: 40, highStatus: 'Qualified', mediumStatus: 'Contacted', lowStatus: 'Not Contacted', highRating: 'Hot', mediumRating: 'Warm', lowRating: 'Cold', assignHighScoreTo: '' })
 
   // Global search (Ctrl+K)
   useEffect(() => {
@@ -90,6 +94,34 @@ export function AiAssistantPage() {
     enabled: activeTab === 'leads',
   })
 
+  const { data: leadAgentData } = useQuery({
+    queryKey: ['ai-lead-agent-config'],
+    queryFn: () => fetch('/api/ai/lead-agent/config', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
+    enabled: activeTab === 'leads',
+  })
+  useEffect(() => { if (leadAgentData?.data) setLeadAgentForm(leadAgentData.data) }, [leadAgentData])
+
+  const saveLeadAgent = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/ai/lead-agent/config', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(leadAgentForm) })
+      const body = await response.json()
+      if (!response.ok) throw new Error(body.error || 'Could not save lead agent')
+      return body
+    },
+    onSuccess: data => { setLeadAgentForm(data.data); queryClient.invalidateQueries({ queryKey: ['ai-lead-agent-config'] }); addToast({ title: 'Lead agent settings saved', variant: 'success' }) },
+    onError: (error: Error) => addToast({ title: 'Could not save lead agent', description: error.message, variant: 'destructive' }),
+  })
+  const runLeadAgent = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/ai/lead-agent/run', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: '{}' })
+      const body = await response.json()
+      if (!response.ok) throw new Error(body.error || 'Lead agent failed')
+      return body
+    },
+    onSuccess: data => { queryClient.invalidateQueries({ queryKey: ['ai-lead-scores'] }); addToast({ title: 'Lead agent completed', description: `${data.data.decisions.length} leads reviewed; ${data.data.applied} changes applied.`, variant: 'success' }) },
+    onError: (error: Error) => addToast({ title: 'Lead agent failed', description: error.message, variant: 'destructive' }),
+  })
+
   const { data: insights, isLoading: insightsLoading } = useQuery({
     queryKey: ['ai-insights'],
     queryFn: () => fetch('/api/ai/insights', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()).catch(() => ({ data: {} })),
@@ -98,21 +130,14 @@ export function AiAssistantPage() {
 
   const { data: oppPredictions, isLoading: predictionsLoading } = useQuery({
     queryKey: ['ai-opp-predictions'],
-    queryFn: async () => {
-      const opps = await fetch('/api/potentials?limit=50', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()).catch(() => ({ data: [] }))
-      const results = await Promise.all((opps.data || []).filter((o: any) => !['Closed Won', 'Closed Lost'].includes(o.stage)).slice(0, 10).map(async (o: any) => {
-        const res = await fetch('/api/ai/opportunity-prediction', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify({ potentialId: o.id }) }).then(r => r.json()).catch(() => null)
-        return res?.data ? { ...o, prediction: res.data } : null
-      }))
-      return results.filter(Boolean)
-    },
+    queryFn: () => fetch('/api/ai/predictions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: '{}' }).then(r => r.json()).catch(() => ({ data: [] })),
     enabled: activeTab === 'predictions',
   })
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
       const res = await fetch('/api/ai/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify({ message }) })
-      if (!res.ok) throw new Error('Failed')
+      if (!res.ok) throw new Error(await apiErrorMessage(res))
       return res.json()
     },
     onSuccess: (data) => {
@@ -124,7 +149,7 @@ export function AiAssistantPage() {
   const suggestMutation = useMutation({
     mutationFn: async (params: { module: string; fieldName: string }) => {
       const res = await fetch('/api/ai/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(params) })
-      if (!res.ok) throw new Error('Failed')
+      if (!res.ok) throw new Error(await apiErrorMessage(res))
       return res.json()
     },
     onSuccess: (data) => {
@@ -216,7 +241,7 @@ export function AiAssistantPage() {
         <TabsContent value="chat">
           <Card className="h-[560px] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between border-b px-4 py-2.5">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground"><ShieldCheck size={13} className="text-emerald-600" /> Tenant-isolated: uses only your organization’s CRM data</div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><ShieldCheck size={13} className="text-emerald-600" /> {user?.isSuperAdmin ? 'Platform-wide: aggregates data across all organizations' : 'Tenant-isolated: uses only your organization’s CRM data'}</div>
               {messages.length > 0 && <Button variant="ghost" size="sm" onClick={() => setMessages([])} className="h-7 text-xs"><RotateCcw size={12} className="mr-1" /> New conversation</Button>}
             </div>
             <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -262,6 +287,8 @@ export function AiAssistantPage() {
 
         {/* Lead Scores Tab */}
         <TabsContent value="leads">
+          <div className="space-y-4">
+          {(user?.isAdmin || user?.isSuperAdmin) && <Card className="border-blue-200 dark:border-blue-900"><CardHeader><div className="flex flex-wrap items-start justify-between gap-3"><div><CardTitle className="flex items-center gap-2 text-sm"><WandSparkles size={16}/>Agentic Lead Decisions</CardTitle><p className="mt-1 text-xs text-muted-foreground">Automatically score leads and assign status, rating and optional ownership. Every decision is recorded in AI logs.</p></div><label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={!!leadAgentForm.enabled} onChange={event => setLeadAgentForm({ ...leadAgentForm, enabled: event.target.checked })}/>Enabled</label></div></CardHeader><CardContent><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><label className="text-xs font-semibold text-muted-foreground">Decision mode<select value={leadAgentForm.mode} onChange={event => setLeadAgentForm({ ...leadAgentForm, mode: event.target.value })} className="mt-1 h-9 w-full rounded-lg border bg-background px-2 text-foreground"><option value="review">Review only</option><option value="automatic">Automatic actions</option></select></label><label className="text-xs font-semibold text-muted-foreground">High-score threshold<Input type="number" min="1" max="100" value={leadAgentForm.highThreshold} onChange={event => setLeadAgentForm({ ...leadAgentForm, highThreshold: Number(event.target.value) })} className="mt-1 h-9"/></label><label className="text-xs font-semibold text-muted-foreground">Low-score threshold<Input type="number" min="0" max="99" value={leadAgentForm.lowThreshold} onChange={event => setLeadAgentForm({ ...leadAgentForm, lowThreshold: Number(event.target.value) })} className="mt-1 h-9"/></label><label className="text-xs font-semibold text-muted-foreground">High score action<Input value={`${leadAgentForm.highStatus || 'Qualified'} / ${leadAgentForm.highRating || 'Hot'}`} disabled className="mt-1 h-9"/></label></div><div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end"><Button variant="outline" onClick={() => runLeadAgent.mutate()} disabled={!leadAgentForm.enabled || runLeadAgent.isPending}>{runLeadAgent.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin"/> : <Brain className="mr-1 h-3 w-3"/>}Run now</Button><Button onClick={() => saveLeadAgent.mutate()} disabled={saveLeadAgent.isPending}>{saveLeadAgent.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin"/> : <Save className="mr-1 h-3 w-3"/>}Save agent settings</Button></div></CardContent></Card>}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -307,6 +334,7 @@ export function AiAssistantPage() {
               )}
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
 
         {/* Predictions Tab */}
@@ -316,11 +344,11 @@ export function AiAssistantPage() {
             <CardContent>
               {predictionsLoading ? (
                 <div className="p-8 text-center text-sm text-muted-foreground"><Loader2 className="animate-spin inline mr-2 h-4 w-4" /> Predicting outcomes...</div>
-              ) : (oppPredictions || []).length === 0 ? (
+              ) : (oppPredictions?.data || []).length === 0 ? (
                 <div className="p-8 text-center text-sm text-muted-foreground">No open opportunities to predict</div>
               ) : (
                 <div className="space-y-3">
-                  {(oppPredictions || []).map((o: any) => (
+                  {(oppPredictions?.data || []).map((o: any) => (
                     <div key={o.id} className="rounded-lg border p-4 bg-card">
                       <div className="flex items-center justify-between mb-2">
                         <div>

@@ -167,7 +167,7 @@ export function PurchaseOrderDetailPage() {
         kind: i.serviceId ? 'service' : 'product',
       })))
       setMode('view')
-    } catch { addToast({ title: 'Error', description: 'Failed to load purchase order', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not load purchase order', description: e?.message || 'The purchase order could not be loaded. Refresh the page and try again.', variant: 'destructive' }) }
     setLoading(false)
   }
 
@@ -325,7 +325,7 @@ export function PurchaseOrderDetailPage() {
       await api.request(`/purchaseorders/${id}`, { method: 'DELETE' })
       addToast({ title: 'Deleted', description: 'Purchase Order deleted', variant: 'success' })
       navigate('/purchaseorders')
-    } catch { addToast({ title: 'Error', description: 'Failed to delete', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not delete purchase order', description: e?.message || 'It may be referenced by another record.', variant: 'destructive' }) }
     setDeleteTarget(false)
   }
 
@@ -340,7 +340,7 @@ export function PurchaseOrderDetailPage() {
     try {
       await api.request(`/purchaseorders/${id}/email`, { method: 'POST', body: JSON.stringify({ to, attachPdf }) })
       addToast({ title: 'Sent', description: `Email sent to ${to}`, variant: 'success' })
-    } catch { addToast({ title: 'Error', description: 'Failed to send email', variant: 'destructive' }) }
+    } catch (e: any) { addToast({ title: 'Could not send email', description: e?.message || 'Check the recipient and outgoing mail settings, then try again.', variant: 'destructive' }) }
   }
 
   function copyAddress(from: 'billing' | 'shipping', to: 'billing' | 'shipping') {

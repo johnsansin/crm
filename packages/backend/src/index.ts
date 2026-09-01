@@ -54,6 +54,7 @@ import { prisma } from './lib/prisma'
 import { PERMISSION_MODULES } from './lib/module-permissions'
 import { setupSupportWebSocket } from './lib/support-websocket'
 import { authMiddleware } from './middleware/auth'
+import { posRouter } from './modules/pos.routes'
 
 const app = express()
 // Nginx is the single trusted reverse proxy. This keeps rate limiting keyed to
@@ -72,7 +73,13 @@ app.use('/api', rateLimit({
   // The CRM performs background presence, notification and chat refreshes. A
   // modest IP-only limit incorrectly groups every user behind an office NAT.
   limit: 5000,
-  skip: req => req.path === '/health' || req.path.startsWith('/auth/login'),
+  // Authenticated CRM screens perform frequent read-only refreshes. Counting
+  // those against one office/NAT IP can hide data for every signed-in user.
+  // Authentication/authorization still runs normally for these requests;
+  // mutations and anonymous traffic remain protected by this limiter.
+  skip: req => req.path === '/health'
+    || req.path.startsWith('/auth/login')
+    || (Boolean(req.headers.authorization) && (req.method === 'GET' || req.method === 'HEAD')),
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   handler: (req, res) => {
@@ -155,6 +162,7 @@ app.use('/api/purchaseorders', purchaseOrdersRouter)
 app.use('/api/calendar', calendarRouter)
 app.use('/api/records', recordRouter)
 app.use('/api/leads', leadRouter)
+app.use('/api/pos', posRouter)
 app.use('/api/presence', presenceRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/dashboard', dashboardRouter)
@@ -189,7 +197,7 @@ async function seedModules() {
       await prisma.module.upsert({
         where: { name },
         update: { label: cfg.label, parent: cfg.parent, sequence: cfg.sequence, icon: cfg.icon },
-        create: { name, label: cfg.label, parent: cfg.parent, sequence: cfg.sequence, icon: cfg.icon, isEntity: !!cfg.modelName },
+        create: { name, label: cfg.label, parent: cfg.parent, sequence: cfg.sequence, icon: cfg.icon, isEntity: !!cfg.modelName, isActive: cfg.defaultActive !== false },
       })
     }
     const roles = await prisma.role.findMany({ select: { id: true, name: true } })

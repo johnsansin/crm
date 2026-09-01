@@ -11,7 +11,7 @@ import {
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, Menu, X,
   ChevronDown, LogOut, Shield, CalendarDays, CreditCard, Repeat, Phone,
   BarChart3, Inbox, Rss, Trash2, LineChart, Zap, Send, MessageCircle,
-  Globe, Share2, Webhook, Sparkles, UserCog, Tag, Star
+  Globe, Share2, Webhook, Sparkles, UserCog, Tag, Star, Store
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { t } from '@/lib/i18n'
@@ -23,10 +23,10 @@ const iconMap: Record<string, React.ElementType> = {
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, CalendarDays,
   CreditCard, Repeat, Phone, BarChart3, Inbox, Rss, Trash2, LineChart, Zap,
-  Send, MessageCircle, Globe, Share2, Webhook, Sparkles, UserCog, Tag
+  Send, MessageCircle, Globe, Share2, Webhook, Sparkles, UserCog, Tag, Store
 }
 
-const GROUP_ORDER = ['Essentials', 'Marketing', 'Sales', 'Inventory', 'Purchasing', 'Support', 'Projects', 'Tools']
+const GROUP_ORDER = ['Essentials', 'POS', 'Marketing', 'Sales', 'Inventory', 'Purchasing', 'Support', 'Projects', 'Tools']
 
 const fallbackGroups = [
   {
@@ -108,6 +108,7 @@ const fallbackGroups = [
       { module: 'sms', label: 'SMS', icon: 'MessageSquare' },
       { module: 'chat-admin', label: 'Chat Admin', icon: 'MessageCircle' },
       { module: 'webhooks', label: 'Webhooks', icon: 'Webhook' },
+      { module: 'help', label: 'Help Center', icon: 'HelpCircle' },
     ]
   }
 ]
@@ -139,6 +140,9 @@ function buildGroups(modules: any[] | null) {
   }
   if (!byGroup['Tools']?.some((m: any) => m.module === 'tags')) {
     byGroup['Tools'] = [...(byGroup['Tools'] || []), { module: 'tags', label: 'Tags', icon: 'Tag' }]
+  }
+  if (!byGroup['Tools']?.some((m: any) => m.module === 'help')) {
+    byGroup['Tools'] = [...(byGroup['Tools'] || []), { module: 'help', label: 'Help Center', icon: 'HelpCircle' }]
   }
   const groups: string[] = []
   for (const g of GROUP_ORDER) if (byGroup[g]) groups.push(g)

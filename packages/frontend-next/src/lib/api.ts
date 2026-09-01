@@ -21,18 +21,40 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     throw new Error('Network error — server may be offline')
   }
 
-  if (!res.ok) {
-    let msg = `Request failed (${res.status})`
-    try {
-      const body = await res.json()
-      msg = body.error || body.message || msg
-    } catch {
-      if (res.status === 429) msg = 'Too many requests. Please wait a moment and try again.'
-    }
-    throw new Error(msg)
-  }
+  if (!res.ok) throw new Error(await apiErrorMessage(res))
 
   return res.json()
+}
+
+const STATUS_MESSAGES: Record<number, string> = {
+  400: 'Some information is missing or invalid. Please review the form and try again.',
+  401: 'Your session has expired. Please sign in again.',
+  403: 'You do not have permission to perform this action.',
+  404: 'The requested record could not be found.',
+  409: 'This change conflicts with existing data. Refresh and try again.',
+  413: 'The selected file or request is too large.',
+  422: 'The submitted information could not be accepted. Please review the form.',
+  429: 'Too many requests. Please wait a moment and try again.',
+  500: 'The server could not complete this action. Please try again or contact support.',
+  502: 'The service is temporarily unavailable. Please try again shortly.',
+  503: 'The service is temporarily unavailable. Please try again shortly.',
+}
+
+export async function apiErrorMessage(res: Response): Promise<string> {
+  try {
+    const body = await res.clone().json()
+    const message = body?.error || body?.message || body?.details
+    if (typeof message === 'string' && message.trim()) return message.trim()
+    if (Array.isArray(body?.errors) && body.errors.length) {
+      return body.errors.map((item: any) => item?.message || item?.error || String(item)).filter(Boolean).join('; ')
+    }
+  } catch {
+    try {
+      const value = (await res.text()).trim()
+      if (value && !value.startsWith('<')) return value.slice(0, 500)
+    } catch {}
+  }
+  return STATUS_MESSAGES[res.status] || `The request could not be completed (error ${res.status}). Please try again.`
 }
 
 async function openAuthenticatedFile(endpoint: string, fileName?: string): Promise<void> {
@@ -44,6 +66,14 @@ async function openAuthenticatedFile(endpoint: string, fileName?: string): Promi
       let message = `Download failed (${res.status})`
       try { const body = await res.json(); message = body.error || message } catch {}
       throw new Error(message)
+    }
+    const contentType = res.headers.get('content-type') || ''
+    if (!fileName && preview && contentType.includes('text/html')) {
+      const html = await res.text()
+      preview.document.open()
+      preview.document.write(html)
+      preview.document.close()
+      return
     }
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
@@ -228,6 +258,12 @@ export const api = {
   superAdminLogoutUser: (userId: string) => request<{ success: boolean }>(`/admin/users/${userId}/logout-all`, { method: 'POST', body: JSON.stringify({}) }),
   superAdminLogoutCompany: (companyId: string) => request<{ success: boolean; count: number; message: string }>(`/admin/companies/${companyId}/logout-all`, { method: 'POST', body: JSON.stringify({}) }),
   adminToggleCompany: (id: string) => request<any>(`/admin/companies/${id}/toggle`, { method: 'PUT' }),
+  adminIssueCompanyTrial: (id: string, data: { days: number; userLimit?: number; contactLimit?: number }) => request<any>(`/admin/companies/${id}/trial`, { method: 'POST', body: JSON.stringify(data) }),
+  adminUpdateCompanySubscription: (id: string, data: any) => request<any>(`/admin/companies/${id}/subscription`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminListSubscriptionModels: () => request<{ data: any[] }>('/admin/subscription-models'),
+  adminCreateSubscriptionModel: (data: any) => request<any>('/admin/subscription-models', { method: 'POST', body: JSON.stringify(data) }),
+  adminUpdateSubscriptionModel: (id: string, data: any) => request<any>(`/admin/subscription-models/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminDeleteSubscriptionModel: (id: string) => request<any>(`/admin/subscription-models/${id}`, { method: 'DELETE' }),
   adminCreateUser: (data: { userName: string; email: string; firstName: string; lastName: string; password: string; companyId: string; isAdmin?: boolean; roleId?: string; phone?: string; department?: string; title?: string }) =>
     request<any>('/admin/users', { method: 'POST', body: JSON.stringify(data) }),
   adminCompanyRoles: (companyId: string) => request<{ data: any[] }>(`/admin/companies/${companyId}/roles`),
@@ -243,6 +279,7 @@ export const api = {
   },
 
   // ---- Settings ----
+  getSubscription: () => request<any>('/settings/subscription'),
   getOrgSettings: () => request<any>('/settings'),
   getPreferences: () => request<any>('/settings/preferences'),
   getFavoriteModules: () => request<{ data: string[]; configured: boolean }>('/auth/me/favorites'),
@@ -352,7 +389,7 @@ export const api = {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: fd,
-      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() })
+      }).then(async r => { if (!r.ok) throw new Error(await apiErrorMessage(r)); return r.json() })
     }
     return request<any>(`/chat/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ body }) })
   },

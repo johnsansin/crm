@@ -4,8 +4,8 @@ import { useNavigate } from '@/lib/navigation'
 import { Sidebar } from './Sidebar'
 import { AppBreadcrumbs, CrmFlowGuide } from './AppBreadcrumbs'
 import { LiveTranslation } from '@/components/LiveTranslation'
-import { SupportChatWidget } from '@/components/support/SupportChatWidget'
 import { useState, useEffect, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/lib/auth'
 import { cn } from '@/lib/utils'
@@ -22,6 +22,8 @@ import { useToast } from '@/lib/toast'
 import { setRemoteTranslations, t } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+
+const SupportChatWidget = dynamic(() => import('@/components/support/SupportChatWidget').then(module => module.SupportChatWidget), { ssr: false })
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'
@@ -40,22 +42,32 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [searching, setSearching] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
   const [dismissedAnnouncements, setDismissedAnnouncements] = useState<string[]>([])
+  const [supportReady, setSupportReady] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
   useOrgSettings()
   usePresence()
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSupportReady(true), 800)
+    return () => window.clearTimeout(timer)
+  }, [])
+
   const { data: notificationsData } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => api.getNotifications().catch(() => ({ data: [] })),
     refetchInterval: 30000,
+    refetchIntervalInBackground: false,
+    staleTime: 15000,
   })
 
   const { data: chatConvosData } = useQuery({
     queryKey: ['header-chat'],
     queryFn: () => api.getChatConversations().catch(() => ({ data: [] })),
     refetchInterval: 15000,
+    refetchIntervalInBackground: false,
+    staleTime: 10000,
   })
 
   const { data: preferences } = useQuery({
@@ -75,6 +87,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     queryFn: () => api.adminRecentCompanies(5).catch(() => ({ data: [] })),
     enabled: !!user?.isSuperAdmin,
     refetchInterval: 60000,
+    refetchIntervalInBackground: false,
+    staleTime: 30000,
   })
 
   useEffect(() => {
@@ -230,6 +244,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <header data-tour="header" className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 md:gap-5 md:px-6">
 
           <button
+            data-tour="navigation"
             className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-lg text-foreground transition-colors hover:bg-accent"
             onClick={() => setMobileOpen(true)}
             aria-label={t('Open menu')}
@@ -254,7 +269,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="relative min-w-0 max-w-[420px] flex-1" ref={searchRef}>
+          <div className="relative min-w-0 max-w-[420px] flex-1" ref={searchRef} data-tour="search">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               ref={searchInputRef}
@@ -295,8 +310,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
-            <Button variant="ghost" size="icon" title={t('Chat')} className="relative hidden h-9 w-9 rounded-lg text-muted-foreground sm:inline-flex" onClick={() => navigate('/chat')}>
+          <div className="flex items-center gap-1 md:gap-1.5 shrink-0" data-tour="workspace-actions">
+            <Button data-tour="communication" variant="ghost" size="icon" title={t('Chat')} className="relative hidden h-9 w-9 rounded-lg text-muted-foreground sm:inline-flex" onClick={() => navigate('/chat')}>
               <MessageSquare size={17} />
               {chatUnread > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center ring-2 ring-background">
@@ -306,7 +321,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" title={t('Notifications')} className="relative h-9 w-9 rounded-lg text-muted-foreground">
+                <Button data-tour="notifications" variant="ghost" size="icon" title={t('Notifications')} className="relative h-9 w-9 rounded-lg text-muted-foreground">
                   <Bell size={17} />
                   {unreadCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center ring-2 ring-background">
@@ -441,7 +456,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
       {user && !user.hasCompletedQuickStart && <QuickStartModal />}
       {user && user.hasCompletedQuickStart && !user.hasCompletedOnboarding && <OnboardingTour />}
-      {user?.isAdmin && !user?.isSuperAdmin && <SupportChatWidget />}
+      {supportReady && (user?.isAdmin || user?.isSuperAdmin) && <SupportChatWidget />}
       <LiveTranslation />
     </div>
   )

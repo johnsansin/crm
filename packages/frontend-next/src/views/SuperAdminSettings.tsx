@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Database, Mail, ArrowLeft, ChevronRight } from 'lucide-react'
+import { Database, Mail, ArrowLeft, ChevronRight, CreditCard } from 'lucide-react'
 import { SystemBackupSettings } from '@/views/settings/SystemBackupSettings'
 import { EmailSettings } from '@/views/settings/EmailSettings'
+import { SubscriptionModelsSettings } from '@/views/settings/SubscriptionModelsSettings'
 
 const sections = [
-  { key: 'data', label: 'System Backups', icon: Database, desc: 'Schedule, retain, download, and securely email database backups', tint: 'from-teal-500 to-emerald-700' },
+  { key: 'subscriptions', label: 'Subscription Plans', icon: CreditCard, desc: 'Define plan names, pricing, features, and organisation limits', tint: 'from-violet-500 to-indigo-700' },
+  { key: 'data', label: 'System Backups', icon: Database, desc: 'Schedule, retain, download, and securely email full-system backups (database, files & configuration)', tint: 'from-teal-500 to-emerald-700' },
   { key: 'email', label: 'Email / SMTP', icon: Mail, desc: 'Outgoing mail server, test and send emails', tint: 'from-orange-500 to-amber-600' },
 ]
 
@@ -37,6 +39,7 @@ export function SuperAdminSettings() {
         </div>
         {sec.key === 'data' && <SystemBackupSettings />}
         {sec.key === 'email' && <EmailSettings />}
+        {sec.key === 'subscriptions' && <SubscriptionModelsSettings />}
       </div>
     )
   }

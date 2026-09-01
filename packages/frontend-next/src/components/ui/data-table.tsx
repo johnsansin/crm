@@ -152,7 +152,7 @@ export function DataTable<T extends Record<string, any>>({
                 </th>
               ))}
               {actions && (
-                <th className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3.5 w-14 dark:text-slate-400">
+                <th className="sticky right-0 z-10 w-14 whitespace-nowrap bg-slate-200 px-4 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 shadow-[-8px_0_12px_-12px_rgba(15,23,42,.45)] dark:bg-slate-800 dark:text-slate-400">
                   Actions
                 </th>
               )}
@@ -196,7 +196,7 @@ export function DataTable<T extends Record<string, any>>({
                     </td>
                   ))}
                   {actions && (
-                    <td className="px-4 py-3 text-right whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                    <td className="sticky right-0 z-[5] bg-inherit px-4 py-3 text-right whitespace-nowrap shadow-[-8px_0_12px_-12px_rgba(15,23,42,.35)]" onClick={e => e.stopPropagation()}>
                       {actions(record)}
                     </td>
                   )}

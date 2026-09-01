@@ -7,7 +7,7 @@ export function createSupportMessageId() {
   return `support-${Date.now().toString(36)}-${random}`
 }
 
-export function useSupportSocket(conversationId: string | null, onEvent: (event: any) => void) {
+export function useSupportSocket(conversationId: string | null, onEvent: (event: any) => void, enabled = true) {
   const [connected, setConnected] = useState(false)
   const socketRef = useRef<WebSocket | null>(null)
   const typingTimerRef = useRef<number | undefined>(undefined)
@@ -16,6 +16,7 @@ export function useSupportSocket(conversationId: string | null, onEvent: (event:
   callbackRef.current = onEvent
 
   useEffect(() => {
+    if (!enabled) { setConnected(false); return }
     const token = localStorage.getItem('token')
     if (!token) return
     let stopped = false
@@ -41,7 +42,7 @@ export function useSupportSocket(conversationId: string | null, onEvent: (event:
       typingSentRef.current = false
       socket?.close()
     }
-  }, [conversationId])
+  }, [conversationId, enabled])
 
   const sendTyping = useCallback((typing: boolean, agent = false) => {
     if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current)
