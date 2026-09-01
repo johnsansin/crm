@@ -22,6 +22,7 @@ const navItems = [
 export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const isSupportInbox = location.pathname === '/superadmin/support'
   const { user, logout } = useAuthStore()
   const { theme, toggleTheme } = useTheme()
   const [collapsed, setCollapsed] = useState(false)
@@ -332,9 +333,9 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </header>
-        <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-slate-100/80 dark:bg-slate-950/70 p-2.5 sm:p-4 md:p-6 lg:p-8">
-          <div className="mx-auto max-w-[1600px]">
-            <AppBreadcrumbs />
+        <div className={`min-h-0 min-w-0 flex-1 bg-slate-100/80 dark:bg-slate-950/70 ${isSupportInbox ? 'overflow-hidden' : 'overflow-x-hidden overflow-y-auto overscroll-contain p-2.5 sm:p-4 md:p-6 lg:p-8'}`}>
+          <div className={isSupportInbox ? 'h-full min-h-0 w-full' : 'mx-auto max-w-[1600px]'}>
+            {!isSupportInbox && <AppBreadcrumbs />}
             {children}
           </div>
         </div>
