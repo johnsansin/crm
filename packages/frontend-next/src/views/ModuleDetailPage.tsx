@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { getFieldTabs, getFieldLabel, formatFieldValue } from '@/lib/field-utils'
-import { useOrgSettings, formatMoney } from '@/lib/org-format'
+import { useOrgSettings, formatMoney, formatDate, formatDateTime, formatTime } from '@/lib/org-format'
 import { ProjectSearchSelect } from '@/components/project-search-select'
 import { UserRoleSelect, userDisplayName } from '@/components/user-role-select'
 import { SearchSelect } from '@/components/search-select'
@@ -709,7 +709,7 @@ export function ModuleDetailPage() {
                   {record?.closingDate && (
                     <div>
                       <p className="text-muted-foreground text-xs">Closing Date</p>
-                      <p className="font-medium">{new Date(record.closingDate).toLocaleDateString()}</p>
+                      <p className="font-medium">{formatDate(record.closingDate)}</p>
                     </div>
                   )}
                   {record?.probability != null && (
@@ -1985,7 +1985,7 @@ function PotentialExtras({ potentialId }: { potentialId: string }) {
                   <span className={`absolute -left-[7px] mt-1 h-3 w-3 rounded-full border-2 border-background ${idx === stageHistory.length - 1 ? 'bg-emerald-500' : 'bg-primary'}`} />
                   <p className="text-sm font-medium">{h.stage}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(h.createdAt).toLocaleString()}
+                    {formatDateTime(h.createdAt)}
                     {h.changedByUser ? ` · by ${h.changedByUser.firstName} ${h.changedByUser.lastName}` : ''}
                   </p>
                 </li>
@@ -2053,7 +2053,7 @@ function PotentialExtras({ potentialId }: { potentialId: string }) {
               {nextFollowUp && (
                 <div>
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Next Follow-up</label>
-                  <p className="text-sm font-medium mt-1">{new Date(nextFollowUp).toLocaleDateString()}</p>
+                  <p className="text-sm font-medium mt-1">{formatDate(nextFollowUp)}</p>
                 </div>
               )}
               {contactRole && (
@@ -2128,7 +2128,7 @@ function TicketExtras({ record }: { record: any }) {
                 <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium', slaBg, slaColor)}>
                   <Timer size={13} /> {slaLabel}
                 </span>
-                <p className="text-xs text-muted-foreground mt-1">{new Date(slaDeadline).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">{formatDateTime(slaDeadline)}</p>
               </div>
             </div>
           )}
@@ -2319,9 +2319,9 @@ function PriceBookExtras({ record }: { record: any }) {
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Validity Period</label>
               <div className="mt-1.5 flex items-center gap-1.5 text-sm">
                 <Calendar size={14} className="text-muted-foreground" />
-                <span>{validFrom ? new Date(validFrom).toLocaleDateString() : '—'}</span>
+                <span>{validFrom ? formatDate(validFrom) : '—'}</span>
                 <span className="text-muted-foreground">→</span>
-                <span>{validUntil ? new Date(validUntil).toLocaleDateString() : '—'}</span>
+                <span>{validUntil ? formatDate(validUntil) : '—'}</span>
               </div>
             </div>
           )}
@@ -2393,7 +2393,7 @@ function AssetExtras({ record }: { record: any }) {
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Purchase Info</label>
               <div className="mt-1.5 space-y-0.5">
-                {purchaseDate && <p className="text-sm font-medium">{new Date(purchaseDate).toLocaleDateString()}</p>}
+                {purchaseDate && <p className="text-sm font-medium">{formatDate(purchaseDate)}</p>}
                 {purchasePrice != null && <p className="text-sm font-medium">{formatMoney(purchasePrice)}</p>}
               </div>
             </div>
@@ -2408,7 +2408,7 @@ function AssetExtras({ record }: { record: any }) {
                     <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium', warrantyBg, warrantyColor)}>
                       {warrantyLabel}
                     </span>
-                    <p className="text-xs text-muted-foreground mt-0.5">Until {new Date(warrantyEndDate).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Until {formatDate(warrantyEndDate)}</p>
                   </div>
                 )}
               </div>
@@ -2418,8 +2418,8 @@ function AssetExtras({ record }: { record: any }) {
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Maintenance</label>
               <div className="mt-1.5 space-y-0.5">
-                {lastMaintenanceDate && <p className="text-xs text-muted-foreground">Last: {new Date(lastMaintenanceDate).toLocaleDateString()}</p>}
-                {nextMaintenanceDate && <p className="text-sm font-medium">Next: {new Date(nextMaintenanceDate).toLocaleDateString()}</p>}
+                {lastMaintenanceDate && <p className="text-xs text-muted-foreground">Last: {formatDate(lastMaintenanceDate)}</p>}
+                {nextMaintenanceDate && <p className="text-sm font-medium">Next: {formatDate(nextMaintenanceDate)}</p>}
               </div>
             </div>
           )}
@@ -2623,7 +2623,7 @@ function ProjectExtras({ record, relatedTaskList, relatedMilestoneList, relatedT
           </CardContent>
         </Card>
       </div>
-      <Card><CardContent className="p-5"><div className="flex items-center justify-between gap-2 mb-3"><div><h3 className="text-sm font-semibold flex items-center gap-1.5"><Clock size={15} className="text-primary" /> Time Tracking</h3><p className="text-xs text-muted-foreground mt-1">{relatedTimeList.reduce((sum, entry) => sum + Number(entry.hours || 0), 0).toFixed(2)} total hours logged</p></div><Button size="sm" variant="outline" onClick={() => navigate(`/timeentries/new?projectId=${id}`)}><Plus size={14} className="mr-1.5" />Log time</Button></div>{!relatedTimeList.length ? <p className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">No time entries yet.</p> : <div className="space-y-2">{relatedTimeList.slice(0, 10).map((entry: any) => <button key={entry.id} onClick={() => navigate(`/timeentries/${entry.id}`)} className="flex w-full items-center justify-between gap-3 rounded-lg border p-3 text-left hover:bg-muted/30"><span className="min-w-0"><span className="block truncate text-sm font-medium">{entry.description || 'Time entry'}</span><span className="text-xs text-muted-foreground">{entry.date ? new Date(entry.date).toLocaleDateString() : ''}</span></span><span className="font-semibold text-primary">{Number(entry.hours || 0).toFixed(2)}h</span></button>)}</div>}</CardContent></Card>
+      <Card><CardContent className="p-5"><div className="flex items-center justify-between gap-2 mb-3"><div><h3 className="text-sm font-semibold flex items-center gap-1.5"><Clock size={15} className="text-primary" /> Time Tracking</h3><p className="text-xs text-muted-foreground mt-1">{relatedTimeList.reduce((sum, entry) => sum + Number(entry.hours || 0), 0).toFixed(2)} total hours logged</p></div><Button size="sm" variant="outline" onClick={() => navigate(`/timeentries/new?projectId=${id}`)}><Plus size={14} className="mr-1.5" />Log time</Button></div>{!relatedTimeList.length ? <p className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">No time entries yet.</p> : <div className="space-y-2">{relatedTimeList.slice(0, 10).map((entry: any) => <button key={entry.id} onClick={() => navigate(`/timeentries/${entry.id}`)} className="flex w-full items-center justify-between gap-3 rounded-lg border p-3 text-left hover:bg-muted/30"><span className="min-w-0"><span className="block truncate text-sm font-medium">{entry.description || 'Time entry'}</span><span className="text-xs text-muted-foreground">{entry.date ? formatDate(entry.date) : ''}</span></span><span className="font-semibold text-primary">{Number(entry.hours || 0).toFixed(2)}h</span></button>)}</div>}</CardContent></Card>
     </div>
   )
 }

@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/lib/toast'
@@ -213,7 +215,7 @@ export function PortalPage() {
                       {(ticket.ticketComments || []).map((c: any) => (
                         <div key={c.id} className="p-2 rounded bg-muted/50 text-xs">
                           <p>{c.comment}</p>
-                          <span className="text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</span>
+                          <span className="text-muted-foreground">{formatDateTime(c.createdAt)}</span>
                         </div>
                       ))}
                     </div>

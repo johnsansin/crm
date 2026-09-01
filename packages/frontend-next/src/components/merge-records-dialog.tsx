@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useState, useEffect, useMemo } from 'react'
 import { api } from '@/lib/api'
 import { useToast } from '@/lib/toast'
@@ -126,7 +128,7 @@ export function MergeRecordsDialog({ module, currentId, currentRecord, open, onO
   function formatVal(v: any): string {
     if (v == null || v === '') return '—'
     if (typeof v === 'boolean') return v ? 'Yes' : 'No'
-    if (v instanceof Date) return v.toLocaleDateString()
+    if (v instanceof Date) return formatDate(v)
     return String(v)
   }
 

@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -129,7 +131,7 @@ export function WebhooksPage() {
                 <p className="text-sm text-muted-foreground truncate font-mono">{ep.url}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {(ep.events as string[] || []).length === 0 ? t('All events') : `${(ep.events as string[]).length} events`}
-                  {ep.lastTriggeredAt && ` · Last triggered ${new Date(ep.lastTriggeredAt).toLocaleDateString()}`}
+                  {ep.lastTriggeredAt && ` · Last triggered ${formatDate(ep.lastTriggeredAt)}`}
                 </p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
@@ -190,7 +192,7 @@ export function WebhooksPage() {
                       {log.duration && <span className="text-xs text-muted-foreground">{log.duration}ms</span>}
                     </div>
                     {log.error && <p className="text-xs text-red-500 mt-0.5">{log.error}</p>}
-                    <p className="text-xs text-muted-foreground mt-0.5">{new Date(log.createdAt).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{formatDateTime(log.createdAt)}</p>
                   </div>
                 </div>
               ))}

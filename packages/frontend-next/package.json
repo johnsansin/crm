@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "HOSTNAME=0.0.0.0 PORT=3001 node .next/standalone/packages/frontend-next/server.js",
     "lint": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postbuild": "mkdir -p .next/standalone/packages/frontend-next/.next .next/standalone/packages/frontend-next/public && cp -R .next/static .next/standalone/packages/frontend-next/.next/static && cp -R public/. .next/standalone/packages/frontend-next/public/"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -213,7 +215,7 @@ export function SmsPage() {
                 <MessageSquare size={14} className="text-muted-foreground shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p><span className="font-medium">{log.toNumber}</span> <span className="text-muted-foreground">· {log.message?.slice(0, 60)}{log.message?.length > 60 ? '...' : ''}</span></p>
-                  <p className="text-xs text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">{formatDateTime(log.createdAt)}</p>
                 </div>
                 <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${log.status === 'Sent' ? 'bg-emerald-100 text-emerald-700' : log.status === 'Failed' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>{log.status}</span>
               </div>
