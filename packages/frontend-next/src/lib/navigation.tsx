@@ -2,7 +2,7 @@
 
 import NextLink from 'next/link'
 import { useParams as useNextParams, usePathname, useRouter, useSearchParams as useNextSearchParams } from 'next/navigation'
-import type { AnchorHTMLAttributes, ReactNode } from 'react'
+import { useCallback, useMemo, type AnchorHTMLAttributes, type ReactNode } from 'react'
 
 export function useNavigate() {
   const router = useRouter()
@@ -31,11 +31,12 @@ export function useSearchParams(): [URLSearchParams, (next: URLSearchParams | Re
   const params = useNextSearchParams()
   const pathname = usePathname()
   const router = useRouter()
-  const current = new URLSearchParams(params.toString())
-  const setParams = (next: URLSearchParams | Record<string, string>) => {
+  const serializedParams = params.toString()
+  const current = useMemo(() => new URLSearchParams(serializedParams), [serializedParams])
+  const setParams = useCallback((next: URLSearchParams | Record<string, string>) => {
     const value = next instanceof URLSearchParams ? next : new URLSearchParams(next)
-    router.push(`${pathname}${value.size ? `?${value}` : ''}`)
-  }
+    router.push(pathname + (value.size ? "?" + value.toString() : ""))
+  }, [pathname, router])
   return [current, setParams]
 }
 

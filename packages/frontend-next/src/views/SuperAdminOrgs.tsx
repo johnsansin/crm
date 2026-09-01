@@ -37,6 +37,7 @@ export function SuperAdminOrgs() {
   const [subscriptionSaving, setSubscriptionSaving] = useState(false)
   const [subscriptionModels, setSubscriptionModels] = useState<any[]>([])
   const [searchParams, setSearchParams] = useSearchParams()
+  const selectedOrganizationId = searchParams.get('id')
 
   const load = () => {
     setLoading(true)
@@ -45,7 +46,7 @@ export function SuperAdminOrgs() {
 
   useEffect(() => { load(); api.adminListSubscriptionModels().then(r => setSubscriptionModels(r.data || [])).catch(() => {}) }, [])
   useEffect(() => {
-    const id = searchParams.get('id')
+    const id = selectedOrganizationId
     if (!id) { setSelectedOrg(null); return }
     api.adminGetCompany(id).then(response => {
       const org = response.data || response
@@ -57,7 +58,7 @@ export function SuperAdminOrgs() {
         subscriptionEndsAt: org.subscriptionEndsAt ? new Date(org.subscriptionEndsAt).toISOString().slice(0, 10) : '',
       })
     }).catch(() => setSelectedOrg(null))
-  }, [searchParams])
+  }, [selectedOrganizationId])
 
   const openOrganization = (id: string) => setSearchParams({ id })
   const closeOrganization = () => { setSelectedOrg(null); setSearchParams({}) }
