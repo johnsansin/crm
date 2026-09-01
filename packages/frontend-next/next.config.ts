@@ -12,6 +12,16 @@ const nextConfig: NextConfig = {
   experimental: { useTypeScriptCli: false },
   basePath,
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
+  async headers() {
+    return [
+      {
+        source: '/((?!api|_next|uploads|robots|sitemap|manifest|sw\\.js|favicon|icon|apple-touch).*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' },
+        ],
+      },
+    ]
+  },
   async rewrites() {
     return [
       { source: '/api/:path*', destination: `${backendOrigin}/api/:path*`, basePath: false },

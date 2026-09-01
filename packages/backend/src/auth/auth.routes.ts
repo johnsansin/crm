@@ -290,8 +290,8 @@ authRouter.post('/register', async (req, res, next) => {
       },
     })
 
-    const sent = await sendVerificationEmail(email, code)
-    res.status(201).json({ needsVerification: true, verificationId: pending.id, email, delivered: sent.delivered })
+    sendVerificationEmail(email, code).catch(err => console.error('[REGISTER] background email error:', err?.message))
+    res.status(201).json({ needsVerification: true, verificationId: pending.id, email, delivered: false })
   } catch (err) { next(err) }
 })
 

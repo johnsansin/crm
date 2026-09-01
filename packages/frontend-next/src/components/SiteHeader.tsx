@@ -48,9 +48,10 @@ export function SiteHeader() {
   const menuItems = [
     { to: '/', label: 'Home', description: 'Your CRM overview', icon: Home },
     { to: '/#features', label: 'Features', description: 'Explore what BizForce can do', icon: Sparkles },
-    { to: '/#about', label: 'About', description: 'Why teams choose BizForce', icon: CircleHelp },
-    { to: '/contact', label: 'Contact', description: 'Talk with our team', icon: Mail },
     { to: '/pricing', label: 'Pricing', description: 'Simple plans that scale', icon: BadgeDollarSign },
+    { to: '/faq', label: 'FAQ', description: 'Frequently asked questions', icon: CircleHelp },
+    { to: '/blog', label: 'Blog', description: 'CRM tips and guides', icon: Sparkles },
+    { to: '/contact', label: 'Contact', description: 'Talk with our team', icon: Mail },
   ]
   const isActive = (to: string) => {
     const [pathname, hash = ''] = to.split('#')
