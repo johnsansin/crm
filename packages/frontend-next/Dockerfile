@@ -10,7 +10,9 @@ RUN npm ci
 COPY packages/frontend-next packages/frontend-next
 
 ARG BACKEND_ORIGIN=http://backend:3000
+ARG NEXT_PUBLIC_GA4_MEASUREMENT_ID=
 ENV BACKEND_ORIGIN=$BACKEND_ORIGIN \
+    NEXT_PUBLIC_GA4_MEASUREMENT_ID=$NEXT_PUBLIC_GA4_MEASUREMENT_ID \
     NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build --workspace @bizforce/frontend-next

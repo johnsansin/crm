@@ -73,6 +73,7 @@ services:
       dockerfile: packages/frontend-next/Dockerfile
       args:
         BACKEND_ORIGIN: http://backend:3000
+        NEXT_PUBLIC_GA4_MEASUREMENT_ID: ${NEXT_PUBLIC_GA4_MEASUREMENT_ID:-}
     restart: unless-stopped
     environment:
       NODE_ENV: production

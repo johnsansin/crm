@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from 'next'
 import { Suspense } from 'react'
+import Script from 'next/script'
 import './globals.css'
 import { Providers } from './providers'
+
+const gaMeasurementId = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || ''
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://bizforce-crm.online'),
@@ -73,7 +76,17 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="geo.position" content="31.5204;74.3587" />
         <meta name="ICBM" content="31.5204, 74.3587" />
       </head>
-      <body><Suspense fallback={null}><Providers>{children}</Providers></Suspense></body>
+      <body>
+        {gaMeasurementId && (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} strategy="afterInteractive" />
+            <Script id="gtag-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${gaMeasurementId}');`}
+            </Script>
+          </>
+        )}
+        <Suspense fallback={null}><Providers>{children}</Providers></Suspense>
+      </body>
     </html>
   )
 }
