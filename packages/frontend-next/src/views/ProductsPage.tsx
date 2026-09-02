@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from '@/lib/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -43,6 +43,7 @@ export function ProductsPage() {
   const queryClient = useQueryClient()
   const { addToast } = useToast()
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [category, setCategory] = useState('all')
   const [status, setStatus] = useState('all')
   const [page, setPage] = useState(1)
@@ -53,10 +54,15 @@ export function ProductsPage() {
   const [importing, setImporting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => { setDebouncedSearch(search); setPage(1) }, 250)
+    return () => window.clearTimeout(timer)
+  }, [search])
+
   const { data, isLoading } = useQuery({
-    queryKey: ['products', 'list', page, search, category, status, sortKey, sortOrder],
+    queryKey: ['products', 'list', page, debouncedSearch, category, status, sortKey, sortOrder],
     queryFn: () => {
-      const params: Record<string, string> = { page: String(page), limit: '25', search, sortBy: sortKey, sortOrder }
+      const params: Record<string, string> = { page: String(page), limit: '25', search: debouncedSearch, sortBy: sortKey, sortOrder }
       const filter: Record<string, any> = {}
       if (category !== 'all') filter.productCategory = category
       if (status !== 'all') filter.isActive = status === 'active'

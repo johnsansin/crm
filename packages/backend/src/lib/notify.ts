@@ -15,16 +15,16 @@ export async function resolveAssigneeUserIds(
   companyId?: string | null,
 ): Promise<string[]> {
   if (!assigneeId) return []
-  const user = await prisma.user.findUnique({ where: { id: assigneeId }, select: { id: true } }).catch(() => null)
+  const user = await prisma.user.findFirst({ where: { id: assigneeId, companyId: companyId || undefined, isActive: true }, select: { id: true } }).catch(() => null)
   if (user) return [user.id]
   const role = await prisma.role.findFirst({ where: { id: assigneeId, companyId: companyId || undefined }, select: { id: true } }).catch(() => null)
   if (role) {
     const users = await prisma.user.findMany({ where: { roleId: role.id, isActive: true }, select: { id: true } })
     return users.map((u) => u.id)
   }
-  const group = await prisma.userGroup.findFirst({ where: { id: assigneeId, companyId: companyId || undefined }, select: { id: true } }).catch(() => null)
+  const group = await prisma.userGroup.findFirst({ where: { id: assigneeId, companyId: companyId || undefined, isActive: true }, select: { id: true } }).catch(() => null)
   if (group) {
-    const members = await prisma.userGroupMember.findMany({ where: { groupId: group.id }, select: { userId: true } })
+    const members = await prisma.userGroupMember.findMany({ where: { groupId: group.id, user: { isActive: true, companyId: companyId || undefined } }, select: { userId: true } })
     return members.map((m) => m.userId)
   }
   return []

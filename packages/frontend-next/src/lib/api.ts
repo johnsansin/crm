@@ -487,7 +487,7 @@ export const api = {
   importModule: (moduleName: string, file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return request<{ success: boolean; created: number; failed: number; total: number }>(`/settings/import/${moduleName}`, {
+    return request<{ success: boolean; created: number; failed: number; total: number; importedModule?: string; errors?: { row: number; error: string }[] }>(`/settings/import/${moduleName}`, {
       method: 'POST', body: formData
     })
   },

@@ -46,7 +46,10 @@ const SelectContent = React.forwardRef<
   const inputRef = React.useRef<HTMLInputElement>(null)
 
   React.useEffect(() => {
-    const timer = window.setTimeout(() => inputRef.current?.focus(), 0)
+    // Focusing a portalled dropdown search must not move the underlying form.
+    // Without preventScroll, browsers can jump the page (especially when the
+    // mobile keyboard changes the visual viewport) whenever a select opens.
+    const timer = window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 0)
     return () => window.clearTimeout(timer)
   }, [])
 
@@ -55,7 +58,7 @@ const SelectContent = React.forwardRef<
       <SelectPrimitive.Content
         ref={ref}
         className={cn(
-          'relative z-50 max-h-96 min-w-[12rem] overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl',
+          'relative z-50 max-h-[min(24rem,calc(100dvh-1rem))] min-w-[12rem] max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl',
           position === 'popper' && 'translate-y-1',
           className
         )}
@@ -77,7 +80,7 @@ const SelectContent = React.forwardRef<
         </div>
         <SelectSearchContext.Provider value={search.trim().toLocaleLowerCase()}>
           <SelectPrimitive.Viewport
-            className={cn('max-h-72 p-1', position === 'popper' && 'w-full min-w-[var(--radix-select-trigger-width)]')}
+            className={cn('max-h-[min(18rem,calc(100dvh-5.5rem))] p-1', position === 'popper' && 'w-full min-w-[min(var(--radix-select-trigger-width),calc(100vw-1rem))]')}
           >
             {children}
           </SelectPrimitive.Viewport>

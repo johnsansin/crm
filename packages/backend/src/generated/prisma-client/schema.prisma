@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma-client"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma-client"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -161,7 +162,7 @@ model Currency {
   symbol    String   @db.VarChar(10)
   rate      Decimal  @default(1) @db.Decimal(10, 5)
   isDefault Boolean  @default(false)
-  isActive  Boolean  @default(true)
+  isActive  Boolean  @default(false)
   companyId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

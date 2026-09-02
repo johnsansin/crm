@@ -34,6 +34,9 @@ function translateTree(root: ParentNode) {
 export function LiveTranslation() {
   const settings = useOrgSettings()
   useEffect(() => {
+    // English is already rendered by React. Avoid observing and walking every
+    // page mutation for the overwhelmingly common no-translation case.
+    if ((settings.language || 'en_us').toLowerCase().startsWith('en')) return
     const root = document.querySelector('main'); if (!root) return
     translateTree(root)
     const observer = new MutationObserver(entries => entries.forEach(entry => entry.addedNodes.forEach(node => {

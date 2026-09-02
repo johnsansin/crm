@@ -82,7 +82,7 @@ quotationsRouter.get('/users', async (req, res, next) => {
   try {
     if (!req.user!.companyId) return res.json({ data: [] })
     const users = await prisma.user.findMany({
-      where: { companyId: req.user!.companyId, isActive: true },
+      where: { companyId: req.user!.companyId, isActive: true, isAgent: false },
       select: { id: true, firstName: true, lastName: true, email: true, userName: true },
       orderBy: { firstName: 'asc' },
     })

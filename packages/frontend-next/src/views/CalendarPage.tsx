@@ -197,10 +197,10 @@ export function CalendarPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-3 sm:space-y-4">
       <Card>
         <CardContent className="p-4 sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
                 <CalendarDays size={20} strokeWidth={1.75} />
@@ -210,17 +210,23 @@ export function CalendarPage() {
                 <p className="truncate text-sm text-muted-foreground">{isTodoPage ? t('Actions assigned with a due date') : `${t('Events plus To-Do due dates')} · ${formatAnchor(view, anchor)}`}</p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid w-full grid-cols-[auto_1fr_auto] gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+              <div className="flex gap-1 sm:contents">
+                <Button size="sm" variant="outline" onClick={() => navigate(-1)} aria-label={t('Previous')}><ChevronLeft size={15} /></Button>
+                <Button size="sm" variant="outline" onClick={() => navigate(1)} aria-label={t('Next')}><ChevronRight size={15} /></Button>
+              </div>
               <Button size="sm" variant="outline" onClick={() => setAnchor(new Date())}>{t('Today')}</Button>
-              <Button size="sm" variant="outline" onClick={() => navigate(-1)}><ChevronLeft size={15} /></Button>
-              <Button size="sm" variant="outline" onClick={() => navigate(1)}><ChevronRight size={15} /></Button>
-              <div className="flex items-center rounded-lg border bg-muted/40 p-0.5">
+              {!isTodoPage && <Button size="sm" onClick={() => openCreate('Meeting')}>
+                <CalendarPlus size={15} className="sm:mr-1.5" /> <span className="hidden sm:inline">{t('Add Event')}</span>
+              </Button>}
+              {isTodoPage && <Button size="sm" onClick={() => openCreate('Task')}><Plus size={15} className="sm:mr-1.5" /> <span className="hidden sm:inline">{t('Add To-Do')}</span></Button>}
+              <div className="col-span-3 grid grid-cols-5 items-center rounded-lg border bg-muted/40 p-0.5 sm:flex">
                 {(['month', 'week', 'day', 'list', 'year'] as View[]).map(v => (
                   <button
                     key={v}
                     onClick={() => setView(v)}
                     className={cn(
-                      'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors sm:px-3',
+                      'rounded-md px-1.5 py-1.5 text-[11px] font-medium capitalize transition-colors sm:px-3 sm:text-xs',
                       view === v ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
@@ -228,22 +234,18 @@ export function CalendarPage() {
                   </button>
                 ))}
               </div>
-              {!isTodoPage && <Button size="sm" onClick={() => openCreate('Meeting')}>
-                <CalendarPlus size={15} className="mr-1.5" /> <span className="hidden sm:inline">{t('Add Event')}</span><span className="sm:hidden">{t('Event')}</span>
-              </Button>}
-              {isTodoPage && <Button size="sm" onClick={() => openCreate('Task')}><Plus size={15} className="mr-1.5" /> {t('Add To-Do')}</Button>}
             </div>
           </div>
         </CardContent>
       </Card>
-      <Card><CardContent className="flex flex-wrap items-center gap-3 p-3 sm:p-4">
-        <div className="relative min-w-[220px] flex-1"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('Search activities...')} className="pl-9" /></div>
-        {!isTodoPage && <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-1"><SlidersHorizontal size={14} className="mx-2 text-muted-foreground" />{['all', 'Task', 'Call', 'Meeting', 'Other'].map(type => <button key={type} onClick={() => setTypeFilter(type)} className={cn('rounded-md px-3 py-1.5 text-xs font-medium', typeFilter === type ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background')}>{type === 'all' ? t('All') : type === 'Task' ? t('To-Dos') : t(type)}</button>)}</div>}
-        <div className="ml-auto flex gap-2 text-xs"><span className="rounded-full bg-sky-100 px-2.5 py-1 font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">{activities.length} {t('shown')}</span><span className="rounded-full bg-emerald-100 px-2.5 py-1 font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">{activities.filter((a:any) => a.status === 'Completed' || a.status === 'Held').length} {t('completed')}</span></div>
+      <Card><CardContent className="flex min-w-0 flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:p-4">
+        <div className="relative w-full min-w-0 flex-1 sm:min-w-[220px]"><Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('Search activities...')} className="pl-9" /></div>
+        {!isTodoPage && <div className="flex w-full items-center gap-1 overflow-x-auto rounded-lg border bg-muted/30 p-1 sm:w-auto"><SlidersHorizontal size={14} className="mx-2 shrink-0 text-muted-foreground" />{['all', 'Task', 'Call', 'Meeting', 'Other'].map(type => <button key={type} onClick={() => setTypeFilter(type)} className={cn('shrink-0 rounded-md px-3 py-1.5 text-xs font-medium', typeFilter === type ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background')}>{type === 'all' ? t('All') : type === 'Task' ? t('To-Dos') : t(type)}</button>)}</div>}
+        <div className="flex gap-2 text-[11px] sm:ml-auto sm:text-xs"><span className="rounded-full bg-sky-100 px-2.5 py-1 font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">{activities.length} {t('shown')}</span><span className="rounded-full bg-emerald-100 px-2.5 py-1 font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">{activities.filter((a:any) => a.status === 'Completed' || a.status === 'Held').length} {t('completed')}</span></div>
       </CardContent></Card>
 
       <div className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b bg-muted/30 px-4 py-2 text-[11px] font-medium text-muted-foreground">
+        <div className="hidden flex-wrap items-center gap-x-4 gap-y-1 border-b bg-muted/30 px-4 py-2 text-[11px] font-medium text-muted-foreground sm:flex">
           <span className="text-xs font-semibold uppercase tracking-wide">{t('Legend')}</span>
           {Object.entries(TYPE_STYLE).map(([tname, s]) => (
             <span key={tname} className="flex items-center gap-1.5">
@@ -257,9 +259,9 @@ export function CalendarPage() {
             <Loader2 size={16} className="mr-2 animate-spin" /> {t('Loading...')}
           </div>
         ) : view === 'month' ? (
-          <MonthView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} />
+          <><div className="sm:hidden"><MobileAgenda activities={activities} anchor={anchor} view="month" onCreate={openCreate} onEdit={openEdit} /></div><div className="hidden sm:block"><MonthView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} /></div></>
         ) : view === 'week' ? (
-          <WeekView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} />
+          <><div className="sm:hidden"><MobileAgenda activities={activities} anchor={anchor} view="week" onCreate={openCreate} onEdit={openEdit} /></div><div className="hidden sm:block"><WeekView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} /></div></>
         ) : view === 'list' ? (
           <ListView activities={activities} anchor={anchor} onEdit={openEdit} todoOnly={isTodoPage} />
         ) : view === 'year' ? (
@@ -336,6 +338,31 @@ function DayDropTarget({ date, children, onMove }: { date: Date; children: React
       {children}
     </div>
   )
+}
+
+function MobileAgenda({ activities, anchor, view, onCreate, onEdit }: { activities: any[]; anchor: Date; view: 'month' | 'week'; onCreate: (type: string, date: Date) => void; onEdit: (a: any) => void }) {
+  const days = useMemo(() => {
+    const start = new Date(anchor)
+    if (view === 'month') start.setDate(1)
+    else start.setDate(anchor.getDate() - firstDayOffset(anchor))
+    start.setHours(0, 0, 0, 0)
+    const count = view === 'month' ? new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0).getDate() : 7
+    return Array.from({ length: count }, (_, index) => { const day = new Date(start); day.setDate(start.getDate() + index); return day })
+  }, [anchor, view])
+  const visibleDays = days.filter(day => activities.some(a => sameDay(activityDay(a), day)) || sameDay(day, new Date()))
+  const displayDays = visibleDays.length ? visibleDays : days.slice(0, view === 'week' ? 7 : 1)
+
+  return <div className="divide-y">{displayDays.map(day => {
+    const items = activities.filter(a => sameDay(activityDay(a), day)).sort((a, b) => activityDay(a).getTime() - activityDay(b).getTime())
+    const today = sameDay(day, new Date())
+    return <section key={day.toISOString()} className={cn('p-3', today && 'bg-indigo-50/50 dark:bg-indigo-500/5')}>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2"><span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold', today ? 'bg-indigo-600 text-white' : 'bg-muted')}>{day.getDate()}</span><div className="min-w-0"><p className="truncate text-sm font-semibold">{weekDayNames('long')[day.getDay()]}</p><p className="text-[11px] text-muted-foreground">{formatDate(day)}{today ? ` · ${t('Today')}` : ''}</p></div></div>
+        <Button type="button" size="sm" variant="ghost" className="h-8 shrink-0 px-2 text-xs" onClick={() => onCreate('Meeting', day)}><Plus size={14} className="mr-1" />{t('Add')}</Button>
+      </div>
+      {items.length ? <div className="space-y-1.5">{items.map(item => <ActivityChip key={item.id} a={item} onClick={() => onEdit(item)} />)}</div> : <p className="rounded-lg border border-dashed px-3 py-3 text-center text-xs text-muted-foreground">{t('No activities')}</p>}
+    </section>
+  })}</div>
 }
 
 function MonthView({ activities, anchor, onCreate, onEdit, onMove }: { activities: any[]; anchor: Date; onCreate: (type: string, date: Date) => void; onEdit: (a: any) => void; onMove?: (id: string, d: Date) => void }) {
@@ -487,13 +514,13 @@ function DayView({ activities, anchor, onCreate, onEdit }: { activities: any[]; 
   }
 
   return (
-    <div className="overflow-x-auto">
-      <div className="min-w-[560px] p-2">
+    <div className="min-w-0">
+      <div className="p-2">
         <button onClick={() => onCreate('Meeting', anchor)} className="w-full rounded-lg px-2 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-accent/40">
           + {t('Add on')} {weekDayNames('long')[anchor.getDay()]}, {formatDate(anchor)}
         </button>
         {dayActs.length === 0 && <p className="px-2 py-4 text-center text-sm text-muted-foreground">{t('No activities for this day.')}</p>}
-        <div className="mt-1 rounded-lg border">
+        <div className="mt-1 overflow-hidden rounded-lg border">
           {hours.map(h => <HourBlock key={h} h={h} working />)}
           {nonWorking.map(h => <HourBlock key={h} h={h} working={false} />)}
         </div>
@@ -675,7 +702,7 @@ function ActivityDialog({ open, onOpenChange, editing, preset, lockedType, onDel
         <DialogHeader><DialogTitle>{editingId ? (isTask ? 'Edit Task' : 'Edit Event') : (isTask ? 'Add Task' : 'Add Event')}</DialogTitle></DialogHeader>
         <form onSubmit={e => { e.preventDefault(); submit() }} className="space-y-3">
           <Input placeholder={t('Subject')} value={form.subject} onChange={e => setForm((f: any) => ({ ...f, subject: e.target.value }))} required />
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2">
             <div>
               <label className="text-sm font-medium block mb-1.5">{t('Type')}</label>
               <Select value={form.activityType} onValueChange={(v) => setForm((f: any) => ({ ...f, activityType: v, status: 'Planned' }))} disabled={lockedType === 'Task'}>
@@ -695,7 +722,7 @@ function ActivityDialog({ open, onOpenChange, editing, preset, lockedType, onDel
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2">
             <div>
               <label className="text-sm font-medium block mb-1.5">{t('Priority')}</label>
               <Select value={form.priority} onValueChange={(v) => setForm((f: any) => ({ ...f, priority: v }))}>
@@ -718,7 +745,7 @@ function ActivityDialog({ open, onOpenChange, editing, preset, lockedType, onDel
             )}
           </div>
           {!isTask && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2">
               <div>
                 <label className="text-sm font-medium block mb-1.5">{t('Start')}</label>
                 <DateTimeField value={form.startAt} onChange={v => setForm((f: any) => ({ ...f, startAt: v }))} />
@@ -751,7 +778,7 @@ function ActivityDialog({ open, onOpenChange, editing, preset, lockedType, onDel
             <label className="text-sm font-medium block mb-1.5">{t('Description')}</label>
             <textarea placeholder={t('Description')} className={`${inputCls} h-20`} value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} />
           </div>
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col-reverse gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               {editingId && (
                 <Button type="button" variant="ghost" size="sm" className="text-destructive" onClick={() => onDelete(editingId)}>
@@ -759,7 +786,7 @@ function ActivityDialog({ open, onOpenChange, editing, preset, lockedType, onDel
                 </Button>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('Cancel')}</Button>
               <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                 {(createMutation.isPending || updateMutation.isPending) && <Loader2 size={14} className="mr-1.5 animate-spin" />}

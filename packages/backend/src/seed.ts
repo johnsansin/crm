@@ -66,13 +66,13 @@ async function main() {
   }
 
   await prisma.currency.create({
-    data: { name: 'US Dollar', code: 'USD', symbol: '$', isDefault: true, rate: 1 }
+    data: { name: 'US Dollar', code: 'USD', symbol: '$', isDefault: true, isActive: true, rate: 1 }
   })
   await prisma.currency.create({
-    data: { name: 'Pakistani Rupee', code: 'PKR', symbol: 'Rs', rate: 280 }
+    data: { name: 'Pakistani Rupee', code: 'PKR', symbol: 'Rs', isDefault: false, isActive: false, rate: 280 }
   })
   await prisma.currency.create({
-    data: { name: 'Euro', code: 'EUR', symbol: '€', rate: 0.92 }
+    data: { name: 'Euro', code: 'EUR', symbol: '€', isDefault: false, isActive: false, rate: 0.92 }
   })
 
   await prisma.sequenceNumber.create({

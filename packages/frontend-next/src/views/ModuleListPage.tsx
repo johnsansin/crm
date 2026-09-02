@@ -2,7 +2,7 @@
 
 import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useParams, useNavigate } from '@/lib/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -84,6 +84,7 @@ export function ModuleListPage() {
   const queryClient = useQueryClient()
   const { addToast } = useToast()
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
   const [sortKey, setSortKey] = useState('')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -99,9 +100,14 @@ export function ModuleListPage() {
   const mod = module || ''
   const hasKanban = kanbanModules.includes(mod)
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => { setDebouncedSearch(search); setPage(1) }, 250)
+    return () => window.clearTimeout(timer)
+  }, [search])
+
   const { data, isLoading } = useQuery({
-    queryKey: [mod, 'list', page, search, sortKey, sortOrder],
-    queryFn: () => api.list(mod, { page: String(page), limit: '25', search, ...(sortKey ? { sortBy: sortKey, sortOrder } : {}) }),
+    queryKey: [mod, 'list', page, debouncedSearch, sortKey, sortOrder],
+    queryFn: () => api.list(mod, { page: String(page), limit: '25', search: debouncedSearch, ...(sortKey ? { sortBy: sortKey, sortOrder } : {}) }),
     enabled: !!mod && mod !== 'settings' && viewMode === 'list',
   })
 
@@ -420,8 +426,9 @@ export function ModuleListPage() {
               const res = await api.importModule(mod, file).catch(() => null)
               setImporting(false)
               if (res?.success) {
-                addToast({ title: 'Import complete', description: `${res.created} created, ${res.failed} failed`, variant: res.failed > 0 ? 'default' : 'success' })
-                queryClient.invalidateQueries({ queryKey: [mod] })
+                const firstError = res.errors?.[0]
+                addToast({ title: 'Import complete', description: `${res.created} ${res.importedModule || mod} created, ${res.failed} failed${firstError ? `. Row ${firstError.row}: ${firstError.error}` : ''}`, variant: res.failed > 0 ? 'default' : 'success' })
+                queryClient.invalidateQueries({ queryKey: [res.importedModule || mod] })
               } else {
                 addToast({ title: 'Import failed', description: 'Check the CSV and try again', variant: 'destructive' })
               }

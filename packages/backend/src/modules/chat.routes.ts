@@ -99,7 +99,7 @@ async function requireMember(conversationId: string, userId: string) {
 chatRouter.get('/users', async (req, res, next) => {
   try {
     const users = await prisma.user.findMany({
-      where: { companyId: req.user!.companyId || null, isActive: true },
+      where: { companyId: req.user!.companyId || null, isActive: true, isAgent: false },
       select: USER_SELECT,
       orderBy: [{ isAdmin: 'desc' }, { firstName: 'asc' }],
     })

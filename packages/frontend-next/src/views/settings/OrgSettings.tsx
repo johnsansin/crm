@@ -76,6 +76,10 @@ const MAPPING_GROUPS = [
   },
 ]
 
+function SettingsField({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><label className="text-sm font-medium block mb-1.5">{label}</label>{children}</div>
+}
+
 export function OrgSettings() {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
@@ -86,7 +90,7 @@ export function OrgSettings() {
     queryKey: ['org-settings'],
     queryFn: () => api.getOrgSettings(),
   })
-  const { data: currencyData } = useQuery({ queryKey: ['currencies'], queryFn: () => api.listAll('currencies').catch(() => ({ data: [] })) })
+  const { data: currencyData } = useQuery({ queryKey: ['currencies', 'active'], queryFn: () => api.listAll('currencies').catch(() => ({ data: [] })) })
 
   const saveMutation = useMutation({
     mutationFn: (settings: any) => api.updateOrgSettings(settings),
@@ -112,9 +116,7 @@ export function OrgSettings() {
 
   const save = () => saveMutation.mutate(form)
 
-  const Field = ({ label, children }: any) => (
-    <div><label className="text-sm font-medium block mb-1.5">{label}</label>{children}</div>
-  )
+  const Field = SettingsField
 
   return (
     <div className="space-y-4">

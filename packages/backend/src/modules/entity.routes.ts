@@ -230,6 +230,18 @@ function fixDecimals(data: any) {
 }
 
 const dmmfModels = () => Prisma.dmmf?.datamodel?.models || []
+function fixNumericFields(modelName: string, data: any) {
+  const model = dmmfModels().find((m) => m.name.toLowerCase() === modelName.toLowerCase())
+  if (!model) return
+  for (const field of model.fields) {
+    if (field.kind !== 'scalar' || !['Int', 'Float', 'Decimal'].includes(field.type)) continue
+    const value = data[field.name]
+    if (typeof value !== 'string' || value.trim() === '') continue
+    const numericValue = Number(value)
+    if (Number.isFinite(numericValue)) data[field.name] = numericValue
+  }
+}
+
 function modelHasScalarField(modelName: string, fieldName: string): boolean {
   const model = dmmfModels().find((m) => m.name.toLowerCase() === modelName.toLowerCase())
   return !!model?.fields.some((field) => field.kind === 'scalar' && field.name === fieldName)
@@ -545,7 +557,7 @@ export function entityRouter(moduleName: string): Router {
     try {
       if (!req.user!.companyId) return res.json({ data: [], roles: [] })
       const users = await prisma.user.findMany({
-        where: { companyId: req.user!.companyId, isActive: true },
+        where: { companyId: req.user!.companyId, isActive: true, isAgent: false },
         select: {
           id: true, firstName: true, lastName: true, email: true, userName: true,
           roleId: true, role: { select: { id: true, name: true } },
@@ -795,6 +807,7 @@ export function entityRouter(moduleName: string): Router {
       }
       fixBooleans(data)
       fixDecimals(data)
+      fixNumericFields(modelName, data)
       await validateProjectLinks(modelName, data, req.user!.companyId!)
       if (modelName === 'quantityDiscount') {
         const validationError = await validateQuantityDiscount(data, req.user!.companyId!)
@@ -812,8 +825,9 @@ export function entityRouter(moduleName: string): Router {
         return res.status(400).json({ error: `Missing required field(s): ${missing.join(', ')}` })
       }
       if (modelName === 'currency') {
+        data.code = String(data.code || '').trim().toUpperCase()
         const activeCount = await prisma.currency.count({ where: { companyId: req.user!.companyId, isActive: true } })
-        if (data.isDefault || activeCount === 0) { data.isDefault = true; data.isActive = true }
+        if (data.isDefault || (data.code === 'USD' && activeCount === 0)) { data.isDefault = true; data.isActive = true }
         if (data.isDefault) {
           await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
         }
@@ -842,16 +856,18 @@ export function entityRouter(moduleName: string): Router {
       }
       await writeAudit({ moduleName, recordId: record.id, action: 'CREATE', newValue: auditSummary(record), userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onCreate', record, req })
+      if (modelHasScalarField(modelName, 'assignedTo') && record.assignedTo) {
+        const recordLabel = record.name || record.subject || record.title || record.potentialName || record.accountName || record.productName || record.id
+        notifyFollowersAndAssignee({
+          moduleName, recordId: record.id, assigneeId: record.assignedTo,
+          title: `New ${moduleName.replace(/s$/, '')} assigned`,
+          message: `“${recordLabel}” has been assigned to you or your group.`,
+          link: `/${moduleName}/${record.id}`, companyId: req.user!.companyId,
+        }).catch(() => {})
+      }
       if (modelName === 'receipt' && record.invoiceId) syncInvoiceBalance(record.invoiceId, req.user!.companyId!)
       if (modelName === 'payment' && record.purchaseOrderId) syncPOBalance(record.purchaseOrderId, req.user!.companyId!)
       if (modelName === 'lead') {
-        const label = `${record.firstName || ''} ${record.lastName || ''}`.trim() || record.company || record.id
-        notifyFollowersAndAssignee({
-          moduleName, recordId: record.id, assigneeId: record.assignedTo,
-          title: `New lead: ${label}`,
-          message: `A new lead "${label}" has been assigned to you.`,
-          link: `/leads/${record.id}`, companyId: req.user!.companyId, actorId: req.user!.userId,
-        }).catch(() => {})
         runLeadAgent(req.user!.companyId!, req.user!.userId, [record.id]).catch(error => console.error('[LEAD AGENT] create decision failed', error))
       }
 
@@ -903,6 +919,7 @@ export function entityRouter(moduleName: string): Router {
       }
       fixBooleans(data)
       fixDecimals(data)
+      fixNumericFields(modelName, data)
       await validateProjectLinks(modelName, { ...before, ...data }, req.user!.companyId!)
       if (modelName === 'quantityDiscount') {
         const validationError = await validateQuantityDiscount({ ...before, ...data }, req.user!.companyId!, req.params.id)
@@ -920,7 +937,24 @@ export function entityRouter(moduleName: string): Router {
         return res.status(400).json({ error: `Field(s) cannot be empty: ${emptyReq.join(', ')}` })
       }
       if (modelName === 'currency') {
-        if (before.isDefault && data.isActive === false) return res.status(400).json({ error: 'Set another active currency as default before deactivating this currency' })
+        const removingCurrentDefault = before.isDefault && (data.isActive === false || data.isDefault === false)
+        if (removingCurrentDefault && String(before.code).toUpperCase() === 'USD') {
+          // USD is the guaranteed baseline. Treat attempts to unset it as a
+          // no-op so the organization is never left without an active default.
+          data.isActive = true
+          data.isDefault = true
+        } else if (removingCurrentDefault) {
+          let usd = await prisma.currency.findFirst({ where: { companyId: req.user!.companyId, code: 'USD' } })
+          if (!usd) {
+            usd = await prisma.currency.create({ data: { companyId: req.user!.companyId, code: 'USD', name: 'US Dollar', symbol: '$', rate: 1, isActive: true, isDefault: false } })
+          }
+          await prisma.currency.updateMany({ where: { companyId: req.user!.companyId, isDefault: true }, data: { isDefault: false } })
+          await prisma.currency.update({ where: { id: usd.id }, data: { isActive: true, isDefault: true } })
+          await setOrgSetting(req.user!.companyId, 'defaultCurrency', 'USD')
+          await setOrgSetting(req.user!.companyId, 'currencySymbol', '$')
+          await prisma.company.updateMany({ where: { id: req.user!.companyId! }, data: { defaultCurrency: 'USD' } })
+          data.isDefault = false
+        }
         if (data.isDefault) {
           data.isActive = true
           await prisma.currency.updateMany({ where: { isDefault: true, companyId: req.user!.companyId }, data: { isDefault: false } })
@@ -961,6 +995,15 @@ export function entityRouter(moduleName: string): Router {
       }
       await writeAuditFields({ moduleName, recordId: record.id, before, after: { ...before, ...data }, userId: req.user!.userId, req })
       await runWorkflows({ companyId: req.user!.companyId, moduleName, triggerType: 'onUpdate', record, prevRecord: before, req })
+      if (modelHasScalarField(modelName, 'assignedTo') && data.assignedTo && data.assignedTo !== before.assignedTo) {
+        const recordLabel = record.name || record.subject || record.title || record.potentialName || record.accountName || record.productName || record.id
+        notifyFollowersAndAssignee({
+          moduleName, recordId: record.id, assigneeId: data.assignedTo,
+          title: `${moduleName.replace(/s$/, '')} reassigned`,
+          message: `“${recordLabel}” has been assigned to you or your group.`,
+          link: `/${moduleName}/${record.id}`, companyId: req.user!.companyId,
+        }).catch(() => {})
+      }
       if (modelName === 'receipt' && record.invoiceId) syncInvoiceBalance(record.invoiceId, req.user!.companyId!)
       if (modelName === 'payment' && record.purchaseOrderId) syncPOBalance(record.purchaseOrderId, req.user!.companyId!)
       if (modelName === 'lead') {

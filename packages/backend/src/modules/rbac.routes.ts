@@ -94,11 +94,11 @@ rbacRouter.put('/roles/:id/permissions', requireAdmin, async (req, res, next) =>
 // === USER GROUPS ===
 
 // List all groups for company
-rbacRouter.get('/usergroups', requireAdmin, async (req, res, next) => {
+rbacRouter.get('/usergroups', async (req, res, next) => {
   try {
     const groups = await prisma.userGroup.findMany({
       where: { companyId: req.user!.companyId, isActive: true },
-      include: { members: { include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } } } }
+      include: { members: { where: { user: { isActive: true } }, include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } } } }
     })
     res.json({ data: groups })
   } catch (err) { next(err) }

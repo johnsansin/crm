@@ -10,6 +10,7 @@ import { generateSecret, verifyTotp, otpauthUri } from '../lib/otp'
 import { writeAudit, getClientIp } from '../lib/audit'
 import { getModuleConfig } from './moduleSetup'
 import { getOrganizationUsage } from '../lib/organization-limits'
+import { Prisma } from '../generated/prisma-client'
 
 export const settingsRouter = Router()
 settingsRouter.use(authMiddleware)
@@ -785,18 +786,99 @@ settingsRouter.get('/export/:module', requireAdmin, async (req, res, next) => {
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } })
 
+const normalizeImportHeader = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+
+function importModelFields(modelName: string) {
+  return (Prisma.dmmf?.datamodel?.models || []).find(model => model.name.toLowerCase() === modelName.toLowerCase())?.fields || []
+}
+
+function resolveImportField(modelName: string, header: string): string | null {
+  const normalized = normalizeImportHeader(header)
+  if (modelName.toLowerCase() === 'lead') {
+    const aliases: Record<string, string> = {
+      name: 'firstName', fullname: 'firstName', contactname: 'firstName', buyername: 'firstName',
+      firstname: 'firstName', surname: 'lastName', lastname: 'lastName',
+      companyname: 'company', organization: 'company', organisation: 'company', organizationname: 'company', organisationname: 'company',
+      source: 'leadSource', status: 'leadStatus', owner: 'assignedTo', assignee: 'assignedTo', assignedto: 'assignedTo',
+      message: 'description', enquiry: 'description', inquiry: 'description', comments: 'description',
+    }
+    if (aliases[normalized]) return aliases[normalized]
+  }
+  const field = importModelFields(modelName).find(candidate => candidate.kind === 'scalar' && normalizeImportHeader(candidate.name) === normalized)
+  return field?.name || null
+}
+
+async function resolveImportedAssignee(value: any, companyId?: string | null): Promise<string | undefined> {
+  if (!value || !companyId) return undefined
+  const text = String(value).trim()
+  const user = await prisma.user.findFirst({
+    where: {
+      companyId, isActive: true,
+      OR: [
+        { id: text }, { userName: { equals: text, mode: 'insensitive' } }, { email: { equals: text, mode: 'insensitive' } },
+        { firstName: { equals: text, mode: 'insensitive' } }, { lastName: { equals: text, mode: 'insensitive' } },
+      ],
+    },
+    select: { id: true },
+  })
+  if (user) return user.id
+  const group = await prisma.userGroup.findFirst({ where: { companyId, isActive: true, OR: [{ id: text }, { name: { equals: text, mode: 'insensitive' } }] }, select: { id: true } })
+  return group?.id
+}
+
+async function normalizeImportedLead(data: any, companyId: string | null | undefined, fallbackAssignee: string) {
+  if (data.firstName && !data.lastName) {
+    const parts = String(data.firstName).trim().split(/\s+/)
+    if (parts.length > 1) data.lastName = parts.pop()
+    data.firstName = parts.join(' ') || data.firstName
+  }
+  if (!data.lastName) data.lastName = '-'
+  if (!data.company) data.company = 'Individual'
+  data.assignedTo = await resolveImportedAssignee(data.assignedTo, companyId) || fallbackAssignee
+}
+
+function coerceImportValue(modelName: string, fieldName: string, raw: any): any {
+  if (raw == null || String(raw).trim() === '') return undefined
+  const field = importModelFields(modelName).find(candidate => candidate.kind === 'scalar' && candidate.name === fieldName)
+  if (!field) return undefined
+  const value = String(raw).trim()
+  if (field.type === 'Boolean') {
+    const normalized = value.toLowerCase()
+    if (['true', 'yes', '1', 'y'].includes(normalized)) return true
+    if (['false', 'no', '0', 'n'].includes(normalized)) return false
+    return raw
+  }
+  if (['Int', 'Float', 'Decimal'].includes(field.type)) {
+    const number = Number(value.replace(/,/g, ''))
+    return Number.isFinite(number) ? number : raw
+  }
+  if (field.type === 'DateTime') {
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(value + 'T12:00:00') : new Date(value)
+    return Number.isNaN(date.getTime()) ? raw : date.toISOString()
+  }
+  return value
+}
+
 settingsRouter.post('/import/:module', requireAdmin, upload.single('file'), async (req, res, next) => {
   try {
     const moduleName = req.params.module
-    const config = getModuleConfig(moduleName)
+    let config = getModuleConfig(moduleName)
     if (!config) return res.status(404).json({ error: 'Unknown module' })
-    const model = (prisma as any)[config.modelName]
+    let model = (prisma as any)[config.modelName]
     if (!model) return res.status(404).json({ error: 'Unknown model' })
     if (!req.file) return res.status(400).json({ error: 'CSV file required' })
     const content = req.file.buffer.toString('utf-8')
     const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0)
     if (lines.length < 2) return res.status(400).json({ error: 'CSV must have a header row and data rows' })
-    const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
+    const rawHeader = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
+    const requestedFields = rawHeader.map(h => resolveImportField(config!.modelName, h)).filter(Boolean)
+    const leadFields = rawHeader.map(h => resolveImportField('lead', h)).filter(Boolean)
+    const appearsToBeLeads = !requestedFields.some(field => field === 'potentialName') && leadFields.some(field => ['firstName', 'lastName', 'company'].includes(String(field)))
+    if (config.modelName !== 'lead' && appearsToBeLeads) {
+      config = getModuleConfig('leads')!
+      model = (prisma as any)[config.modelName]
+    }
+    const header = rawHeader.map(h => resolveImportField(config.modelName, h))
     const parseRow = (line: string): string[] => {
       const out: string[] = []
       let cur = ''
@@ -813,45 +895,35 @@ settingsRouter.post('/import/:module', requireAdmin, upload.single('file'), asyn
     const skipKeys = new Set(['id', 'companyId', 'createdAt', 'updatedAt', 'password', 'createdBy'])
     let created = 0
     let failed = 0
+    const errors: { row: number; error: string }[] = []
     const limit = (await getOrgSetting(req.user!.companyId, 'importExport')).maxRows || 1000
     const contactCapacity = config.modelName === 'contact' && req.user!.companyId ? await getOrganizationUsage(req.user!.companyId) : null
     const contactRemaining = contactCapacity ? Math.max(0, contactCapacity.company.contactLimit - contactCapacity.contacts) : Number.POSITIVE_INFINITY
-    for (const line of lines.slice(1, limit + 1)) {
+    for (const [rowIndex, line] of lines.slice(1, limit + 1).entries()) {
       try {
         if (created >= contactRemaining) throw new Error('Organization contact limit reached')
         const cells = parseRow(line)
         const data: any = {}
         header.forEach((h, i) => {
           if (!h || skipKeys.has(h)) return
-          const v = cells[i]
-          if (v == null || v === '') { data[h] = null; return }
-          if (/^\d{4}-\d{2}-\d{2}$/.test(v)) data[h] = new Date(v + 'T12:00:00').toISOString()
-          else if (v === 'true' || v === 'false') data[h] = v === 'true'
-          else if (/^-?\d+(\.\d+)?$/.test(v)) data[h] = Number(v)
-          else data[h] = v
+          const value = coerceImportValue(config.modelName, h, cells[i])
+          if (value !== undefined) data[h] = value
         })
         if (req.user!.companyId) data.companyId = req.user!.companyId
         data.createdBy = req.user!.userId
-        if (!data.assignedTo) data.assignedTo = req.user!.userId
+        if (config.modelName === 'lead') await normalizeImportedLead(data, req.user!.companyId, req.user!.userId)
+        else if (!data.assignedTo) data.assignedTo = req.user!.userId
         await model.create({ data })
         created++
-      } catch { failed++ }
+      } catch (error: any) {
+        failed++
+        errors.push({ row: rowIndex + 2, error: error?.message || 'Failed to save record' })
+      }
     }
     await writeAudit({ moduleName: moduleName, action: 'IMPORT', newValue: `created=${created} failed=${failed}`, userId: req.user!.userId, req })
-    res.json({ success: true, created, failed, total: Math.min(lines.length - 1, limit) })
+    res.json({ success: true, created, failed, total: Math.min(lines.length - 1, limit), importedModule: config.modelName === 'lead' ? 'leads' : moduleName, errors: errors.slice(0, 50) })
   } catch (err) { next(err) }
 })
-
-function coerceCell(v: any): any {
-  if (v == null || v === '') return null
-  const s = String(v)
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s + 'T12:00:00').toISOString()
-  if (s === 'true' || s === 'false') return s === 'true'
-  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s)
-  return v
-}
-
-const IMPORT_BOOLEANS = new Set(['emailOptOut', 'notifyOwner', 'doNotCall', 'portal', 'vat', 'isService', 'isSales', 'active', 'discontinued'])
 
 settingsRouter.post('/import/:module/rows', requireAdmin, async (req, res, next) => {
   try {
@@ -878,19 +950,18 @@ settingsRouter.post('/import/:module/rows', requireAdmin, async (req, res, next)
       const data: any = {}
       let hadData = false
       for (const [k, raw] of Object.entries(row)) {
-        if (!k || skipKeys.has(k)) continue
-        let v: any = coerceCell(raw)
-        if (IMPORT_BOOLEANS.has(k) && typeof raw === 'string' && v === null) {
-          const low = String(raw).trim().toLowerCase()
-          if (['yes', 'no', '1', '0', 'y', 'n'].includes(low)) v = ['yes', '1', 'y'].includes(low)
-        }
-        data[k] = v
+        const fieldName = resolveImportField(config.modelName, k)
+        if (!fieldName || skipKeys.has(fieldName)) continue
+        const v = coerceImportValue(config.modelName, fieldName, raw)
+        if (v === undefined) continue
+        data[fieldName] = v
         if (v != null && v !== '') hadData = true
       }
       if (!hadData) { errors.push({ row: i + 1, error: 'Row is empty' }); continue }
       if (req.user!.companyId) data.companyId = req.user!.companyId
       data.createdBy = req.user!.userId
-      if (!data.assignedTo) data.assignedTo = req.user!.userId
+      if (config.modelName === 'lead') await normalizeImportedLead(data, req.user!.companyId, req.user!.userId)
+      else if (!data.assignedTo) data.assignedTo = req.user!.userId
       if (config.modelName === 'purchaseOrder' && (data.conversionRate == null || data.conversionRate === '')) data.conversionRate = 1
       try {
         if (updateExisting && matchField && data[matchField] != null) {
