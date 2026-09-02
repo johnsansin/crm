@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useNavigate } from '@/lib/navigation'
 import { Bell, CheckCheck, Headphones, LogOut, ShieldCheck, X } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth'
@@ -44,7 +46,7 @@ export function SupportAgentLayout({ children }: { children: React.ReactNode }) 
     {notificationsOpen && <div className="fixed inset-0 z-[120] flex justify-end bg-slate-950/45" onMouseDown={event => { if (event.target === event.currentTarget) setNotificationsOpen(false) }}>
       <section role="dialog" aria-modal="true" aria-label="Notifications" className="flex h-full w-full max-w-sm flex-col bg-background shadow-2xl">
         <header className="flex items-center justify-between border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]"><div><h2 className="font-semibold">Notifications</h2><p className="text-xs text-muted-foreground">{unread} unread</p></div><div className="flex gap-2">{unread > 0 && <button onClick={markAllRead} className="flex items-center gap-1 rounded-lg border px-2.5 py-2 text-xs"><CheckCheck size={14}/> Read all</button>}<button onClick={() => setNotificationsOpen(false)} aria-label="Close notifications" className="grid h-9 w-9 place-items-center rounded-lg border"><X size={16}/></button></div></header>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">{notifications.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">No notifications</p> : notifications.map(notification => <button key={notification.id} onClick={() => openNotification(notification)} className={`block w-full border-b px-4 py-3 text-left hover:bg-muted ${notification.isRead ? 'opacity-60' : 'bg-blue-50/60 dark:bg-blue-950/20'}`}><p className="text-sm font-semibold">{notification.title}</p><p className="mt-1 line-clamp-2 break-words text-xs text-muted-foreground">{notification.message}</p><p className="mt-1 text-[10px] text-muted-foreground">{notification.createdAt ? new Date(notification.createdAt).toLocaleString() : ''}</p></button>)}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">{notifications.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">No notifications</p> : notifications.map(notification => <button key={notification.id} onClick={() => openNotification(notification)} className={`block w-full border-b px-4 py-3 text-left hover:bg-muted ${notification.isRead ? 'opacity-60' : 'bg-blue-50/60 dark:bg-blue-950/20'}`}><p className="text-sm font-semibold">{notification.title}</p><p className="mt-1 line-clamp-2 break-words text-xs text-muted-foreground">{notification.message}</p><p className="mt-1 text-[10px] text-muted-foreground">{notification.createdAt ? formatDateTime(notification.createdAt) : ''}</p></button>)}</div>
       </section>
     </div>}
   </div>

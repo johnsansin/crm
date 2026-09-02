@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -158,7 +160,7 @@ export function SocialMediaPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusColor(p.status)}`}>{p.status}</span>
                     {p.profile && <span className="text-xs text-muted-foreground capitalize">{p.profile.platform}</span>}
-                    {p.publishedAt && <span className="text-xs text-muted-foreground">{new Date(p.publishedAt).toLocaleDateString()}</span>}
+                    {p.publishedAt && <span className="text-xs text-muted-foreground">{formatDate(p.publishedAt)}</span>}
                   </div>
                   <p className="text-sm whitespace-pre-wrap">{p.content}</p>
                   <div className="flex gap-4 mt-2 text-xs text-muted-foreground">

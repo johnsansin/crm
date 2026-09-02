@@ -1099,10 +1099,10 @@ function CurrenciesSettings() {
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [currencySearch, setCurrencySearch] = useState('')
-  const [form, setForm] = useState({ name: '', code: '', symbol: '', rate: '1', isDefault: false, isActive: true })
+  const [form, setForm] = useState({ name: '', code: '', symbol: '', rate: '1', isDefault: false, isActive: false })
 
   const { data } = useQuery({
-    queryKey: ['currencies'],
+    queryKey: ['currencies', 'settings', 'all'],
     queryFn: () => api.listAll('currencies', { includeInactive: 'true' }).catch(() => ({ data: [] })),
   })
 
@@ -1114,7 +1114,7 @@ function CurrenciesSettings() {
 
   const updateMutation = useMutation({
     mutationFn: (d: any) => api.update('currencies', editId!, d),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['currencies'] }); addToast({ title: 'Currency updated', variant: 'success' }); setEditId(null); setShowForm(false) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['currencies'] }); queryClient.invalidateQueries({ queryKey: ['org-settings'] }); queryClient.invalidateQueries({ queryKey: ['company'] }); queryClient.invalidateQueries({ queryKey: ['preferences'] }); addToast({ title: 'Currency updated', description: 'If the default was disabled, USD is now the active default.', variant: 'success' }); setEditId(null); setShowForm(false) },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
@@ -1125,21 +1125,37 @@ function CurrenciesSettings() {
   })
 
   const configured = data?.data || []
+  const activeCurrencyCount = configured.filter((currency: any) => currency.isActive === true).length
   const configuredByCode = new Map(configured.map((currency: any) => [currency.code, currency]))
-  const catalogRows = CURRENCY_CATALOG.map(currency => ({
-    ...currency,
-    rate: 1,
-    isDefault: false,
-    isActive: false,
-    configured: false,
-    ...(configuredByCode.get(currency.code) || {}),
-  })).filter(currency => `${currency.code} ${currency.name} ${currency.symbol}`.toLowerCase().includes(currencySearch.toLowerCase()))
+  const normalizedCurrencySearch = currencySearch.trim().toLocaleLowerCase()
+  const catalogRows = CURRENCY_CATALOG.map(currency => {
+    const configuredCurrency = configuredByCode.get(currency.code) as any
+    return {
+      ...currency,
+      rate: 1,
+      isDefault: false,
+      isActive: false,
+      ...(configuredCurrency || {}),
+      configured: Boolean(configuredCurrency),
+    }
+  }).filter(currency => {
+    if (!normalizedCurrencySearch) return true
+    const searchableValues = [
+      currency.name,
+      currency.code,
+      currency.symbol,
+      currency.configured ? Number(currency.rate).toFixed(4) : 'not configured',
+      currency.isDefault ? 'default' : 'not default',
+      currency.configured && currency.isActive ? 'active' : 'inactive',
+    ]
+    return searchableValues.some(value => String(value).toLocaleLowerCase().includes(normalizedCurrencySearch))
+  })
 
   const openCurrency = (currency?: any) => {
     setEditId(currency?.id || null)
     setForm(currency
-      ? { name: currency.name, code: currency.code, symbol: currency.symbol, rate: String(currency.rate ?? 1), isDefault: !!currency.isDefault, isActive: currency.configured ? currency.isActive !== false : true }
-      : { name: '', code: '', symbol: '', rate: '1', isDefault: false, isActive: true })
+      ? { name: currency.name, code: currency.code, symbol: currency.symbol, rate: String(currency.rate ?? 1), isDefault: !!currency.isDefault, isActive: currency.configured ? currency.isActive === true : currency.code === 'USD' }
+      : { name: '', code: '', symbol: '', rate: '1', isDefault: false, isActive: false })
     setShowForm(true)
   }
 
@@ -1154,7 +1170,7 @@ function CurrenciesSettings() {
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Activate only the currencies this organisation uses. Active currencies appear throughout CRM dropdowns, and exactly one is the default.</p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex">
-            <div className="rounded-xl border bg-background/80 px-4 py-2.5 backdrop-blur"><div className="text-xl font-bold">{configured.length}</div><div className="text-[11px] text-muted-foreground">Configured</div></div>
+            <div className="rounded-xl border bg-background/80 px-4 py-2.5 backdrop-blur"><div className="text-xl font-bold">{activeCurrencyCount}</div><div className="text-[11px] text-muted-foreground">Active</div></div>
             <div className="rounded-xl border bg-background/80 px-4 py-2.5 backdrop-blur"><div className="text-xl font-bold">{configured.find((c: any) => c.isDefault)?.code || '—'}</div><div className="text-[11px] text-muted-foreground">Default</div></div>
           </div>
         </div>
@@ -1173,11 +1189,11 @@ function CurrenciesSettings() {
         <CardContent className="p-0">
           <DataTable
             columns={[
-              { key: 'name', label: 'Currency', render: (v: any, row: any) => <div className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/10 text-sm font-bold text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-300">{row.symbol}</span><div><div className="font-semibold">{v}</div><div className="text-xs text-muted-foreground">ISO 4217</div></div></div> },
-              { key: 'code', label: 'Code', render: (v: any) => <span className="inline-flex rounded-lg border bg-muted/50 px-2.5 py-1 text-xs font-bold tracking-wider">{v}</span> },
-              { key: 'rate', label: 'Organization rate', className: 'text-right', render: (v: any, row: any) => row.configured ? <span className="font-medium tabular-nums">{Number(v).toFixed(4)}</span> : <span className="text-xs text-muted-foreground">Not configured</span> },
-              { key: 'isDefault', label: 'Default', render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium">Default</span> : '—' },
-              { key: 'isActive', label: 'Status', render: (v: any, row: any) => <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${row.configured && v ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{row.configured && v ? 'Active' : 'Inactive'}</span> },
+              { key: 'name', label: 'Currency', sortable: true, render: (v: any, row: any) => <div className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/10 text-sm font-bold text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-300">{row.symbol}</span><div><div className="font-semibold">{v}</div><div className="text-xs text-muted-foreground">ISO 4217</div></div></div> },
+              { key: 'code', label: 'Code', sortable: true, render: (v: any) => <span className="inline-flex rounded-lg border bg-muted/50 px-2.5 py-1 text-xs font-bold tracking-wider">{v}</span> },
+              { key: 'rate', label: 'Organization rate', sortable: true, className: 'text-right', render: (v: any, row: any) => row.configured ? <span className="font-medium tabular-nums">{Number(v).toFixed(4)}</span> : <span className="text-xs text-muted-foreground">Not configured</span> },
+              { key: 'isDefault', label: 'Default', sortable: true, render: (v: any) => v ? <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium">Default</span> : '—' },
+              { key: 'isActive', label: 'Status', sortable: true, render: (v: any, row: any) => <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${row.configured && v ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{row.configured && v ? 'Active' : 'Inactive'}</span> },
             ]}
             data={catalogRows}
             loading={!data}
@@ -1206,11 +1222,11 @@ function CurrenciesSettings() {
             <Input placeholder="Symbol (e.g. $)" value={form.symbol} onChange={e => setForm(f => ({ ...f, symbol: e.target.value }))} required />
             <Input type="number" step="0.0001" placeholder="Rate" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} required />
             <div className="flex items-center gap-2">
-              <input type="checkbox" id="curIsDefault" checked={form.isDefault} onChange={e => setForm(f => ({ ...f, isDefault: e.target.checked }))} />
+              <input type="checkbox" id="curIsDefault" checked={form.isDefault} disabled={!!editId && configured.find((currency: any) => currency.id === editId)?.isDefault} onChange={e => setForm(f => ({ ...f, isDefault: e.target.checked, isActive: e.target.checked ? true : f.isActive }))} />
               <label htmlFor="curIsDefault" className="text-sm">Set as default currency</label>
             </div>
             <div className="flex items-center gap-2">
-              <input type="checkbox" id="curIsActive" checked={form.isActive} disabled={form.isDefault} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} />
+              <input type="checkbox" id="curIsActive" checked={form.isActive} disabled={form.isDefault && form.code.toUpperCase() === 'USD'} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} />
               <label htmlFor="curIsActive" className="text-sm">Active in application dropdowns</label>
             </div>
             <div className="flex justify-end gap-2">
@@ -1343,7 +1359,7 @@ function CompanySettings() {
   })
 
   const { data: currencies } = useQuery({
-    queryKey: ['currencies'],
+    queryKey: ['currencies', 'active'],
     queryFn: () => api.list('currencies', { limit: '200' }),
   })
 
@@ -1392,9 +1408,10 @@ function CompanySettings() {
     }
   }
 
-  const currencyList = CURRENCY_CATALOG.map(c => ({
-    value: c.code,
-    label: `${c.symbol} ${c.code} — ${c.name}`
+  const activeCurrencyCodes = new Set((currencies?.data || []).filter((currency: any) => currency.isActive === true).map((currency: any) => currency.code))
+  const currencyList = CURRENCY_CATALOG.filter(currency => activeCurrencyCodes.has(currency.code)).map(currency => ({
+    value: currency.code,
+    label: `${currency.symbol} ${currency.code} — ${currency.name}`
   }))
 
   const sel = (field: string) => ({

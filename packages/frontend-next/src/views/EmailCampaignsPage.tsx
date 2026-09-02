@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -162,7 +164,7 @@ export function EmailCampaignsPage() {
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[c.status] || statusColors.Draft}`}>{c.status}</span>
                 </div>
                 <p className="text-sm text-muted-foreground truncate">{c.subject}</p>
-                <p className="text-xs text-muted-foreground mt-1">{c.recipientCount} recipients · {c.sentAt ? `Sent ${new Date(c.sentAt).toLocaleDateString()}` : 'Not sent'}</p>
+                <p className="text-xs text-muted-foreground mt-1">{c.recipientCount} recipients · {c.sentAt ? `Sent ${formatDate(c.sentAt)}` : 'Not sent'}</p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <Button variant="ghost" size="icon" className="h-8 w-8" title="Stats" onClick={() => setStatsOpen(c.id)}><BarChart3 size={15} /></Button>

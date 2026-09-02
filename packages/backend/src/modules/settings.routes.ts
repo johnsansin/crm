@@ -1,6 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import bcrypt from 'bcryptjs'
 import multer from 'multer'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, requireAdmin } from '../middleware/auth'
 import { getOrgSetting, setOrgSetting, getAllOrgSettings, validatePassword, nextSequenceNumber } from '../lib/settings'
@@ -10,6 +12,7 @@ import { generateSecret, verifyTotp, otpauthUri } from '../lib/otp'
 import { writeAudit, getClientIp } from '../lib/audit'
 import { getModuleConfig } from './moduleSetup'
 import { getOrganizationUsage } from '../lib/organization-limits'
+import { Prisma } from '../generated/prisma-client'
 
 export const settingsRouter = Router()
 settingsRouter.use(authMiddleware)
@@ -785,73 +788,215 @@ settingsRouter.get('/export/:module', requireAdmin, async (req, res, next) => {
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } })
 
+const normalizeImportHeader = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+const importStringLimitCache = new Map<string, Map<string, number>>()
+
+function importStringLimits(modelName: string): Map<string, number> {
+  const cached = importStringLimitCache.get(modelName)
+  if (cached) return cached
+  const limits = new Map<string, number>()
+  try {
+    const schema = readFileSync(join(__dirname, '../generated/prisma-client/schema.prisma'), 'utf8')
+    const actualName = (Prisma.dmmf?.datamodel?.models || []).find(model => model.name.toLowerCase() === modelName.toLowerCase())?.name || modelName
+    const escapedName = actualName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const block = schema.match(new RegExp(`model\\s+${escapedName}\\s*\\{([\\s\\S]*?)\\n\\}`))?.[1] || ''
+    for (const line of block.split('\n')) {
+      const match = line.match(/^\s*(\w+)\s+String\??\s+.*@db\.VarChar\((\d+)\)/)
+      if (match) limits.set(match[1], Number(match[2]))
+    }
+  } catch {}
+  importStringLimitCache.set(modelName, limits)
+  return limits
+}
+
+function fitImportedStrings(modelName: string, data: any) {
+  for (const [fieldName, maxLength] of importStringLimits(modelName)) {
+    if (typeof data[fieldName] !== 'string') continue
+    const characters = Array.from(data[fieldName])
+    if (characters.length > maxLength) data[fieldName] = characters.slice(0, maxLength).join('')
+  }
+}
+
+function importModelFields(modelName: string) {
+  return (Prisma.dmmf?.datamodel?.models || []).find(model => model.name.toLowerCase() === modelName.toLowerCase())?.fields || []
+}
+
+function resolveImportField(modelName: string, header: string): string | null {
+  const normalized = normalizeImportHeader(header)
+  if (modelName.toLowerCase() === 'lead') {
+    const aliases: Record<string, string> = {
+      name: 'firstName', fullname: 'firstName', contactname: 'firstName', buyername: 'firstName',
+      firstname: 'firstName', surname: 'lastName', lastname: 'lastName',
+      companyname: 'company', organization: 'company', organisation: 'company', organizationname: 'company', organisationname: 'company',
+      source: 'leadSource', status: 'leadStatus', owner: 'assignedTo', assignee: 'assignedTo', assignedto: 'assignedTo',
+      message: 'description', enquiry: 'description', inquiry: 'description', comments: 'description',
+    }
+    if (aliases[normalized]) return aliases[normalized]
+  }
+  const field = importModelFields(modelName).find(candidate => candidate.kind === 'scalar' && normalizeImportHeader(candidate.name) === normalized)
+  return field?.name || null
+}
+
+async function resolveImportedAssignee(value: any, companyId?: string | null): Promise<string | undefined> {
+  if (!value || !companyId) return undefined
+  const text = String(value).trim()
+  const user = await prisma.user.findFirst({
+    where: {
+      companyId, isActive: true,
+      OR: [
+        { id: text }, { userName: { equals: text, mode: 'insensitive' } }, { email: { equals: text, mode: 'insensitive' } },
+        { firstName: { equals: text, mode: 'insensitive' } }, { lastName: { equals: text, mode: 'insensitive' } },
+      ],
+    },
+    select: { id: true },
+  })
+  if (user) return user.id
+  const group = await prisma.userGroup.findFirst({ where: { companyId, isActive: true, OR: [{ id: text }, { name: { equals: text, mode: 'insensitive' } }] }, select: { id: true } })
+  return group?.id
+}
+
+async function normalizeImportedLead(data: any, companyId: string | null | undefined, fallbackAssignee: string) {
+  if (!data.firstName && data.lastName) {
+    data.firstName = String(data.lastName).trim()
+    data.lastName = '-'
+  }
+  if (data.firstName && !data.lastName) {
+    const parts = String(data.firstName).trim().split(/\s+/)
+    if (parts.length > 1) data.lastName = parts.pop()
+    data.firstName = parts.join(' ') || data.firstName
+  }
+  if (!data.firstName) data.firstName = data.company ? String(data.company).trim() : 'Unknown'
+  if (!data.lastName) data.lastName = '-'
+  if (!data.company) data.company = 'Individual'
+  data.assignedTo = await resolveImportedAssignee(data.assignedTo, companyId) || fallbackAssignee
+}
+
+function coerceImportValue(modelName: string, fieldName: string, raw: any): any {
+  if (raw == null || String(raw).trim() === '') return undefined
+  const field = importModelFields(modelName).find(candidate => candidate.kind === 'scalar' && candidate.name === fieldName)
+  if (!field) return undefined
+  const value = String(raw).trim()
+  if (field.type === 'Boolean') {
+    const normalized = value.toLowerCase()
+    if (['true', 'yes', '1', 'y'].includes(normalized)) return true
+    if (['false', 'no', '0', 'n'].includes(normalized)) return false
+    return raw
+  }
+  if (['Int', 'Float', 'Decimal'].includes(field.type)) {
+    const number = Number(value.replace(/,/g, ''))
+    return Number.isFinite(number) ? number : raw
+  }
+  if (field.type === 'DateTime') {
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(value + 'T12:00:00') : new Date(value)
+    return Number.isNaN(date.getTime()) ? raw : date.toISOString()
+  }
+  return value
+}
+
+function parseImportCsv(content: string): string[][] {
+  const rows: string[][] = []
+  let row: string[] = []
+  let field = ''
+  let quoted = false
+
+  const finishField = () => { row.push(field.trim()); field = '' }
+  const finishRow = () => {
+    finishField()
+    if (row.some(value => value.length > 0)) rows.push(row)
+    row = []
+  }
+
+  for (let index = 0; index < content.length; index++) {
+    const character = content[index]
+    if (character === '"') {
+      if (quoted && content[index + 1] === '"') { field += '"'; index++ }
+      else quoted = !quoted
+    } else if (character === ',' && !quoted) {
+      finishField()
+    } else if ((character === '\n' || character === '\r') && !quoted) {
+      if (character === '\r' && content[index + 1] === '\n') index++
+      finishRow()
+    } else {
+      field += character
+    }
+  }
+  if (quoted) throw new Error('CSV has an unterminated quoted field')
+  if (field.length > 0 || row.length > 0) finishRow()
+  if (rows[0]?.[0]) rows[0][0] = rows[0][0].replace(/^\uFEFF/, '')
+  return rows
+}
+
 settingsRouter.post('/import/:module', requireAdmin, upload.single('file'), async (req, res, next) => {
   try {
     const moduleName = req.params.module
-    const config = getModuleConfig(moduleName)
+    let config = getModuleConfig(moduleName)
     if (!config) return res.status(404).json({ error: 'Unknown module' })
-    const model = (prisma as any)[config.modelName]
+    let model = (prisma as any)[config.modelName]
     if (!model) return res.status(404).json({ error: 'Unknown model' })
     if (!req.file) return res.status(400).json({ error: 'CSV file required' })
     const content = req.file.buffer.toString('utf-8')
-    const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0)
-    if (lines.length < 2) return res.status(400).json({ error: 'CSV must have a header row and data rows' })
-    const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
-    const parseRow = (line: string): string[] => {
-      const out: string[] = []
-      let cur = ''
-      let inQ = false
-      for (let i = 0; i < line.length; i++) {
-        const c = line[i]
-        if (c === '"') { if (inQ && line[i + 1] === '"') { cur += '"'; i++ } else inQ = !inQ }
-        else if (c === ',' && !inQ) { out.push(cur); cur = '' }
-        else cur += c
-      }
-      out.push(cur)
-      return out.map(x => x.trim())
+    const rows = parseImportCsv(content)
+    if (rows.length < 2) return res.status(400).json({ error: 'CSV must have a header row and data rows' })
+    const rawHeader = rows[0]
+    const requestedFields = rawHeader.map(h => resolveImportField(config!.modelName, h)).filter(Boolean)
+    const leadFields = rawHeader.map(h => resolveImportField('lead', h)).filter(Boolean)
+    const appearsToBeLeads = !requestedFields.some(field => field === 'potentialName') && leadFields.some(field => ['firstName', 'lastName', 'company'].includes(String(field)))
+    if (config.modelName !== 'lead' && appearsToBeLeads) {
+      config = getModuleConfig('leads')!
+      model = (prisma as any)[config.modelName]
     }
+    const header = rawHeader.map(h => resolveImportField(config.modelName, h))
     const skipKeys = new Set(['id', 'companyId', 'createdAt', 'updatedAt', 'password', 'createdBy'])
     let created = 0
+    let updated = 0
+    let skipped = 0
     let failed = 0
+    const errors: { row: number; error: string }[] = []
     const limit = (await getOrgSetting(req.user!.companyId, 'importExport')).maxRows || 1000
     const contactCapacity = config.modelName === 'contact' && req.user!.companyId ? await getOrganizationUsage(req.user!.companyId) : null
     const contactRemaining = contactCapacity ? Math.max(0, contactCapacity.company.contactLimit - contactCapacity.contacts) : Number.POSITIVE_INFINITY
-    for (const line of lines.slice(1, limit + 1)) {
+    for (const [rowIndex, cells] of rows.slice(1, limit + 1).entries()) {
       try {
         if (created >= contactRemaining) throw new Error('Organization contact limit reached')
-        const cells = parseRow(line)
         const data: any = {}
         header.forEach((h, i) => {
           if (!h || skipKeys.has(h)) return
-          const v = cells[i]
-          if (v == null || v === '') { data[h] = null; return }
-          if (/^\d{4}-\d{2}-\d{2}$/.test(v)) data[h] = new Date(v + 'T12:00:00').toISOString()
-          else if (v === 'true' || v === 'false') data[h] = v === 'true'
-          else if (/^-?\d+(\.\d+)?$/.test(v)) data[h] = Number(v)
-          else data[h] = v
+          const value = coerceImportValue(config.modelName, h, cells[i])
+          if (value !== undefined) data[h] = value
         })
         if (req.user!.companyId) data.companyId = req.user!.companyId
         data.createdBy = req.user!.userId
-        if (!data.assignedTo) data.assignedTo = req.user!.userId
+        if (config.modelName === 'lead') await normalizeImportedLead(data, req.user!.companyId, req.user!.userId)
+        else if (!data.assignedTo) data.assignedTo = req.user!.userId
+        fitImportedStrings(config.modelName, data)
+        if (config.modelName === 'lead') {
+          const duplicate = await prisma.lead.findFirst({
+            where: {
+              companyId: req.user!.companyId,
+              firstName: { equals: data.firstName, mode: 'insensitive' },
+              lastName: { equals: data.lastName, mode: 'insensitive' },
+              company: { equals: data.company, mode: 'insensitive' },
+              isActive: true,
+            },
+            select: { id: true },
+          })
+          if (duplicate) {
+            await prisma.lead.update({ where: { id: duplicate.id }, data })
+            updated++
+            continue
+          }
+        }
         await model.create({ data })
         created++
-      } catch { failed++ }
+      } catch (error: any) {
+        failed++
+        errors.push({ row: rowIndex + 2, error: error?.message || 'Failed to save record' })
+      }
     }
-    await writeAudit({ moduleName: moduleName, action: 'IMPORT', newValue: `created=${created} failed=${failed}`, userId: req.user!.userId, req })
-    res.json({ success: true, created, failed, total: Math.min(lines.length - 1, limit) })
+    await writeAudit({ moduleName: moduleName, action: 'IMPORT', newValue: `created=${created} updated=${updated} skipped=${skipped} failed=${failed}`, userId: req.user!.userId, req })
+    res.json({ success: true, created, updated, skipped, failed, total: Math.min(rows.length - 1, limit), importedModule: config.modelName === 'lead' ? 'leads' : moduleName, errors: errors.slice(0, 50) })
   } catch (err) { next(err) }
 })
-
-function coerceCell(v: any): any {
-  if (v == null || v === '') return null
-  const s = String(v)
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s + 'T12:00:00').toISOString()
-  if (s === 'true' || s === 'false') return s === 'true'
-  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s)
-  return v
-}
-
-const IMPORT_BOOLEANS = new Set(['emailOptOut', 'notifyOwner', 'doNotCall', 'portal', 'vat', 'isService', 'isSales', 'active', 'discontinued'])
 
 settingsRouter.post('/import/:module/rows', requireAdmin, async (req, res, next) => {
   try {
@@ -878,19 +1023,19 @@ settingsRouter.post('/import/:module/rows', requireAdmin, async (req, res, next)
       const data: any = {}
       let hadData = false
       for (const [k, raw] of Object.entries(row)) {
-        if (!k || skipKeys.has(k)) continue
-        let v: any = coerceCell(raw)
-        if (IMPORT_BOOLEANS.has(k) && typeof raw === 'string' && v === null) {
-          const low = String(raw).trim().toLowerCase()
-          if (['yes', 'no', '1', '0', 'y', 'n'].includes(low)) v = ['yes', '1', 'y'].includes(low)
-        }
-        data[k] = v
+        const fieldName = resolveImportField(config.modelName, k)
+        if (!fieldName || skipKeys.has(fieldName)) continue
+        const v = coerceImportValue(config.modelName, fieldName, raw)
+        if (v === undefined) continue
+        data[fieldName] = v
         if (v != null && v !== '') hadData = true
       }
       if (!hadData) { errors.push({ row: i + 1, error: 'Row is empty' }); continue }
       if (req.user!.companyId) data.companyId = req.user!.companyId
       data.createdBy = req.user!.userId
-      if (!data.assignedTo) data.assignedTo = req.user!.userId
+      if (config.modelName === 'lead') await normalizeImportedLead(data, req.user!.companyId, req.user!.userId)
+      else if (!data.assignedTo) data.assignedTo = req.user!.userId
+      fitImportedStrings(config.modelName, data)
       if (config.modelName === 'purchaseOrder' && (data.conversionRate == null || data.conversionRate === '')) data.conversionRate = 1
       try {
         if (updateExisting && matchField && data[matchField] != null) {
@@ -1061,15 +1206,17 @@ settingsRouter.post('/tags', async (req, res, next) => {
 settingsRouter.put('/tags/:id', async (req, res, next) => {
   try {
     const name = String(req.body.name || '').trim()
+    const color = req.body.color == null ? null : String(req.body.color).trim()
     if (!name) return res.status(400).json({ error: 'name is required' })
+    if (color && !/^#[0-9a-f]{6}$/i.test(color)) return res.status(400).json({ error: 'Invalid tag colour' })
     const owned = await prisma.tag.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId } })
     if (!owned) return res.status(404).json({ error: 'Tag not found' })
     if (!req.user!.isAdmin && !req.user!.isSuperAdmin && (!owned.recordId || owned.userId !== req.user!.userId)) return res.status(403).json({ error: 'Not allowed to edit this tag' })
     const where: any = { id: req.params.id }
     if (!req.user!.isSuperAdmin) where.companyId = req.user!.companyId
-    const tag = await prisma.tag.updateMany({ where, data: { name } })
+    const tag = await prisma.tag.updateMany({ where, data: { name, color } })
     if (tag.count === 0) return res.status(404).json({ error: 'Tag not found' })
-    if (!owned.module && !owned.recordId) await prisma.tag.updateMany({ where: { parentTagId: owned.id }, data: { name } })
+    if (!owned.module && !owned.recordId) await prisma.tag.updateMany({ where: { parentTagId: owned.id }, data: { name, color } })
     await writeAudit({ moduleName: 'tags', recordId: req.params.id, action: 'UPDATE', newValue: name, userId: req.user!.userId, req })
     res.json({ success: true })
   } catch (err) { next(err) }

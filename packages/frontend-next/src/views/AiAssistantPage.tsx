@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/lib/toast'
@@ -442,7 +444,7 @@ export function AiAssistantPage() {
                         {insightData.upcomingActions.map((a: any, i: number) => (
                           <div key={i} className="flex items-center justify-between rounded-lg border p-2.5">
                             <span className="text-sm font-medium truncate">{a.subject}</span>
-                            <span className="text-xs text-muted-foreground">{a.dueAt ? new Date(a.dueAt).toLocaleDateString() : '—'}</span>
+                            <span className="text-xs text-muted-foreground">{a.dueAt ? formatDate(a.dueAt) : '—'}</span>
                           </div>
                         ))}
                       </div>
@@ -537,7 +539,7 @@ export function AiAssistantPage() {
                     <tbody>
                       {logs.map((log: any) => (
                         <tr key={log.id} className="border-b last:border-0 hover:bg-muted/20">
-                          <td className="px-4 py-2">{new Date(log.createdAt).toLocaleString()}</td>
+                          <td className="px-4 py-2">{formatDateTime(log.createdAt)}</td>
                           <td className="px-4 py-2">{log.moduleName || '—'}</td>
                           <td className="px-4 py-2 font-mono">{log.model || '—'}</td>
                           <td className="text-right px-4 py-2">{log.tokens || 0}</td>

@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -86,7 +88,7 @@ export function RecycleBinPage() {
                   if (v) return <span className="flex items-center gap-1.5 text-sm"><User size={13} className="text-muted-foreground" /> {v}</span>
                   return <span className="text-muted-foreground">—</span>
                 }},
-                { key: 'deletedAt', label: 'Deleted', render: (v) => <span className="text-muted-foreground whitespace-nowrap">{v ? new Date(v).toLocaleString() : '—'}</span> },
+                { key: 'deletedAt', label: 'Deleted', render: (v) => <span className="text-muted-foreground whitespace-nowrap">{v ? formatDateTime(v) : '—'}</span> },
               ]}
               data={records?.data || []}
               loading={loadingRecords}

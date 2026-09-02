@@ -393,6 +393,8 @@ exports.Prisma.LeadScalarFieldEnum = {
   rating: 'rating',
   emailOptOut: 'emailOptOut',
   interest: 'interest',
+  leadScore: 'leadScore',
+  nextFollowUp: 'nextFollowUp',
   isConverted: 'isConverted',
   convertedAccountId: 'convertedAccountId',
   convertedContactId: 'convertedContactId',

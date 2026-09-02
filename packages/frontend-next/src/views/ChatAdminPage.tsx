@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -84,7 +86,7 @@ export function ChatAdminPage() {
                   <p className="text-sm font-medium truncate">{s.visitorName || s.visitorEmail || 'Visitor'}</p>
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${s.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-muted text-muted-foreground'}`}>{s.status}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{new Date(s.createdAt).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{formatDateTime(s.createdAt)}</p>
               </button>
             ))
           )}
@@ -120,7 +122,7 @@ export function ChatAdminPage() {
                       <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-sm break-words ${isAgent ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-card border rounded-bl-sm'}`}>
                         <p className="text-[10px] font-semibold mb-0.5">{isAgent ? t('Agent') : t('Visitor')}</p>
                         <p className="whitespace-pre-wrap">{m.body}</p>
-                        <p className="text-[10px] mt-0.5 text-right opacity-60">{new Date(m.createdAt).toLocaleTimeString()}</p>
+                        <p className="text-[10px] mt-0.5 text-right opacity-60">{formatTime(m.createdAt)}</p>
                       </div>
                     </div>
                   )

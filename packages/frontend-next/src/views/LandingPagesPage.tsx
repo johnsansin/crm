@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -169,7 +171,7 @@ export function LandingPagesPage() {
                 ['Views', statsData.data.viewCount],
                 ['Submissions', statsData.data.submitCount],
                 ['Published', statsData.data.isPublished ? t('Yes') : t('No')],
-                ['Created', new Date(statsData.data.createdAt).toLocaleDateString()],
+                ['Created', formatDate(statsData.data.createdAt)],
               ].map(([label, val]) => (
                 <div key={String(label)} className="p-3 rounded-lg bg-muted/50">
                   <p className="text-2xl font-bold">{String(val)}</p>
@@ -188,7 +190,7 @@ export function LandingPagesPage() {
             {(submissionsData?.data || []).map((s: any) => (
               <div key={s.id} className="p-3 rounded-lg bg-muted/40 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">{new Date(s.createdAt).toLocaleString()}</span>
+                  <span className="font-medium">{formatDateTime(s.createdAt)}</span>
                   {s.leadId && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Lead created</span>}
                   {s.contactId && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Contact created</span>}
                 </div>

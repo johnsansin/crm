@@ -252,6 +252,7 @@ export function SuperAdminOrgs() {
                   {org.dateFormat && (
                     <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                       <span className="text-[11px] font-mono text-slate-400 shrink-0">{dfLabel(org.dateFormat)}</span>
+                    <td className="px-5 py-3 whitespace-nowrap"><span className="inline-flex rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700 dark:bg-violet-950/50 dark:text-violet-300">{org.subscriptionModel?.name || org.subscriptionPlan || 'Starter'}</span><p className="mt-1 text-[10px] font-medium text-slate-400">{org.subscriptionStatus || 'ACTIVE'}</p></td>
                     </div>
                   )}
                 </div>
@@ -294,6 +295,7 @@ export function SuperAdminOrgs() {
                   <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Language</th>
                   <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Timezone</th>
                   <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Date Format</th>
+                  <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Package Plan</th>
                   <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Users</th>
                   <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Status</th>
                   <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Actions</th>
@@ -317,6 +319,7 @@ export function SuperAdminOrgs() {
                     <td className="px-5 py-3"><span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">{langLabel(org.language)}</span></td>
                     <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400">{tzLabel(org.timezone)}</td>
                     <td className="px-5 py-3 text-xs font-mono text-slate-500 dark:text-slate-400">{dfLabel(org.dateFormat)}</td>
+                    <td className="px-5 py-3 whitespace-nowrap"><span className="inline-flex rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700 dark:bg-violet-950/50 dark:text-violet-300">{org.subscriptionModel?.name || org.subscriptionPlan || 'Starter'}</span><p className="mt-1 text-[10px] font-medium text-slate-400">{org.subscriptionStatus || 'ACTIVE'}</p></td>
                     <td className="px-5 py-3 text-center font-medium text-slate-700 dark:text-slate-300">{org._count?.users || 0}</td>
                     <td className="px-5 py-3 text-center">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColors[org.isActive !== false ? 'active' : 'inactive']}`}>

@@ -24497,11 +24497,13 @@ export namespace Prisma {
   export type LeadAvgAggregateOutputType = {
     annualRevenue: Decimal | null
     noOfEmployees: number | null
+    leadScore: number | null
   }
 
   export type LeadSumAggregateOutputType = {
     annualRevenue: Decimal | null
     noOfEmployees: number | null
+    leadScore: number | null
   }
 
   export type LeadMinAggregateOutputType = {
@@ -24526,6 +24528,8 @@ export namespace Prisma {
     rating: string | null
     emailOptOut: boolean | null
     interest: string | null
+    leadScore: number | null
+    nextFollowUp: Date | null
     isConverted: boolean | null
     convertedAccountId: string | null
     convertedContactId: string | null
@@ -24568,6 +24572,8 @@ export namespace Prisma {
     rating: string | null
     emailOptOut: boolean | null
     interest: string | null
+    leadScore: number | null
+    nextFollowUp: Date | null
     isConverted: boolean | null
     convertedAccountId: string | null
     convertedContactId: string | null
@@ -24610,6 +24616,8 @@ export namespace Prisma {
     rating: number
     emailOptOut: number
     interest: number
+    leadScore: number
+    nextFollowUp: number
     isConverted: number
     convertedAccountId: number
     convertedContactId: number
@@ -24635,11 +24643,13 @@ export namespace Prisma {
   export type LeadAvgAggregateInputType = {
     annualRevenue?: true
     noOfEmployees?: true
+    leadScore?: true
   }
 
   export type LeadSumAggregateInputType = {
     annualRevenue?: true
     noOfEmployees?: true
+    leadScore?: true
   }
 
   export type LeadMinAggregateInputType = {
@@ -24664,6 +24674,8 @@ export namespace Prisma {
     rating?: true
     emailOptOut?: true
     interest?: true
+    leadScore?: true
+    nextFollowUp?: true
     isConverted?: true
     convertedAccountId?: true
     convertedContactId?: true
@@ -24706,6 +24718,8 @@ export namespace Prisma {
     rating?: true
     emailOptOut?: true
     interest?: true
+    leadScore?: true
+    nextFollowUp?: true
     isConverted?: true
     convertedAccountId?: true
     convertedContactId?: true
@@ -24748,6 +24762,8 @@ export namespace Prisma {
     rating?: true
     emailOptOut?: true
     interest?: true
+    leadScore?: true
+    nextFollowUp?: true
     isConverted?: true
     convertedAccountId?: true
     convertedContactId?: true
@@ -24877,6 +24893,8 @@ export namespace Prisma {
     rating: string | null
     emailOptOut: boolean
     interest: string | null
+    leadScore: number | null
+    nextFollowUp: Date | null
     isConverted: boolean
     convertedAccountId: string | null
     convertedContactId: string | null
@@ -24938,6 +24956,8 @@ export namespace Prisma {
     rating?: boolean
     emailOptOut?: boolean
     interest?: boolean
+    leadScore?: boolean
+    nextFollowUp?: boolean
     isConverted?: boolean
     convertedAccountId?: boolean
     convertedContactId?: boolean
@@ -24980,6 +25000,8 @@ export namespace Prisma {
     rating?: boolean
     emailOptOut?: boolean
     interest?: boolean
+    leadScore?: boolean
+    nextFollowUp?: boolean
     isConverted?: boolean
     convertedAccountId?: boolean
     convertedContactId?: boolean
@@ -25022,6 +25044,8 @@ export namespace Prisma {
     rating?: boolean
     emailOptOut?: boolean
     interest?: boolean
+    leadScore?: boolean
+    nextFollowUp?: boolean
     isConverted?: boolean
     convertedAccountId?: boolean
     convertedContactId?: boolean
@@ -25068,6 +25092,8 @@ export namespace Prisma {
       rating: string | null
       emailOptOut: boolean
       interest: string | null
+      leadScore: number | null
+      nextFollowUp: Date | null
       isConverted: boolean
       convertedAccountId: string | null
       convertedContactId: string | null
@@ -25500,6 +25526,8 @@ export namespace Prisma {
     readonly rating: FieldRef<"Lead", 'String'>
     readonly emailOptOut: FieldRef<"Lead", 'Boolean'>
     readonly interest: FieldRef<"Lead", 'String'>
+    readonly leadScore: FieldRef<"Lead", 'Int'>
+    readonly nextFollowUp: FieldRef<"Lead", 'DateTime'>
     readonly isConverted: FieldRef<"Lead", 'Boolean'>
     readonly convertedAccountId: FieldRef<"Lead", 'String'>
     readonly convertedContactId: FieldRef<"Lead", 'String'>
@@ -138393,6 +138421,8 @@ export namespace Prisma {
     rating: 'rating',
     emailOptOut: 'emailOptOut',
     interest: 'interest',
+    leadScore: 'leadScore',
+    nextFollowUp: 'nextFollowUp',
     isConverted: 'isConverted',
     convertedAccountId: 'convertedAccountId',
     convertedContactId: 'convertedContactId',
@@ -142357,6 +142387,8 @@ export namespace Prisma {
     rating?: StringNullableFilter<"Lead"> | string | null
     emailOptOut?: BoolFilter<"Lead"> | boolean
     interest?: StringNullableFilter<"Lead"> | string | null
+    leadScore?: IntNullableFilter<"Lead"> | number | null
+    nextFollowUp?: DateTimeNullableFilter<"Lead"> | Date | string | null
     isConverted?: BoolFilter<"Lead"> | boolean
     convertedAccountId?: StringNullableFilter<"Lead"> | string | null
     convertedContactId?: StringNullableFilter<"Lead"> | string | null
@@ -142399,6 +142431,8 @@ export namespace Prisma {
     rating?: SortOrderInput | SortOrder
     emailOptOut?: SortOrder
     interest?: SortOrderInput | SortOrder
+    leadScore?: SortOrderInput | SortOrder
+    nextFollowUp?: SortOrderInput | SortOrder
     isConverted?: SortOrder
     convertedAccountId?: SortOrderInput | SortOrder
     convertedContactId?: SortOrderInput | SortOrder
@@ -142444,6 +142478,8 @@ export namespace Prisma {
     rating?: StringNullableFilter<"Lead"> | string | null
     emailOptOut?: BoolFilter<"Lead"> | boolean
     interest?: StringNullableFilter<"Lead"> | string | null
+    leadScore?: IntNullableFilter<"Lead"> | number | null
+    nextFollowUp?: DateTimeNullableFilter<"Lead"> | Date | string | null
     isConverted?: BoolFilter<"Lead"> | boolean
     convertedAccountId?: StringNullableFilter<"Lead"> | string | null
     convertedContactId?: StringNullableFilter<"Lead"> | string | null
@@ -142486,6 +142522,8 @@ export namespace Prisma {
     rating?: SortOrderInput | SortOrder
     emailOptOut?: SortOrder
     interest?: SortOrderInput | SortOrder
+    leadScore?: SortOrderInput | SortOrder
+    nextFollowUp?: SortOrderInput | SortOrder
     isConverted?: SortOrder
     convertedAccountId?: SortOrderInput | SortOrder
     convertedContactId?: SortOrderInput | SortOrder
@@ -142536,6 +142574,8 @@ export namespace Prisma {
     rating?: StringNullableWithAggregatesFilter<"Lead"> | string | null
     emailOptOut?: BoolWithAggregatesFilter<"Lead"> | boolean
     interest?: StringNullableWithAggregatesFilter<"Lead"> | string | null
+    leadScore?: IntNullableWithAggregatesFilter<"Lead"> | number | null
+    nextFollowUp?: DateTimeNullableWithAggregatesFilter<"Lead"> | Date | string | null
     isConverted?: BoolWithAggregatesFilter<"Lead"> | boolean
     convertedAccountId?: StringNullableWithAggregatesFilter<"Lead"> | string | null
     convertedContactId?: StringNullableWithAggregatesFilter<"Lead"> | string | null
@@ -155737,6 +155777,8 @@ export namespace Prisma {
     rating?: string | null
     emailOptOut?: boolean
     interest?: string | null
+    leadScore?: number | null
+    nextFollowUp?: Date | string | null
     isConverted?: boolean
     convertedAccountId?: string | null
     convertedContactId?: string | null
@@ -155779,6 +155821,8 @@ export namespace Prisma {
     rating?: string | null
     emailOptOut?: boolean
     interest?: string | null
+    leadScore?: number | null
+    nextFollowUp?: Date | string | null
     isConverted?: boolean
     convertedAccountId?: string | null
     convertedContactId?: string | null
@@ -155821,6 +155865,8 @@ export namespace Prisma {
     rating?: NullableStringFieldUpdateOperationsInput | string | null
     emailOptOut?: BoolFieldUpdateOperationsInput | boolean
     interest?: NullableStringFieldUpdateOperationsInput | string | null
+    leadScore?: NullableIntFieldUpdateOperationsInput | number | null
+    nextFollowUp?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     isConverted?: BoolFieldUpdateOperationsInput | boolean
     convertedAccountId?: NullableStringFieldUpdateOperationsInput | string | null
     convertedContactId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -155863,6 +155909,8 @@ export namespace Prisma {
     rating?: NullableStringFieldUpdateOperationsInput | string | null
     emailOptOut?: BoolFieldUpdateOperationsInput | boolean
     interest?: NullableStringFieldUpdateOperationsInput | string | null
+    leadScore?: NullableIntFieldUpdateOperationsInput | number | null
+    nextFollowUp?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     isConverted?: BoolFieldUpdateOperationsInput | boolean
     convertedAccountId?: NullableStringFieldUpdateOperationsInput | string | null
     convertedContactId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -155905,6 +155953,8 @@ export namespace Prisma {
     rating?: string | null
     emailOptOut?: boolean
     interest?: string | null
+    leadScore?: number | null
+    nextFollowUp?: Date | string | null
     isConverted?: boolean
     convertedAccountId?: string | null
     convertedContactId?: string | null
@@ -155947,6 +155997,8 @@ export namespace Prisma {
     rating?: NullableStringFieldUpdateOperationsInput | string | null
     emailOptOut?: BoolFieldUpdateOperationsInput | boolean
     interest?: NullableStringFieldUpdateOperationsInput | string | null
+    leadScore?: NullableIntFieldUpdateOperationsInput | number | null
+    nextFollowUp?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     isConverted?: BoolFieldUpdateOperationsInput | boolean
     convertedAccountId?: NullableStringFieldUpdateOperationsInput | string | null
     convertedContactId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -155989,6 +156041,8 @@ export namespace Prisma {
     rating?: NullableStringFieldUpdateOperationsInput | string | null
     emailOptOut?: BoolFieldUpdateOperationsInput | boolean
     interest?: NullableStringFieldUpdateOperationsInput | string | null
+    leadScore?: NullableIntFieldUpdateOperationsInput | number | null
+    nextFollowUp?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     isConverted?: BoolFieldUpdateOperationsInput | boolean
     convertedAccountId?: NullableStringFieldUpdateOperationsInput | string | null
     convertedContactId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -171043,6 +171097,8 @@ export namespace Prisma {
     rating?: SortOrder
     emailOptOut?: SortOrder
     interest?: SortOrder
+    leadScore?: SortOrder
+    nextFollowUp?: SortOrder
     isConverted?: SortOrder
     convertedAccountId?: SortOrder
     convertedContactId?: SortOrder
@@ -171066,6 +171122,7 @@ export namespace Prisma {
   export type LeadAvgOrderByAggregateInput = {
     annualRevenue?: SortOrder
     noOfEmployees?: SortOrder
+    leadScore?: SortOrder
   }
 
   export type LeadMaxOrderByAggregateInput = {
@@ -171090,6 +171147,8 @@ export namespace Prisma {
     rating?: SortOrder
     emailOptOut?: SortOrder
     interest?: SortOrder
+    leadScore?: SortOrder
+    nextFollowUp?: SortOrder
     isConverted?: SortOrder
     convertedAccountId?: SortOrder
     convertedContactId?: SortOrder
@@ -171132,6 +171191,8 @@ export namespace Prisma {
     rating?: SortOrder
     emailOptOut?: SortOrder
     interest?: SortOrder
+    leadScore?: SortOrder
+    nextFollowUp?: SortOrder
     isConverted?: SortOrder
     convertedAccountId?: SortOrder
     convertedContactId?: SortOrder
@@ -171155,6 +171216,7 @@ export namespace Prisma {
   export type LeadSumOrderByAggregateInput = {
     annualRevenue?: SortOrder
     noOfEmployees?: SortOrder
+    leadScore?: SortOrder
   }
 
   export type PotentialProductListRelationFilter = {

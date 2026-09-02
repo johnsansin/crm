@@ -19,6 +19,7 @@ export function TagsSettings() {
   const [color, setColor] = useState('#4f46e5')
   const [editing, setEditing] = useState<any | null>(null)
   const [editName, setEditName] = useState('')
+  const [editColor, setEditColor] = useState('#4f46e5')
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery({ queryKey: ['tags'], queryFn: () => api.getTags() })
@@ -34,7 +35,7 @@ export function TagsSettings() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: () => api.updateTag(editing.id, editName.trim()),
+    mutationFn: () => api.updateTag(editing.id, { name: editName.trim(), color: editColor }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] })
       setEditing(null)
@@ -93,13 +94,14 @@ export function TagsSettings() {
                 <span key={t.id} style={t.color ? { borderColor: t.color, color: t.color, backgroundColor: `${t.color}12` } : undefined} className="inline-flex items-center gap-2 rounded-full border bg-primary/5 px-3 py-1.5 text-sm">
                   <Tag size={13} />
                   {editing?.id === t.id ? (
-                    <Input
+                    <><Input
                       value={editName}
                       onChange={e => setEditName(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') updateMutation.mutate(); if (e.key === 'Escape') setEditing(null) }}
                       className="h-7 w-40 px-2"
                       autoFocus
                     />
+                    <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} className="h-7 w-8 cursor-pointer border-0 bg-transparent p-0" aria-label={`Colour for ${t.name}`} /></>
                   ) : (
                     <span className="font-medium">{t.name}</span>
                   )}
@@ -113,7 +115,7 @@ export function TagsSettings() {
                       </button>
                     </>
                   ) : (
-                    <button onClick={() => { setEditing(t); setEditName(t.name) }} className="text-muted-foreground hover:text-foreground">
+                    <button onClick={() => { setEditing(t); setEditName(t.name); setEditColor(t.color || '#4f46e5') }} className="text-muted-foreground hover:text-foreground">
                       <Pencil size={13} />
                     </button>
                   )}

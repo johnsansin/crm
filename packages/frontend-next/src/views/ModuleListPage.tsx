@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useParams, useNavigate } from '@/lib/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -13,7 +15,7 @@ import { RowActions } from '@/components/ui/row-actions'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { getFieldLabel } from '@/lib/field-utils'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
-import { Plus, Search, RefreshCw, LayoutGrid, List, Download, Upload, Columns3, Loader2, Mail, FileDown, Copy, GitMerge, Trash2, Bell, SlidersHorizontal, TrendingUp, Clock3, CheckSquare2, Pencil, MoreHorizontal } from 'lucide-react'
+import { Plus, Search, RefreshCw, LayoutGrid, List, Download, Upload, Columns3, Loader2, Mail, FileDown, Copy, GitMerge, Trash2, Bell, SlidersHorizontal, TrendingUp, Clock3, CheckSquare2, Pencil, MoreHorizontal, Tag, Star } from 'lucide-react'
 import { t } from '@/lib/i18n'
 
 const kanbanModules = ['potentials', 'tickets', 'projects']
@@ -82,6 +84,7 @@ export function ModuleListPage() {
   const queryClient = useQueryClient()
   const { addToast } = useToast()
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
   const [sortKey, setSortKey] = useState('')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -92,14 +95,20 @@ export function ModuleListPage() {
   const [exporting, setExporting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [leadView, setLeadView] = useState<'all' | 'overdue' | 'followup'>('all')
+  const [pageSize, setPageSize] = useState<'25' | '50' | '100' | 'all'>('25')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const mod = module || ''
   const hasKanban = kanbanModules.includes(mod)
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => { setDebouncedSearch(search); setPage(1) }, 250)
+    return () => window.clearTimeout(timer)
+  }, [search])
+
   const { data, isLoading } = useQuery({
-    queryKey: [mod, 'list', page, search, sortKey, sortOrder],
-    queryFn: () => api.list(mod, { page: String(page), limit: '25', search, ...(sortKey ? { sortBy: sortKey, sortOrder } : {}) }),
+    queryKey: [mod, 'list', page, pageSize, debouncedSearch, sortKey, sortOrder],
+    queryFn: () => api.list(mod, { page: String(page), limit: pageSize === 'all' ? '10000' : pageSize, search: debouncedSearch, ...(sortKey ? { sortBy: sortKey, sortOrder } : {}) }),
     enabled: !!mod && mod !== 'settings' && viewMode === 'list',
   })
 
@@ -217,6 +226,46 @@ export function ModuleListPage() {
     if (!tag.recordId || tag.module !== mod) continue
     tagsByRecord.set(tag.recordId, [...(tagsByRecord.get(tag.recordId) || []), tag])
   }
+  const catalogueTags = (tagsData?.data || []).filter((tag: any) => !tag.module && !tag.recordId)
+  const leadIds = mod === 'leads' ? (data?.data || []).map((lead: any) => lead.id) : []
+  const { data: followerStates } = useQuery({
+    queryKey: ['lead-followers-list', leadIds.join(',')],
+    queryFn: async () => Promise.all(leadIds.map(async (id: string) => ({ id, ...(await api.record('leads', id).followers()) }))),
+    enabled: mod === 'leads' && leadIds.length > 0,
+  })
+  const followingIds = new Set((followerStates || []).filter((item: any) => item.isFollowing).map((item: any) => item.id))
+
+  const toggleLeadTag = async (leadId: string, definition: any) => {
+    const assignment = (tagsByRecord.get(leadId) || []).find((tag: any) => tag.parentTagId === definition.id || tag.name.toLowerCase() === definition.name.toLowerCase())
+    if (assignment) await api.deleteTag(assignment.id)
+    else await api.createTag({ name: definition.name, color: definition.color, isPrivate: definition.isPrivate, parentTagId: definition.id, module: 'leads', recordId: leadId })
+    await queryClient.invalidateQueries({ queryKey: ['tags'] })
+    addToast({ title: assignment ? 'Tag removed' : 'Tag added', variant: 'success' })
+  }
+
+  const followLead = async (leadId: string) => {
+    if (followingIds.has(leadId)) await api.record('leads', leadId).unfollow()
+    else await api.record('leads', leadId).follow()
+    await queryClient.invalidateQueries({ queryKey: ['lead-followers-list'] })
+    addToast({ title: followingIds.has(leadId) ? 'Lead unfollowed' : 'Lead followed', variant: 'success' })
+  }
+
+  const bulkAddTag = async (definition: any) => {
+    const ids = Array.from(selectedIds)
+    await Promise.all(ids.map(async id => {
+      const attached = (tagsByRecord.get(id) || []).some((tag: any) => tag.parentTagId === definition.id || tag.name.toLowerCase() === definition.name.toLowerCase())
+      if (!attached) await api.createTag({ name: definition.name, color: definition.color, isPrivate: definition.isPrivate, parentTagId: definition.id, module: 'leads', recordId: id })
+    }))
+    await queryClient.invalidateQueries({ queryKey: ['tags'] })
+    addToast({ title: 'Tag added', description: 'Applied to ' + ids.length + ' selected lead(s)', variant: 'success' })
+  }
+
+  const bulkFollow = async () => {
+    const ids = Array.from(selectedIds)
+    await Promise.all(ids.map(id => api.record('leads', id).follow()))
+    await queryClient.invalidateQueries({ queryKey: ['lead-followers-list'] })
+    addToast({ title: 'Leads followed', description: ids.length + ' selected lead(s)', variant: 'success' })
+  }
 
   const monetaryColumns = ['amount', 'grandTotal', 'subTotal', 'unitPrice', 'costPrice', 'annualRevenue', 'expectedRevenue', 'budget', 'actualCost', 'shipping', 'shippingHandling', 'discount', 'adjustment', 'salesCommission', 'exciseDuty', 'targetBudget', 'actualBudget', 'paidAmount']
 
@@ -275,15 +324,15 @@ export function ModuleListPage() {
     const statusTone = (status: string) => /qualif/i.test(status) ? 'bg-emerald-50 text-emerald-700' : /follow|warm|contact/i.test(status) ? 'bg-amber-50 text-amber-700' : /lost|junk|cold/i.test(status) ? 'bg-rose-50 text-rose-700' : 'bg-blue-50 text-blue-700'
     const initialsFor = (lead: any) => `${lead.firstName?.[0] || ''}${lead.lastName?.[0] || ''}`.toUpperCase() || (lead.company?.slice(0, 2).toUpperCase() || 'LD')
     const scoreFor = (lead: any) => {
-      const raw = Number(lead.leadScore ?? lead.score ?? lead.rating)
-      return Number.isFinite(raw) ? Math.max(0, Math.min(raw > 10 ? raw / 10 : raw, 10)) : null
+      const raw = Number(lead.leadScore ?? lead.score)
+      return Number.isFinite(raw) ? Math.max(0, Math.min(raw, 100)) : null
     }
     const formatFollowUp = (value: any) => {
       if (!value) return { label: 'Not scheduled', tone: 'text-slate-400' }
       const date = new Date(value)
       if (Number.isNaN(date.getTime())) return { label: String(value), tone: 'text-slate-500' }
       const overdue = date.getTime() < now.getTime()
-      return { label: `${overdue ? 'Overdue · ' : ''}${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`, tone: overdue ? 'text-rose-600' : 'text-slate-600' }
+      return { label: `${overdue ? 'Overdue · ' : ''}${formatDate(date)}`, tone: overdue ? 'text-rose-600' : 'text-slate-600' }
     }
     const actionCards = [
       { icon: Bell, title: 'Overdue follow-ups', detail: `${allLeads.filter(isOverdue).length} on this page need attention`, tone: 'bg-rose-50 text-rose-600' },
@@ -307,7 +356,7 @@ export function ModuleListPage() {
           {actionCards.map(({ icon: Icon, title, detail, tone }) => <div key={title} className="flex gap-3 rounded-xl border bg-card p-3.5 shadow-sm"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${tone}`}><Icon size={17}/></span><div><p className="text-sm font-semibold">{title}</p><p className="mt-0.5 text-xs leading-5 text-muted-foreground">{detail}</p></div></div>)}
         </div>
 
-        {selectedIds.size > 0 && <div className="flex flex-wrap items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white"><span>{selectedIds.size} lead{selectedIds.size === 1 ? '' : 's'} selected</span><span className="flex-1"/><Button size="sm" variant="secondary" onClick={handleBulkEmail}><Mail size={14} className="mr-1"/>Email</Button><Button size="sm" variant="secondary" onClick={handleBulkPdf}><FileDown size={14} className="mr-1"/>PDF</Button><Button size="sm" variant="destructive" onClick={handleBulkDelete}><Trash2 size={14} className="mr-1"/>Delete</Button></div>}
+        {selectedIds.size > 0 && <div className="flex flex-wrap items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white"><span>{selectedIds.size} lead{selectedIds.size === 1 ? '' : 's'} selected</span><span className="flex-1"/><Button size="sm" variant="secondary" onClick={handleBulkEmail}><Mail size={14} className="mr-1"/>Email</Button><Button size="sm" variant="secondary" onClick={handleBulkPdf}><FileDown size={14} className="mr-1"/>PDF</Button><DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="secondary"><Tag size={14} className="mr-1"/>Add tag</Button></DropdownMenuTrigger><DropdownMenuContent align="end">{catalogueTags.length ? catalogueTags.map((tag: any) => <DropdownMenuItem key={tag.id} onSelect={() => bulkAddTag(tag)}><span className="mr-2 h-2.5 w-2.5 rounded-full" style={{backgroundColor:tag.color||'#4f46e5'}}/>{tag.name}</DropdownMenuItem>) : <DropdownMenuItem disabled>No tags available</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu><Button size="sm" variant="secondary" onClick={bulkFollow}><Star size={14} className="mr-1"/>Follow</Button><Button size="sm" variant="destructive" onClick={handleBulkDelete}><Trash2 size={14} className="mr-1"/>Delete</Button></div>}
 
         <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
           <div className="flex flex-wrap items-center gap-3 border-b p-3.5">
@@ -315,12 +364,12 @@ export function ModuleListPage() {
               {[['all','All leads'],['followup','Follow up'],['overdue','Overdue']].map(([value,text]) => <button key={value} onClick={() => setLeadView(value as any)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${leadView === value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}>{text}</button>)}
             </div>
             <div className="relative min-w-[220px] flex-1 sm:max-w-sm"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/><Input value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} placeholder="Search leads…" className="h-9 pl-9"/></div>
-            <Button variant="outline" size="icon" className="h-9 w-9" onClick={()=>queryClient.invalidateQueries({queryKey:[mod]})}><RefreshCw size={15}/></Button>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">Rows<select value={pageSize} onChange={e=>{setPageSize(e.target.value as any);setPage(1);setSelectedIds(new Set())}} className="h-9 rounded-md border bg-background px-2 text-xs text-foreground"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="all">All</option></select></label><Button variant="outline" size="icon" className="h-9 w-9" onClick={()=>queryClient.invalidateQueries({queryKey:[mod]})}><RefreshCw size={15}/></Button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] border-collapse text-sm">
-              <thead><tr className="border-b bg-muted/55 text-left text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground"><th className="w-12 px-4 py-3"><input type="checkbox" checked={allLeads.length > 0 && selectedIds.size === allLeads.length} onChange={toggleSelectAll}/></th><th className="px-3 py-3">Lead</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Source</th><th className="px-3 py-3">Score</th><th className="px-3 py-3">Next follow-up</th><th className="px-3 py-3">Owner</th><th className="px-3 py-3">Created</th><th className="w-24 px-3 py-3"/></tr></thead>
-              <tbody>{visibleLeads.map(lead => { const score=scoreFor(lead); const follow=formatFollowUp(lead.nextFollowUp); const name=[lead.firstName,lead.lastName].filter(Boolean).join(' ')||lead.company||'Untitled lead'; return <tr key={lead.id} className="group cursor-pointer border-b last:border-0 hover:bg-muted/35" onClick={()=>navigate(`/leads/${lead.id}`)}><td className="px-4 py-3" onClick={e=>e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(lead.id)} onChange={()=>toggleSelect(lead.id)}/></td><td className="px-3 py-3"><button type="button" className="flex items-center gap-2.5 text-left" onClick={e=>{e.stopPropagation();navigate(`/leads/${lead.id}`)}} aria-label={`View ${name}`}><span className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-xs font-bold text-indigo-700">{initialsFor(lead)}</span><span><span className="block font-semibold text-foreground underline-offset-4 group-hover:text-indigo-700 group-hover:underline">{name}</span><span className="block text-xs text-muted-foreground">{[lead.company,lead.industry].filter(Boolean).join(' · ')||lead.email||'No company details'}</span></span></button></td><td className="px-3 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone(lead.leadStatus||'New')}`}>{lead.leadStatus||'New'}</span></td><td className="px-3 py-3 text-muted-foreground">{lead.leadSource||'—'}</td><td className="px-3 py-3">{score == null ? <span className="text-muted-foreground">—</span> : <div className="flex items-center gap-2"><span className="w-7 font-semibold tabular-nums">{score.toFixed(1)}</span><span className="h-1.5 w-14 overflow-hidden rounded-full bg-muted"><i className="block h-full rounded-full bg-indigo-600" style={{width:`${score*10}%`}}/></span></div>}</td><td className={`px-3 py-3 text-xs font-semibold ${follow.tone}`}><Clock3 size={12} className="mr-1 inline"/>{follow.label}</td><td className="px-3 py-3 text-xs text-muted-foreground">{lead.ownerName||lead.assignedToName||'Unassigned'}</td><td className="px-3 py-3 text-xs text-muted-foreground">{lead.createdAt?new Date(lead.createdAt).toLocaleDateString():'—'}</td><td className="px-3 py-3"><div className="flex justify-end gap-1 opacity-70 transition group-hover:opacity-100" onClick={e=>e.stopPropagation()}><button type="button" title="View lead" className="grid h-7 w-7 place-items-center rounded-md border bg-background text-muted-foreground hover:text-indigo-600" onClick={()=>navigate(`/leads/${lead.id}`)}><Search size={13}/></button><button type="button" title="Edit lead" className="grid h-7 w-7 place-items-center rounded-md border bg-background text-muted-foreground hover:text-indigo-600" onClick={()=>navigate(`/leads/${lead.id}/edit`)}><Pencil size={13}/></button><DropdownMenu><DropdownMenuTrigger asChild><button type="button" title="More actions" className="grid h-7 w-7 place-items-center rounded-md border bg-background text-muted-foreground"><MoreHorizontal size={14}/></button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={()=>handleRowEmail(lead)}><Mail size={14} className="mr-2"/>Send email</DropdownMenuItem><DropdownMenuItem onSelect={()=>handleRowPdf(lead)}><FileDown size={14} className="mr-2"/>Download PDF</DropdownMenuItem><DropdownMenuSeparator/><DropdownMenuItem className="text-red-600" onSelect={()=>setDeleteTarget({id:lead.id,name})}><Trash2 size={14} className="mr-2"/>Delete lead</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div></td></tr> })}</tbody>
+              <thead><tr className="border-b bg-muted/55 text-left text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground"><th className="w-12 px-4 py-3"><input type="checkbox" checked={allLeads.length > 0 && selectedIds.size === allLeads.length} onChange={toggleSelectAll}/></th><th className="px-3 py-3">Lead</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Source</th><th className="px-3 py-3">Score</th><th className="px-3 py-3">Next follow-up</th><th className="px-3 py-3">Tags</th><th className="px-3 py-3">Following</th><th className="px-3 py-3">Owner</th><th className="px-3 py-3">Created</th><th className="w-24 px-3 py-3"/></tr></thead>
+              <tbody>{visibleLeads.map(lead => { const score=scoreFor(lead); const follow=formatFollowUp(lead.nextFollowUp); const name=[lead.firstName,lead.lastName].filter(Boolean).join(' ')||lead.company||'Untitled lead'; return <tr key={lead.id} className="group cursor-pointer border-b last:border-0 hover:bg-muted/35" onClick={()=>navigate(`/leads/${lead.id}`)}><td className="px-4 py-3" onClick={e=>e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(lead.id)} onChange={()=>toggleSelect(lead.id)}/></td><td className="px-3 py-3"><button type="button" className="flex items-center gap-2.5 text-left" onClick={e=>{e.stopPropagation();navigate(`/leads/${lead.id}`)}} aria-label={`View ${name}`}><span className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-xs font-bold text-indigo-700">{initialsFor(lead)}</span><span><span className="block font-semibold text-foreground underline-offset-4 group-hover:text-indigo-700 group-hover:underline">{name}</span><span className="block text-xs text-muted-foreground">{[lead.company,lead.industry].filter(Boolean).join(' · ')||lead.email||'No company details'}</span></span></button></td><td className="px-3 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone(lead.leadStatus||'New')}`}>{lead.leadStatus||'New'}</span></td><td className="px-3 py-3 text-muted-foreground">{lead.leadSource||'—'}</td><td className="px-3 py-3">{score == null ? <span className="text-muted-foreground">—</span> : <div className="flex items-center gap-2"><span className="w-7 font-semibold tabular-nums">{score.toFixed(0)}</span><span className="h-1.5 w-14 overflow-hidden rounded-full bg-muted"><i className="block h-full rounded-full bg-indigo-600" style={{width:`${score}%`}}/></span></div>}</td><td className={`px-3 py-3 text-xs font-semibold ${follow.tone}`}><Clock3 size={12} className="mr-1 inline"/>{follow.label}</td><td className="px-3 py-3" onClick={e=>e.stopPropagation()}><div className="flex max-w-[180px] flex-wrap gap-1">{(tagsByRecord.get(lead.id)||[]).slice(0,2).map((tag:any)=><span key={tag.id} className="rounded-full border px-2 py-0.5 text-[10px] font-medium" style={tag.color?{color:tag.color,borderColor:tag.color,backgroundColor:`${tag.color}12`}:undefined}>{tag.name}</span>)}{(tagsByRecord.get(lead.id)||[]).length===0&&<span className="text-xs text-muted-foreground">—</span>}</div></td><td className="px-3 py-3" onClick={e=>e.stopPropagation()}><button type="button" onClick={()=>followLead(lead.id)} className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold ${followingIds.has(lead.id)?'border-amber-300 bg-amber-50 text-amber-700':'bg-background text-muted-foreground'}`}><Star size={12} fill={followingIds.has(lead.id)?'currentColor':'none'}/>{followingIds.has(lead.id)?'Following':'Follow'}</button></td><td className="px-3 py-3 text-xs text-muted-foreground">{lead.ownerName||lead.assignedToName||'Unassigned'}</td><td className="px-3 py-3 text-xs text-muted-foreground">{lead.createdAt?formatDate(lead.createdAt):'—'}</td><td className="px-3 py-3"><div className="flex justify-end gap-1 opacity-70 transition group-hover:opacity-100" onClick={e=>e.stopPropagation()}><button type="button" title="View lead" className="grid h-7 w-7 place-items-center rounded-md border bg-background text-muted-foreground hover:text-indigo-600" onClick={()=>navigate(`/leads/${lead.id}`)}><Search size={13}/></button><button type="button" title="Edit lead" className="grid h-7 w-7 place-items-center rounded-md border bg-background text-muted-foreground hover:text-indigo-600" onClick={()=>navigate(`/leads/${lead.id}/edit`)}><Pencil size={13}/></button><DropdownMenu><DropdownMenuTrigger asChild><button type="button" title="More actions" className="grid h-7 w-7 place-items-center rounded-md border bg-background text-muted-foreground"><MoreHorizontal size={14}/></button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={()=>followLead(lead.id)}><Star size={14} className="mr-2"/>{followingIds.has(lead.id)?'Unfollow lead':'Follow lead'}</DropdownMenuItem>{catalogueTags.map((tag:any)=>{const attached=(tagsByRecord.get(lead.id)||[]).some((item:any)=>item.parentTagId===tag.id||item.name.toLowerCase()===tag.name.toLowerCase());return <DropdownMenuItem key={tag.id} onSelect={()=>toggleLeadTag(lead.id,tag)}><span className="mr-2 h-2.5 w-2.5 rounded-full" style={{backgroundColor:tag.color||'#4f46e5'}}/>{attached?'Remove':'Add'} {tag.name}</DropdownMenuItem>})}<DropdownMenuSeparator/><DropdownMenuItem onSelect={()=>handleRowEmail(lead)}><Mail size={14} className="mr-2"/>Send email</DropdownMenuItem><DropdownMenuItem onSelect={()=>handleRowPdf(lead)}><FileDown size={14} className="mr-2"/>Download PDF</DropdownMenuItem><DropdownMenuSeparator/><DropdownMenuItem className="text-red-600" onSelect={()=>setDeleteTarget({id:lead.id,name})}><Trash2 size={14} className="mr-2"/>Delete lead</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div></td></tr> })}</tbody>
             </table>
             {!isLoading && visibleLeads.length === 0 && <div className="px-6 py-14 text-center"><p className="font-semibold">No leads match this view</p><p className="mt-1 text-sm text-muted-foreground">Try another view or clear the search.</p></div>}
             {isLoading && <div className="grid place-items-center py-14"><Loader2 className="animate-spin text-muted-foreground"/></div>}
@@ -418,8 +467,9 @@ export function ModuleListPage() {
               const res = await api.importModule(mod, file).catch(() => null)
               setImporting(false)
               if (res?.success) {
-                addToast({ title: 'Import complete', description: `${res.created} created, ${res.failed} failed`, variant: res.failed > 0 ? 'default' : 'success' })
-                queryClient.invalidateQueries({ queryKey: [mod] })
+                const firstError = res.errors?.[0]
+                addToast({ title: 'Import complete', description: `${res.created} ${res.importedModule || mod} created${res.updated ? `, ${res.updated} existing updated` : ''}${res.skipped ? `, ${res.skipped} existing skipped` : ''}, ${res.failed} failed${firstError ? `. Row ${firstError.row}: ${firstError.error}` : ''}`, variant: res.failed > 0 ? 'default' : 'success' })
+                queryClient.invalidateQueries({ queryKey: [res.importedModule || mod] })
               } else {
                 addToast({ title: 'Import failed', description: 'Check the CSV and try again', variant: 'destructive' })
               }

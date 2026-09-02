@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from '@/lib/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { getFieldTabs, getFieldLabel, formatFieldValue } from '@/lib/field-utils'
-import { useOrgSettings, formatMoney } from '@/lib/org-format'
+import { useOrgSettings, formatMoney, formatDate, formatDateTime, formatTime } from '@/lib/org-format'
 import { ProjectSearchSelect } from '@/components/project-search-select'
 import { UserRoleSelect, userDisplayName } from '@/components/user-role-select'
 import { SearchSelect } from '@/components/search-select'
@@ -56,6 +56,8 @@ const TAB_ACTIVE_COLORS = [
 
 const SELECT_OPTIONS: Record<string, Record<string, string[]>> = {
   accounts: {
+    rating: ['--None--','Hot','Warm','Cold','Acquired','Active','Inactive'],
+    interest: ['--None--','Buying signals','Product details','Quotation negotiation','Requested Sample','Specification','Support','Other'],
     industry: ['--None--','Apparel','Banking','Biotechnology','Chemicals','Communications','Construction','Consulting','Education','Electronics','Energy','Engineering','Entertainment','Environmental','Finance','Food & Beverage','Government','Healthcare','Hospitality','Insurance','Machinery','Manufacturing','Media','Not For Profit','Other','Recreation','Retail','Shipping','Technology','Telecommunications','Transportation','Utilities'],
     accountType: ['--None--','Analyst','Competitor','Customer','Integrator','Investor','Partner','Press','Prospect','Reseller','Other'],
     ownership: ['--None--','Private','Public'],
@@ -69,6 +71,8 @@ const SELECT_OPTIONS: Record<string, Record<string, string[]>> = {
     leadStatus: ['--None--','Attempted to Contact','Cold','Contact in Future','Contacted','Hot','Junk Lead','Lost Lead','Not Contacted','Pre Qualified','Qualified','Warm'],
     leadSource: ['--None--','Cold Call','Existing Customer','Self Generated','Employee','Partner','Public Relations','Direct Mail','Conference','Trade Show','Web Site','Word of mouth','Other'],
     salutation: ['--None--','Mr.','Ms.','Mrs.','Dr.','Prof.'],
+    rating: ['--None--','Hot','Warm','Cold','Acquired','Active','Inactive'],
+    interest: ['--None--','Buying signals','Product details','Quotation negotiation','Requested Sample','Specification','Support','Other'],
     industry: ['--None--','Apparel','Banking','Biotechnology','Chemicals','Communications','Construction','Consulting','Education','Electronics','Energy','Engineering','Entertainment','Environmental','Finance','Food & Beverage','Government','Healthcare','Hospitality','Insurance','Machinery','Manufacturing','Media','Not For Profit','Other','Recreation','Retail','Shipping','Technology','Telecommunications','Transportation','Utilities'],
   },
   potentials: {
@@ -391,6 +395,14 @@ export function ModuleDetailPage() {
     queryFn: () => api.getOrgSettings(),
   })
   const stageProbability = (orgSettingsData?.stageProbability || {}) as Record<string, number>
+  const organizationDefaultCurrency = orgSettingsData?.defaultCurrency || 'USD'
+
+  useEffect(() => {
+    if (!isNew || !organizationDefaultCurrency) return
+    const hasCurrencyField = (fieldConfigs[mod] || []).some((field: any) => field.name === 'currency')
+    if (!hasCurrencyField) return
+    setFormData(current => current.currency ? current : { ...current, currency: organizationDefaultCurrency })
+  }, [isNew, mod, organizationDefaultCurrency])
 
   function formatRecordForForm(data: any) {
     const result: Record<string, any> = {}
@@ -517,9 +529,17 @@ export function ModuleDetailPage() {
     e.preventDefault()
     const config = fieldConfigs[mod] || []
     const newErrors: Record<string, string> = {}
+    const missingRequiredLabels: string[] = []
     for (const field of config) {
       if (field.required && (formData[field.name] === '' || formData[field.name] == null)) {
         newErrors[field.name] = 'This field is required'
+        missingRequiredLabels.push(field.label ? t(field.label) : getFieldLabel(field.name))
+      }
+    }
+    for (const field of customFields) {
+      if (field.isRequired && (formData[field.fieldName] === '' || formData[field.fieldName] == null)) {
+        newErrors[field.fieldName] = 'This field is required'
+        missingRequiredLabels.push(field.label ? t(field.label) : getFieldLabel(field.fieldName))
       }
     }
     if (mod === 'stageprobability' && (Number(formData.probability) < 0 || Number(formData.probability) > 100)) {
@@ -534,16 +554,30 @@ export function ModuleDetailPage() {
       if (!Number.isFinite(discount) || discount <= 0 || discount > 100) newErrors.discountPercent = 'Discount must be greater than 0 and no more than 100%'
     }
     setErrors(newErrors)
-    if (Object.keys(newErrors).length > 0) return
+    if (Object.keys(newErrors).length > 0) {
+      if (missingRequiredLabels.length > 0) {
+        addToast({
+          title: missingRequiredLabels.length === 1 ? 'Required field missing' : 'Required fields missing',
+          description: `Please complete: ${missingRequiredLabels.join(', ')}`,
+          variant: 'destructive',
+        })
+      } else {
+        const invalidLabels = Object.keys(newErrors).map(name => getFieldLabel(name))
+        addToast({ title: 'Please check the form', description: `Invalid field${invalidLabels.length === 1 ? '' : 's'}: ${invalidLabels.join(', ')}`, variant: 'destructive' })
+      }
+      return
+    }
     const payload: Record<string, any> = {}
     for (const field of config) {
       const val = formData[field.name]
       if (field.type === 'date' && val) {
         payload[field.name] = new Date(val + 'T12:00:00').toISOString()
+      } else if (field.type === 'datetime-local' && val) {
+        payload[field.name] = new Date(val).toISOString()
       } else if (field.type === 'checkbox') {
         payload[field.name] = !!val
-      } else if ((field.type === 'number') && (val === '' || val == null)) {
-        payload[field.name] = null
+      } else if (field.type === 'number') {
+        payload[field.name] = val === '' || val == null ? null : Number(val)
       } else {
         payload[field.name] = val ?? null
       }
@@ -709,7 +743,7 @@ export function ModuleDetailPage() {
                   {record?.closingDate && (
                     <div>
                       <p className="text-muted-foreground text-xs">Closing Date</p>
-                      <p className="font-medium">{new Date(record.closingDate).toLocaleDateString()}</p>
+                      <p className="font-medium">{formatDate(record.closingDate)}</p>
                     </div>
                   )}
                   {record?.probability != null && (
@@ -921,6 +955,7 @@ export function ModuleDetailPage() {
             leadSourceOptions={dynamicOptions.potentials?.leadSource || SELECT_OPTIONS.potentials.leadSource}
             typeOptions={dynamicOptions.potentials?.type || SELECT_OPTIONS.potentials.type}
             forecastOptions={dynamicOptions.potentials?.forecastCategory || SELECT_OPTIONS.potentials.forecastCategory}
+            defaultCurrency={organizationDefaultCurrency}
           />
         ) : mod === 'leads' ? (
           <LeadEditor formData={formData} errors={errors} handleChange={handleChange} users={users} roles={roles} campaigns={campaigns} options={dynamicOptions.leads || SELECT_OPTIONS.leads} />
@@ -1038,27 +1073,65 @@ export function ModuleDetailPage() {
   )
 }
 
-function LeadEditor({ formData, errors, handleChange, users, roles, campaigns, options }: { formData: Record<string, any>; errors: Record<string,string>; handleChange:(name:string,value:any)=>void; users:any[]; roles:any[]; campaigns:any[]; options:Record<string,string[]> }) {
-  const labelClass = 'mb-1.5 block text-[11px] font-bold uppercase tracking-[.045em] text-muted-foreground'
-  const inputClass = 'h-10 rounded-lg bg-background shadow-none focus-visible:ring-indigo-500/20 focus-visible:ring-offset-0'
-  const required = ['firstName','lastName','company','assignedTo']
-  const complete = required.filter(key => String(formData[key] || '').trim()).length
-  const percent = Math.round((complete / required.length) * 100)
-  const NativeSelect = ({ name }: { name:string }) => <select value={formData[name] || ''} onChange={e=>handleChange(name,e.target.value)} className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"><option value="">— None —</option>{(options[name]||[]).filter(v=>!/^--/.test(v)).map(v=><option key={v}>{v}</option>)}</select>
-  const Field = ({ name, type='text', placeholder='' }: { name:string; type?:string; placeholder?:string }) => <div><label className={labelClass}>{getFieldLabel(name)} {required.includes(name)&&<span className="text-destructive">*</span>}</label><Input type={type} value={formData[name] ?? ''} onChange={e=>handleChange(name,e.target.value)} placeholder={placeholder} className={cn(inputClass,errors[name]&&'border-destructive')}/>{errors[name]&&<p className="mt-1 text-xs text-destructive">{errors[name]}</p>}</div>
-  const Section = ({ number,title,description,children }: { number:number; title:string; description:string; children:React.ReactNode }) => <section className="border-b p-5 last:border-0 sm:p-6"><div className="mb-5 flex gap-2.5"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-indigo-50 text-xs font-bold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{number}</span><div><h2 className="text-sm font-bold">{title}</h2><p className="mt-0.5 text-xs text-muted-foreground">{description}</p></div></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</div></section>
-  return <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
-    <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-      <Section number={1} title="Contact" description="The person your sales team will contact."><div><label className={labelClass}>Salutation</label><NativeSelect name="salutation"/></div><Field name="firstName" placeholder="e.g. Ali"/><Field name="lastName" placeholder="e.g. Hassan"/><Field name="email" type="email" placeholder="name@company.com"/><Field name="secondaryEmail" type="email"/><Field name="phone" placeholder="+92 300 0000000"/><Field name="mobile"/><Field name="fax"/><Field name="website" placeholder="https://"/></Section>
-      <Section number={2} title="Company" description="Firmographic details used for qualification and reporting."><div className="sm:col-span-2"><Field name="company" placeholder="Company name"/></div><Field name="title" placeholder="Owner, purchasing manager…"/><div><label className={labelClass}>Industry</label><NativeSelect name="industry"/></div><Field name="noOfEmployees" type="number"/><Field name="annualRevenue" type="number"/><Field name="interest" placeholder="Products or services of interest"/></Section>
-      <Section number={3} title="Lead details" description="Ownership, source, campaign, status, and qualification context."><div><label className={labelClass}>Lead source</label><NativeSelect name="leadSource"/></div><div><label className={labelClass}>Lead status</label><NativeSelect name="leadStatus"/></div><div><label className={labelClass}>Campaign</label><select value={formData.campaignId || ''} onChange={event => handleChange('campaignId', event.target.value)} className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"><option value="">— No campaign —</option>{campaigns.map(campaign => <option key={campaign.id} value={campaign.id}>{campaign.campaignName}{campaign.status ? ` · ${campaign.status}` : ''}</option>)}</select></div><Field name="rating"/><div className="sm:col-span-2 xl:col-span-3"><label className={labelClass}>Assigned to <span className="text-destructive">*</span></label><UserRoleSelect value={formData.assignedTo||''} users={users} roles={roles} onSelect={v=>handleChange('assignedTo',v)}/>{errors.assignedTo&&<p className="mt-1 text-xs text-destructive">{errors.assignedTo}</p>}</div></Section>
-      <Section number={4} title="Address & notes" description="Location and context for the next person working this lead."><Field name="street"/><Field name="city"/><Field name="state"/><Field name="country"/><Field name="postalCode"/><Field name="poBox"/><div className="sm:col-span-2 xl:col-span-3"><label className={labelClass}>Description</label><textarea value={formData.description||''} onChange={e=>handleChange('description',e.target.value)} placeholder="Anything the next rep should know before contacting this lead…" className="min-h-28 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"/></div></Section>
-    </div>
-    <aside className="space-y-4 lg:sticky lg:top-5"><div className="rounded-2xl border bg-card p-5 shadow-sm"><div className="flex items-center justify-between"><div><p className="text-sm font-bold">Profile completeness</p><p className="mt-1 text-xs text-muted-foreground">Complete the essentials before saving.</p></div><span className="text-xl font-bold text-indigo-700">{percent}%</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-indigo-600 transition-all" style={{width:`${percent}%`}}/></div><div className="mt-4 space-y-2">{required.map(key=><div key={key} className="flex items-center gap-2 text-xs"><span className={cn('grid h-4 w-4 place-items-center rounded-full border text-[9px]',formData[key]?'border-emerald-600 bg-emerald-600 text-white':'text-transparent')}>✓</span><span className={formData[key]?'text-foreground':'text-muted-foreground'}>{getFieldLabel(key)}</span></div>)}</div></div><div className="rounded-2xl bg-indigo-50 p-4 text-indigo-900 dark:bg-indigo-500/10 dark:text-indigo-200"><p className="text-sm font-bold">Build momentum early</p><p className="mt-1 text-xs leading-5 opacity-75">After saving, open the lead workspace to schedule a follow-up, log activity, send email, or convert the record.</p></div></aside>
-  </div>
+const LEAD_LABEL_CLASS = 'mb-1.5 block text-[11px] font-bold uppercase tracking-[.045em] text-muted-foreground'
+const LEAD_INPUT_CLASS = 'h-10 rounded-lg bg-background shadow-none focus-visible:ring-indigo-500/20 focus-visible:ring-offset-0'
+const LEAD_REQUIRED_FIELDS = ['firstName', 'lastName', 'company', 'assignedTo']
+const LeadEditorContext = createContext<{ formData: Record<string, any>; errors: Record<string, string>; options: Record<string, string[]>; handleChange: (name: string, value: any) => void } | null>(null)
+
+function LeadNativeSelect({ name, value, options, onChange }: { name: string; value: string; options: string[]; onChange: (name: string, value: string) => void }) {
+  return <select value={value} onChange={e => onChange(name, e.target.value)} className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"><option value="">— None —</option>{options.filter(v => !/^--/.test(v)).map(v => <option key={v}>{v}</option>)}</select>
 }
 
-function OpportunityEditor({ formData, errors, handleChange, currencies, stageOptions, leadSourceOptions, typeOptions, forecastOptions }: {
+function LeadField({ name, type = 'text', placeholder = '', value, error, required, onChange }: { name: string; type?: string; placeholder?: string; value: any; error?: string; required?: boolean; onChange: (name: string, value: string) => void }) {
+  return <div><label className={LEAD_LABEL_CLASS}>{getFieldLabel(name)} {required && <span className="text-destructive">*</span>}</label><Input type={type} value={value ?? ''} onChange={e => onChange(name, e.target.value)} placeholder={placeholder} className={cn(LEAD_INPUT_CLASS, error && 'border-destructive')} />{error && <p className="mt-1 text-xs text-destructive">{error}</p>}</div>
+}
+
+function LeadBoundField({ name, type = 'text', placeholder = '' }: { name: string; type?: string; placeholder?: string }) {
+  const context = useContext(LeadEditorContext)!
+  return <LeadField name={name} type={type} placeholder={placeholder} value={context.formData[name]} error={context.errors[name]} required={LEAD_REQUIRED_FIELDS.includes(name)} onChange={context.handleChange} />
+}
+
+function LeadBoundSelect({ name }: { name: string }) {
+  const context = useContext(LeadEditorContext)!
+  return <LeadNativeSelect name={name} value={context.formData[name] || ''} options={context.options[name] || []} onChange={context.handleChange} />
+}
+
+function LeadSection({ number, title, description, children }: { number: number; title: string; description: string; children: React.ReactNode }) {
+  return <section className="border-b p-5 last:border-0 sm:p-6"><div className="mb-5 flex gap-2.5"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-indigo-50 text-xs font-bold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{number}</span><div><h2 className="text-sm font-bold">{title}</h2><p className="mt-0.5 text-xs text-muted-foreground">{description}</p></div></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</div></section>
+}
+
+function LeadEditor({ formData, errors, handleChange, users, roles, campaigns, options }: { formData: Record<string, any>; errors: Record<string,string>; handleChange:(name:string,value:any)=>void; users:any[]; roles:any[]; campaigns:any[]; options:Record<string,string[]> }) {
+  const labelClass = LEAD_LABEL_CLASS
+  const required = LEAD_REQUIRED_FIELDS
+  const complete = required.filter(key => String(formData[key] || '').trim()).length
+  const percent = Math.round((complete / required.length) * 100)
+  const contextValue = useMemo(() => ({ formData, errors, options, handleChange }), [formData, errors, options, handleChange])
+  const Field = LeadBoundField
+  const NativeSelect = LeadBoundSelect
+  return <LeadEditorContext.Provider value={contextValue}><div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+    <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+      <LeadSection number={1} title="Contact" description="The person your sales team will contact."><div><label className={labelClass}>Salutation</label><NativeSelect name="salutation"/></div><Field name="firstName" placeholder="e.g. Ali"/><Field name="lastName" placeholder="e.g. Hassan"/><Field name="email" type="email" placeholder="name@company.com"/><Field name="secondaryEmail" type="email"/><Field name="phone" placeholder="+92 300 0000000"/><Field name="mobile"/><Field name="fax"/><Field name="website" placeholder="https://"/></LeadSection>
+      <LeadSection number={2} title="Company" description="Firmographic details used for qualification and reporting."><div className="sm:col-span-2"><Field name="company" placeholder="Company name"/></div><Field name="title" placeholder="Owner, purchasing manager…"/><div><label className={labelClass}>Industry</label><NativeSelect name="industry"/></div><Field name="noOfEmployees" type="number"/><Field name="annualRevenue" type="number"/><div><label className={labelClass}>Interest</label><NativeSelect name="interest"/></div></LeadSection>
+      <LeadSection number={3} title="Lead details" description="Ownership, source, campaign, status, and qualification context."><div><label className={labelClass}>Lead source</label><NativeSelect name="leadSource"/></div><div><label className={labelClass}>Lead status</label><NativeSelect name="leadStatus"/></div><div><label className={labelClass}>Campaign</label><select value={formData.campaignId || ''} onChange={event => handleChange('campaignId', event.target.value)} className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"><option value="">— No campaign —</option>{campaigns.map(campaign => <option key={campaign.id} value={campaign.id}>{campaign.campaignName}{campaign.status ? ` · ${campaign.status}` : ''}</option>)}</select></div><div><label className={labelClass}>Rating</label><NativeSelect name="rating"/></div><Field name="leadScore" type="number" placeholder="0–100"/><Field name="nextFollowUp" type="datetime-local"/><div className="sm:col-span-2 xl:col-span-3"><label className={labelClass}>Assigned to <span className="text-destructive">*</span></label><UserRoleSelect value={formData.assignedTo||''} users={users} roles={roles} onSelect={v=>handleChange('assignedTo',v)}/>{errors.assignedTo&&<p className="mt-1 text-xs text-destructive">{errors.assignedTo}</p>}</div></LeadSection>
+      <LeadSection number={4} title="Address & notes" description="Location and context for the next person working this lead."><Field name="street"/><Field name="city"/><Field name="state"/><Field name="country"/><Field name="postalCode"/><Field name="poBox"/><div className="sm:col-span-2 xl:col-span-3"><label className={labelClass}>Description</label><textarea value={formData.description||''} onChange={e=>handleChange('description',e.target.value)} placeholder="Anything the next rep should know before contacting this lead…" className="min-h-28 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10"/></div></LeadSection>
+    </div>
+    <aside className="space-y-4 lg:sticky lg:top-5"><div className="rounded-2xl border bg-card p-5 shadow-sm"><div className="flex items-center justify-between"><div><p className="text-sm font-bold">Profile completeness</p><p className="mt-1 text-xs text-muted-foreground">Complete the essentials before saving.</p></div><span className="text-xl font-bold text-indigo-700">{percent}%</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-indigo-600 transition-all" style={{width:`${percent}%`}}/></div><div className="mt-4 space-y-2">{required.map(key=><div key={key} className="flex items-center gap-2 text-xs"><span className={cn('grid h-4 w-4 place-items-center rounded-full border text-[9px]',formData[key]?'border-emerald-600 bg-emerald-600 text-white':'text-transparent')}>✓</span><span className={formData[key]?'text-foreground':'text-muted-foreground'}>{getFieldLabel(key)}</span></div>)}</div></div><div className="rounded-2xl bg-indigo-50 p-4 text-indigo-900 dark:bg-indigo-500/10 dark:text-indigo-200"><p className="text-sm font-bold">Build momentum early</p><p className="mt-1 text-xs leading-5 opacity-75">After saving, open the lead workspace to schedule a follow-up, log activity, send email, or convert the record.</p></div></aside>
+  </div></LeadEditorContext.Provider>
+}
+
+function OpportunitySection({ number, title, description, children }: { number: number; title: string; description: string; children: React.ReactNode }) {
+  return (
+    <section className="border-b border-border p-5 last:border-b-0 sm:p-6">
+      <div className="mb-5 flex gap-2.5">
+        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-indigo-50 font-mono text-[10px] font-bold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{number}</span>
+        <div><h2 className="text-sm font-bold tracking-tight">{title}</h2><p className="mt-0.5 text-xs text-muted-foreground">{description}</p></div>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</div>
+    </section>
+  )
+}
+
+function OpportunityEditor({ formData, errors, handleChange, currencies, stageOptions, leadSourceOptions, typeOptions, forecastOptions, defaultCurrency }: {
   formData: Record<string, any>
   errors: Record<string, string>
   handleChange: (name: string, value: any) => void
@@ -1067,12 +1140,13 @@ function OpportunityEditor({ formData, errors, handleChange, currencies, stageOp
   leadSourceOptions: string[]
   typeOptions: string[]
   forecastOptions: string[]
+  defaultCurrency: string
 }) {
   const [tab, setTab] = useState<'details' | 'description'>('details')
   const amount = Number(formData.amount) || 0
   const probability = Math.max(0, Math.min(100, Number(formData.probability) || 0))
   const weightedValue = amount * probability / 100
-  const currency = formData.currency || 'USD'
+  const currency = formData.currency || defaultCurrency || 'USD'
   const activeStages = stageOptions.filter(stage => stage && stage !== '--None--' && stage !== 'Closed Lost')
   const selectedStageIndex = activeStages.indexOf(formData.stage)
   const closed = formData.stage === 'Closed Won' || formData.stage === 'Closed Lost'
@@ -1095,18 +1169,7 @@ function OpportunityEditor({ formData, errors, handleChange, currencies, stageOp
     </select>
   )
 
-  const Section = ({ number, title, description, children }: { number: number; title: string; description: string; children: React.ReactNode }) => (
-    <section className="border-b border-border p-5 last:border-b-0 sm:p-6">
-      <div className="mb-5 flex gap-2.5">
-        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-indigo-50 font-mono text-[10px] font-bold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{number}</span>
-        <div>
-          <h2 className="text-sm font-bold tracking-tight">{title}</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</div>
-    </section>
-  )
+  const Section = OpportunitySection
 
   return (
     <div>
@@ -1985,7 +2048,7 @@ function PotentialExtras({ potentialId }: { potentialId: string }) {
                   <span className={`absolute -left-[7px] mt-1 h-3 w-3 rounded-full border-2 border-background ${idx === stageHistory.length - 1 ? 'bg-emerald-500' : 'bg-primary'}`} />
                   <p className="text-sm font-medium">{h.stage}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(h.createdAt).toLocaleString()}
+                    {formatDateTime(h.createdAt)}
                     {h.changedByUser ? ` · by ${h.changedByUser.firstName} ${h.changedByUser.lastName}` : ''}
                   </p>
                 </li>
@@ -2053,7 +2116,7 @@ function PotentialExtras({ potentialId }: { potentialId: string }) {
               {nextFollowUp && (
                 <div>
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Next Follow-up</label>
-                  <p className="text-sm font-medium mt-1">{new Date(nextFollowUp).toLocaleDateString()}</p>
+                  <p className="text-sm font-medium mt-1">{formatDate(nextFollowUp)}</p>
                 </div>
               )}
               {contactRole && (
@@ -2128,7 +2191,7 @@ function TicketExtras({ record }: { record: any }) {
                 <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium', slaBg, slaColor)}>
                   <Timer size={13} /> {slaLabel}
                 </span>
-                <p className="text-xs text-muted-foreground mt-1">{new Date(slaDeadline).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">{formatDateTime(slaDeadline)}</p>
               </div>
             </div>
           )}
@@ -2319,9 +2382,9 @@ function PriceBookExtras({ record }: { record: any }) {
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Validity Period</label>
               <div className="mt-1.5 flex items-center gap-1.5 text-sm">
                 <Calendar size={14} className="text-muted-foreground" />
-                <span>{validFrom ? new Date(validFrom).toLocaleDateString() : '—'}</span>
+                <span>{validFrom ? formatDate(validFrom) : '—'}</span>
                 <span className="text-muted-foreground">→</span>
-                <span>{validUntil ? new Date(validUntil).toLocaleDateString() : '—'}</span>
+                <span>{validUntil ? formatDate(validUntil) : '—'}</span>
               </div>
             </div>
           )}
@@ -2393,7 +2456,7 @@ function AssetExtras({ record }: { record: any }) {
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Purchase Info</label>
               <div className="mt-1.5 space-y-0.5">
-                {purchaseDate && <p className="text-sm font-medium">{new Date(purchaseDate).toLocaleDateString()}</p>}
+                {purchaseDate && <p className="text-sm font-medium">{formatDate(purchaseDate)}</p>}
                 {purchasePrice != null && <p className="text-sm font-medium">{formatMoney(purchasePrice)}</p>}
               </div>
             </div>
@@ -2408,7 +2471,7 @@ function AssetExtras({ record }: { record: any }) {
                     <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium', warrantyBg, warrantyColor)}>
                       {warrantyLabel}
                     </span>
-                    <p className="text-xs text-muted-foreground mt-0.5">Until {new Date(warrantyEndDate).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Until {formatDate(warrantyEndDate)}</p>
                   </div>
                 )}
               </div>
@@ -2418,8 +2481,8 @@ function AssetExtras({ record }: { record: any }) {
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Maintenance</label>
               <div className="mt-1.5 space-y-0.5">
-                {lastMaintenanceDate && <p className="text-xs text-muted-foreground">Last: {new Date(lastMaintenanceDate).toLocaleDateString()}</p>}
-                {nextMaintenanceDate && <p className="text-sm font-medium">Next: {new Date(nextMaintenanceDate).toLocaleDateString()}</p>}
+                {lastMaintenanceDate && <p className="text-xs text-muted-foreground">Last: {formatDate(lastMaintenanceDate)}</p>}
+                {nextMaintenanceDate && <p className="text-sm font-medium">Next: {formatDate(nextMaintenanceDate)}</p>}
               </div>
             </div>
           )}
@@ -2623,7 +2686,7 @@ function ProjectExtras({ record, relatedTaskList, relatedMilestoneList, relatedT
           </CardContent>
         </Card>
       </div>
-      <Card><CardContent className="p-5"><div className="flex items-center justify-between gap-2 mb-3"><div><h3 className="text-sm font-semibold flex items-center gap-1.5"><Clock size={15} className="text-primary" /> Time Tracking</h3><p className="text-xs text-muted-foreground mt-1">{relatedTimeList.reduce((sum, entry) => sum + Number(entry.hours || 0), 0).toFixed(2)} total hours logged</p></div><Button size="sm" variant="outline" onClick={() => navigate(`/timeentries/new?projectId=${id}`)}><Plus size={14} className="mr-1.5" />Log time</Button></div>{!relatedTimeList.length ? <p className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">No time entries yet.</p> : <div className="space-y-2">{relatedTimeList.slice(0, 10).map((entry: any) => <button key={entry.id} onClick={() => navigate(`/timeentries/${entry.id}`)} className="flex w-full items-center justify-between gap-3 rounded-lg border p-3 text-left hover:bg-muted/30"><span className="min-w-0"><span className="block truncate text-sm font-medium">{entry.description || 'Time entry'}</span><span className="text-xs text-muted-foreground">{entry.date ? new Date(entry.date).toLocaleDateString() : ''}</span></span><span className="font-semibold text-primary">{Number(entry.hours || 0).toFixed(2)}h</span></button>)}</div>}</CardContent></Card>
+      <Card><CardContent className="p-5"><div className="flex items-center justify-between gap-2 mb-3"><div><h3 className="text-sm font-semibold flex items-center gap-1.5"><Clock size={15} className="text-primary" /> Time Tracking</h3><p className="text-xs text-muted-foreground mt-1">{relatedTimeList.reduce((sum, entry) => sum + Number(entry.hours || 0), 0).toFixed(2)} total hours logged</p></div><Button size="sm" variant="outline" onClick={() => navigate(`/timeentries/new?projectId=${id}`)}><Plus size={14} className="mr-1.5" />Log time</Button></div>{!relatedTimeList.length ? <p className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">No time entries yet.</p> : <div className="space-y-2">{relatedTimeList.slice(0, 10).map((entry: any) => <button key={entry.id} onClick={() => navigate(`/timeentries/${entry.id}`)} className="flex w-full items-center justify-between gap-3 rounded-lg border p-3 text-left hover:bg-muted/30"><span className="min-w-0"><span className="block truncate text-sm font-medium">{entry.description || 'Time entry'}</span><span className="text-xs text-muted-foreground">{entry.date ? formatDate(entry.date) : ''}</span></span><span className="font-semibold text-primary">{Number(entry.hours || 0).toFixed(2)}h</span></button>)}</div>}</CardContent></Card>
     </div>
   )
 }

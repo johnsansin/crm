@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarClock, CheckCircle2, Clock3, Database, Download, HardDrive, Loader2, Mail, Save, ShieldCheck } from 'lucide-react'
@@ -25,7 +27,7 @@ function size(bytes: number) {
 }
 
 function date(value?: string | null) {
-  return value ? new Date(value).toLocaleString() : 'Not yet'
+  return value ? formatDateTime(value) : 'Not yet'
 }
 
 export function SystemBackupSettings() {

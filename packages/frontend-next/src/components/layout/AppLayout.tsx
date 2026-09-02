@@ -12,8 +12,6 @@ import { cn } from '@/lib/utils'
 import { useTheme } from '@/lib/theme'
 import { usePresence } from '@/hooks/usePresence'
 import { UserAvatar } from '@/components/UserAvatar'
-import { OnboardingTour } from '@/components/OnboardingTour'
-import { QuickStartModal } from '@/components/QuickStartModal'
 import { LogOut, User, Search, Sun, Moon, Loader2, Menu, Bell, Building2, Megaphone, CheckCheck, X, Languages, Check, ChevronDown, Command, MessageSquare, PlayCircle } from 'lucide-react'
 import { api } from '@/lib/api'
 import { setOrgSettings, orgLocale, orgLanguage, formatDateTime, useOrgSettings } from '@/lib/org-format'
@@ -24,6 +22,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 const SupportChatWidget = dynamic(() => import('@/components/support/SupportChatWidget').then(module => module.SupportChatWidget), { ssr: false })
+const OnboardingTour = dynamic(() => import('@/components/OnboardingTour').then(module => module.OnboardingTour), { ssr: false })
+const QuickStartModal = dynamic(() => import('@/components/QuickStartModal').then(module => module.QuickStartModal), { ssr: false })
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'

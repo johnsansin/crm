@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
+
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from '@/lib/navigation'
 import { useAuthStore } from '@/lib/auth'
@@ -311,7 +313,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
               </button>
               {showNotifications && <div className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-2xl border bg-white shadow-2xl dark:bg-slate-900">
                 <div className="flex items-center justify-between border-b px-4 py-3"><div><p className="text-sm font-semibold">Notifications</p><p className="text-[11px] text-muted-foreground">{unreadNotifications.length} unread</p></div>{unreadNotifications.length > 0 && <button onClick={async () => { await api.markAllNotificationsRead().catch(() => {}); setNotifications(rows => rows.map(row => ({ ...row, isRead: true }))) }} className="text-xs font-semibold text-indigo-600">Mark all read</button>}</div>
-                <div className="max-h-[420px] overflow-y-auto p-2">{notifications.length === 0 ? <div className="p-8 text-center"><Bell className="mx-auto mb-2 text-muted-foreground"/><p className="text-sm font-medium">No notifications</p></div> : notifications.map(item => <button key={item.id} onClick={() => openNotification(item)} className={`mb-1 w-full rounded-xl p-3 text-left transition hover:bg-muted ${!item.isRead ? 'bg-indigo-50/80 dark:bg-indigo-950/30' : ''}`}><div className="flex gap-3"><span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${!item.isRead ? 'bg-indigo-500' : 'bg-slate-300'}`}/><div className="min-w-0"><p className="truncate text-sm font-semibold">{item.title}</p><p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.message}</p><p className="mt-1 text-[10px] text-muted-foreground">{new Date(item.createdAt).toLocaleString()}</p></div></div></button>)}</div>
+                <div className="max-h-[420px] overflow-y-auto p-2">{notifications.length === 0 ? <div className="p-8 text-center"><Bell className="mx-auto mb-2 text-muted-foreground"/><p className="text-sm font-medium">No notifications</p></div> : notifications.map(item => <button key={item.id} onClick={() => openNotification(item)} className={`mb-1 w-full rounded-xl p-3 text-left transition hover:bg-muted ${!item.isRead ? 'bg-indigo-50/80 dark:bg-indigo-950/30' : ''}`}><div className="flex gap-3"><span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${!item.isRead ? 'bg-indigo-500' : 'bg-slate-300'}`}/><div className="min-w-0"><p className="truncate text-sm font-semibold">{item.title}</p><p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.message}</p><p className="mt-1 text-[10px] text-muted-foreground">{formatDateTime(item.createdAt)}</p></div></div></button>)}</div>
               </div>}
             </div>
             <button
