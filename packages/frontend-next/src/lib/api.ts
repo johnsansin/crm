@@ -487,7 +487,7 @@ export const api = {
   importModule: (moduleName: string, file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return request<{ success: boolean; created: number; failed: number; total: number; importedModule?: string; errors?: { row: number; error: string }[] }>(`/settings/import/${moduleName}`, {
+    return request<{ success: boolean; created: number; updated?: number; skipped?: number; failed: number; total: number; importedModule?: string; errors?: { row: number; error: string }[] }>(`/settings/import/${moduleName}`, {
       method: 'POST', body: formData
     })
   },
@@ -517,8 +517,8 @@ export const api = {
   getTags: (params?: { module?: string; recordId?: string; includeAssignments?: string }) => request<{ data: any[] }>(`/settings/tags${params ? `?${new URLSearchParams(params as Record<string, string>)}` : ''}`),
   createTag: (data: any) =>
     request<any>('/settings/tags', { method: 'POST', body: JSON.stringify(data) }),
-  updateTag: (id: string, name: string) =>
-    request<any>(`/settings/tags/${id}`, { method: 'PUT', body: JSON.stringify({ name }) }),
+  updateTag: (id: string, data: { name: string; color?: string | null }) =>
+    request<any>(`/settings/tags/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteTag: (id: string) => request<any>(`/settings/tags/${id}`, { method: 'DELETE' }),
 
   // ---- Custom views ----

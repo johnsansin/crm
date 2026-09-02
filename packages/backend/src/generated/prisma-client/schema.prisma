@@ -297,45 +297,47 @@ model Contact {
 }
 
 model Lead {
-  id                   String   @id @default(uuid())
-  leadNo               String?  @unique @db.VarChar(100)
-  salutation           String?  @db.VarChar(50)
-  firstName            String   @db.VarChar(100)
-  lastName             String   @db.VarChar(100)
-  title                String?  @db.VarChar(100)
-  company              String   @db.VarChar(200)
-  email                String?  @db.VarChar(100)
-  secondaryEmail       String?  @db.VarChar(100)
-  phone                String?  @db.VarChar(30)
-  mobile               String?  @db.VarChar(30)
-  fax                  String?  @db.VarChar(30)
-  website              String?  @db.VarChar(200)
-  leadSource           String?  @db.VarChar(100)
-  leadStatus           String?  @db.VarChar(100)
-  industry             String?  @db.VarChar(100)
-  annualRevenue        Decimal? @db.Decimal(16, 2)
+  id                   String    @id @default(uuid())
+  leadNo               String?   @unique @db.VarChar(100)
+  salutation           String?   @db.VarChar(50)
+  firstName            String    @db.VarChar(100)
+  lastName             String    @db.VarChar(100)
+  title                String?   @db.VarChar(100)
+  company              String    @db.VarChar(200)
+  email                String?   @db.VarChar(100)
+  secondaryEmail       String?   @db.VarChar(100)
+  phone                String?   @db.VarChar(30)
+  mobile               String?   @db.VarChar(30)
+  fax                  String?   @db.VarChar(30)
+  website              String?   @db.VarChar(200)
+  leadSource           String?   @db.VarChar(100)
+  leadStatus           String?   @db.VarChar(100)
+  industry             String?   @db.VarChar(100)
+  annualRevenue        Decimal?  @db.Decimal(16, 2)
   noOfEmployees        Int?
-  rating               String?  @db.VarChar(10)
-  emailOptOut          Boolean  @default(false)
-  interest             String?  @db.VarChar(200)
-  isConverted          Boolean  @default(false)
+  rating               String?   @db.VarChar(10)
+  emailOptOut          Boolean   @default(false)
+  interest             String?   @db.VarChar(200)
+  leadScore            Int?
+  nextFollowUp         DateTime?
+  isConverted          Boolean   @default(false)
   convertedAccountId   String?
   convertedContactId   String?
   convertedPotentialId String?
-  description          String?  @db.Text
+  description          String?   @db.Text
   companyId            String?
-  isActive             Boolean  @default(true)
+  isActive             Boolean   @default(true)
   assignedTo           String?
-  street               String?  @db.VarChar(200)
-  city                 String?  @db.VarChar(100)
-  state                String?  @db.VarChar(100)
-  country              String?  @db.VarChar(100)
-  postalCode           String?  @db.VarChar(30)
-  poBox                String?  @db.VarChar(50)
+  street               String?   @db.VarChar(200)
+  city                 String?   @db.VarChar(100)
+  state                String?   @db.VarChar(100)
+  country              String?   @db.VarChar(100)
+  postalCode           String?   @db.VarChar(30)
+  poBox                String?   @db.VarChar(50)
   createdBy            String?
   campaignId           String?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 model Potential {

@@ -234,6 +234,7 @@ aiRouter.post('/lead-score', authMiddleware, async (req: any, res) => {
     const emails = await prisma.email.findMany({ where: { companyId, parentModule: 'leads', parentId: leadId } })
 
     const score = computeLeadScore(lead, activities, emails)
+    await prisma.lead.update({ where: { id: leadId }, data: { leadScore: score.score } })
 
     await logAi(req, { leadId }, score, 'leads', leadId)
     res.json({ data: score })

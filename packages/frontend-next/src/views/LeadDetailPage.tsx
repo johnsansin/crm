@@ -64,13 +64,13 @@ const DETAIL_FIELDS = [
   'leadNo', 'salutation', 'firstName', 'lastName', 'company', 'title', 'email', 'secondaryEmail',
   'phone', 'mobile', 'fax', 'website', 'leadSource', 'leadStatus', 'industry', 'annualRevenue',
   'noOfEmployees', 'rating', 'interest', 'emailOptOut', 'street', 'city', 'state', 'country',
-  'postalCode', 'poBox', 'description',
+  'postalCode', 'poBox', 'leadScore', 'nextFollowUp', 'description',
 ]
 
 const DETAIL_GROUPS: { title: string; icon: LucideIcon; fields: string[] }[] = [
   { title: 'Lead Information', icon: Users, fields: ['leadNo', 'salutation', 'firstName', 'lastName', 'company', 'title', 'leadSource', 'leadStatus'] },
   { title: 'Contact Information', icon: Phone, fields: ['email', 'secondaryEmail', 'phone', 'mobile', 'fax', 'website'] },
-  { title: 'Company Information', icon: TrendingUp, fields: ['industry', 'annualRevenue', 'noOfEmployees', 'rating', 'interest', 'emailOptOut'] },
+  { title: 'Company Information', icon: TrendingUp, fields: ['industry', 'annualRevenue', 'noOfEmployees', 'rating', 'interest', 'leadScore', 'nextFollowUp', 'emailOptOut'] },
   { title: 'Address Information', icon: Globe, fields: ['street', 'city', 'state', 'country', 'postalCode', 'poBox'] },
   { title: 'Description Information', icon: FileText, fields: ['description'] },
   { title: 'Assignment & System Information', icon: History, fields: ['assignedTo', 'createdBy', 'createdAt', 'updatedAt'] },
@@ -108,6 +108,8 @@ const SUMMARY_INFO_FIELDS: { name: string; label: string; type: string; options?
   { name: 'noOfEmployees', label: 'No. of Employees', type: 'number' },
   { name: 'rating', label: 'Rating', type: 'select', options: RATINGS },
   { name: 'interest', label: 'Interest', type: 'select', options: INTERESTS },
+  { name: 'leadScore', label: 'Lead Score (0–100)', type: 'number' },
+  { name: 'nextFollowUp', label: 'Next Follow-up', type: 'datetime-local' },
   { name: 'emailOptOut', label: 'Email Opt Out', type: 'checkbox' },
   { name: 'street', label: 'Street', type: 'text' },
   { name: 'city', label: 'City', type: 'text' },
@@ -572,12 +574,16 @@ export function LeadDetailPage() {
   })
 
   const activityMutation = useMutation({
-    mutationFn: (data: any) =>
-      editingActivity ? api.updateRecordActivity(editingActivity.id, data) : api.record('leads', id!).createActivity(data),
+    mutationFn: async (data: any) => {
+      const result = editingActivity ? await api.updateRecordActivity(editingActivity.id, data) : await api.record('leads', id!).createActivity(data)
+      const nextFollowUp = data.dueAt || data.startAt || null
+      if (nextFollowUp) await api.update('leads', id!, { nextFollowUp })
+      return result
+    },
     onSuccess: () => {
       setActivityOpen(false)
       setEditingActivity(null)
-      invalidate('record-activities', 'record-updates')
+      invalidate('record-activities', 'record-updates', 'leads')
       addToast({ title: editingActivity ? 'Activity updated' : 'Activity created', variant: 'success' })
     },
     onError: toastErr,
@@ -778,7 +784,9 @@ export function LeadDetailPage() {
     onSuccess: (data) => {
       setAiScore(data.data)
       setShowAiScore(true)
-      addToast({ title: 'Lead scored', variant: 'success' })
+      queryClient.setQueryData(['leads', id], (current: any) => current ? { ...current, leadScore: data.data.score } : current)
+      invalidate('leads')
+      addToast({ title: 'Lead scored and saved', description: `Score: ${data.data.score}/100`, variant: 'success' })
     },
     onError: toastErr,
   })
@@ -841,7 +849,7 @@ export function LeadDetailPage() {
   const recentActivities = (activitiesData?.data || []).slice(0, 5)
   const recentComments = (commentsData?.data || []).slice(0, 5)
   const daysInPipeline = lead.createdAt ? Math.max(0, Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / 86400000)) : 0
-  const leadScore = Math.max(0, Math.min(10, Number(lead.leadScore ?? lead.score ?? lead.rating) || 0))
+  const leadScore = Math.max(0, Math.min(100, Number(lead.leadScore ?? lead.score) || 0))
 
   const openActivityDialog = (a: any | null) => {
     if (a) {
@@ -1075,7 +1083,7 @@ export function LeadDetailPage() {
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-500 text-xl font-bold text-white shadow-lg shadow-indigo-500/20">{initials}</div>
             <h2 className="mt-3 text-base font-bold">{fullName}</h2><p className="mt-1 text-xs text-muted-foreground">{lead.company || 'No company'}{lead.industry ? ` · ${lead.industry}` : ''}</p>
             <div className="mt-3 flex flex-wrap justify-center gap-1.5">{lead.leadStatus&&<span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">{lead.leadStatus}</span>}{lead.leadSource&&<span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700">{lead.leadSource}</span>}</div>
-            <div className="mt-5 flex items-center gap-4 border-t border-b py-4 text-left"><div className="relative h-16 w-16 shrink-0"><svg className="-rotate-90" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" className="text-muted" strokeWidth="7"/><circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" className="text-indigo-600" strokeWidth="7" strokeLinecap="round" strokeDasharray="169.6" strokeDashoffset={169.6-(169.6*leadScore/10)}/></svg><span className="absolute inset-0 grid place-items-center text-sm font-bold">{leadScore ? leadScore.toFixed(1) : '—'}</span></div><div><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Lead score</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{leadScore >= 7 ? 'Strong fit — prioritize this lead.' : leadScore >= 4 ? 'Mid-tier fit — keep nurturing.' : 'Score this lead to assess fit.'}</p></div></div>
+            <div className="mt-5 flex items-center gap-4 border-t border-b py-4 text-left"><div className="relative h-16 w-16 shrink-0"><svg className="-rotate-90" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" className="text-muted" strokeWidth="7"/><circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" className="text-indigo-600" strokeWidth="7" strokeLinecap="round" strokeDasharray="169.6" strokeDashoffset={169.6-(169.6*leadScore/100)}/></svg><span className="absolute inset-0 grid place-items-center text-sm font-bold">{leadScore ? leadScore.toFixed(1) : '—'}</span></div><div><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Lead score</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{leadScore >= 70 ? 'Strong fit — prioritize this lead.' : leadScore >= 40 ? 'Mid-tier fit — keep nurturing.' : 'Score this lead to assess fit.'}</p></div></div>
             <div className="pt-4 text-left"><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Contact</p><div className="mt-3 space-y-3 text-xs">{lead.email?<a href={`mailto:${lead.email}`} className="flex items-center gap-2 hover:text-indigo-600"><Mail size={14}/><span className="truncate">{lead.email}</span></a>:<p className="flex items-center gap-2 text-muted-foreground"><Mail size={14}/>Email not provided</p>}{lead.phone||lead.mobile?<a href={`tel:${lead.phone||lead.mobile}`} className="flex items-center gap-2 hover:text-indigo-600"><Phone size={14}/>{lead.phone||lead.mobile}</a>:<p className="flex items-center gap-2 text-muted-foreground"><Phone size={14}/>Phone not provided</p>}<p className="flex items-center gap-2 text-muted-foreground"><MapPin size={14}/>{[lead.city,lead.country].filter(Boolean).join(', ')||'Location not set'}</p></div></div>
           </div>
           <div className="rounded-2xl border bg-card p-5 shadow-sm"><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Pipeline stage</p><div className="mt-4 space-y-0">{['New lead','Follow up','Qualified','Converted'].map((stage,index)=>{const status=String(lead.leadStatus||'').toLowerCase();const active=lead.isConverted?3:/qualif/.test(status)?2:/follow|contact|warm|hot/.test(status)?1:0;return <div key={stage} className="relative flex gap-3 pb-5 last:pb-0"><span className={cn('relative z-10 grid h-5 w-5 place-items-center rounded-full border-2 text-[9px]',index<active?'border-indigo-600 bg-indigo-600 text-white':index===active?'border-indigo-600 bg-background ring-4 ring-indigo-50':'border-border bg-muted')}>{index<active?'✓':''}</span>{index<3&&<span className={cn('absolute left-[9px] top-5 h-full w-0.5',index<active?'bg-indigo-600':'bg-border')}/>}<span className={cn('pt-0.5 text-xs font-semibold',index<=active?'text-foreground':'text-muted-foreground')}>{stage}</span></div>})}</div></div>

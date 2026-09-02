@@ -318,6 +318,8 @@ model Lead {
   rating               String?  @db.VarChar(10)
   emailOptOut          Boolean  @default(false)
   interest             String?  @db.VarChar(200)
+  leadScore            Int?
+  nextFollowUp         DateTime?
   isConverted          Boolean  @default(false)
   convertedAccountId   String?
   convertedContactId   String?
