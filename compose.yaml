@@ -47,6 +47,7 @@ services:
       CORS_ORIGIN: ${APP_ORIGIN:-https://bizforce-crm.online}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
+      SITE_NOTIFY_EMAIL: ${SITE_NOTIFY_EMAIL:-sajjad@bizforce-crm.online}
     volumes:
       - backend_uploads:/app/packages/backend/uploads
       - backend_private:/app/packages/backend/private

@@ -11,8 +11,11 @@ import {
   Sparkles,
   Mail,
   BookOpen,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react'
 import { blogPosts } from '@/data/blogPosts'
+import { useToast } from '@/lib/toast'
 
 const categoryMeta: Record<string, { icon: string; gradient: string; chip: string }> = {
   'CRM Basics': { icon: '💡', gradient: 'from-sky-500 to-blue-600', chip: 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300' },
@@ -74,8 +77,32 @@ function ArticleCard({ slug, title, excerpt, category, date, readTime, featured 
 }
 
 export function BlogPage() {
+  const { addToast } = useToast()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState('All')
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+  const [newsletterLoading, setNewsletterLoading] = useState(false)
+  const [newsletterDone, setNewsletterDone] = useState(false)
+
+  const handleNewsletter = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newsletterEmail.trim()) return
+    setNewsletterLoading(true)
+    try {
+      const res = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newsletterEmail }),
+      })
+      if (!res.ok) throw new Error('Could not subscribe')
+      setNewsletterDone(true)
+      addToast({ title: 'Subscribed!', description: 'Thanks for joining — insights are on the way.', variant: 'success' })
+    } catch (err: any) {
+      addToast({ title: 'Error', description: err?.message || 'Could not subscribe. Please try again.', variant: 'destructive' })
+    } finally {
+      setNewsletterLoading(false)
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -195,23 +222,31 @@ export function BlogPage() {
               <p className="mt-3 max-w-xl mx-auto text-white/80">
                 Get our best guides and growth tips delivered to your inbox. No spam, unsubscribe anytime.
               </p>
-              <form
-                onSubmit={e => { e.preventDefault(); window.location.href = '/contact' }}
-                className="mt-6 max-w-md mx-auto flex flex-col sm:flex-row gap-3"
-              >
+              {newsletterDone ? (
+                <div className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white/15 backdrop-blur px-5 py-3 text-white">
+                  <CheckCircle2 size={18} />
+                  <span className="font-medium">You're subscribed. Thanks for joining!</span>
+                </div>
+              ) : (
+              <form onSubmit={handleNewsletter} className="mt-6 max-w-md mx-auto flex flex-col sm:flex-row gap-3">
                 <input
                   type="email"
                   required
                   placeholder="Enter your email"
+                  value={newsletterEmail}
+                  onChange={e => setNewsletterEmail(e.target.value)}
                   className="flex-1 h-12 px-4 rounded-xl bg-white/95 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50"
                 />
                 <button
                   type="submit"
-                  className="h-12 px-6 rounded-xl bg-white text-blue-700 font-semibold shadow-lg hover:bg-blue-50 transition-colors"
+                  disabled={newsletterLoading}
+                  className="h-12 px-6 rounded-xl bg-white text-blue-700 font-semibold shadow-lg hover:bg-blue-50 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
                 >
+                  {newsletterLoading ? <Loader2 size={16} className="animate-spin" /> : null}
                   Subscribe
                 </button>
               </form>
+              )}
             </div>
           </div>
         </div>

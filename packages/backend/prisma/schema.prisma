@@ -2654,3 +2654,30 @@ model WebhookLog {
   @@index([companyId])
   @@index([createdAt])
 }
+
+model WebsiteEnquiry {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(200)
+  email     String   @db.VarChar(200)
+  subject   String?  @db.VarChar(300)
+  message   String   @db.Text
+  source    String   @default("contact") @db.VarChar(30)
+  ip        String?  @db.VarChar(64)
+  companyId String?
+  status    String   @default("NEW") @db.VarChar(30)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([email])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique @db.VarChar(200)
+  name      String?  @db.VarChar(200)
+  source    String   @default("blog") @db.VarChar(30)
+  status    String   @default("SUBSCRIBED") @db.VarChar(30)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

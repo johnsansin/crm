@@ -216,7 +216,6 @@ export async function sendMail(
   const fromEmail = cfg.fromEmail || process.env.SMTP_FROM_EMAIL || ''
   const fromName = cfg.fromName || 'BizForce CRM'
   const from = fromEmail ? `"${fromName}" <${fromEmail}>` : ''
-  const fromEmailIsGmail = /@gmail\.com$/i.test(fromEmail)
   let emailId: string | undefined
 
   if (opts.companyId) {
@@ -267,24 +266,7 @@ export async function sendMail(
     console.log(`[EMAIL] SMTP failed (${result.error}), trying next provider...`)
   }
 
-  const resendKey = process.env.RESEND_API_KEY
-  if (!cfg.host && resendKey && !fromEmailIsGmail) {
-    const resendFrom = fromEmail ? `"${fromName}" <noreply@bizforce-crm.online>` : '"BizForce CRM" <noreply@bizforce-crm.online>'
-    result = await sendViaResend({
-      to: toArr,
-      from: resendFrom,
-      subject: opts.subject,
-      html: opts.html,
-      text: opts.text,
-    })
-    if (result.ok) {
-      if (emailId) await prisma.email.update({ where: { id: emailId }, data: { emailFlag: 'Sent' } }).catch(() => {})
-      return { ok: true, delivered: true, id: emailId }
-    }
-    console.log(`[EMAIL] Resend failed (${result.error}), trying Gmail API...`)
-  }
-
-  if (opts.companyId || !cfg.host) {
+  if (opts.companyId) {
     const gmail = await sendViaGmailApi(
       { from: fromName, fromEmail, to: toArr, subject: opts.subject, html: opts.html, text: opts.text },
       opts.companyId
@@ -297,6 +279,23 @@ export async function sendMail(
       console.log(`[EMAIL] Gmail API fallback failed: ${gmail.error}`)
       result = { ok: false, error: gmail.error }
     }
+  }
+
+  const resendKey = process.env.RESEND_API_KEY
+  if (resendKey) {
+    const resendFrom = fromEmail ? `"${fromName}" <noreply@bizforce-crm.online>` : '"BizForce CRM" <noreply@bizforce-crm.online>'
+    result = await sendViaResend({
+      to: toArr,
+      from: resendFrom,
+      subject: opts.subject,
+      html: opts.html,
+      text: opts.text,
+    })
+    if (result.ok) {
+      if (emailId) await prisma.email.update({ where: { id: emailId }, data: { emailFlag: 'Sent' } }).catch(() => {})
+      return { ok: true, delivered: true, id: emailId }
+    }
+    console.log(`[EMAIL] Resend fallback failed: ${result.error}`)
   }
 
   if (result.ok) {

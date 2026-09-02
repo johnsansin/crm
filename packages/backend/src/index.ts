@@ -51,6 +51,7 @@ import { errorHandler } from './middleware/errorHandler'
 import { setupModules, getModuleConfig } from './modules/moduleSetup'
 import { startCron } from './lib/cron'
 import { prisma } from './lib/prisma'
+import { sendMail, getSmtpConfig } from './lib/mailer'
 import { PERMISSION_MODULES } from './lib/module-permissions'
 import { setupSupportWebSocket } from './lib/support-websocket'
 import { authMiddleware } from './middleware/auth'
@@ -118,15 +119,92 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-app.post('/api/contact', (req, res) => {
+app.post('/api/contact', async (req, res) => {
   const { name, email, subject, message } = req.body || {}
   if (!name || !email || !message) {
     res.status(400).json({ error: 'Name, email and message are required' })
     return
   }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) {
+    res.status(400).json({ error: 'A valid email address is required' })
+    return
+  }
+  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress || null
   // Avoid writing customer messages and email addresses to process logs.
   console.info('[CONTACT] message received', { hasSubject: Boolean(subject), receivedAt: new Date().toISOString() })
-  res.status(200).json({ ok: true })
+
+  try {
+    const enquiry = await prisma.websiteEnquiry.create({
+      data: {
+        name: String(name).slice(0, 200),
+        email: String(email).slice(0, 200),
+        subject: subject ? String(subject).slice(0, 300) : null,
+        message: String(message),
+        source: 'contact',
+        ip: ip ? String(ip).slice(0, 64) : null,
+      },
+    })
+    // Notify the site owner so leads are acted on, without failing the request
+    // if outgoing email delivery is temporarily unavailable.
+    const notifyTo = process.env.SITE_NOTIFY_EMAIL || 'sajjad@bizforce-crm.online'
+    const notifyFrom = await getSmtpConfig(null)
+    sendMail({
+      to: notifyTo,
+      subject: `New website enquiry: ${subject ? String(subject).slice(0, 120) : 'Website contact'}`,
+      html: [
+        '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px">',
+        '<h2 style="margin-top:0;color:#0f172a">New BizForce website enquiry</h2>',
+        `<p><strong>Name:</strong> ${String(name)}</p>`,
+        `<p><strong>Email:</strong> <a href="mailto:${String(email)}">${String(email)}</a></p>`,
+        subject ? `<p><strong>Subject:</strong> ${String(subject)}</p>` : '',
+        `<p><strong>Message:</strong><br/>${String(message).replace(/\n/g, '<br/>')}</p>`,
+        '<p style="color:#94a3b8;font-size:12px">Received via the BizForce website contact form.</p>',
+        '</div>',
+      ].join(''),
+      fromOverride: notifyFrom,
+    }).catch(err => console.error('[CONTACT] notification email failed:', err?.message))
+
+    res.status(200).json({ ok: true, id: enquiry.id })
+  } catch (err) {
+    console.error('[CONTACT] failed to store enquiry:', (err as Error)?.message)
+    res.status(500).json({ error: 'Could not submit your message. Please try again.' })
+  }
+})
+
+app.post('/api/newsletter/subscribe', async (req, res) => {
+  const { email, name } = req.body || {}
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) {
+    res.status(400).json({ error: 'A valid email address is required' })
+    return
+  }
+  try {
+    const normalized = String(email).toLowerCase().trim().slice(0, 200)
+    const existing = await prisma.newsletterSubscriber.findUnique({ where: { email: normalized } })
+    if (existing) {
+      res.status(200).json({ ok: true, alreadySubscribed: true })
+      return
+    }
+    await prisma.newsletterSubscriber.create({
+      data: {
+        email: normalized,
+        name: name ? String(name).slice(0, 200) : null,
+        source: 'blog',
+      },
+    })
+    console.info('[NEWSLETTER] new subscriber', { receivedAt: new Date().toISOString() })
+    const notifyTo = process.env.SITE_NOTIFY_EMAIL || 'sajjad@bizforce-crm.online'
+    const notifyFrom = await getSmtpConfig(null)
+    sendMail({
+      to: notifyTo,
+      subject: 'New blog newsletter subscriber',
+      html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px"><h2 style="margin-top:0;color:#0f172a">New subscriber</h2><p><strong>Email:</strong> <a href="mailto:${normalized}">${normalized}</a></p></div>`,
+      fromOverride: notifyFrom,
+    }).catch(err => console.error('[NEWSLETTER] notification email failed:', err?.message))
+    res.status(200).json({ ok: true })
+  } catch (err) {
+    console.error('[NEWSLETTER] failed to store subscriber:', (err as Error)?.message)
+    res.status(500).json({ error: 'Could not subscribe. Please try again.' })
+  }
 })
 
 app.use('/api/auth', authRouter)
