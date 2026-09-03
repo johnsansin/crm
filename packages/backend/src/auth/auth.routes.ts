@@ -414,7 +414,7 @@ authRouter.post('/forgot-password', async (req, res, next) => {
     const raw = (req.body?.email || '').toString().trim().toLowerCase()
     if (!raw) return res.status(400).json({ error: 'Email is required' })
     const user = await prisma.user.findUnique({ where: { email: raw } })
-    if (!user) return res.json({ message: 'If that email exists, a reset link has been sent.' })
+    if (!user) return res.status(404).json({ error: 'The given email address was not found.' })
     const now = Date.now()
     if (user.resetToken && user.resetTokenExpires && user.resetTokenExpires.getTime() > now) {
       return res.json({ message: `A reset link was already sent to ${raw}. Please check your inbox.`, email: raw, alreadySent: true, delivered: false })

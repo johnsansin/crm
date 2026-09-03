@@ -4,7 +4,7 @@ import { formatDate, formatDateTime, formatTime } from '@/lib/org-format'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bot, CheckCircle2, ChevronLeft, Headphones, Loader2, MessageCircle, Plus, Send, UserRound, Wifi, WifiOff, X } from 'lucide-react'
+import { Bot, CheckCircle2, ChevronLeft, Headphones, Lightbulb, Loader2, MessageCircle, Paperclip, Plus, Send, UserRound, Wifi, WifiOff, X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { createSupportMessageId, useSupportSocket } from '@/hooks/useSupportSocket'
 import { useAuthStore } from '@/lib/auth'
@@ -27,6 +27,7 @@ export function SupportChatWidget() {
   const [showHistory, setShowHistory] = useState(false)
   const [agentTyping, setAgentTyping] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const refresh = useCallback(async (id?: string) => {
     const list = await api.supportList()
@@ -44,6 +45,29 @@ export function SupportChatWidget() {
   }, [])
 
   useEffect(() => {
+    const openSupport = (event: Event) => {
+      if (isSuperAdmin) { router.push('/superadmin/support'); return }
+      const conversationId = (event as CustomEvent<{ conversationId?: string }>).detail?.conversationId
+      setOpen(true); setShowHistory(false)
+      if (conversationId) {
+        setLoading(true)
+        refresh(conversationId).catch((e: any) => setError(e.message || 'Unable to open support request')).finally(() => setLoading(false))
+      }
+    }
+    window.addEventListener('open-support-chat', openSupport)
+    return () => window.removeEventListener('open-support-chat', openSupport)
+  }, [isSuperAdmin, refresh, router])
+
+  useEffect(() => {
+    if (isSuperAdmin) return
+    const requestedConversation = new URLSearchParams(window.location.search).get('support')
+    if (!requestedConversation) return
+    setOpen(true)
+    setLoading(true)
+    refresh(requestedConversation).catch((e: any) => setError(e.message || 'Unable to open support request')).finally(() => setLoading(false))
+  }, [isSuperAdmin, refresh])
+
+  useEffect(() => {
     if (!open) return
     setLoading(true); setError('')
     refresh().catch((e: any) => setError(e.message || 'Unable to load support')).finally(() => setLoading(false))
@@ -54,7 +78,10 @@ export function SupportChatWidget() {
       setAgentTyping(!!event.payload?.typing)
       return
     }
-    if (event.event?.startsWith('message.') || event.event?.startsWith('conversation.')) refresh(conversation?.id).catch(() => {})
+    if (event.event?.startsWith('message.') || event.event?.startsWith('conversation.')) {
+      window.dispatchEvent(new CustomEvent('notifications-updated'))
+      refresh(conversation?.id).catch(() => {})
+    }
   }, [conversation?.id, refresh])
   const { connected, sendTyping } = useSupportSocket(conversation?.id || null, onSocketEvent, open && !isSuperAdmin)
 
@@ -68,13 +95,21 @@ export function SupportChatWidget() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, agentTyping])
 
-  async function createConversation() {
+  async function createConversation(channel: 'SUPPORT' | 'FEEDBACK' | 'REQUIREMENT' = 'SUPPORT') {
     setLoading(true); setError(''); setShowHistory(false)
     try {
-      const response = await api.supportCreate({ subject: 'Support request' })
+      const response = await api.supportCreate({ subject: channel === 'SUPPORT' ? 'Support request' : channel === 'FEEDBACK' ? 'Organisation feedback' : 'Organisation requirement', channel })
       await refresh(response.data.id)
     } catch (e: any) { setError(e.message || 'Unable to start a conversation') }
     finally { setLoading(false) }
+  }
+
+  async function sendFile(file?: File) {
+    if (!file || !conversation || sending) return
+    setSending(true); setError('')
+    try { const uploaded = await api.uploadFile(file); await api.supportSend(conversation.id, uploaded.fileName, createSupportMessageId(), uploaded); await refresh(conversation.id) }
+    catch (e:any) { setError(e.message || 'Unable to send file') }
+    finally { setSending(false); if (fileRef.current) fileRef.current.value = '' }
   }
 
   async function send(content = text) {
@@ -112,7 +147,7 @@ export function SupportChatWidget() {
       <span className="relative"><Headphones size={19}/><span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-indigo-600"/></span>
     </button>
     {!isSuperAdmin && open && <div className="fixed inset-0 z-[70] bg-slate-950/25 sm:bg-transparent" onMouseDown={e => { if (e.target === e.currentTarget) setOpen(false) }}>
-      <section className="absolute inset-x-0 bottom-0 flex h-[min(720px,92dvh)] flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl dark:bg-slate-900 sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[680px] sm:w-[410px] sm:rounded-3xl">
+      <section className="absolute inset-x-0 bottom-0 flex h-[min(700px,90dvh)] flex-col overflow-hidden rounded-t-3xl border border-white/70 bg-white shadow-2xl shadow-slate-950/25 dark:border-white/10 dark:bg-slate-900 sm:inset-auto sm:bottom-5 sm:right-5 sm:h-[min(700px,calc(100dvh-4rem))] sm:w-[min(440px,calc(100vw-2.5rem))] sm:rounded-3xl">
         <header className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 px-4 pb-4 pt-4 text-white">
           <div className="flex items-center gap-3">
             {showHistory && <button onClick={() => setShowHistory(false)} className="rounded-full p-2 hover:bg-white/15"><ChevronLeft size={18}/></button>}
@@ -121,18 +156,19 @@ export function SupportChatWidget() {
             <button onClick={() => setShowHistory(v => !v)} className="rounded-full p-2 hover:bg-white/15" title="Conversation history"><MessageCircle size={18}/></button>
             <button onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-white/15"><X size={19}/></button>
           </div>
-          {!showHistory && conversation && <div className="mt-3 flex items-center justify-between rounded-xl bg-white/10 px-3 py-2 text-xs"><span>{agentName ? `${agentName} is assisting you` : status === 'AI_ACTIVE' ? 'AI Assistant' : status === 'RESOLVED' ? 'Resolved' : 'Waiting for a support agent'}</span><span className="h-2 w-2 rounded-full bg-emerald-300"/></div>}
+          {!showHistory && conversation && <div className="mt-3 flex items-center justify-between rounded-xl bg-white/10 px-3 py-2 text-xs"><span><strong className="mr-2">{conversation.channel === 'FEEDBACK' ? 'Feedback' : conversation.channel === 'REQUIREMENT' ? 'Requirement' : 'Support'}</strong>{agentName ? `${agentName} is assisting you` : status === 'AI_ACTIVE' ? 'AI Assistant' : status === 'RESOLVED' ? 'Resolved' : 'Waiting for a support agent'}</span><span className="h-2 w-2 rounded-full bg-emerald-300"/></div>}
         </header>
         {showHistory ? <div className="flex-1 overflow-y-auto p-4">
-          <div className="mb-3 flex items-center justify-between"><h3 className="font-semibold">Your conversations</h3><button onClick={createConversation} className="flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950"><Plus size={14}/> New</button></div>
-          <div className="space-y-2">{history.map(item => <button key={item.id} onClick={async () => { setShowHistory(false); setLoading(true); await refresh(item.id); setLoading(false) }} className="w-full rounded-xl border p-3 text-left hover:border-indigo-300 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30"><div className="flex justify-between gap-2"><span className="truncate text-sm font-medium">{item.subject}</span><span className="text-[10px] text-muted-foreground">{formatDate(item.lastMessageAt)}</span></div><p className="mt-1 truncate text-xs text-muted-foreground">{item.messages?.[0]?.content || 'No messages'}</p><span className="mt-2 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold dark:bg-slate-800">{item.status.replaceAll('_', ' ')}</span></button>)}</div>
+          <div className="mb-3 flex items-center justify-between"><h3 className="font-semibold">Your conversations</h3><button onClick={() => createConversation()} className="flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950"><Plus size={14}/> New</button></div>
+          <div className="mb-3 grid grid-cols-2 gap-2"><button onClick={() => createConversation('FEEDBACK')} className="rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-muted"><Lightbulb size={14} className="mr-1 inline"/>Give feedback</button><button onClick={() => createConversation('REQUIREMENT')} className="rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-muted">Submit requirement</button></div>
+          <div className="space-y-2">{history.map(item => <button key={item.id} onClick={async () => { setShowHistory(false); setLoading(true); await refresh(item.id); setLoading(false) }} className="w-full rounded-xl border p-3 text-left hover:border-indigo-300 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30"><div className="flex justify-between gap-2"><span className="truncate text-sm font-medium">{item.subject}</span><span className="text-[10px] text-muted-foreground">{formatDate(item.lastMessageAt)}</span></div><p className="mt-1 truncate text-xs text-muted-foreground">{item.messages?.[0]?.content || 'No messages'}</p><div className="mt-2 flex gap-1"><span className="inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">{item.channel || 'SUPPORT'}</span><span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold dark:bg-slate-800">{item.status.replaceAll('_', ' ')}</span></div></button>)}</div>
         </div> : <>
           <div className="flex-1 overflow-y-auto bg-slate-50/80 px-4 py-4 dark:bg-slate-950/40">
-            {loading ? <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800"/>)}</div> : !conversation ? <div className="flex h-full flex-col items-center justify-center text-center"><div className="mb-4 grid h-16 w-16 place-items-center rounded-3xl bg-indigo-100 text-indigo-600 dark:bg-indigo-950"><Bot size={30}/></div><h3 className="text-lg font-semibold">How can we help?</h3><p className="mt-2 max-w-xs text-sm text-muted-foreground">Start with our AI assistant, and reach a human support agent at any time.</p><button onClick={createConversation} className="mt-5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white">Start conversation</button></div> : <>
+            {loading ? <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800"/>)}</div> : !conversation ? <div className="flex h-full flex-col items-center justify-center text-center"><div className="mb-4 grid h-16 w-16 place-items-center rounded-3xl bg-indigo-100 text-indigo-600 dark:bg-indigo-950"><Bot size={30}/></div><h3 className="text-lg font-semibold">How can we help?</h3><p className="mt-2 max-w-xs text-sm text-muted-foreground">Start with our AI assistant, and reach a human support agent at any time.</p><button onClick={() => createConversation()} className="mt-5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white">Start conversation</button><div className="mt-3 flex gap-2"><button onClick={() => createConversation('FEEDBACK')} className="rounded-lg border px-3 py-2 text-xs font-semibold">Give feedback</button><button onClick={() => createConversation('REQUIREMENT')} className="rounded-lg border px-3 py-2 text-xs font-semibold">Submit requirement</button></div></div> : <>
               {messages.map(message => {
                 const mine = message.senderType === 'CUSTOMER'
                 if (message.senderType === 'SYSTEM') return <div key={message.id} className="my-3 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"><CheckCircle2 size={14}/>{message.content}</div>
-                return <div key={message.id} className={`mb-3 flex gap-2 ${mine ? 'flex-row-reverse' : ''}`}><div className={`mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-full ${mine ? 'bg-indigo-600 text-white' : message.senderType === 'AI' ? 'bg-violet-100 text-violet-700 dark:bg-violet-950' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950'}`}>{mine ? <UserRound size={14}/> : message.senderType === 'AI' ? <Bot size={14}/> : <Headphones size={14}/>}</div><div className={`max-w-[78%] ${mine ? 'text-right' : ''}`}><div className={`rounded-2xl px-3.5 py-2.5 text-left text-sm leading-relaxed shadow-sm ${mine ? 'rounded-tr-sm bg-indigo-600 text-white' : 'rounded-tl-sm border bg-white dark:bg-slate-900'}`}>{message.content}</div><span className="px-1 text-[10px] text-muted-foreground">{formatTime(message.createdAt)}</span></div></div>
+                return <div key={message.id} className={`mb-3 flex gap-2 ${mine ? 'flex-row-reverse' : ''}`}><div className={`mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-full ${mine ? 'bg-indigo-600 text-white' : message.senderType === 'AI' ? 'bg-violet-100 text-violet-700 dark:bg-violet-950' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950'}`}>{mine ? <UserRound size={14}/> : message.senderType === 'AI' ? <Bot size={14}/> : <Headphones size={14}/>}</div><div className={`max-w-[78%] ${mine ? 'text-right' : ''}`}><div className={`rounded-2xl px-3.5 py-2.5 text-left text-sm leading-relaxed shadow-sm ${mine ? 'rounded-tr-sm bg-indigo-600 text-white' : 'rounded-tl-sm border bg-white dark:bg-slate-900'}`}>{message.messageType === 'FILE' && message.metadata?.path ? <a href={message.metadata.path} target="_blank" rel="noreferrer" className="flex items-center gap-2 font-semibold underline"><Paperclip size={14}/>{message.metadata.fileName || message.content}</a> : message.content}</div><span className="px-1 text-[10px] text-muted-foreground">{formatTime(message.createdAt)}</span></div></div>
               })}
               {agentTyping && <p className="text-xs text-muted-foreground">Support agent is typing…</p>}
               {status === 'AI_ACTIVE' && messages.length <= 3 && <div className="mt-3 flex flex-wrap gap-2">{suggestions.map(item => <button key={item} onClick={() => send(item)} className="rounded-full border border-indigo-200 bg-white px-3 py-1.5 text-xs text-indigo-700 hover:bg-indigo-50 dark:bg-slate-900">{item}</button>)}</div>}
@@ -141,7 +177,7 @@ export function SupportChatWidget() {
           </div>
           {conversation && <footer className="border-t bg-white p-3 dark:bg-slate-900">
             {status === 'AI_ACTIVE' && <button onClick={requestAgent} disabled={sending} className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300"><Headphones size={15}/> Talk to a human agent</button>}
-            {status === 'CLOSED' ? <button onClick={createConversation} className="w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white">Start a new conversation</button> : <div className="flex items-end gap-2"><textarea value={text} onChange={e => { setText(e.target.value); sendTyping(true) }} onBlur={() => sendTyping(false)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} rows={1} placeholder={humanMode ? 'Message support…' : 'Ask the AI assistant…'} className="max-h-28 min-h-11 flex-1 resize-none rounded-xl border bg-slate-50 px-3 py-3 text-sm outline-none focus:border-indigo-400 dark:bg-slate-950"/><button onClick={() => send()} disabled={!text.trim() || sending} className="grid h-11 w-11 place-items-center rounded-xl bg-indigo-600 text-white disabled:opacity-50">{sending ? <Loader2 size={18} className="animate-spin"/> : <Send size={18}/>}</button></div>}
+            {status === 'CLOSED' ? <button onClick={() => createConversation()} className="w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white">Start a new conversation</button> : <div className="flex items-end gap-2"><input ref={fileRef} type="file" className="hidden" onChange={e => sendFile(e.target.files?.[0])}/><button type="button" onClick={() => fileRef.current?.click()} disabled={sending} title="Attach a file" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border hover:bg-muted disabled:opacity-50"><Paperclip size={18}/></button><textarea value={text} onChange={e => { setText(e.target.value); sendTyping(true) }} onBlur={() => sendTyping(false)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} rows={1} placeholder={humanMode ? 'Message support…' : 'Ask the AI assistant…'} className="max-h-28 min-h-11 flex-1 resize-none rounded-xl border bg-slate-50 px-3 py-3 text-sm outline-none focus:border-indigo-400 dark:bg-slate-950"/><button onClick={() => send()} disabled={!text.trim() || sending} className="grid h-11 w-11 place-items-center rounded-xl bg-indigo-600 text-white disabled:opacity-50">{sending ? <Loader2 size={18} className="animate-spin"/> : <Send size={18}/>}</button></div>}
             {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
           </footer>}
         </>}

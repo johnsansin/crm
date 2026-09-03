@@ -27,6 +27,40 @@ leadRouter.get('/users', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+leadRouter.post('/bulk-email', async (req, res, next) => {
+  try {
+    const companyId = req.user!.companyId
+    if (!companyId) return res.status(400).json({ error: 'Organization is required' })
+    const { target = 'selected', ids = [], tagId, search = '', subject, body } = req.body || {}
+    if (!String(subject || '').trim()) return res.status(400).json({ error: 'Subject is required' })
+    if (!String(body || '').trim()) return res.status(400).json({ error: 'Email body is required' })
+    const where: any = { companyId, isActive: true, isConverted: false, email: { not: null }, emailOptOut: false }
+    if (target === 'selected') {
+      if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: 'Select at least one lead' })
+      where.id = { in: ids.slice(0, 500) }
+    } else if (target === 'tag') {
+      if (!tagId) return res.status(400).json({ error: 'Choose a tag' })
+      const assignments = await prisma.tag.findMany({ where: { companyId, module: 'leads', OR: [{ parentTagId: tagId }, { id: tagId, recordId: { not: null } }] }, select: { recordId: true } })
+      where.id = { in: assignments.map(item => item.recordId).filter(Boolean) }
+    } else if (target === 'all' && String(search).trim()) {
+      where.OR = ['firstName', 'lastName', 'company', 'email'].map(field => ({ [field]: { contains: String(search).trim(), mode: 'insensitive' } }))
+    }
+    const leads = await prisma.lead.findMany({ where, take: 500, orderBy: { createdAt: 'desc' } })
+    if (!leads.length) return res.status(400).json({ error: 'No eligible leads with email addresses were found' })
+    const smtp = await getSmtpConfig(companyId)
+    const failures: { leadId: string; email: string; error: string }[] = []
+    let sent = 0
+    for (const lead of leads) {
+      const personalized = String(body).replace(/\{firstName\}/g, lead.firstName || '').replace(/\{lastName\}/g, lead.lastName || '').replace(/\{company\}/g, lead.company || '')
+      const result = await sendMail({ to: lead.email!, subject: String(subject), html: personalized.replace(/\n/g, '<br>'), companyId, fromOverride: smtp })
+      if (!result.delivered) { failures.push({ leadId: lead.id, email: lead.email!, error: result.error || 'Delivery failed' }); continue }
+      sent++
+      await prisma.email.create({ data: { subject: String(subject), body: personalized, fromEmail: req.user!.email, toEmails: lead.email, emailFlag: 'Sent', parentModule: 'leads', parentId: lead.id, companyId, assignedTo: req.user!.userId, createdBy: req.user!.userId, dateSent: new Date() } }).catch(() => {})
+    }
+    res.json({ data: { matched: leads.length, sent, failed: failures.length, failures } })
+  } catch (err) { next(err) }
+})
+
 leadRouter.get('/:id/pdf', async (req, res, next) => {
   try {
     const lead: any = await prisma.lead.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId, isActive: true } })

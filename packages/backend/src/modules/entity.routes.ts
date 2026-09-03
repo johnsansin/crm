@@ -492,6 +492,31 @@ export function entityRouter(moduleName: string): Router {
   const prismaModel = (prisma as any)[modelName]
   const isScoped = scopedModels.has(modelName)
 
+  async function enrichOwnerNames(records: any[]) {
+    const ownerIds = [...new Set(records.flatMap((record: any) => [record.assignedTo, record.assignedGroupId, record.createdBy]).filter(Boolean))] as string[]
+    if (!ownerIds.length) return records
+    const [users, roles, groups] = await Promise.all([
+      prisma.user.findMany({ where: { id: { in: ownerIds } }, select: { id: true, firstName: true, lastName: true, email: true } }),
+      prisma.role.findMany({ where: { id: { in: ownerIds } }, select: { id: true, name: true } }),
+      prisma.userGroup.findMany({ where: { id: { in: ownerIds }, companyId: reqCompanyId(records), isActive: true }, select: { id: true, name: true } }),
+    ])
+    const names = new Map<string, string>()
+    for (const user of users) names.set(user.id, `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email)
+    for (const role of roles) names.set(role.id, role.name)
+    for (const group of groups) names.set(group.id, group.name)
+    for (const record of records) {
+      record.assignedToName = record.assignedTo ? names.get(record.assignedTo) || null : null
+      record.assignedGroupName = record.assignedGroupId ? names.get(record.assignedGroupId) || null : null
+      record.createdByName = record.createdBy ? names.get(record.createdBy) || null : null
+      record.ownerName = record.assignedToName || record.assignedGroupName || record.createdByName
+    }
+    return records
+  }
+
+  function reqCompanyId(records: any[]): string | undefined {
+    return records.find(record => record.companyId)?.companyId
+  }
+
   router.use(authMiddleware)
   router.use(requireTenant)
   router.use(async (req: any, _res, next) => {
@@ -549,22 +574,7 @@ export function entityRouter(moduleName: string): Router {
       ])
 
       const merged = await mergeCustomValues(moduleName, data)
-      if (merged.some((record: any) => record.assignedTo || record.createdBy)) {
-        const ownerIds = [...new Set(merged.flatMap((record: any) => [record.assignedTo, record.createdBy]).filter(Boolean))] as string[]
-        const [users, roles, groups] = await Promise.all([
-          prisma.user.findMany({ where: { id: { in: ownerIds } }, select: { id: true, firstName: true, lastName: true, email: true } }),
-          prisma.role.findMany({ where: { id: { in: ownerIds } }, select: { id: true, name: true } }),
-          prisma.userGroup.findMany({ where: { id: { in: ownerIds }, companyId: req.user!.companyId, isActive: true }, select: { id: true, name: true } }),
-        ])
-        const names = new Map<string, string>()
-        for (const user of users) names.set(user.id, `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email)
-        for (const role of roles) names.set(role.id, role.name)
-        for (const group of groups) names.set(group.id, group.name)
-        for (const record of merged) {
-          record.assignedToName = record.assignedTo ? names.get(record.assignedTo) || null : null
-          record.ownerName = record.assignedToName || (record.createdBy ? names.get(record.createdBy) || null : null)
-        }
-      }
+      await enrichOwnerNames(merged)
       res.json({ data: merged, pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) } })
     } catch (err) { next(err) }
   })
@@ -624,6 +634,7 @@ export function entityRouter(moduleName: string): Router {
       const include = moduleName === 'products' ? { images: { orderBy: { sortOrder: 'asc' as const } } } : {}
       const data = await prismaModel.findMany({ where, orderBy, include })
       const merged = await mergeCustomValues(moduleName, data)
+      await enrichOwnerNames(merged)
       res.json({ data: merged })
     } catch (err) { next(err) }
   })

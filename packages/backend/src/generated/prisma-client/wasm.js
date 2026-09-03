@@ -1811,6 +1811,37 @@ exports.Prisma.AiLogScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.LeadCandidateScalarFieldEnum = {
+  id: 'id',
+  source: 'source',
+  sourceReference: 'sourceReference',
+  consentBasis: 'consentBasis',
+  fingerprint: 'fingerprint',
+  status: 'status',
+  firstName: 'firstName',
+  lastName: 'lastName',
+  company: 'company',
+  email: 'email',
+  phone: 'phone',
+  website: 'website',
+  title: 'title',
+  industry: 'industry',
+  country: 'country',
+  employeeCount: 'employeeCount',
+  score: 'score',
+  band: 'band',
+  reasons: 'reasons',
+  rawPayload: 'rawPayload',
+  duplicateLeadId: 'duplicateLeadId',
+  createdLeadId: 'createdLeadId',
+  companyId: 'companyId',
+  createdBy: 'createdBy',
+  reviewedBy: 'reviewedBy',
+  reviewedAt: 'reviewedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.TranslationScalarFieldEnum = {
   id: 'id',
   locale: 'locale',
@@ -2506,6 +2537,7 @@ exports.Prisma.ModelName = {
   PortalUser: 'PortalUser',
   AiPrompt: 'AiPrompt',
   AiLog: 'AiLog',
+  LeadCandidate: 'LeadCandidate',
   Translation: 'Translation',
   Mailbox: 'Mailbox',
   EmailToTicketRule: 'EmailToTicketRule',

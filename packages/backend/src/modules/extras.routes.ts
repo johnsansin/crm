@@ -9,7 +9,7 @@ import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { writeAudit } from '../lib/audit'
 import { syncMailbox, generateRecurringInvoice, fetchRssFeed, applyEmailToTicketRule } from '../lib/automation'
 import { renderReport, escapeHtml, resolveReportLogo } from './report'
-import { renderReportHtml, renderReportCsv } from '../lib/report-runner'
+import { renderReportHtml, renderReportCsv, resolveReportReferences } from '../lib/report-runner'
 import { dialViaPbx } from './pbx.routes'
 import { evaluateConditions } from '../lib/settings'
 import { getOrgSetting } from '../lib/settings'
@@ -934,7 +934,7 @@ extrasRouter.post('/reports/export', authMiddleware, requireTenant, requireModul
   try {
     const { name, moduleName, reportType, columns, grouping, filters, rows, format } = req.body || {}
     const report = { name, moduleName, reportType: reportType || 'tabular', columns, grouping, filters, rows }
-    const list = Array.isArray(rows) ? rows : []
+    const list = await resolveReportReferences(Array.isArray(rows) ? rows : [], req.user!.companyId)
     const company = req.user?.companyId ? await prisma.company.findUnique({ where: { id: req.user.companyId } }) : null
 
     if (format === 'csv') {
@@ -958,7 +958,8 @@ extrasRouter.post('/reports/email', authMiddleware, requireTenant, requireModule
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) return res.status(400).json({ error: 'A valid recipient email is required' })
     const company = await prisma.company.findUnique({ where: { id: req.user!.companyId } })
     const report = { name, moduleName, reportType: reportType || 'tabular', columns, grouping, filters }
-    const html = renderReportHtml(report, Array.isArray(rows) ? rows : [], company?.name || 'BizForce CRM')
+    const resolvedRows = await resolveReportReferences(Array.isArray(rows) ? rows : [], req.user!.companyId)
+    const html = renderReportHtml(report, resolvedRows, company?.name || 'BizForce CRM')
     const safeName = String(name || 'report').replace(/[^a-zA-Z0-9._-]/g, '_')
     const attachments = attachPdf ? [{ filename: `${safeName}.pdf`, content: await htmlToPdf(html), contentType: 'application/pdf' }] : undefined
     const result = await sendMail({

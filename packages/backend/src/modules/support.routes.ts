@@ -3,11 +3,13 @@ import rateLimit from 'express-rate-limit'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { publishSupportEvent } from '../lib/support-events'
+import { activeSupportUserIds } from '../lib/support-websocket'
 
 const messageLimiter = rateLimit({ windowMs: 60_000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false })
 const createLimiter = rateLimit({ windowMs: 60_000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false })
 const STATUSES = ['AI_ACTIVE', 'WAITING_FOR_AGENT', 'AGENT_ASSIGNED', 'AGENT_ACTIVE', 'RESOLVED', 'CLOSED'] as const
 const PRIORITIES = ['LOW', 'NORMAL', 'HIGH', 'URGENT'] as const
+const CHANNELS = ['SUPPORT', 'FEEDBACK', 'REQUIREMENT'] as const
 
 export const supportRouter = Router()
 export const adminSupportRouter = Router()
@@ -91,6 +93,40 @@ async function notifyAssignedAgent(conversation: any, agentId: string, title = '
   }).catch(() => {})
 }
 
+async function notifyCustomerMessage(conversation: any, preview: string) {
+  if (activeSupportUserIds(conversation.id).has(conversation.createdByUserId)) return
+  await prisma.notification.create({ data: {
+    userId: conversation.createdByUserId,
+    companyId: conversation.companyId,
+    title: 'New reply from BizForce Support',
+    message: preview || conversation.subject || 'A support agent replied to your request.',
+    link: `/dashboard?support=${conversation.id}`,
+  } })
+}
+
+async function notifyStaffMessage(conversation: any, preview: string, senderId: string) {
+  const activeUsers = activeSupportUserIds(conversation.id)
+  const staff = await prisma.user.findMany({
+    where: {
+      isActive: true,
+      id: { notIn: [senderId, ...activeUsers] },
+      OR: [
+        { profile: { is: { isSuperAdmin: true } } },
+        ...(conversation.assignedAgentId ? [{ id: conversation.assignedAgentId }] : []),
+      ],
+    },
+    select: { id: true, profile: { select: { isSuperAdmin: true } } },
+  })
+  if (!staff.length) return
+  await prisma.notification.createMany({ data: staff.map(user => ({
+    userId: user.id,
+    companyId: conversation.companyId,
+    title: `New ${conversation.channel === 'REQUIREMENT' ? 'requirement' : conversation.channel === 'FEEDBACK' ? 'feedback' : 'support'} message`,
+    message: preview || conversation.subject || 'An organization administrator sent a message.',
+    link: user.profile?.isSuperAdmin ? `/superadmin/support?id=${conversation.id}` : `/support-agent?id=${conversation.id}`,
+  })) })
+}
+
 async function nextAvailableAgent() {
   const presenceCutoff = new Date(Date.now() - 5 * 60_000)
   const agents = await prisma.user.findMany({
@@ -115,12 +151,15 @@ supportRouter.post('/conversations', createLimiter, async (req, res, next) => {
   try {
     const subject = cleanText(req.body.subject, 240) || 'Support request'
     const initialMessage = cleanText(req.body.message)
-    const conversation = await prisma.supportConversation.create({ data: { companyId: req.user!.companyId!, createdByUserId: req.user!.userId, subject, customerLastReadAt: new Date() } })
-    await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'AI', messageType: 'TEXT', content: 'Hello! I’m the BizForce support assistant. How can I help you today?' } })
+    const channel = CHANNELS.includes(req.body.channel) ? req.body.channel : 'SUPPORT'
+    const humanRequest = channel !== 'SUPPORT'
+    const conversation = await prisma.supportConversation.create({ data: { companyId: req.user!.companyId!, createdByUserId: req.user!.userId, subject, channel, customerLastReadAt: new Date(), status: humanRequest ? 'WAITING_FOR_AGENT' : 'AI_ACTIVE', humanRequested: humanRequest, aiEnabled: !humanRequest } })
+    await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: humanRequest ? 'SYSTEM' : 'AI', messageType: humanRequest ? 'SYSTEM' : 'TEXT', content: humanRequest ? `Your ${channel.toLowerCase()} has been submitted to the BizForce team.` : 'Hello! I’m the BizForce support assistant. How can I help you today?' } })
     if (initialMessage) {
       await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'CUSTOMER', senderId: req.user!.userId, content: initialMessage } })
-      await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'AI', content: aiAnswer(initialMessage) } })
+      if (!humanRequest) await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'AI', content: aiAnswer(initialMessage) } })
     }
+    if (humanRequest) await notifyStaff(conversation)
     await audit(conversation.id, conversation.companyId, req.user!.userId, 'CONVERSATION_CREATED')
     publishSupportEvent({ event: 'conversation.created', conversationId: conversation.id, companyId: conversation.companyId, payload: conversation })
     res.status(201).json({ data: conversation })
@@ -165,8 +204,9 @@ supportRouter.post('/conversations/:id/messages', messageLimiter, async (req, re
     const conversation = await customerConversation(req, req.params.id)
     if (!conversation) return res.status(404).json({ error: 'Conversation not found' })
     if (conversation.status === 'CLOSED') return res.status(409).json({ error: 'This conversation is closed. Start a new conversation.' })
-    const content = cleanText(req.body.content)
-    if (!content) return res.status(400).json({ error: 'Message is required' })
+    const attachment = req.body.attachment && String(req.body.attachment.path || '').startsWith('/uploads/') ? { path: cleanText(req.body.attachment.path, 500), fileName: cleanText(req.body.attachment.fileName, 300), size: Number(req.body.attachment.size) || 0 } : null
+    const content = cleanText(req.body.content) || attachment?.fileName || ''
+    if (!content) return res.status(400).json({ error: 'Message or file is required' })
     const clientMessageId = cleanText(req.body.clientMessageId, 100) || null
     if (clientMessageId) {
       const existing = await prisma.supportMessage.findFirst({ where: { conversationId: conversation.id, clientMessageId } })
@@ -176,8 +216,9 @@ supportRouter.post('/conversations/:id/messages', messageLimiter, async (req, re
       await prisma.supportConversation.update({ where: { id: conversation.id }, data: { status: 'WAITING_FOR_AGENT', humanRequested: true, aiEnabled: false, resolvedAt: null } })
       await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'SYSTEM', messageType: 'SYSTEM', content: 'Conversation reopened and returned to the support queue.' } })
     }
-    const message = await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'CUSTOMER', senderId: req.user!.userId, content, clientMessageId } })
+    const message = await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'CUSTOMER', senderId: req.user!.userId, content, clientMessageId, messageType: attachment ? 'FILE' : 'TEXT', metadata: attachment || undefined } })
     await prisma.supportConversation.update({ where: { id: conversation.id }, data: { lastMessageAt: message.createdAt, customerLastReadAt: new Date() } })
+    if (conversation.status !== 'AI_ACTIVE' || !conversation.aiEnabled) await notifyStaffMessage(conversation, attachment ? `Attachment: ${content}` : content.slice(0, 240), req.user!.userId)
     publishSupportEvent({ event: 'message.created', conversationId: conversation.id, companyId: conversation.companyId, payload: message })
     let aiMessage = null
     if (conversation.status === 'AI_ACTIVE' && conversation.aiEnabled) {
@@ -287,6 +328,16 @@ adminSupportRouter.post('/conversations/:id/claim', async (req, res, next) => {
   try {
     const conversation = await staffConversation(req, req.params.id, true)
     if (!conversation) return res.status(404).json({ error: 'Conversation not found' })
+    if (req.user!.isSuperAdmin) {
+      if (['RESOLVED', 'CLOSED'].includes(conversation.status)) return res.status(409).json({ error: 'Reopen this conversation before joining' })
+      if (conversation.status === 'AGENT_ACTIVE') return res.json({ data: conversation, alreadyActive: true })
+      const updated = await prisma.supportConversation.update({ where: { id: conversation.id }, data: { status: 'AGENT_ACTIVE', assignedAgentId: conversation.assignedAgentId || req.user!.userId, aiEnabled: false, agentLastReadAt: new Date() } })
+      const agent = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { firstName: true, lastName: true } })
+      const systemMessage = await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'SYSTEM', messageType: 'SYSTEM', content: `${[agent?.firstName, agent?.lastName].filter(Boolean).join(' ') || 'A superadmin'} joined the conversation.` } })
+      await audit(updated.id, updated.companyId, req.user!.userId, 'SUPERADMIN_JOINED')
+      publishSupportEvent({ event: 'conversation.status_changed', conversationId: updated.id, companyId: updated.companyId, userId: req.user!.userId, payload: { conversation: updated, systemMessage } })
+      return res.json({ data: updated, systemMessage })
+    }
     const claimed = await prisma.supportConversation.updateMany({ where: { id: conversation.id, status: 'WAITING_FOR_AGENT', assignedAgentId: null }, data: { status: 'AGENT_ASSIGNED', assignedAgentId: req.user!.userId, aiEnabled: false } })
     if (claimed.count === 0) return res.status(409).json({ error: 'Another agent already claimed this conversation' })
     const updated = await prisma.supportConversation.update({ where: { id: conversation.id }, data: { status: 'AGENT_ACTIVE', agentLastReadAt: new Date() } })
@@ -323,10 +374,12 @@ adminSupportRouter.post('/conversations/:id/messages', messageLimiter, async (re
     const conversation = await staffConversation(req, req.params.id)
     if (!conversation) return res.status(404).json({ error: 'Conversation not found or not assigned to you' })
     if (conversation.status !== 'AGENT_ACTIVE') return res.status(409).json({ error: 'Accept this conversation before replying' })
-    const content = cleanText(req.body.content)
-    if (!content) return res.status(400).json({ error: 'Message is required' })
-    const message = await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'AGENT', senderId: req.user!.userId, content, clientMessageId: cleanText(req.body.clientMessageId, 100) || null } })
+    const attachment = req.body.attachment && String(req.body.attachment.path || '').startsWith('/uploads/') ? { path: cleanText(req.body.attachment.path, 500), fileName: cleanText(req.body.attachment.fileName, 300), size: Number(req.body.attachment.size) || 0 } : null
+    const content = cleanText(req.body.content) || attachment?.fileName || ''
+    if (!content) return res.status(400).json({ error: 'Message or file is required' })
+    const message = await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'AGENT', senderId: req.user!.userId, content, clientMessageId: cleanText(req.body.clientMessageId, 100) || null, messageType: attachment ? 'FILE' : 'TEXT', metadata: attachment || undefined } })
     await prisma.supportConversation.update({ where: { id: conversation.id }, data: { status: 'AGENT_ACTIVE', lastMessageAt: message.createdAt, firstAgentResponseAt: conversation.firstAgentResponseAt || message.createdAt, agentLastReadAt: new Date() } })
+    await notifyCustomerMessage(conversation, attachment ? `Attachment: ${content}` : content.slice(0, 240))
     publishSupportEvent({ event: 'message.created', conversationId: conversation.id, companyId: conversation.companyId, userId: req.user!.userId, payload: message })
     res.status(201).json({ data: message })
   } catch (err) { next(err) }
@@ -339,6 +392,7 @@ adminSupportRouter.post('/conversations/:id/resolve', async (req, res, next) => 
     if (!['AGENT_ASSIGNED', 'AGENT_ACTIVE'].includes(conversation.status)) return res.status(409).json({ error: 'Only an active conversation can be resolved' })
     const updated = await prisma.supportConversation.update({ where: { id: conversation.id }, data: { status: 'RESOLVED', resolvedAt: new Date(), aiEnabled: false } })
     const message = await prisma.supportMessage.create({ data: { conversationId: conversation.id, senderType: 'SYSTEM', messageType: 'SYSTEM', content: 'Your support request has been resolved. You can reopen it by sending another message.' } })
+    await prisma.notification.create({ data: { userId: conversation.createdByUserId, companyId: conversation.companyId, title: `${conversation.channel === 'REQUIREMENT' ? 'Requirement' : conversation.channel === 'FEEDBACK' ? 'Feedback' : 'Support request'} resolved`, message: conversation.subject || 'Your request has been resolved by BizForce support.', link: `/dashboard?support=${conversation.id}` } }).catch(() => {})
     await audit(updated.id, updated.companyId, req.user!.userId, 'CONVERSATION_RESOLVED')
     publishSupportEvent({ event: 'conversation.status_changed', conversationId: updated.id, companyId: updated.companyId, payload: updated })
     res.json({ data: updated, systemMessage: message })

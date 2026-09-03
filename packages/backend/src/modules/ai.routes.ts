@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { requireModulePermission } from '../lib/module-permissions'
-import { getLeadAgentConfig, runLeadAgent, saveLeadAgentConfig } from '../lib/lead-agent'
+import { getLeadAgentConfig, ingestLeadCandidate, reviewLeadCandidate, runLeadAgent, saveLeadAgentConfig } from '../lib/lead-agent'
 
 export const aiRouter = Router()
 aiRouter.use(authMiddleware)
@@ -282,6 +282,50 @@ aiRouter.post('/lead-agent/run', async (req: any, res) => {
     if (!req.user?.companyId) return res.status(400).json({ error: 'Organization is required' })
     res.json({ data: await runLeadAgent(req.user.companyId, req.user.userId) })
   } catch (err: any) { res.status(500).json({ error: err.message }) }
+})
+
+aiRouter.get('/lead-agent/candidates', async (req: any, res) => {
+  try {
+    if (!req.user?.companyId) return res.status(400).json({ error: 'Organization is required' })
+    const status = typeof req.query.status === 'string' && req.query.status !== 'ALL' ? req.query.status.toUpperCase() : undefined
+    const all = await prisma.$queryRaw<any[]>`SELECT * FROM "LeadCandidate" WHERE "companyId" = ${req.user.companyId} ORDER BY "createdAt" DESC LIMIT 200`
+    const candidates = status ? all.filter(item => item.status === status) : all
+    res.json({ data: candidates.map(item => ({ ...item, reasons: JSON.parse(item.reasons || '[]') })) })
+  } catch (err: any) { res.status(500).json({ error: err.message }) }
+})
+
+aiRouter.post('/lead-agent/intake', async (req: any, res) => {
+  try {
+    if (!req.user?.isAdmin && !req.user?.isSuperAdmin) return res.status(403).json({ error: 'Administrator access required' })
+    if (!req.user?.companyId) return res.status(400).json({ error: 'Organization is required' })
+    const result = await ingestLeadCandidate(req.user.companyId, req.user.userId, req.body || {})
+    res.status(result.created ? 201 : 200).json({ data: result })
+  } catch (err: any) { res.status(400).json({ error: err.message }) }
+})
+
+aiRouter.post('/lead-agent/candidates/:id/review', async (req: any, res) => {
+  try {
+    if (!req.user?.isAdmin && !req.user?.isSuperAdmin) return res.status(403).json({ error: 'Administrator access required' })
+    if (!req.user?.companyId) return res.status(400).json({ error: 'Organization is required' })
+    if (!['approve', 'reject'].includes(req.body?.action)) return res.status(400).json({ error: 'Action must be approve or reject' })
+    res.json({ data: await reviewLeadCandidate(req.user.companyId, req.user.userId, req.params.id, req.body.action) })
+  } catch (err: any) { res.status(400).json({ error: err.message }) }
+})
+
+aiRouter.post('/lead-agent/demo', async (req: any, res) => {
+  try {
+    if (!req.user?.isAdmin && !req.user?.isSuperAdmin) return res.status(403).json({ error: 'Administrator access required' })
+    if (!req.user?.companyId) return res.status(400).json({ error: 'Organization is required' })
+    const stamp = new Date().toISOString().slice(0, 10)
+    const samples = [
+      { firstName: 'Maya', lastName: 'Chen', company: 'Northstar Analytics', email: `maya.chen+${stamp}@example.com`, title: 'VP Sales', website: 'https://example.com/northstar', industry: 'Technology', employeeCount: 240, country: 'United States', source: 'Demo website form', sourceReference: 'agentic-demo', consentBasis: 'Requested a product demonstration' },
+      { firstName: 'Omar', lastName: 'Rahman', company: 'Harbor Logistics', email: `omar.rahman+${stamp}@example.com`, industry: 'Transportation', employeeCount: 65, country: 'United Kingdom', source: 'Demo event import', sourceReference: 'agentic-demo', consentBasis: 'Opted in at industry event' },
+      { firstName: 'Priya', lastName: 'Shah', company: 'Brightlane Studio', phone: `+1555${stamp.replace(/-/g, '').slice(2)}`, source: 'Demo referral', sourceReference: 'agentic-demo' },
+    ]
+    const results = []
+    for (const sample of samples) results.push(await ingestLeadCandidate(req.user.companyId, req.user.userId, sample))
+    res.json({ data: results, message: 'Three realistic demo candidates processed' })
+  } catch (err: any) { res.status(400).json({ error: err.message }) }
 })
 
 // ===== 1e. AI SALES OPPORTUNITY PREDICTION =====

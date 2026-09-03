@@ -64,6 +64,7 @@ export function AiAssistantPage() {
   const [assistantContext, setAssistantContext] = useState('all')
   const [responseStyle, setResponseStyle] = useState('actionable')
   const [leadAgentForm, setLeadAgentForm] = useState<any>({ enabled: false, mode: 'review', highThreshold: 75, lowThreshold: 40, highStatus: 'Qualified', mediumStatus: 'Contacted', lowStatus: 'Not Contacted', highRating: 'Hot', mediumRating: 'Warm', lowRating: 'Cold', assignHighScoreTo: '' })
+  const [intakeForm, setIntakeForm] = useState({ firstName: '', lastName: '', company: '', email: '', phone: '', title: '', industry: '', website: '', country: '', source: 'Manual agent intake', sourceReference: '', consentBasis: '' })
 
   // Global search (Ctrl+K)
   useEffect(() => {
@@ -101,6 +102,11 @@ export function AiAssistantPage() {
     queryFn: () => fetch('/api/ai/lead-agent/config', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
     enabled: activeTab === 'leads',
   })
+  const { data: candidateData, isLoading: candidatesLoading } = useQuery({
+    queryKey: ['ai-lead-candidates'],
+    queryFn: async () => { const response = await fetch('/api/ai/lead-agent/candidates', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }); if (!response.ok) throw new Error(await apiErrorMessage(response)); return response.json() },
+    enabled: activeTab === 'intake',
+  })
   useEffect(() => { if (leadAgentData?.data) setLeadAgentForm(leadAgentData.data) }, [leadAgentData])
 
   const saveLeadAgent = useMutation({
@@ -122,6 +128,21 @@ export function AiAssistantPage() {
     },
     onSuccess: data => { queryClient.invalidateQueries({ queryKey: ['ai-lead-scores'] }); addToast({ title: 'Lead agent completed', description: `${data.data.decisions.length} leads reviewed; ${data.data.applied} changes applied.`, variant: 'success' }) },
     onError: (error: Error) => addToast({ title: 'Lead agent failed', description: error.message, variant: 'destructive' }),
+  })
+  const intakeCandidate = useMutation({
+    mutationFn: async (payload: any) => { const response = await fetch('/api/ai/lead-agent/intake', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(payload) }); if (!response.ok) throw new Error(await apiErrorMessage(response)); return response.json() },
+    onSuccess: data => { queryClient.invalidateQueries({ queryKey: ['ai-lead-candidates'] }); setIntakeForm({ firstName: '', lastName: '', company: '', email: '', phone: '', title: '', industry: '', website: '', country: '', source: 'Manual agent intake', sourceReference: '', consentBasis: '' }); addToast({ title: data.data.automaticallyApproved ? 'Lead created automatically' : data.data.created ? 'Candidate added for review' : 'Candidate already exists', variant: 'success' }) },
+    onError: (error: Error) => addToast({ title: 'Could not process candidate', description: error.message, variant: 'destructive' }),
+  })
+  const reviewCandidate = useMutation({
+    mutationFn: async ({ id, action }: { id: string; action: string }) => { const response = await fetch(`/api/ai/lead-agent/candidates/${id}/review`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify({ action }) }); if (!response.ok) throw new Error(await apiErrorMessage(response)); return response.json() },
+    onSuccess: (_, variables) => { queryClient.invalidateQueries({ queryKey: ['ai-lead-candidates'] }); queryClient.invalidateQueries({ queryKey: ['ai-lead-scores'] }); addToast({ title: variables.action === 'approve' ? 'CRM lead created' : 'Candidate rejected', variant: 'success' }) },
+    onError: (error: Error) => addToast({ title: 'Review failed', description: error.message, variant: 'destructive' }),
+  })
+  const runDemo = useMutation({
+    mutationFn: async () => { const response = await fetch('/api/ai/lead-agent/demo', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }); if (!response.ok) throw new Error(await apiErrorMessage(response)); return response.json() },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['ai-lead-candidates'] }); addToast({ title: 'Demo candidates processed', description: 'The queue now shows high, medium, and low-information examples.', variant: 'success' }) },
+    onError: (error: Error) => addToast({ title: 'Demo failed', description: error.message, variant: 'destructive' }),
   })
 
   const { data: insights, isLoading: insightsLoading } = useQuery({
@@ -232,6 +253,7 @@ export function AiAssistantPage() {
         <TabsList>
           <TabsTrigger value="chat"><Sparkles size={14} className="mr-1" /> Ask AI</TabsTrigger>
           <TabsTrigger value="leads"><Target size={14} className="mr-1" /> Lead Scores</TabsTrigger>
+          <TabsTrigger value="intake"><Users size={14} className="mr-1" /> Lead Intake</TabsTrigger>
           <TabsTrigger value="predictions"><TrendingUp size={14} className="mr-1" /> Predictions</TabsTrigger>
           <TabsTrigger value="insights"><BarChart3 size={14} className="mr-1" /> Insights</TabsTrigger>
           <TabsTrigger value="suggest"><Lightbulb size={14} className="mr-1" /> Suggestions</TabsTrigger>
@@ -336,6 +358,21 @@ export function AiAssistantPage() {
               )}
             </CardContent>
           </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="intake">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><div><CardTitle className="flex items-center gap-2 text-sm"><WandSparkles size={16}/>Agentic lead intake</CardTitle><p className="mt-1 text-xs text-muted-foreground">Capture, score, deduplicate, and approve leads with a full source trail.</p></div>{(user?.isAdmin || user?.isSuperAdmin) && <Button variant="outline" size="sm" onClick={() => runDemo.mutate()} disabled={runDemo.isPending}>{runDemo.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin"/> : <Sparkles className="mr-1 h-3 w-3"/>}Run demo</Button>}</div></CardHeader>
+              {(user?.isAdmin || user?.isSuperAdmin) && <CardContent><form onSubmit={event => { event.preventDefault(); intakeCandidate.mutate(intakeForm) }} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {([['firstName','First name'],['lastName','Last name *'],['company','Company *'],['email','Work email'],['phone','Phone'],['title','Job title'],['industry','Industry'],['website','Website'],['country','Country'],['source','Source *'],['sourceReference','Source reference'],['consentBasis','Consent / legal basis']] as const).map(([key,label]) => <label key={key} className="text-xs font-semibold text-muted-foreground">{label}<Input className="mt-1 h-9" value={intakeForm[key]} onChange={event => setIntakeForm({ ...intakeForm, [key]: event.target.value })}/></label>)}
+                <div className="flex items-end lg:col-span-4"><Button type="submit" disabled={intakeCandidate.isPending}>{intakeCandidate.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin"/>}Process candidate</Button></div>
+              </form></CardContent>}
+            </Card>
+            <Card><CardHeader><CardTitle className="text-sm">Approval queue</CardTitle></CardHeader><CardContent className="p-0">
+              {candidatesLoading ? <div className="p-8 text-center text-sm text-muted-foreground"><Loader2 className="mr-2 inline h-4 w-4 animate-spin"/>Loading candidates…</div> : !(candidateData?.data || []).length ? <div className="p-8 text-center text-sm text-muted-foreground">No candidates yet. Add one above or run the demo.</div> : <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="border-b bg-muted/40"><th className="px-4 py-2 text-left">Candidate</th><th className="px-4 py-2 text-left">Source</th><th className="px-4 py-2 text-center">Score</th><th className="px-4 py-2 text-left">Status</th><th className="px-4 py-2 text-left">Why</th><th className="px-4 py-2 text-right">Actions</th></tr></thead><tbody>{(candidateData?.data || []).map((candidate: any) => <tr key={candidate.id} className="border-b last:border-0"><td className="px-4 py-3"><p className="font-medium">{candidate.firstName} {candidate.lastName}</p><p className="text-muted-foreground">{candidate.company} · {candidate.email || candidate.phone}</p></td><td className="px-4 py-3">{candidate.source}<p className="text-muted-foreground">{candidate.consentBasis || 'Basis not recorded'}</p></td><td className="px-4 py-3 text-center"><ScoreBadge score={candidate.score} size="sm"/></td><td className="px-4 py-3"><span className="rounded-full bg-muted px-2 py-1 font-semibold">{candidate.status}</span></td><td className="max-w-xs px-4 py-3 text-muted-foreground"><span title={(candidate.reasons || []).join('; ')}>{(candidate.reasons || []).slice(0,2).join('; ')}</span></td><td className="px-4 py-3 text-right">{candidate.status === 'PENDING' && (user?.isAdmin || user?.isSuperAdmin) && <div className="flex justify-end gap-2"><Button size="sm" variant="outline" onClick={() => reviewCandidate.mutate({ id: candidate.id, action: 'reject' })}>Reject</Button><Button size="sm" onClick={() => reviewCandidate.mutate({ id: candidate.id, action: 'approve' })}>Create lead</Button></div>}{candidate.createdLeadId && <a className="font-semibold text-primary hover:underline" href={`/leads/${candidate.createdLeadId}`}>View lead</a>}{candidate.duplicateLeadId && <a className="font-semibold text-amber-600 hover:underline" href={`/leads/${candidate.duplicateLeadId}`}>View duplicate</a>}</td></tr>)}</tbody></table></div>}
+            </CardContent></Card>
           </div>
         </TabsContent>
 

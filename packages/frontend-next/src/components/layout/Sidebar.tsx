@@ -322,6 +322,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, onHove
         </div>
 
         <footer className="flex shrink-0 flex-wrap items-center gap-1 border-t bg-slate-50 px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] dark:bg-slate-950/40 sm:gap-2 sm:px-4 sm:py-3">
+          <MenuModule module="help" label={t('Help & Support')} icon="LifeBuoy" onNavigate={onMobileClose} footer />
           {(user?.isAdmin || user?.isSuperAdmin) && <MenuModule module="settings" label={t('Settings')} icon="Settings" onNavigate={onMobileClose} footer />}
           {user?.isSuperAdmin && <MenuModule module="superadmin" label={t('Super Admin')} icon="Shield" onNavigate={onMobileClose} footer />}
           <MenuModule module="profile" label={t('My Profile')} icon="UserCog" onNavigate={onMobileClose} footer />

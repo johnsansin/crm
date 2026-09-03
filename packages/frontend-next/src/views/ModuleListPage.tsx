@@ -11,11 +11,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { RowActions } from '@/components/ui/row-actions'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { getFieldLabel } from '@/lib/field-utils'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
-import { Plus, Search, RefreshCw, LayoutGrid, List, Download, Upload, Columns3, Loader2, Mail, FileDown, Copy, GitMerge, Trash2, Bell, SlidersHorizontal, TrendingUp, Clock3, CheckSquare2, Pencil, MoreHorizontal, Tag, Star } from 'lucide-react'
+import { Plus, Search, RefreshCw, LayoutGrid, List, Download, Upload, Columns3, Loader2, Mail, Send, FileDown, Copy, GitMerge, Trash2, Bell, SlidersHorizontal, TrendingUp, Clock3, CheckSquare2, Pencil, MoreHorizontal, Tag, Star } from 'lucide-react'
 import { t } from '@/lib/i18n'
 
 const kanbanModules = ['potentials', 'tickets', 'projects']
@@ -96,6 +97,10 @@ export function ModuleListPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [leadView, setLeadView] = useState<'all' | 'overdue' | 'followup'>('all')
   const [pageSize, setPageSize] = useState<'25' | '50' | '100' | 'all'>('25')
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [emailSending, setEmailSending] = useState(false)
+  const [emailForm, setEmailForm] = useState({ target: 'selected', tagId: '', subject: '', body: '' })
+  const [emailIds, setEmailIds] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const mod = module || ''
@@ -142,18 +147,11 @@ export function ModuleListPage() {
   }
 
   const handleBulkEmail = async () => {
-    const to = prompt('Send to email (comma-separated for multiple):')
+    if (mod === 'leads') { setEmailIds(Array.from(selectedIds)); setEmailForm(f => ({ ...f, target: 'selected' })); setEmailOpen(true); return }
+    const to = prompt('Send to email:')
     if (!to) return
-    const ids = Array.from(selectedIds)
-    try {
-      for (const id of ids) {
-        await api.request(`/${mod}/${id}/email`, { method: 'POST', body: JSON.stringify({ to }) }).catch(() => null)
-      }
-      addToast({ title: 'Sent', description: `Email sent to ${to}`, variant: 'success' })
-      setSelectedIds(new Set())
-    } catch {
-      addToast({ title: 'Error', description: 'Failed to send emails', variant: 'destructive' })
-    }
+    await Promise.all(Array.from(selectedIds).map(id => api.request(`/${mod}/${id}/email`, { method: 'POST', body: JSON.stringify({ to }) }).catch(() => null)))
+    addToast({ title: 'Email requests completed', variant: 'success' })
   }
 
   const handleBulkPdf = () => {
@@ -162,12 +160,19 @@ export function ModuleListPage() {
   }
 
   const handleRowEmail = (record: any) => {
+    if (mod === 'leads') { setEmailIds([record.id]); setEmailForm(f => ({ ...f, target: 'selected' })); setEmailOpen(true); return }
     const to = prompt('Send to email:')
-    if (!to) return
-    const attachPdf = window.confirm('Attach the PDF to this email?')
-    api.request(`/${mod}/${record.id}/email`, { method: 'POST', body: JSON.stringify({ to, attachPdf }) })
-      .then(() => addToast({ title: 'Sent', description: `Email sent to ${to}`, variant: 'success' }))
-      .catch(() => addToast({ title: 'Error', description: 'Failed to send email', variant: 'destructive' }))
+    if (to) api.request(`/${mod}/${record.id}/email`, { method: 'POST', body: JSON.stringify({ to }) }).then(() => addToast({ title: 'Email sent', variant: 'success' })).catch((error:any) => addToast({ title: 'Email failed', description: error.message, variant: 'destructive' }))
+  }
+
+  const sendLeadEmail = async () => {
+    setEmailSending(true)
+    try {
+      const result: any = await api.request('/leads/bulk-email', { method: 'POST', body: JSON.stringify({ ...emailForm, ids: emailForm.target === 'selected' ? emailIds : [], search: debouncedSearch }) })
+      addToast({ title: 'Bulk email completed', description: `${result.data.sent} sent${result.data.failed ? `, ${result.data.failed} failed` : ''}.`, variant: result.data.failed ? 'destructive' : 'success' })
+      setEmailOpen(false); setSelectedIds(new Set()); setEmailIds([])
+    } catch (error: any) { addToast({ title: 'Email failed', description: error.message, variant: 'destructive' }) }
+    finally { setEmailSending(false) }
   }
 
   const handleRowPdf = (record: any) => {
@@ -345,6 +350,7 @@ export function ModuleListPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div><h1 className="text-2xl font-bold tracking-tight">Leads</h1><p className="mt-1 text-sm text-muted-foreground">Prioritize prospects, follow up on time, and move qualified leads forward.</p></div>
           <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setEmailIds([]); setEmailForm(f => ({ ...f, target: 'all' })); setEmailOpen(true) }}><Mail size={14} className="mr-1.5" />Email leads</Button>
             <Button variant="outline" size="sm" disabled={importing} onClick={() => fileInputRef.current?.click()}><Upload size={14} className="mr-1.5" />Import</Button>
             <Button variant="outline" size="sm" disabled={exporting} onClick={async () => { setExporting(true); const r = await api.exportModule(mod, 'csv').catch(() => ({ ok: false, error: 'Export failed' })); setExporting(false); if (!r.ok) addToast({ title: 'Export failed', description: r.error, variant: 'destructive' }) }}><Download size={14} className="mr-1.5" />Export</Button>
             <Button size="sm" onClick={() => navigate('/leads/new')}><Plus size={15} className="mr-1.5" />New lead</Button>
@@ -548,6 +554,19 @@ export function ModuleListPage() {
           />
         </>
       )}
+
+      {mod === 'leads' && <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader><DialogTitle>Compose lead email</DialogTitle><DialogDescription>Send to selected leads, all leads matching the current search, or leads with a tag. Opted-out and missing-email records are excluded.</DialogDescription></DialogHeader>
+          <div className="space-y-4">
+            <div><label className="mb-1 block text-xs font-semibold text-muted-foreground">Recipients</label><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={emailForm.target} onChange={e => setEmailForm({ ...emailForm, target: e.target.value })}><option value="selected" disabled={!emailIds.length}>Selected leads ({emailIds.length})</option><option value="all">All {debouncedSearch ? 'matching' : ''} leads</option><option value="tag">Leads with tag</option></select></div>
+            {emailForm.target === 'tag' && <div><label className="mb-1 block text-xs font-semibold text-muted-foreground">Tag</label><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={emailForm.tagId} onChange={e => setEmailForm({ ...emailForm, tagId: e.target.value })}><option value="">Choose a tag</option>{catalogueTags.map((tag:any)=><option key={tag.id} value={tag.id}>{tag.name}</option>)}</select></div>}
+            <div><label className="mb-1 block text-xs font-semibold text-muted-foreground">Subject *</label><Input value={emailForm.subject} onChange={e => setEmailForm({ ...emailForm, subject: e.target.value })} placeholder="Email subject"/></div>
+            <div><label className="mb-1 block text-xs font-semibold text-muted-foreground">Message *</label><textarea className="min-h-40 w-full rounded-md border bg-background px-3 py-2 text-sm" value={emailForm.body} onChange={e => setEmailForm({ ...emailForm, body: e.target.value })} placeholder={'Hello {firstName},\n\nWe would like to speak with {company}…'}/><p className="mt-1 text-xs text-muted-foreground">Personalization: {'{firstName}'}, {'{lastName}'}, {'{company}'}. Maximum 500 recipients per send.</p></div>
+          </div>
+          <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setEmailOpen(false)}>Cancel</Button><Button onClick={sendLeadEmail} disabled={emailSending || !emailForm.subject.trim() || !emailForm.body.trim() || (emailForm.target === 'selected' && !emailIds.length) || (emailForm.target === 'tag' && !emailForm.tagId)}>{emailSending ? <Loader2 size={15} className="mr-1 animate-spin"/> : <Send size={15} className="mr-1"/>}Send email</Button></div>
+        </DialogContent>
+      </Dialog>}
 
       <ConfirmDialog
         open={!!deleteTarget}
