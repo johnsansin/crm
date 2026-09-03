@@ -10,7 +10,6 @@ import { checkOrganizationLimit } from '../lib/organization-limits'
 export const userRouter = Router()
 
 userRouter.use(authMiddleware)
-userRouter.use(requireAdmin)
 
 userRouter.get('/', async (req, res, next) => {
   try {
@@ -33,7 +32,7 @@ userRouter.get('/', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-userRouter.post('/', async (req, res, next) => {
+userRouter.post('/', requireAdmin, async (req, res, next) => {
   try {
     if (!req.user!.companyId) return res.status(400).json({ error: 'No company' })
     const capacity = await checkOrganizationLimit(req.user!.companyId, 'users')
@@ -61,7 +60,7 @@ userRouter.post('/', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-userRouter.put('/:id', async (req, res, next) => {
+userRouter.put('/:id', requireAdmin, async (req, res, next) => {
   try {
     if (!req.user!.companyId) return res.status(400).json({ error: 'No company' })
     const existing = await prisma.user.findFirst({
@@ -87,7 +86,7 @@ userRouter.put('/:id', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-userRouter.post('/:id/logout-all', async (req, res, next) => {
+userRouter.post('/:id/logout-all', requireAdmin, async (req, res, next) => {
   try {
     if (!req.user!.companyId) return res.status(400).json({ error: 'No company' })
     const target = await prisma.user.findFirst({
@@ -103,7 +102,7 @@ userRouter.post('/:id/logout-all', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-userRouter.delete('/:id', async (req, res, next) => {
+userRouter.delete('/:id', requireAdmin, async (req, res, next) => {
   try {
     if (!req.user!.companyId) return res.status(400).json({ error: 'No company' })
     const existing = await prisma.user.findFirst({
