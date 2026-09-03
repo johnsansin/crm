@@ -23,6 +23,42 @@ let lastFollowUpCheck = 0
 let lastOverdueInvoiceCheck = 0
 let lastAssetMaintenanceCheck = 0
 let lastProjectHealthCheck = 0
+let lastSubscriptionNoticeCheck = 0
+
+async function sendSubscriptionLifecycleNotifications(now: Date) {
+  const warningCutoff = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const companies = await prisma.company.findMany({
+    where: {
+      isActive: true,
+      OR: [
+        { trialEndsAt: { lte: warningCutoff } },
+        { subscriptionEndsAt: { lte: warningCutoff } },
+      ],
+    },
+    select: { id: true, trialEndsAt: true, subscriptionEndsAt: true, subscriptionStatus: true },
+  })
+  for (const company of companies) {
+    const admins = await prisma.user.findMany({ where: { companyId: company.id, isAdmin: true, isActive: true }, select: { id: true } })
+    if (!admins.length) continue
+    const notices: Array<{ title: string; message: string }> = []
+    const addNotice = (kind: 'Trial' | 'Subscription', endsAt: Date) => {
+      const ended = endsAt.getTime() <= now.getTime()
+      const dateLabel = endsAt.toISOString().slice(0, 10)
+      const days = Math.max(1, Math.ceil((endsAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)))
+      notices.push(ended
+        ? { title: `${kind} ended`, message: `Your organisation ${kind.toLowerCase()} ended on ${dateLabel}. Review the subscription settings to restore or update access.` }
+        : { title: `${kind} ends soon`, message: `Your organisation ${kind.toLowerCase()} ends in ${days} day${days === 1 ? '' : 's'} on ${dateLabel}. Review the subscription settings to avoid interruption.` })
+    }
+    if (company.trialEndsAt && company.subscriptionStatus === 'TRIAL') addNotice('Trial', company.trialEndsAt)
+    if (company.subscriptionEndsAt && company.subscriptionStatus !== 'TRIAL') addNotice('Subscription', company.subscriptionEndsAt)
+    for (const notice of notices) {
+      for (const admin of admins) {
+        const exists = await prisma.notification.findFirst({ where: { userId: admin.id, title: notice.title, message: notice.message }, select: { id: true } })
+        if (!exists) await prisma.notification.create({ data: { userId: admin.id, companyId: company.id, ...notice, link: '/settings?section=subscription' } })
+      }
+    }
+  }
+}
 
 async function sendActivityReminders(now: Date) {
   const activities = await prisma.activity.findMany({ where: { isActive: true, reminderAt: { lte: now }, reminderSentAt: null, OR: [{ assignedTo: { not: null } }, { assignedGroupId: { not: null } }], status: { notIn: ['Completed', 'Held', 'Cancelled'] } }, take: 100 })
@@ -100,6 +136,10 @@ export async function runDueTasks(): Promise<void> {
   if (now - lastProjectHealthCheck >= 24 * 60 * 60 * 1000) {
     lastProjectHealthCheck = now
     checkProjectHealth().catch(() => {})
+  }
+  if (now - lastSubscriptionNoticeCheck >= 6 * 60 * 60 * 1000) {
+    lastSubscriptionNoticeCheck = now
+    sendSubscriptionLifecycleNotifications(new Date()).catch(err => console.error('[CRON] subscription notification check failed:', err?.message || err))
   }
 }
 

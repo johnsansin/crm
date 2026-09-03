@@ -1,6 +1,6 @@
 'use client'
 
-import { useNavigate } from '@/lib/navigation'
+import { useLocation, useNavigate } from '@/lib/navigation'
 import { Sidebar } from './Sidebar'
 import { AppBreadcrumbs, CrmFlowGuide } from './AppBreadcrumbs'
 import { LiveTranslation } from '@/components/LiveTranslation'
@@ -35,6 +35,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
+  const immersiveSupport = location.pathname === '/superadmin/support' || location.pathname === '/support-agent'
   const { addToast } = useToast()
   const { theme, toggleTheme } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
@@ -61,6 +63,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     refetchIntervalInBackground: false,
     staleTime: 15000,
   })
+
+  useEffect(() => {
+    const refreshNotifications = () => queryClient.invalidateQueries({ queryKey: ['notifications'] })
+    window.addEventListener('notifications-updated', refreshNotifications)
+    return () => window.removeEventListener('notifications-updated', refreshNotifications)
+  }, [queryClient])
 
   const { data: chatConvosData } = useQuery({
     queryKey: ['header-chat'],
@@ -366,7 +374,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <div
                       key={n.id}
                       className={`px-3 py-2.5 hover:bg-accent transition-colors cursor-pointer ${n.isRead ? 'opacity-60' : ''}`}
-                      onClick={() => { markRead(n.id); if (n.link) navigate(n.link) }}
+                      onClick={() => {
+                        markRead(n.id)
+                        if (!n.link) return
+                        const supportId = new URL(n.link, window.location.origin).searchParams.get('support')
+                        if (supportId) window.dispatchEvent(new CustomEvent('open-support-chat', { detail: { conversationId: supportId } }))
+                        else navigate(n.link)
+                      }}
                     >
                       <p className="text-sm font-medium">{n.title}</p>
                       {n.message && <p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p>}
@@ -442,14 +456,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main
-          className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto bg-slate-100/80 dark:bg-slate-950/70 p-2.5 sm:p-4 md:p-6 overscroll-contain"
+          className={cn('flex-1 min-h-0 min-w-0 overflow-x-hidden bg-slate-100/80 dark:bg-slate-950/70 overscroll-contain', immersiveSupport ? 'overflow-hidden p-1.5 sm:p-2' : 'overflow-y-auto p-2.5 sm:p-4 md:p-6')}
           onPointerDown={() => {
             if (mobileOpen) setMobileOpen(false)
           }}
         >
-          <div className="mx-auto w-full max-w-[1600px]">
-            <AppBreadcrumbs />
-            <CrmFlowGuide />
+          <div className={cn('mx-auto flex w-full max-w-[1600px] flex-col', immersiveSupport ? 'h-full min-h-0' : 'min-h-full')}>
+            {!immersiveSupport && <AppBreadcrumbs />}
+            {!immersiveSupport && <CrmFlowGuide />}
             {children}
           </div>
         </main>

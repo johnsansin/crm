@@ -429,6 +429,11 @@ export type AiPrompt = $Result.DefaultSelection<Prisma.$AiPromptPayload>
  */
 export type AiLog = $Result.DefaultSelection<Prisma.$AiLogPayload>
 /**
+ * Model LeadCandidate
+ * 
+ */
+export type LeadCandidate = $Result.DefaultSelection<Prisma.$LeadCandidatePayload>
+/**
  * Model Translation
  * 
  */
@@ -1621,6 +1626,16 @@ export class PrismaClient<
   get aiLog(): Prisma.AiLogDelegate<ExtArgs>;
 
   /**
+   * `prisma.leadCandidate`: Exposes CRUD operations for the **LeadCandidate** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more LeadCandidates
+    * const leadCandidates = await prisma.leadCandidate.findMany()
+    * ```
+    */
+  get leadCandidate(): Prisma.LeadCandidateDelegate<ExtArgs>;
+
+  /**
    * `prisma.translation`: Exposes CRUD operations for the **Translation** model.
     * Example usage:
     * ```ts
@@ -2493,6 +2508,7 @@ export namespace Prisma {
     PortalUser: 'PortalUser',
     AiPrompt: 'AiPrompt',
     AiLog: 'AiLog',
+    LeadCandidate: 'LeadCandidate',
     Translation: 'Translation',
     Mailbox: 'Mailbox',
     EmailToTicketRule: 'EmailToTicketRule',
@@ -2543,7 +2559,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "user" | "role" | "rolePermission" | "userGroup" | "userGroupMember" | "userProfile" | "module" | "currency" | "customView" | "account" | "contact" | "lead" | "potential" | "potentialProduct" | "potentialStageHistory" | "campaign" | "product" | "productImage" | "leadProduct" | "leadService" | "service" | "vendor" | "priceBook" | "priceBookProduct" | "quote" | "quoteLineItem" | "quoteStageHistory" | "salesOrder" | "salesOrderLineItem" | "purchaseOrder" | "purchaseOrderLineItem" | "invoice" | "invoiceLineItem" | "ticket" | "faq" | "document" | "email" | "emailTemplate" | "project" | "projectTask" | "projectMilestone" | "asset" | "serviceContract" | "smsNotifier" | "comment" | "tag" | "attachment" | "auditLog" | "relatedList" | "currencyInfo" | "taxInfo" | "chatConversation" | "chatParticipant" | "chatMessage" | "supportConversation" | "supportMessage" | "supportAuditEvent" | "company" | "subscriptionModel" | "loginLog" | "pendingRegistration" | "sequenceNumber" | "orgSetting" | "globalSetting" | "customField" | "customFieldValue" | "picklistOption" | "sharingRule" | "permissionProfile" | "workflow" | "scheduledTask" | "webform" | "notification" | "announcement" | "holiday" | "activity" | "follow" | "receipt" | "payment" | "recurringInvoice" | "portalUser" | "aiPrompt" | "aiLog" | "translation" | "mailbox" | "emailToTicketRule" | "callLog" | "googleAccount" | "report" | "rssFeed" | "rssEntry" | "moduleLayout" | "picklistDependency" | "apiKey" | "competitor" | "potentialCompetitor" | "timeEntry" | "stageProbability" | "quantityDiscount" | "ticketComment" | "escalationHistory" | "projectResource" | "workflowLog" | "dashboardWidget" | "reportSchedule" | "scorecard" | "emailCampaign" | "emailCampaignRecipient" | "smsTemplate" | "chatWidget" | "chatSession" | "chatSessionMessage" | "landingPage" | "landingPageSubmission" | "socialMediaProfile" | "socialMediaPost" | "webhookEndpoint" | "webhookLog"
+      modelProps: "user" | "role" | "rolePermission" | "userGroup" | "userGroupMember" | "userProfile" | "module" | "currency" | "customView" | "account" | "contact" | "lead" | "potential" | "potentialProduct" | "potentialStageHistory" | "campaign" | "product" | "productImage" | "leadProduct" | "leadService" | "service" | "vendor" | "priceBook" | "priceBookProduct" | "quote" | "quoteLineItem" | "quoteStageHistory" | "salesOrder" | "salesOrderLineItem" | "purchaseOrder" | "purchaseOrderLineItem" | "invoice" | "invoiceLineItem" | "ticket" | "faq" | "document" | "email" | "emailTemplate" | "project" | "projectTask" | "projectMilestone" | "asset" | "serviceContract" | "smsNotifier" | "comment" | "tag" | "attachment" | "auditLog" | "relatedList" | "currencyInfo" | "taxInfo" | "chatConversation" | "chatParticipant" | "chatMessage" | "supportConversation" | "supportMessage" | "supportAuditEvent" | "company" | "subscriptionModel" | "loginLog" | "pendingRegistration" | "sequenceNumber" | "orgSetting" | "globalSetting" | "customField" | "customFieldValue" | "picklistOption" | "sharingRule" | "permissionProfile" | "workflow" | "scheduledTask" | "webform" | "notification" | "announcement" | "holiday" | "activity" | "follow" | "receipt" | "payment" | "recurringInvoice" | "portalUser" | "aiPrompt" | "aiLog" | "leadCandidate" | "translation" | "mailbox" | "emailToTicketRule" | "callLog" | "googleAccount" | "report" | "rssFeed" | "rssEntry" | "moduleLayout" | "picklistDependency" | "apiKey" | "competitor" | "potentialCompetitor" | "timeEntry" | "stageProbability" | "quantityDiscount" | "ticketComment" | "escalationHistory" | "projectResource" | "workflowLog" | "dashboardWidget" | "reportSchedule" | "scorecard" | "emailCampaign" | "emailCampaignRecipient" | "smsTemplate" | "chatWidget" | "chatSession" | "chatSessionMessage" | "landingPage" | "landingPageSubmission" | "socialMediaProfile" | "socialMediaPost" | "webhookEndpoint" | "webhookLog"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -8354,6 +8370,76 @@ export namespace Prisma {
           count: {
             args: Prisma.AiLogCountArgs<ExtArgs>
             result: $Utils.Optional<AiLogCountAggregateOutputType> | number
+          }
+        }
+      }
+      LeadCandidate: {
+        payload: Prisma.$LeadCandidatePayload<ExtArgs>
+        fields: Prisma.LeadCandidateFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.LeadCandidateFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadCandidatePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.LeadCandidateFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadCandidatePayload>
+          }
+          findFirst: {
+            args: Prisma.LeadCandidateFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadCandidatePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.LeadCandidateFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadCandidatePayload>
+          }
+          findMany: {
+            args: Prisma.LeadCandidateFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadCandidatePayload>[]
+          }
+          create: {
+            args: Prisma.LeadCandidateCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadCandidatePayload>
+          }
+          createMany: {
+            args: Prisma.LeadCandidateCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.LeadCandidateCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadCandidatePayload>[]
+          }
+          delete: {
+            args: Prisma.LeadCandidateDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadCandidatePayload>
+          }
+          update: {
+            args: Prisma.LeadCandidateUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadCandidatePayload>
+          }
+          deleteMany: {
+            args: Prisma.LeadCandidateDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.LeadCandidateUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.LeadCandidateUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadCandidatePayload>
+          }
+          aggregate: {
+            args: Prisma.LeadCandidateAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateLeadCandidate>
+          }
+          groupBy: {
+            args: Prisma.LeadCandidateGroupByArgs<ExtArgs>
+            result: $Utils.Optional<LeadCandidateGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.LeadCandidateCountArgs<ExtArgs>
+            result: $Utils.Optional<LeadCandidateCountAggregateOutputType> | number
           }
         }
       }
@@ -102486,6 +102572,1198 @@ export namespace Prisma {
 
 
   /**
+   * Model LeadCandidate
+   */
+
+  export type AggregateLeadCandidate = {
+    _count: LeadCandidateCountAggregateOutputType | null
+    _avg: LeadCandidateAvgAggregateOutputType | null
+    _sum: LeadCandidateSumAggregateOutputType | null
+    _min: LeadCandidateMinAggregateOutputType | null
+    _max: LeadCandidateMaxAggregateOutputType | null
+  }
+
+  export type LeadCandidateAvgAggregateOutputType = {
+    employeeCount: number | null
+    score: number | null
+  }
+
+  export type LeadCandidateSumAggregateOutputType = {
+    employeeCount: number | null
+    score: number | null
+  }
+
+  export type LeadCandidateMinAggregateOutputType = {
+    id: string | null
+    source: string | null
+    sourceReference: string | null
+    consentBasis: string | null
+    fingerprint: string | null
+    status: string | null
+    firstName: string | null
+    lastName: string | null
+    company: string | null
+    email: string | null
+    phone: string | null
+    website: string | null
+    title: string | null
+    industry: string | null
+    country: string | null
+    employeeCount: number | null
+    score: number | null
+    band: string | null
+    reasons: string | null
+    rawPayload: string | null
+    duplicateLeadId: string | null
+    createdLeadId: string | null
+    companyId: string | null
+    createdBy: string | null
+    reviewedBy: string | null
+    reviewedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type LeadCandidateMaxAggregateOutputType = {
+    id: string | null
+    source: string | null
+    sourceReference: string | null
+    consentBasis: string | null
+    fingerprint: string | null
+    status: string | null
+    firstName: string | null
+    lastName: string | null
+    company: string | null
+    email: string | null
+    phone: string | null
+    website: string | null
+    title: string | null
+    industry: string | null
+    country: string | null
+    employeeCount: number | null
+    score: number | null
+    band: string | null
+    reasons: string | null
+    rawPayload: string | null
+    duplicateLeadId: string | null
+    createdLeadId: string | null
+    companyId: string | null
+    createdBy: string | null
+    reviewedBy: string | null
+    reviewedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type LeadCandidateCountAggregateOutputType = {
+    id: number
+    source: number
+    sourceReference: number
+    consentBasis: number
+    fingerprint: number
+    status: number
+    firstName: number
+    lastName: number
+    company: number
+    email: number
+    phone: number
+    website: number
+    title: number
+    industry: number
+    country: number
+    employeeCount: number
+    score: number
+    band: number
+    reasons: number
+    rawPayload: number
+    duplicateLeadId: number
+    createdLeadId: number
+    companyId: number
+    createdBy: number
+    reviewedBy: number
+    reviewedAt: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type LeadCandidateAvgAggregateInputType = {
+    employeeCount?: true
+    score?: true
+  }
+
+  export type LeadCandidateSumAggregateInputType = {
+    employeeCount?: true
+    score?: true
+  }
+
+  export type LeadCandidateMinAggregateInputType = {
+    id?: true
+    source?: true
+    sourceReference?: true
+    consentBasis?: true
+    fingerprint?: true
+    status?: true
+    firstName?: true
+    lastName?: true
+    company?: true
+    email?: true
+    phone?: true
+    website?: true
+    title?: true
+    industry?: true
+    country?: true
+    employeeCount?: true
+    score?: true
+    band?: true
+    reasons?: true
+    rawPayload?: true
+    duplicateLeadId?: true
+    createdLeadId?: true
+    companyId?: true
+    createdBy?: true
+    reviewedBy?: true
+    reviewedAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type LeadCandidateMaxAggregateInputType = {
+    id?: true
+    source?: true
+    sourceReference?: true
+    consentBasis?: true
+    fingerprint?: true
+    status?: true
+    firstName?: true
+    lastName?: true
+    company?: true
+    email?: true
+    phone?: true
+    website?: true
+    title?: true
+    industry?: true
+    country?: true
+    employeeCount?: true
+    score?: true
+    band?: true
+    reasons?: true
+    rawPayload?: true
+    duplicateLeadId?: true
+    createdLeadId?: true
+    companyId?: true
+    createdBy?: true
+    reviewedBy?: true
+    reviewedAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type LeadCandidateCountAggregateInputType = {
+    id?: true
+    source?: true
+    sourceReference?: true
+    consentBasis?: true
+    fingerprint?: true
+    status?: true
+    firstName?: true
+    lastName?: true
+    company?: true
+    email?: true
+    phone?: true
+    website?: true
+    title?: true
+    industry?: true
+    country?: true
+    employeeCount?: true
+    score?: true
+    band?: true
+    reasons?: true
+    rawPayload?: true
+    duplicateLeadId?: true
+    createdLeadId?: true
+    companyId?: true
+    createdBy?: true
+    reviewedBy?: true
+    reviewedAt?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type LeadCandidateAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LeadCandidate to aggregate.
+     */
+    where?: LeadCandidateWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LeadCandidates to fetch.
+     */
+    orderBy?: LeadCandidateOrderByWithRelationInput | LeadCandidateOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: LeadCandidateWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LeadCandidates from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LeadCandidates.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned LeadCandidates
+    **/
+    _count?: true | LeadCandidateCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: LeadCandidateAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: LeadCandidateSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: LeadCandidateMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: LeadCandidateMaxAggregateInputType
+  }
+
+  export type GetLeadCandidateAggregateType<T extends LeadCandidateAggregateArgs> = {
+        [P in keyof T & keyof AggregateLeadCandidate]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateLeadCandidate[P]>
+      : GetScalarType<T[P], AggregateLeadCandidate[P]>
+  }
+
+
+
+
+  export type LeadCandidateGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LeadCandidateWhereInput
+    orderBy?: LeadCandidateOrderByWithAggregationInput | LeadCandidateOrderByWithAggregationInput[]
+    by: LeadCandidateScalarFieldEnum[] | LeadCandidateScalarFieldEnum
+    having?: LeadCandidateScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: LeadCandidateCountAggregateInputType | true
+    _avg?: LeadCandidateAvgAggregateInputType
+    _sum?: LeadCandidateSumAggregateInputType
+    _min?: LeadCandidateMinAggregateInputType
+    _max?: LeadCandidateMaxAggregateInputType
+  }
+
+  export type LeadCandidateGroupByOutputType = {
+    id: string
+    source: string
+    sourceReference: string | null
+    consentBasis: string | null
+    fingerprint: string
+    status: string
+    firstName: string
+    lastName: string
+    company: string
+    email: string | null
+    phone: string | null
+    website: string | null
+    title: string | null
+    industry: string | null
+    country: string | null
+    employeeCount: number | null
+    score: number
+    band: string
+    reasons: string
+    rawPayload: string | null
+    duplicateLeadId: string | null
+    createdLeadId: string | null
+    companyId: string
+    createdBy: string | null
+    reviewedBy: string | null
+    reviewedAt: Date | null
+    createdAt: Date
+    updatedAt: Date
+    _count: LeadCandidateCountAggregateOutputType | null
+    _avg: LeadCandidateAvgAggregateOutputType | null
+    _sum: LeadCandidateSumAggregateOutputType | null
+    _min: LeadCandidateMinAggregateOutputType | null
+    _max: LeadCandidateMaxAggregateOutputType | null
+  }
+
+  type GetLeadCandidateGroupByPayload<T extends LeadCandidateGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<LeadCandidateGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof LeadCandidateGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], LeadCandidateGroupByOutputType[P]>
+            : GetScalarType<T[P], LeadCandidateGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type LeadCandidateSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    source?: boolean
+    sourceReference?: boolean
+    consentBasis?: boolean
+    fingerprint?: boolean
+    status?: boolean
+    firstName?: boolean
+    lastName?: boolean
+    company?: boolean
+    email?: boolean
+    phone?: boolean
+    website?: boolean
+    title?: boolean
+    industry?: boolean
+    country?: boolean
+    employeeCount?: boolean
+    score?: boolean
+    band?: boolean
+    reasons?: boolean
+    rawPayload?: boolean
+    duplicateLeadId?: boolean
+    createdLeadId?: boolean
+    companyId?: boolean
+    createdBy?: boolean
+    reviewedBy?: boolean
+    reviewedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["leadCandidate"]>
+
+  export type LeadCandidateSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    source?: boolean
+    sourceReference?: boolean
+    consentBasis?: boolean
+    fingerprint?: boolean
+    status?: boolean
+    firstName?: boolean
+    lastName?: boolean
+    company?: boolean
+    email?: boolean
+    phone?: boolean
+    website?: boolean
+    title?: boolean
+    industry?: boolean
+    country?: boolean
+    employeeCount?: boolean
+    score?: boolean
+    band?: boolean
+    reasons?: boolean
+    rawPayload?: boolean
+    duplicateLeadId?: boolean
+    createdLeadId?: boolean
+    companyId?: boolean
+    createdBy?: boolean
+    reviewedBy?: boolean
+    reviewedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["leadCandidate"]>
+
+  export type LeadCandidateSelectScalar = {
+    id?: boolean
+    source?: boolean
+    sourceReference?: boolean
+    consentBasis?: boolean
+    fingerprint?: boolean
+    status?: boolean
+    firstName?: boolean
+    lastName?: boolean
+    company?: boolean
+    email?: boolean
+    phone?: boolean
+    website?: boolean
+    title?: boolean
+    industry?: boolean
+    country?: boolean
+    employeeCount?: boolean
+    score?: boolean
+    band?: boolean
+    reasons?: boolean
+    rawPayload?: boolean
+    duplicateLeadId?: boolean
+    createdLeadId?: boolean
+    companyId?: boolean
+    createdBy?: boolean
+    reviewedBy?: boolean
+    reviewedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+
+  export type $LeadCandidatePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "LeadCandidate"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      source: string
+      sourceReference: string | null
+      consentBasis: string | null
+      fingerprint: string
+      status: string
+      firstName: string
+      lastName: string
+      company: string
+      email: string | null
+      phone: string | null
+      website: string | null
+      title: string | null
+      industry: string | null
+      country: string | null
+      employeeCount: number | null
+      score: number
+      band: string
+      reasons: string
+      rawPayload: string | null
+      duplicateLeadId: string | null
+      createdLeadId: string | null
+      companyId: string
+      createdBy: string | null
+      reviewedBy: string | null
+      reviewedAt: Date | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["leadCandidate"]>
+    composites: {}
+  }
+
+  type LeadCandidateGetPayload<S extends boolean | null | undefined | LeadCandidateDefaultArgs> = $Result.GetResult<Prisma.$LeadCandidatePayload, S>
+
+  type LeadCandidateCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<LeadCandidateFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: LeadCandidateCountAggregateInputType | true
+    }
+
+  export interface LeadCandidateDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['LeadCandidate'], meta: { name: 'LeadCandidate' } }
+    /**
+     * Find zero or one LeadCandidate that matches the filter.
+     * @param {LeadCandidateFindUniqueArgs} args - Arguments to find a LeadCandidate
+     * @example
+     * // Get one LeadCandidate
+     * const leadCandidate = await prisma.leadCandidate.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends LeadCandidateFindUniqueArgs>(args: SelectSubset<T, LeadCandidateFindUniqueArgs<ExtArgs>>): Prisma__LeadCandidateClient<$Result.GetResult<Prisma.$LeadCandidatePayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one LeadCandidate that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {LeadCandidateFindUniqueOrThrowArgs} args - Arguments to find a LeadCandidate
+     * @example
+     * // Get one LeadCandidate
+     * const leadCandidate = await prisma.leadCandidate.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends LeadCandidateFindUniqueOrThrowArgs>(args: SelectSubset<T, LeadCandidateFindUniqueOrThrowArgs<ExtArgs>>): Prisma__LeadCandidateClient<$Result.GetResult<Prisma.$LeadCandidatePayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first LeadCandidate that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadCandidateFindFirstArgs} args - Arguments to find a LeadCandidate
+     * @example
+     * // Get one LeadCandidate
+     * const leadCandidate = await prisma.leadCandidate.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends LeadCandidateFindFirstArgs>(args?: SelectSubset<T, LeadCandidateFindFirstArgs<ExtArgs>>): Prisma__LeadCandidateClient<$Result.GetResult<Prisma.$LeadCandidatePayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first LeadCandidate that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadCandidateFindFirstOrThrowArgs} args - Arguments to find a LeadCandidate
+     * @example
+     * // Get one LeadCandidate
+     * const leadCandidate = await prisma.leadCandidate.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends LeadCandidateFindFirstOrThrowArgs>(args?: SelectSubset<T, LeadCandidateFindFirstOrThrowArgs<ExtArgs>>): Prisma__LeadCandidateClient<$Result.GetResult<Prisma.$LeadCandidatePayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more LeadCandidates that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadCandidateFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all LeadCandidates
+     * const leadCandidates = await prisma.leadCandidate.findMany()
+     * 
+     * // Get first 10 LeadCandidates
+     * const leadCandidates = await prisma.leadCandidate.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const leadCandidateWithIdOnly = await prisma.leadCandidate.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends LeadCandidateFindManyArgs>(args?: SelectSubset<T, LeadCandidateFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LeadCandidatePayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a LeadCandidate.
+     * @param {LeadCandidateCreateArgs} args - Arguments to create a LeadCandidate.
+     * @example
+     * // Create one LeadCandidate
+     * const LeadCandidate = await prisma.leadCandidate.create({
+     *   data: {
+     *     // ... data to create a LeadCandidate
+     *   }
+     * })
+     * 
+     */
+    create<T extends LeadCandidateCreateArgs>(args: SelectSubset<T, LeadCandidateCreateArgs<ExtArgs>>): Prisma__LeadCandidateClient<$Result.GetResult<Prisma.$LeadCandidatePayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many LeadCandidates.
+     * @param {LeadCandidateCreateManyArgs} args - Arguments to create many LeadCandidates.
+     * @example
+     * // Create many LeadCandidates
+     * const leadCandidate = await prisma.leadCandidate.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends LeadCandidateCreateManyArgs>(args?: SelectSubset<T, LeadCandidateCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many LeadCandidates and returns the data saved in the database.
+     * @param {LeadCandidateCreateManyAndReturnArgs} args - Arguments to create many LeadCandidates.
+     * @example
+     * // Create many LeadCandidates
+     * const leadCandidate = await prisma.leadCandidate.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many LeadCandidates and only return the `id`
+     * const leadCandidateWithIdOnly = await prisma.leadCandidate.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends LeadCandidateCreateManyAndReturnArgs>(args?: SelectSubset<T, LeadCandidateCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LeadCandidatePayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a LeadCandidate.
+     * @param {LeadCandidateDeleteArgs} args - Arguments to delete one LeadCandidate.
+     * @example
+     * // Delete one LeadCandidate
+     * const LeadCandidate = await prisma.leadCandidate.delete({
+     *   where: {
+     *     // ... filter to delete one LeadCandidate
+     *   }
+     * })
+     * 
+     */
+    delete<T extends LeadCandidateDeleteArgs>(args: SelectSubset<T, LeadCandidateDeleteArgs<ExtArgs>>): Prisma__LeadCandidateClient<$Result.GetResult<Prisma.$LeadCandidatePayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one LeadCandidate.
+     * @param {LeadCandidateUpdateArgs} args - Arguments to update one LeadCandidate.
+     * @example
+     * // Update one LeadCandidate
+     * const leadCandidate = await prisma.leadCandidate.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends LeadCandidateUpdateArgs>(args: SelectSubset<T, LeadCandidateUpdateArgs<ExtArgs>>): Prisma__LeadCandidateClient<$Result.GetResult<Prisma.$LeadCandidatePayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more LeadCandidates.
+     * @param {LeadCandidateDeleteManyArgs} args - Arguments to filter LeadCandidates to delete.
+     * @example
+     * // Delete a few LeadCandidates
+     * const { count } = await prisma.leadCandidate.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends LeadCandidateDeleteManyArgs>(args?: SelectSubset<T, LeadCandidateDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LeadCandidates.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadCandidateUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many LeadCandidates
+     * const leadCandidate = await prisma.leadCandidate.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends LeadCandidateUpdateManyArgs>(args: SelectSubset<T, LeadCandidateUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one LeadCandidate.
+     * @param {LeadCandidateUpsertArgs} args - Arguments to update or create a LeadCandidate.
+     * @example
+     * // Update or create a LeadCandidate
+     * const leadCandidate = await prisma.leadCandidate.upsert({
+     *   create: {
+     *     // ... data to create a LeadCandidate
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the LeadCandidate we want to update
+     *   }
+     * })
+     */
+    upsert<T extends LeadCandidateUpsertArgs>(args: SelectSubset<T, LeadCandidateUpsertArgs<ExtArgs>>): Prisma__LeadCandidateClient<$Result.GetResult<Prisma.$LeadCandidatePayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of LeadCandidates.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadCandidateCountArgs} args - Arguments to filter LeadCandidates to count.
+     * @example
+     * // Count the number of LeadCandidates
+     * const count = await prisma.leadCandidate.count({
+     *   where: {
+     *     // ... the filter for the LeadCandidates we want to count
+     *   }
+     * })
+    **/
+    count<T extends LeadCandidateCountArgs>(
+      args?: Subset<T, LeadCandidateCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], LeadCandidateCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a LeadCandidate.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadCandidateAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends LeadCandidateAggregateArgs>(args: Subset<T, LeadCandidateAggregateArgs>): Prisma.PrismaPromise<GetLeadCandidateAggregateType<T>>
+
+    /**
+     * Group by LeadCandidate.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadCandidateGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends LeadCandidateGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: LeadCandidateGroupByArgs['orderBy'] }
+        : { orderBy?: LeadCandidateGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, LeadCandidateGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetLeadCandidateGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the LeadCandidate model
+   */
+  readonly fields: LeadCandidateFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for LeadCandidate.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__LeadCandidateClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the LeadCandidate model
+   */ 
+  interface LeadCandidateFieldRefs {
+    readonly id: FieldRef<"LeadCandidate", 'String'>
+    readonly source: FieldRef<"LeadCandidate", 'String'>
+    readonly sourceReference: FieldRef<"LeadCandidate", 'String'>
+    readonly consentBasis: FieldRef<"LeadCandidate", 'String'>
+    readonly fingerprint: FieldRef<"LeadCandidate", 'String'>
+    readonly status: FieldRef<"LeadCandidate", 'String'>
+    readonly firstName: FieldRef<"LeadCandidate", 'String'>
+    readonly lastName: FieldRef<"LeadCandidate", 'String'>
+    readonly company: FieldRef<"LeadCandidate", 'String'>
+    readonly email: FieldRef<"LeadCandidate", 'String'>
+    readonly phone: FieldRef<"LeadCandidate", 'String'>
+    readonly website: FieldRef<"LeadCandidate", 'String'>
+    readonly title: FieldRef<"LeadCandidate", 'String'>
+    readonly industry: FieldRef<"LeadCandidate", 'String'>
+    readonly country: FieldRef<"LeadCandidate", 'String'>
+    readonly employeeCount: FieldRef<"LeadCandidate", 'Int'>
+    readonly score: FieldRef<"LeadCandidate", 'Int'>
+    readonly band: FieldRef<"LeadCandidate", 'String'>
+    readonly reasons: FieldRef<"LeadCandidate", 'String'>
+    readonly rawPayload: FieldRef<"LeadCandidate", 'String'>
+    readonly duplicateLeadId: FieldRef<"LeadCandidate", 'String'>
+    readonly createdLeadId: FieldRef<"LeadCandidate", 'String'>
+    readonly companyId: FieldRef<"LeadCandidate", 'String'>
+    readonly createdBy: FieldRef<"LeadCandidate", 'String'>
+    readonly reviewedBy: FieldRef<"LeadCandidate", 'String'>
+    readonly reviewedAt: FieldRef<"LeadCandidate", 'DateTime'>
+    readonly createdAt: FieldRef<"LeadCandidate", 'DateTime'>
+    readonly updatedAt: FieldRef<"LeadCandidate", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * LeadCandidate findUnique
+   */
+  export type LeadCandidateFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCandidate
+     */
+    select?: LeadCandidateSelect<ExtArgs> | null
+    /**
+     * Filter, which LeadCandidate to fetch.
+     */
+    where: LeadCandidateWhereUniqueInput
+  }
+
+  /**
+   * LeadCandidate findUniqueOrThrow
+   */
+  export type LeadCandidateFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCandidate
+     */
+    select?: LeadCandidateSelect<ExtArgs> | null
+    /**
+     * Filter, which LeadCandidate to fetch.
+     */
+    where: LeadCandidateWhereUniqueInput
+  }
+
+  /**
+   * LeadCandidate findFirst
+   */
+  export type LeadCandidateFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCandidate
+     */
+    select?: LeadCandidateSelect<ExtArgs> | null
+    /**
+     * Filter, which LeadCandidate to fetch.
+     */
+    where?: LeadCandidateWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LeadCandidates to fetch.
+     */
+    orderBy?: LeadCandidateOrderByWithRelationInput | LeadCandidateOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LeadCandidates.
+     */
+    cursor?: LeadCandidateWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LeadCandidates from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LeadCandidates.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LeadCandidates.
+     */
+    distinct?: LeadCandidateScalarFieldEnum | LeadCandidateScalarFieldEnum[]
+  }
+
+  /**
+   * LeadCandidate findFirstOrThrow
+   */
+  export type LeadCandidateFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCandidate
+     */
+    select?: LeadCandidateSelect<ExtArgs> | null
+    /**
+     * Filter, which LeadCandidate to fetch.
+     */
+    where?: LeadCandidateWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LeadCandidates to fetch.
+     */
+    orderBy?: LeadCandidateOrderByWithRelationInput | LeadCandidateOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LeadCandidates.
+     */
+    cursor?: LeadCandidateWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LeadCandidates from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LeadCandidates.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LeadCandidates.
+     */
+    distinct?: LeadCandidateScalarFieldEnum | LeadCandidateScalarFieldEnum[]
+  }
+
+  /**
+   * LeadCandidate findMany
+   */
+  export type LeadCandidateFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCandidate
+     */
+    select?: LeadCandidateSelect<ExtArgs> | null
+    /**
+     * Filter, which LeadCandidates to fetch.
+     */
+    where?: LeadCandidateWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LeadCandidates to fetch.
+     */
+    orderBy?: LeadCandidateOrderByWithRelationInput | LeadCandidateOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing LeadCandidates.
+     */
+    cursor?: LeadCandidateWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LeadCandidates from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LeadCandidates.
+     */
+    skip?: number
+    distinct?: LeadCandidateScalarFieldEnum | LeadCandidateScalarFieldEnum[]
+  }
+
+  /**
+   * LeadCandidate create
+   */
+  export type LeadCandidateCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCandidate
+     */
+    select?: LeadCandidateSelect<ExtArgs> | null
+    /**
+     * The data needed to create a LeadCandidate.
+     */
+    data: XOR<LeadCandidateCreateInput, LeadCandidateUncheckedCreateInput>
+  }
+
+  /**
+   * LeadCandidate createMany
+   */
+  export type LeadCandidateCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many LeadCandidates.
+     */
+    data: LeadCandidateCreateManyInput | LeadCandidateCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * LeadCandidate createManyAndReturn
+   */
+  export type LeadCandidateCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCandidate
+     */
+    select?: LeadCandidateSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many LeadCandidates.
+     */
+    data: LeadCandidateCreateManyInput | LeadCandidateCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * LeadCandidate update
+   */
+  export type LeadCandidateUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCandidate
+     */
+    select?: LeadCandidateSelect<ExtArgs> | null
+    /**
+     * The data needed to update a LeadCandidate.
+     */
+    data: XOR<LeadCandidateUpdateInput, LeadCandidateUncheckedUpdateInput>
+    /**
+     * Choose, which LeadCandidate to update.
+     */
+    where: LeadCandidateWhereUniqueInput
+  }
+
+  /**
+   * LeadCandidate updateMany
+   */
+  export type LeadCandidateUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update LeadCandidates.
+     */
+    data: XOR<LeadCandidateUpdateManyMutationInput, LeadCandidateUncheckedUpdateManyInput>
+    /**
+     * Filter which LeadCandidates to update
+     */
+    where?: LeadCandidateWhereInput
+  }
+
+  /**
+   * LeadCandidate upsert
+   */
+  export type LeadCandidateUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCandidate
+     */
+    select?: LeadCandidateSelect<ExtArgs> | null
+    /**
+     * The filter to search for the LeadCandidate to update in case it exists.
+     */
+    where: LeadCandidateWhereUniqueInput
+    /**
+     * In case the LeadCandidate found by the `where` argument doesn't exist, create a new LeadCandidate with this data.
+     */
+    create: XOR<LeadCandidateCreateInput, LeadCandidateUncheckedCreateInput>
+    /**
+     * In case the LeadCandidate was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<LeadCandidateUpdateInput, LeadCandidateUncheckedUpdateInput>
+  }
+
+  /**
+   * LeadCandidate delete
+   */
+  export type LeadCandidateDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCandidate
+     */
+    select?: LeadCandidateSelect<ExtArgs> | null
+    /**
+     * Filter which LeadCandidate to delete.
+     */
+    where: LeadCandidateWhereUniqueInput
+  }
+
+  /**
+   * LeadCandidate deleteMany
+   */
+  export type LeadCandidateDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LeadCandidates to delete
+     */
+    where?: LeadCandidateWhereInput
+  }
+
+  /**
+   * LeadCandidate without action
+   */
+  export type LeadCandidateDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCandidate
+     */
+    select?: LeadCandidateSelect<ExtArgs> | null
+  }
+
+
+  /**
    * Model Translation
    */
 
@@ -140055,6 +141333,40 @@ export namespace Prisma {
   export type AiLogScalarFieldEnum = (typeof AiLogScalarFieldEnum)[keyof typeof AiLogScalarFieldEnum]
 
 
+  export const LeadCandidateScalarFieldEnum: {
+    id: 'id',
+    source: 'source',
+    sourceReference: 'sourceReference',
+    consentBasis: 'consentBasis',
+    fingerprint: 'fingerprint',
+    status: 'status',
+    firstName: 'firstName',
+    lastName: 'lastName',
+    company: 'company',
+    email: 'email',
+    phone: 'phone',
+    website: 'website',
+    title: 'title',
+    industry: 'industry',
+    country: 'country',
+    employeeCount: 'employeeCount',
+    score: 'score',
+    band: 'band',
+    reasons: 'reasons',
+    rawPayload: 'rawPayload',
+    duplicateLeadId: 'duplicateLeadId',
+    createdLeadId: 'createdLeadId',
+    companyId: 'companyId',
+    createdBy: 'createdBy',
+    reviewedBy: 'reviewedBy',
+    reviewedAt: 'reviewedAt',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type LeadCandidateScalarFieldEnum = (typeof LeadCandidateScalarFieldEnum)[keyof typeof LeadCandidateScalarFieldEnum]
+
+
   export const TranslationScalarFieldEnum: {
     id: 'id',
     locale: 'locale',
@@ -150689,6 +152001,176 @@ export namespace Prisma {
     companyId?: StringNullableWithAggregatesFilter<"AiLog"> | string | null
     userId?: StringNullableWithAggregatesFilter<"AiLog"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"AiLog"> | Date | string
+  }
+
+  export type LeadCandidateWhereInput = {
+    AND?: LeadCandidateWhereInput | LeadCandidateWhereInput[]
+    OR?: LeadCandidateWhereInput[]
+    NOT?: LeadCandidateWhereInput | LeadCandidateWhereInput[]
+    id?: StringFilter<"LeadCandidate"> | string
+    source?: StringFilter<"LeadCandidate"> | string
+    sourceReference?: StringNullableFilter<"LeadCandidate"> | string | null
+    consentBasis?: StringNullableFilter<"LeadCandidate"> | string | null
+    fingerprint?: StringFilter<"LeadCandidate"> | string
+    status?: StringFilter<"LeadCandidate"> | string
+    firstName?: StringFilter<"LeadCandidate"> | string
+    lastName?: StringFilter<"LeadCandidate"> | string
+    company?: StringFilter<"LeadCandidate"> | string
+    email?: StringNullableFilter<"LeadCandidate"> | string | null
+    phone?: StringNullableFilter<"LeadCandidate"> | string | null
+    website?: StringNullableFilter<"LeadCandidate"> | string | null
+    title?: StringNullableFilter<"LeadCandidate"> | string | null
+    industry?: StringNullableFilter<"LeadCandidate"> | string | null
+    country?: StringNullableFilter<"LeadCandidate"> | string | null
+    employeeCount?: IntNullableFilter<"LeadCandidate"> | number | null
+    score?: IntFilter<"LeadCandidate"> | number
+    band?: StringFilter<"LeadCandidate"> | string
+    reasons?: StringFilter<"LeadCandidate"> | string
+    rawPayload?: StringNullableFilter<"LeadCandidate"> | string | null
+    duplicateLeadId?: StringNullableFilter<"LeadCandidate"> | string | null
+    createdLeadId?: StringNullableFilter<"LeadCandidate"> | string | null
+    companyId?: StringFilter<"LeadCandidate"> | string
+    createdBy?: StringNullableFilter<"LeadCandidate"> | string | null
+    reviewedBy?: StringNullableFilter<"LeadCandidate"> | string | null
+    reviewedAt?: DateTimeNullableFilter<"LeadCandidate"> | Date | string | null
+    createdAt?: DateTimeFilter<"LeadCandidate"> | Date | string
+    updatedAt?: DateTimeFilter<"LeadCandidate"> | Date | string
+  }
+
+  export type LeadCandidateOrderByWithRelationInput = {
+    id?: SortOrder
+    source?: SortOrder
+    sourceReference?: SortOrderInput | SortOrder
+    consentBasis?: SortOrderInput | SortOrder
+    fingerprint?: SortOrder
+    status?: SortOrder
+    firstName?: SortOrder
+    lastName?: SortOrder
+    company?: SortOrder
+    email?: SortOrderInput | SortOrder
+    phone?: SortOrderInput | SortOrder
+    website?: SortOrderInput | SortOrder
+    title?: SortOrderInput | SortOrder
+    industry?: SortOrderInput | SortOrder
+    country?: SortOrderInput | SortOrder
+    employeeCount?: SortOrderInput | SortOrder
+    score?: SortOrder
+    band?: SortOrder
+    reasons?: SortOrder
+    rawPayload?: SortOrderInput | SortOrder
+    duplicateLeadId?: SortOrderInput | SortOrder
+    createdLeadId?: SortOrderInput | SortOrder
+    companyId?: SortOrder
+    createdBy?: SortOrderInput | SortOrder
+    reviewedBy?: SortOrderInput | SortOrder
+    reviewedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type LeadCandidateWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    companyId_fingerprint?: LeadCandidateCompanyIdFingerprintCompoundUniqueInput
+    AND?: LeadCandidateWhereInput | LeadCandidateWhereInput[]
+    OR?: LeadCandidateWhereInput[]
+    NOT?: LeadCandidateWhereInput | LeadCandidateWhereInput[]
+    source?: StringFilter<"LeadCandidate"> | string
+    sourceReference?: StringNullableFilter<"LeadCandidate"> | string | null
+    consentBasis?: StringNullableFilter<"LeadCandidate"> | string | null
+    fingerprint?: StringFilter<"LeadCandidate"> | string
+    status?: StringFilter<"LeadCandidate"> | string
+    firstName?: StringFilter<"LeadCandidate"> | string
+    lastName?: StringFilter<"LeadCandidate"> | string
+    company?: StringFilter<"LeadCandidate"> | string
+    email?: StringNullableFilter<"LeadCandidate"> | string | null
+    phone?: StringNullableFilter<"LeadCandidate"> | string | null
+    website?: StringNullableFilter<"LeadCandidate"> | string | null
+    title?: StringNullableFilter<"LeadCandidate"> | string | null
+    industry?: StringNullableFilter<"LeadCandidate"> | string | null
+    country?: StringNullableFilter<"LeadCandidate"> | string | null
+    employeeCount?: IntNullableFilter<"LeadCandidate"> | number | null
+    score?: IntFilter<"LeadCandidate"> | number
+    band?: StringFilter<"LeadCandidate"> | string
+    reasons?: StringFilter<"LeadCandidate"> | string
+    rawPayload?: StringNullableFilter<"LeadCandidate"> | string | null
+    duplicateLeadId?: StringNullableFilter<"LeadCandidate"> | string | null
+    createdLeadId?: StringNullableFilter<"LeadCandidate"> | string | null
+    companyId?: StringFilter<"LeadCandidate"> | string
+    createdBy?: StringNullableFilter<"LeadCandidate"> | string | null
+    reviewedBy?: StringNullableFilter<"LeadCandidate"> | string | null
+    reviewedAt?: DateTimeNullableFilter<"LeadCandidate"> | Date | string | null
+    createdAt?: DateTimeFilter<"LeadCandidate"> | Date | string
+    updatedAt?: DateTimeFilter<"LeadCandidate"> | Date | string
+  }, "id" | "companyId_fingerprint">
+
+  export type LeadCandidateOrderByWithAggregationInput = {
+    id?: SortOrder
+    source?: SortOrder
+    sourceReference?: SortOrderInput | SortOrder
+    consentBasis?: SortOrderInput | SortOrder
+    fingerprint?: SortOrder
+    status?: SortOrder
+    firstName?: SortOrder
+    lastName?: SortOrder
+    company?: SortOrder
+    email?: SortOrderInput | SortOrder
+    phone?: SortOrderInput | SortOrder
+    website?: SortOrderInput | SortOrder
+    title?: SortOrderInput | SortOrder
+    industry?: SortOrderInput | SortOrder
+    country?: SortOrderInput | SortOrder
+    employeeCount?: SortOrderInput | SortOrder
+    score?: SortOrder
+    band?: SortOrder
+    reasons?: SortOrder
+    rawPayload?: SortOrderInput | SortOrder
+    duplicateLeadId?: SortOrderInput | SortOrder
+    createdLeadId?: SortOrderInput | SortOrder
+    companyId?: SortOrder
+    createdBy?: SortOrderInput | SortOrder
+    reviewedBy?: SortOrderInput | SortOrder
+    reviewedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: LeadCandidateCountOrderByAggregateInput
+    _avg?: LeadCandidateAvgOrderByAggregateInput
+    _max?: LeadCandidateMaxOrderByAggregateInput
+    _min?: LeadCandidateMinOrderByAggregateInput
+    _sum?: LeadCandidateSumOrderByAggregateInput
+  }
+
+  export type LeadCandidateScalarWhereWithAggregatesInput = {
+    AND?: LeadCandidateScalarWhereWithAggregatesInput | LeadCandidateScalarWhereWithAggregatesInput[]
+    OR?: LeadCandidateScalarWhereWithAggregatesInput[]
+    NOT?: LeadCandidateScalarWhereWithAggregatesInput | LeadCandidateScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"LeadCandidate"> | string
+    source?: StringWithAggregatesFilter<"LeadCandidate"> | string
+    sourceReference?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    consentBasis?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    fingerprint?: StringWithAggregatesFilter<"LeadCandidate"> | string
+    status?: StringWithAggregatesFilter<"LeadCandidate"> | string
+    firstName?: StringWithAggregatesFilter<"LeadCandidate"> | string
+    lastName?: StringWithAggregatesFilter<"LeadCandidate"> | string
+    company?: StringWithAggregatesFilter<"LeadCandidate"> | string
+    email?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    phone?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    website?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    title?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    industry?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    country?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    employeeCount?: IntNullableWithAggregatesFilter<"LeadCandidate"> | number | null
+    score?: IntWithAggregatesFilter<"LeadCandidate"> | number
+    band?: StringWithAggregatesFilter<"LeadCandidate"> | string
+    reasons?: StringWithAggregatesFilter<"LeadCandidate"> | string
+    rawPayload?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    duplicateLeadId?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    createdLeadId?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    companyId?: StringWithAggregatesFilter<"LeadCandidate"> | string
+    createdBy?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    reviewedBy?: StringNullableWithAggregatesFilter<"LeadCandidate"> | string | null
+    reviewedAt?: DateTimeNullableWithAggregatesFilter<"LeadCandidate"> | Date | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"LeadCandidate"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"LeadCandidate"> | Date | string
   }
 
   export type TranslationWhereInput = {
@@ -165912,6 +167394,223 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type LeadCandidateCreateInput = {
+    id?: string
+    source: string
+    sourceReference?: string | null
+    consentBasis?: string | null
+    fingerprint: string
+    status?: string
+    firstName: string
+    lastName: string
+    company: string
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    title?: string | null
+    industry?: string | null
+    country?: string | null
+    employeeCount?: number | null
+    score: number
+    band: string
+    reasons: string
+    rawPayload?: string | null
+    duplicateLeadId?: string | null
+    createdLeadId?: string | null
+    companyId: string
+    createdBy?: string | null
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type LeadCandidateUncheckedCreateInput = {
+    id?: string
+    source: string
+    sourceReference?: string | null
+    consentBasis?: string | null
+    fingerprint: string
+    status?: string
+    firstName: string
+    lastName: string
+    company: string
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    title?: string | null
+    industry?: string | null
+    country?: string | null
+    employeeCount?: number | null
+    score: number
+    band: string
+    reasons: string
+    rawPayload?: string | null
+    duplicateLeadId?: string | null
+    createdLeadId?: string | null
+    companyId: string
+    createdBy?: string | null
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type LeadCandidateUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    source?: StringFieldUpdateOperationsInput | string
+    sourceReference?: NullableStringFieldUpdateOperationsInput | string | null
+    consentBasis?: NullableStringFieldUpdateOperationsInput | string | null
+    fingerprint?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    firstName?: StringFieldUpdateOperationsInput | string
+    lastName?: StringFieldUpdateOperationsInput | string
+    company?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    industry?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    employeeCount?: NullableIntFieldUpdateOperationsInput | number | null
+    score?: IntFieldUpdateOperationsInput | number
+    band?: StringFieldUpdateOperationsInput | string
+    reasons?: StringFieldUpdateOperationsInput | string
+    rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
+    duplicateLeadId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdLeadId?: NullableStringFieldUpdateOperationsInput | string | null
+    companyId?: StringFieldUpdateOperationsInput | string
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LeadCandidateUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    source?: StringFieldUpdateOperationsInput | string
+    sourceReference?: NullableStringFieldUpdateOperationsInput | string | null
+    consentBasis?: NullableStringFieldUpdateOperationsInput | string | null
+    fingerprint?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    firstName?: StringFieldUpdateOperationsInput | string
+    lastName?: StringFieldUpdateOperationsInput | string
+    company?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    industry?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    employeeCount?: NullableIntFieldUpdateOperationsInput | number | null
+    score?: IntFieldUpdateOperationsInput | number
+    band?: StringFieldUpdateOperationsInput | string
+    reasons?: StringFieldUpdateOperationsInput | string
+    rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
+    duplicateLeadId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdLeadId?: NullableStringFieldUpdateOperationsInput | string | null
+    companyId?: StringFieldUpdateOperationsInput | string
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LeadCandidateCreateManyInput = {
+    id?: string
+    source: string
+    sourceReference?: string | null
+    consentBasis?: string | null
+    fingerprint: string
+    status?: string
+    firstName: string
+    lastName: string
+    company: string
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    title?: string | null
+    industry?: string | null
+    country?: string | null
+    employeeCount?: number | null
+    score: number
+    band: string
+    reasons: string
+    rawPayload?: string | null
+    duplicateLeadId?: string | null
+    createdLeadId?: string | null
+    companyId: string
+    createdBy?: string | null
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type LeadCandidateUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    source?: StringFieldUpdateOperationsInput | string
+    sourceReference?: NullableStringFieldUpdateOperationsInput | string | null
+    consentBasis?: NullableStringFieldUpdateOperationsInput | string | null
+    fingerprint?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    firstName?: StringFieldUpdateOperationsInput | string
+    lastName?: StringFieldUpdateOperationsInput | string
+    company?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    industry?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    employeeCount?: NullableIntFieldUpdateOperationsInput | number | null
+    score?: IntFieldUpdateOperationsInput | number
+    band?: StringFieldUpdateOperationsInput | string
+    reasons?: StringFieldUpdateOperationsInput | string
+    rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
+    duplicateLeadId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdLeadId?: NullableStringFieldUpdateOperationsInput | string | null
+    companyId?: StringFieldUpdateOperationsInput | string
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LeadCandidateUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    source?: StringFieldUpdateOperationsInput | string
+    sourceReference?: NullableStringFieldUpdateOperationsInput | string | null
+    consentBasis?: NullableStringFieldUpdateOperationsInput | string | null
+    fingerprint?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    firstName?: StringFieldUpdateOperationsInput | string
+    lastName?: StringFieldUpdateOperationsInput | string
+    company?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    industry?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    employeeCount?: NullableIntFieldUpdateOperationsInput | number | null
+    score?: IntFieldUpdateOperationsInput | number
+    band?: StringFieldUpdateOperationsInput | string
+    reasons?: StringFieldUpdateOperationsInput | string
+    rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
+    duplicateLeadId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdLeadId?: NullableStringFieldUpdateOperationsInput | string | null
+    companyId?: StringFieldUpdateOperationsInput | string
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type TranslationCreateInput = {
     id?: string
     locale: string
@@ -176449,6 +178148,114 @@ export namespace Prisma {
   export type AiLogSumOrderByAggregateInput = {
     tokens?: SortOrder
     duration?: SortOrder
+  }
+
+  export type LeadCandidateCompanyIdFingerprintCompoundUniqueInput = {
+    companyId: string
+    fingerprint: string
+  }
+
+  export type LeadCandidateCountOrderByAggregateInput = {
+    id?: SortOrder
+    source?: SortOrder
+    sourceReference?: SortOrder
+    consentBasis?: SortOrder
+    fingerprint?: SortOrder
+    status?: SortOrder
+    firstName?: SortOrder
+    lastName?: SortOrder
+    company?: SortOrder
+    email?: SortOrder
+    phone?: SortOrder
+    website?: SortOrder
+    title?: SortOrder
+    industry?: SortOrder
+    country?: SortOrder
+    employeeCount?: SortOrder
+    score?: SortOrder
+    band?: SortOrder
+    reasons?: SortOrder
+    rawPayload?: SortOrder
+    duplicateLeadId?: SortOrder
+    createdLeadId?: SortOrder
+    companyId?: SortOrder
+    createdBy?: SortOrder
+    reviewedBy?: SortOrder
+    reviewedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type LeadCandidateAvgOrderByAggregateInput = {
+    employeeCount?: SortOrder
+    score?: SortOrder
+  }
+
+  export type LeadCandidateMaxOrderByAggregateInput = {
+    id?: SortOrder
+    source?: SortOrder
+    sourceReference?: SortOrder
+    consentBasis?: SortOrder
+    fingerprint?: SortOrder
+    status?: SortOrder
+    firstName?: SortOrder
+    lastName?: SortOrder
+    company?: SortOrder
+    email?: SortOrder
+    phone?: SortOrder
+    website?: SortOrder
+    title?: SortOrder
+    industry?: SortOrder
+    country?: SortOrder
+    employeeCount?: SortOrder
+    score?: SortOrder
+    band?: SortOrder
+    reasons?: SortOrder
+    rawPayload?: SortOrder
+    duplicateLeadId?: SortOrder
+    createdLeadId?: SortOrder
+    companyId?: SortOrder
+    createdBy?: SortOrder
+    reviewedBy?: SortOrder
+    reviewedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type LeadCandidateMinOrderByAggregateInput = {
+    id?: SortOrder
+    source?: SortOrder
+    sourceReference?: SortOrder
+    consentBasis?: SortOrder
+    fingerprint?: SortOrder
+    status?: SortOrder
+    firstName?: SortOrder
+    lastName?: SortOrder
+    company?: SortOrder
+    email?: SortOrder
+    phone?: SortOrder
+    website?: SortOrder
+    title?: SortOrder
+    industry?: SortOrder
+    country?: SortOrder
+    employeeCount?: SortOrder
+    score?: SortOrder
+    band?: SortOrder
+    reasons?: SortOrder
+    rawPayload?: SortOrder
+    duplicateLeadId?: SortOrder
+    createdLeadId?: SortOrder
+    companyId?: SortOrder
+    createdBy?: SortOrder
+    reviewedBy?: SortOrder
+    reviewedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type LeadCandidateSumOrderByAggregateInput = {
+    employeeCount?: SortOrder
+    score?: SortOrder
   }
 
   export type TranslationCompanyIdLocaleKeyNamespaceCompoundUniqueInput = {
@@ -195782,6 +197589,10 @@ export namespace Prisma {
      * @deprecated Use AiLogDefaultArgs instead
      */
     export type AiLogArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = AiLogDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use LeadCandidateDefaultArgs instead
+     */
+    export type LeadCandidateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = LeadCandidateDefaultArgs<ExtArgs>
     /**
      * @deprecated Use TranslationDefaultArgs instead
      */

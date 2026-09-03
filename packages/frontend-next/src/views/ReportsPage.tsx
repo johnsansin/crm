@@ -630,7 +630,11 @@ function ReportRunner({ report }: { report: any }) {
   })
 
   const rows = useMemo(() => {
-    let list = [...(data?.data || [])]
+    let list = (data?.data || []).map((row: any) => ({
+      ...row,
+      ...(row.assignedTo !== undefined && { assignedTo: row.assignedToName || row.assignedGroupName || 'Unassigned' }),
+      ...(row.createdBy !== undefined && { createdBy: row.createdByName || row.createdBy }),
+    }))
     for (const flt of report.filters || []) {
       const val = flt.value
       list = list.filter((r) => {

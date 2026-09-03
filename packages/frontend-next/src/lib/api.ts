@@ -752,10 +752,10 @@ export const api = {
 
   // Dedicated SaaS support (separate from organization chat)
   supportList: () => request<any>('/support/conversations'),
-  supportCreate: (data: { subject?: string; message?: string }) => request<any>('/support/conversations', { method: 'POST', body: JSON.stringify(data) }),
+  supportCreate: (data: { subject?: string; message?: string; channel?: 'SUPPORT' | 'FEEDBACK' | 'REQUIREMENT' }) => request<any>('/support/conversations', { method: 'POST', body: JSON.stringify(data) }),
   supportGet: (id: string) => request<any>(`/support/conversations/${id}`),
   supportMessages: (id: string) => request<any>(`/support/conversations/${id}/messages`),
-  supportSend: (id: string, content: string, clientMessageId: string) => request<any>(`/support/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ content, clientMessageId }) }),
+  supportSend: (id: string, content: string, clientMessageId: string, attachment?: any) => request<any>(`/support/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ content, clientMessageId, attachment }) }),
   supportRequestAgent: (id: string, priority = 'NORMAL') => request<any>(`/support/conversations/${id}/request-agent`, { method: 'POST', body: JSON.stringify({ priority }) }),
   supportRead: (id: string) => request<any>(`/support/conversations/${id}/read`, { method: 'POST' }),
   supportReopen: (id: string) => request<any>(`/support/conversations/${id}/reopen`, { method: 'POST' }),
@@ -765,7 +765,7 @@ export const api = {
   adminSupportMessages: (id: string) => request<any>(`/admin/support/conversations/${id}/messages`),
   adminSupportClaim: (id: string) => request<any>(`/admin/support/conversations/${id}/claim`, { method: 'POST' }),
   adminSupportAccept: (id: string) => request<any>(`/admin/support/conversations/${id}/accept`, { method: 'POST' }),
-  adminSupportSend: (id: string, content: string, clientMessageId: string) => request<any>(`/admin/support/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ content, clientMessageId }) }),
+  adminSupportSend: (id: string, content: string, clientMessageId: string, attachment?: any) => request<any>(`/admin/support/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ content, clientMessageId, attachment }) }),
   adminSupportResolve: (id: string) => request<any>(`/admin/support/conversations/${id}/resolve`, { method: 'POST' }),
   adminSupportPriority: (id: string, priority: string) => request<any>(`/admin/support/conversations/${id}/priority`, { method: 'POST', body: JSON.stringify({ priority }) }),
   adminSupportTransfer: (id: string, agentId: string, reason = '') => request<any>(`/admin/support/conversations/${id}/transfer`, { method: 'POST', body: JSON.stringify({ agentId, reason }) }),

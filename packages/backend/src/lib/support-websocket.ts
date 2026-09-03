@@ -8,6 +8,12 @@ import { publishSupportEvent, subscribeSupportEvents } from './support-events'
 const JWT_SECRET = signingSecret('JWT_SECRET', 'bizforce-jwt-secret-dev-2026')
 const connections = new Set<{ socket: WebSocket; user: any; subscriptions: Set<string> }>()
 
+export function activeSupportUserIds(conversationId: string) {
+  return new Set([...connections]
+    .filter(connection => connection.socket.readyState === WebSocket.OPEN && connection.subscriptions.has(conversationId))
+    .map(connection => connection.user.id as string))
+}
+
 async function canSubscribe(user: any, conversationId: string) {
   const conversation = await prisma.supportConversation.findUnique({ where: { id: conversationId } })
   if (!conversation) return false
@@ -62,7 +68,7 @@ export function setupSupportWebSocket(server: Server) {
     const body = JSON.stringify({ event: event.event, conversationId: event.conversationId, payload: event.payload })
     for (const connection of connections) {
       if (connection.socket.readyState !== WebSocket.OPEN) continue
-      const staffQueueEvent = (connection.user.isSuperAdmin || connection.user.isAgent) && ['conversation.created', 'conversation.assigned', 'conversation.status_changed'].includes(event.event)
+      const staffQueueEvent = (connection.user.isSuperAdmin || connection.user.isAgent) && ['conversation.created', 'conversation.assigned', 'conversation.status_changed', 'message.created'].includes(event.event)
       if (staffQueueEvent || connection.subscriptions.has(event.conversationId)) connection.socket.send(body)
     }
   })

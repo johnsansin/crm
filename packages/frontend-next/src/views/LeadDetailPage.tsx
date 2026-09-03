@@ -141,11 +141,11 @@ function fmtDisplay(value: any, name: string): string {
   return String(value)
 }
 
-function FieldRow({ label, value }: { label: string; value?: any }) {
+function FieldRow({ label, value, full = false }: { label: string; value?: any; full?: boolean }) {
   return (
-    <div>
+    <div className={full ? 'sm:col-span-2 lg:col-span-4' : undefined}>
       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
-      <p className="text-sm mt-1 break-words">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value == null || value === '' ? '-' : value}</p>
+      <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value == null || value === '' ? '-' : value}</p>
     </div>
   )
 }
@@ -220,7 +220,7 @@ function InlineField({
   }
 
   return (
-    <div className="group relative grid min-h-11 grid-cols-[minmax(92px,40%)_1fr] items-center gap-3 border-b border-border/60 px-2 py-1.5 transition-colors last:border-b-0 hover:bg-muted/50">
+    <div className={cn('group relative grid min-h-11 grid-cols-[minmax(92px,40%)_1fr] items-center gap-3 border-b border-border/60 px-2 py-1.5 transition-colors last:border-b-0 hover:bg-muted/50', name === 'description' && 'sm:col-span-2 xl:col-span-3')}>
       <label className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
         <span>{label}</span>
         {!editing && (
@@ -272,7 +272,7 @@ function InlineField({
           </button>
         </div>
       ) : (
-        <p className="min-w-0 cursor-pointer break-words text-sm font-medium hover:text-primary" onClick={start} title={`Edit ${label}`}>
+        <p className="min-w-0 cursor-pointer whitespace-pre-wrap break-words text-sm font-medium leading-6 hover:text-primary" onClick={start} title={`Edit ${label}`}>
           {fmtDisplay(value, name)}
         </p>
       )}
@@ -1084,7 +1084,7 @@ export function LeadDetailPage() {
             <h2 className="mt-3 text-base font-bold">{fullName}</h2><p className="mt-1 text-xs text-muted-foreground">{lead.company || 'No company'}{lead.industry ? ` · ${lead.industry}` : ''}</p>
             <div className="mt-3 flex flex-wrap justify-center gap-1.5">{lead.leadStatus&&<span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">{lead.leadStatus}</span>}{lead.leadSource&&<span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700">{lead.leadSource}</span>}</div>
             <div className="mt-5 flex items-center gap-4 border-t border-b py-4 text-left"><div className="relative h-16 w-16 shrink-0"><svg className="-rotate-90" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" className="text-muted" strokeWidth="7"/><circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" className="text-indigo-600" strokeWidth="7" strokeLinecap="round" strokeDasharray="169.6" strokeDashoffset={169.6-(169.6*leadScore/100)}/></svg><span className="absolute inset-0 grid place-items-center text-sm font-bold">{leadScore ? leadScore.toFixed(1) : '—'}</span></div><div><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Lead score</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{leadScore >= 70 ? 'Strong fit — prioritize this lead.' : leadScore >= 40 ? 'Mid-tier fit — keep nurturing.' : 'Score this lead to assess fit.'}</p></div></div>
-            <div className="pt-4 text-left"><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Contact</p><div className="mt-3 space-y-3 text-xs">{lead.email?<a href={`mailto:${lead.email}`} className="flex items-center gap-2 hover:text-indigo-600"><Mail size={14}/><span className="truncate">{lead.email}</span></a>:<p className="flex items-center gap-2 text-muted-foreground"><Mail size={14}/>Email not provided</p>}{lead.phone||lead.mobile?<a href={`tel:${lead.phone||lead.mobile}`} className="flex items-center gap-2 hover:text-indigo-600"><Phone size={14}/>{lead.phone||lead.mobile}</a>:<p className="flex items-center gap-2 text-muted-foreground"><Phone size={14}/>Phone not provided</p>}<p className="flex items-center gap-2 text-muted-foreground"><MapPin size={14}/>{[lead.city,lead.country].filter(Boolean).join(', ')||'Location not set'}</p></div></div>
+            <div className="pt-4 text-left"><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Contact</p><div className="mt-3 space-y-3 text-xs">{lead.email?<button type="button" onClick={() => { setEmailForm((f:any) => ({ ...f, to: lead.email })); setEmailOpen(true) }} className="flex items-center gap-2 hover:text-indigo-600"><Mail size={14}/><span className="truncate">{lead.email}</span></button>:<p className="flex items-center gap-2 text-muted-foreground"><Mail size={14}/>Email not provided</p>}{lead.phone||lead.mobile?<a href={`tel:${lead.phone||lead.mobile}`} className="flex items-center gap-2 hover:text-indigo-600"><Phone size={14}/>{lead.phone||lead.mobile}</a>:<p className="flex items-center gap-2 text-muted-foreground"><Phone size={14}/>Phone not provided</p>}<p className="flex items-center gap-2 text-muted-foreground"><MapPin size={14}/>{[lead.city,lead.country].filter(Boolean).join(', ')||'Location not set'}</p></div></div>
           </div>
           <div className="rounded-2xl border bg-card p-5 shadow-sm"><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Pipeline stage</p><div className="mt-4 space-y-0">{['New lead','Follow up','Qualified','Converted'].map((stage,index)=>{const status=String(lead.leadStatus||'').toLowerCase();const active=lead.isConverted?3:/qualif/.test(status)?2:/follow|contact|warm|hot/.test(status)?1:0;return <div key={stage} className="relative flex gap-3 pb-5 last:pb-0"><span className={cn('relative z-10 grid h-5 w-5 place-items-center rounded-full border-2 text-[9px]',index<active?'border-indigo-600 bg-indigo-600 text-white':index===active?'border-indigo-600 bg-background ring-4 ring-indigo-50':'border-border bg-muted')}>{index<active?'✓':''}</span>{index<3&&<span className={cn('absolute left-[9px] top-5 h-full w-0.5',index<active?'bg-indigo-600':'bg-border')}/>}<span className={cn('pt-0.5 text-xs font-semibold',index<=active?'text-foreground':'text-muted-foreground')}>{stage}</span></div>})}</div></div>
           <div className="rounded-2xl border bg-card p-5 shadow-sm"><p className="text-[10px] font-bold uppercase tracking-[.1em] text-muted-foreground">Owner & source</p><div className="mt-3 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-xs font-bold text-indigo-700">{String(lead.ownerName||currentUser?.name||'AU').split(/\s+/).map((v:string)=>v[0]).join('').slice(0,2).toUpperCase()}</span><div><p className="text-sm font-semibold">{lead.ownerName||currentUser?.name||'Admin User'}</p><p className="text-xs text-muted-foreground">Lead owner</p></div></div></div>
@@ -1134,9 +1134,9 @@ export function LeadDetailPage() {
                 </div>
                 <div className="grid w-full gap-2 text-sm sm:w-auto sm:min-w-[240px]">
                   {lead.email && (
-                    <a href={`mailto:${lead.email}`} className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-foreground transition-colors hover:bg-muted">
+                    <button type="button" onClick={() => { setEmailForm((f:any) => ({ ...f, to: lead.email })); setEmailOpen(true) }} className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-foreground transition-colors hover:bg-muted">
                       <Mail size={14} className="text-blue-500" /> <span className="max-w-[220px] truncate">{lead.email}</span>
-                    </a>
+                    </button>
                   )}
                   {(lead.phone || lead.mobile) && (
                     <a href={`tel:${lead.phone || lead.mobile}`} className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-foreground transition-colors hover:bg-muted">
@@ -1263,7 +1263,7 @@ export function LeadDetailPage() {
                       const value = f === 'assignedTo' ? (lead.ownerName || lead.assignedTo)
                         : f === 'createdBy' ? (lead.createdByName || lead.createdBy)
                         : lead[f]
-                      return <FieldRow key={f} label={getFieldLabel(f)} value={formatFieldValue(value, f)} />
+                      return <FieldRow key={f} label={getFieldLabel(f)} value={formatFieldValue(value, f)} full={f === 'description'} />
                     })}
                   </DetailGroup>
                 ))}

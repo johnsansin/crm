@@ -21,6 +21,38 @@ function num(v: any): number {
   return Number.isFinite(n) ? n : 0
 }
 
+export async function resolveReportReferences(rows: any[], companyId?: string | null): Promise<any[]> {
+  if (!rows.length) return rows
+  const userIds = new Set<string>()
+  const groupIds = new Set<string>()
+  for (const row of rows) {
+    if (row.assignedTo) { userIds.add(String(row.assignedTo)); groupIds.add(String(row.assignedTo)) }
+    if (row.createdBy) userIds.add(String(row.createdBy))
+    if (row.assignedGroupId) groupIds.add(String(row.assignedGroupId))
+  }
+  const [users, roles, groups] = await Promise.all([
+    userIds.size ? prisma.user.findMany({ where: { id: { in: [...userIds] }, ...(companyId ? { OR: [{ companyId }, { companyId: null }] } : {}) }, select: { id: true, firstName: true, lastName: true, userName: true, email: true } }).catch(() => []) : [],
+    userIds.size ? prisma.role.findMany({ where: { id: { in: [...userIds] }, ...(companyId ? { companyId } : {}) }, select: { id: true, name: true } }).catch(() => []) : [],
+    groupIds.size ? prisma.userGroup.findMany({ where: { id: { in: [...groupIds] }, ...(companyId ? { companyId } : {}) }, select: { id: true, name: true } }).catch(() => []) : [],
+  ])
+  const userNames = new Map(users.map(user => [user.id, [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.userName || user.email]))
+  const roleNames = new Map(roles.map(role => [role.id, role.name]))
+  const groupNames = new Map(groups.map(group => [group.id, group.name]))
+  return rows.map(row => {
+    const assignedToName = row.assignedToName || (row.assignedTo ? userNames.get(String(row.assignedTo)) || roleNames.get(String(row.assignedTo)) || groupNames.get(String(row.assignedTo)) : null)
+    const assignedGroupName = row.assignedGroupName || (row.assignedGroupId ? groupNames.get(String(row.assignedGroupId)) : null)
+    const createdByName = row.createdByName || (row.createdBy ? userNames.get(String(row.createdBy)) : null)
+    return {
+      ...row,
+      ...(row.assignedTo !== undefined && { assignedTo: assignedToName || assignedGroupName || 'Unassigned' }),
+      ...(row.assignedGroupId !== undefined && { assignedGroupId: assignedGroupName || row.assignedGroupId }),
+      ...(row.createdBy !== undefined && { createdBy: createdByName || row.createdBy }),
+      assignedToName: assignedToName || assignedGroupName || null,
+      createdByName: createdByName || null,
+    }
+  })
+}
+
 export async function fetchReportRows(report: any, companyId?: string | null): Promise<any[]> {
   const modelName = modelMap[report.moduleName]
   if (!modelName) return []
@@ -36,7 +68,7 @@ export async function fetchReportRows(report: any, companyId?: string | null): P
     where: { moduleName: report.moduleName, recordId: { in: rows.map((r: any) => r.id) } },
   }).catch(() => [])
   const map = new Map(custom.map((r: any) => [r.recordId, (r.values as any) || {}]))
-  return rows.map((r: any) => ({ ...r, customFields: map.get(r.id) || {} }))
+  return resolveReportReferences(rows.map((r: any) => ({ ...r, customFields: map.get(r.id) || {} })), companyId)
 }
 
 export function applyReportFilters(rows: any[], filters: any[]): any[] {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useNavigate, useLocation } from '@/lib/navigation'
+import { useNavigate } from '@/lib/navigation'
 import { Button } from '@/components/ui/button'
 import {
   Building2, TrendingUp, Shield, Users, BarChart3, Zap, Sparkles,
@@ -92,16 +92,14 @@ const integrations = [
 
 export function LandingPage() {
   const navigate = useNavigate()
-  const location = useLocation()
-
   useEffect(() => {
-    if (location.hash) {
-      const el = document.getElementById(location.hash.slice(1))
-      if (el) el.scrollIntoView({ behavior: 'smooth' })
-    } else {
-      window.scrollTo(0, 0)
-    }
-  }, [location])
+    const hash = window.location.hash
+    const frame = window.requestAnimationFrame(() => {
+      if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })
+      else window.scrollTo(0, 0)
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [])
 
   return (
     <SiteLayout>
@@ -167,7 +165,7 @@ export function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20 sm:py-28">
+      <section id="features" className="scroll-mt-16 py-20 sm:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 reveal reveal-up">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">Everything you need to grow</h2>

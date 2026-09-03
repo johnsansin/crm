@@ -1978,6 +1978,41 @@ model AiLog {
   @@index([createdAt])
 }
 
+model LeadCandidate {
+  id              String    @id @default(uuid())
+  source          String    @db.VarChar(100)
+  sourceReference String?   @db.VarChar(300)
+  consentBasis    String?   @db.VarChar(200)
+  fingerprint     String    @db.VarChar(64)
+  status          String    @default("PENDING") @db.VarChar(30)
+  firstName       String    @db.VarChar(100)
+  lastName        String    @db.VarChar(100)
+  company         String    @db.VarChar(200)
+  email           String?   @db.VarChar(100)
+  phone           String?   @db.VarChar(30)
+  website         String?   @db.VarChar(200)
+  title           String?   @db.VarChar(100)
+  industry        String?   @db.VarChar(100)
+  country         String?   @db.VarChar(100)
+  employeeCount   Int?
+  score           Int
+  band            String    @db.VarChar(20)
+  reasons         String    @db.Text
+  rawPayload      String?   @db.Text
+  duplicateLeadId String?
+  createdLeadId   String?
+  companyId       String
+  createdBy       String?
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([companyId, fingerprint])
+  @@index([companyId, status, createdAt])
+  @@index([createdLeadId])
+}
+
 model Translation {
   id        String   @id @default(uuid())
   locale    String   @db.VarChar(10)
