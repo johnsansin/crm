@@ -754,10 +754,19 @@ export function entityRouter(moduleName: string): Router {
       // Repair legacy leads created before organization-scoped auto numbering
       // was enabled. New leads receive the number during creation above.
       if (modelName === 'lead' && !record.leadNo) {
-        record = await prisma.lead.update({
-          where: { id: record.id },
-          data: { leadNo: await nextSequenceNumber('Lead', req.user!.companyId) },
-        })
+        for (let attempt = 0; attempt < 5; attempt++) {
+          try {
+            const leadNo = await nextSequenceNumber('Lead', req.user!.companyId)
+            record = await prisma.lead.update({
+              where: { id: record.id },
+              data: { leadNo },
+            })
+            break
+          } catch (e: any) {
+            if (e?.code === 'P2002' && attempt < 4) continue
+            break
+          }
+        }
       }
       const merged = await mergeCustomValues(moduleName, [record])
       if (record.assignedTo || record.createdBy) {
