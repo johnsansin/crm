@@ -85,17 +85,17 @@ const CATEGORIES = [
   {
     label: 'Communication',
     blurb: 'Keep your team informed',
-    keys: ['announcements'],
+    keys: ['announcements', 'chat'],
   },
   {
-    label: 'Integrations',
-    blurb: 'REST API, portal, Google sync, layouts, menu and dependencies',
-    keys: ['integrations', 'menu'],
+    label: 'Integrations & Security',
+    blurb: 'REST API, portal, Google sync, SSO, layouts and dependencies',
+    keys: ['integrations', 'sso', 'menu'],
   },
   {
-    label: 'System',
-    blurb: 'Recover deleted records',
-    keys: ['trash', 'language'],
+    label: 'Data Tools',
+    blurb: 'Data imports, views, reports and recovery',
+    keys: ['data', 'datatools', 'views', 'trash', 'language'],
   },
 ]
 
