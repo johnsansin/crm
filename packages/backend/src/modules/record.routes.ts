@@ -259,7 +259,7 @@ recordRouter.post('/:module/:id/emails', async (req, res, next) => {
         toEmails: toEmails || parent.email || null,
         ccEmails: ccEmails || null,
         bccEmails: bccEmails || null,
-        emailFlag: 'Sent',
+        emailFlag: 'Queued',
         parentModule: req.params.module, parentId: req.params.id,
         companyId: req.user!.companyId || null,
         assignedTo: req.user!.userId,
@@ -274,7 +274,13 @@ recordRouter.post('/:module/:id/emails', async (req, res, next) => {
         subject: email.subject || '',
         html: email.body || undefined,
         fromOverride: smtp,
-      }).catch(() => {})
+      }).then(res => {
+        prisma.email.update({ where: { id: email.id }, data: { emailFlag: res?.ok ? 'Sent' : 'Failed' } }).catch(() => {})
+      }).catch(() => {
+        prisma.email.update({ where: { id: email.id }, data: { emailFlag: 'Failed' } }).catch(() => {})
+      })
+    } else {
+      prisma.email.update({ where: { id: email.id }, data: { emailFlag: email.toEmails ? 'Failed' : 'Draft' } }).catch(() => {})
     }
     await writeAudit({ moduleName: req.params.module, recordId: req.params.id, action: 'EMAIL', newValue: `Email sent: ${email.subject}`, userId: req.user!.userId, req })
     res.status(201).json(email)

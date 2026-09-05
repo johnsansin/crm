@@ -13,7 +13,7 @@ import { Save, Loader2, Send, PlugZap, Mail, Pencil, X } from 'lucide-react'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
-const DEFAULT_SMTP = { host: '', port: 587, secure: false, user: '', pass: '', fromEmail: '', fromName: '' }
+const DEFAULT_SMTP = { host: '', port: 587, secure: false, user: '', pass: '', fromEmail: '', fromName: '', resendApiKey: '', resendFromEmail: '', resendConfigured: false }
 
 export function EmailSettings() {
   const { user } = useAuthStore()
@@ -120,6 +120,33 @@ export function EmailSettings() {
             <input type="checkbox" checked={!!form.secure} onChange={e => set('secure', e.target.checked)} disabled={!editing} />
             Use TLS/SSL (for port 465)
           </label>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Resend API (recommended)</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">
+            If your hosting provider blocks outbound SMTP, configure a Resend API key so emails are delivered over HTTPS instead. Leave blank to use the platform-wide default.
+          </p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <div>
+            <label className="text-sm font-medium block mb-1.5">Resend API Key</label>
+            <PasswordInput
+              value={editing ? (form.resendApiKey || '') : ''}
+              onChange={e => set('resendApiKey', e.target.value)}
+              disabled={!editing}
+              placeholder={editing ? (form.resendConfigured ? 'Configured — leave blank to keep' : 're_...') : (form.resendConfigured ? 'Configured' : 'Not set')}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1.5">Sender Email (verified in Resend)</label>
+            <Input type="email" placeholder="you@yourdomain.com" value={form.resendFromEmail || ''} onChange={e => set('resendFromEmail', e.target.value)} disabled={!editing} />
+          </div>
+          <p className="text-xs text-muted-foreground md:col-span-2">
+            The sender email must be on a domain verified in your Resend account. Emails that would otherwise fail on an unreachable SMTP server are delivered through Resend.
+          </p>
         </CardContent>
       </Card>
 

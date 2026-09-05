@@ -104,7 +104,7 @@ settingsRouter.get('/subscription', requireAdmin, async (req, res, next) => {
 settingsRouter.get('/', requireAdmin, async (req, res, next) => {
   try {
     const settings = await getAllOrgSettings(req.user!.companyId)
-    if (settings.smtp) settings.smtp = { ...settings.smtp, pass: '', configured: !!(settings.smtp.host && settings.smtp.fromEmail && settings.smtp.pass) }
+    if (settings.smtp) settings.smtp = { ...settings.smtp, pass: '', configured: !!(settings.smtp.host && settings.smtp.fromEmail && settings.smtp.pass), resendApiKey: '', resendConfigured: !!(settings.smtp.resendApiKey && settings.smtp.resendFromEmail) }
     res.json(settings)
   } catch (err) { next(err) }
 })
@@ -124,15 +124,21 @@ settingsRouter.put('/', requireAdmin, async (req, res, next) => {
       keys.currencySymbol = selected.symbol
     }
     for (const key of Object.keys(keys || {})) {
-      if (key === 'smtp' && !keys[key]?.pass) {
+      if (key === 'smtp' && (keys[key] && !keys[key]?.pass || keys[key] && !keys[key]?.resendApiKey)) {
         const current = await getOrgSetting(req.user!.companyId, 'smtp', {})
-        keys[key] = { ...current, ...keys[key], pass: current?.pass || '' }
+        const incoming = keys[key] || {}
+        keys[key] = {
+          ...current,
+          ...incoming,
+          pass: 'pass' in incoming ? (incoming.pass || current?.pass || '') : current?.pass || '',
+          resendApiKey: 'resendApiKey' in incoming ? (incoming.resendApiKey || current?.resendApiKey || '') : current?.resendApiKey || '',
+        }
       }
       await setOrgSetting(req.user!.companyId, key, keys[key])
     }
     await writeAudit({ moduleName: 'settings', action: 'UPDATE', fieldName: 'org', newValue: JSON.stringify(Object.keys(keys || {})), userId: req.user!.userId, req })
     const result = await getAllOrgSettings(req.user!.companyId)
-    if (result.smtp) result.smtp = { ...result.smtp, pass: '', configured: !!(result.smtp.host && result.smtp.fromEmail && result.smtp.pass) }
+    if (result.smtp) result.smtp = { ...result.smtp, pass: '', configured: !!(result.smtp.host && result.smtp.fromEmail && result.smtp.pass), resendApiKey: '', resendConfigured: !!(result.smtp.resendApiKey && result.smtp.resendFromEmail) }
     res.json(result)
   } catch (err) { next(err) }
 })

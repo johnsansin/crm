@@ -62,7 +62,7 @@ adminRouter.get('/search', async (req, res, next) => {
 adminRouter.get('/settings', async (_req, res, next) => {
   try {
     const settings = await getAllGlobalSettings()
-    if (settings.smtp) settings.smtp = { ...settings.smtp, pass: '', configured: !!(settings.smtp.host && settings.smtp.fromEmail && settings.smtp.pass) }
+    if (settings.smtp) settings.smtp = { ...settings.smtp, pass: '', configured: !!(settings.smtp.host && settings.smtp.fromEmail && settings.smtp.pass), resendApiKey: '', resendConfigured: !!(settings.smtp.resendApiKey && settings.smtp.resendFromEmail) }
     res.json(settings)
   } catch (err) { next(err) }
 })
@@ -72,14 +72,20 @@ adminRouter.put('/settings', async (req, res, next) => {
     const body = req.body
     const keys = body && body.settings ? body.settings : body
     for (const key of Object.keys(keys || {})) {
-      if (key === 'smtp' && !keys[key]?.pass) {
+      if (key === 'smtp' && (keys[key] && !keys[key]?.pass || keys[key] && !keys[key]?.resendApiKey)) {
         const current = await getGlobalSetting('smtp', {})
-        keys[key] = { ...current, ...keys[key], pass: current?.pass || '' }
+        const incoming = keys[key] || {}
+        keys[key] = {
+          ...current,
+          ...incoming,
+          pass: 'pass' in incoming ? (incoming.pass || current?.pass || '') : current?.pass || '',
+          resendApiKey: 'resendApiKey' in incoming ? (incoming.resendApiKey || current?.resendApiKey || '') : current?.resendApiKey || '',
+        }
       }
       await setGlobalSetting(key, keys[key])
     }
     const settings = await getAllGlobalSettings()
-    if (settings.smtp) settings.smtp = { ...settings.smtp, pass: '', configured: !!(settings.smtp.host && settings.smtp.fromEmail && settings.smtp.pass) }
+    if (settings.smtp) settings.smtp = { ...settings.smtp, pass: '', configured: !!(settings.smtp.host && settings.smtp.fromEmail && settings.smtp.pass), resendApiKey: '', resendConfigured: !!(settings.smtp.resendApiKey && settings.smtp.resendFromEmail) }
     res.json(settings)
   } catch (err) { next(err) }
 })

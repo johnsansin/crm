@@ -10,6 +10,8 @@ export interface SmtpConfig {
   pass?: string
   fromEmail?: string
   fromName?: string
+  resendApiKey?: string
+  resendFromEmail?: string
 }
 
 function buildMime(opts: { from: string; to: string[]; subject: string; html?: string; text?: string }): string {
@@ -148,18 +150,19 @@ export async function getSmtpConfig(companyId?: string | null): Promise<SmtpConf
 
 export async function isSmtpConfigured(companyId?: string | null): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY
-  if (apiKey) return true
   const cfg = await getSmtpConfig(companyId)
+  if (apiKey || cfg.resendApiKey) return true
   return !!(cfg.host && cfg.fromEmail)
 }
 
 async function sendViaResend(
-  opts: { to: string[]; from: string; subject: string; html?: string; text?: string }
+  opts: { to: string[]; from: string; subject: string; html?: string; text?: string },
+  apiKey?: string
 ): Promise<{ ok: boolean; error?: string }> {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) return { ok: false, error: 'RESEND_API_KEY not set' }
+  const key = apiKey || process.env.RESEND_API_KEY
+  if (!key) return { ok: false, error: 'Resend API key not set' }
   try {
-    const resend = new Resend(apiKey)
+    const resend = new Resend(key)
     const result = await resend.emails.send({
       from: opts.from,
       to: opts.to,
@@ -188,9 +191,9 @@ async function sendViaSmtp(
       port: Number(cfg.port || 587),
       secure: !!cfg.secure,
       auth: cfg.user ? { user: cfg.user, pass: cfg.pass || '' } : undefined,
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 5000,
+      connectionTimeout: 2500,
+      greetingTimeout: 2500,
+      socketTimeout: 2500,
     })
     await transporter.sendMail({
       from: opts.from,
@@ -216,6 +219,7 @@ export async function sendMail(
   const fromEmail = cfg.fromEmail || process.env.SMTP_FROM_EMAIL || ''
   const fromName = cfg.fromName || 'BizForce CRM'
   const from = fromEmail ? `"${fromName}" <${fromEmail}>` : ''
+  const resendKey = cfg.resendApiKey || process.env.RESEND_API_KEY
   let emailId: string | undefined
 
   if (opts.companyId) {
@@ -232,20 +236,6 @@ export async function sendMail(
       })
       emailId = email.id
     } catch {}
-  }
-
-  if (!fromEmail && !cfg.host) {
-    console.log(`[EMAIL] (no sender configured, logged only) to=${to} subject="${opts.subject}"`)
-    const gmailProbe = await sendViaGmailApi(
-      { from: fromName, fromEmail, to: toArr, subject: opts.subject, html: opts.html, text: opts.text },
-      opts.companyId
-    )
-    if (gmailProbe.ok) {
-      if (emailId) await prisma.email.update({ where: { id: emailId }, data: { emailFlag: 'Sent' } }).catch(() => {})
-      return { ok: true, delivered: true, id: emailId }
-    }
-    if (emailId) await prisma.email.update({ where: { id: emailId }, data: { emailFlag: 'Failed' } }).catch(() => {})
-    return { ok: false, delivered: false, error: 'No sender email configured', id: emailId }
   }
 
   let result: { ok: boolean; error?: string } = { ok: false, error: 'No email provider available' }
@@ -281,16 +271,19 @@ export async function sendMail(
     }
   }
 
-  const resendKey = process.env.RESEND_API_KEY
   if (resendKey) {
-    const resendFrom = fromEmail ? `"${fromName}" <noreply@bizforce-crm.online>` : '"BizForce CRM" <noreply@bizforce-crm.online>'
+    const useOrgKey = !!cfg.resendApiKey
+    const orgFrom = cfg.resendFromEmail || cfg.fromEmail
+    const resendFrom = useOrgKey
+      ? (orgFrom ? `"${fromName}" <${orgFrom}>` : `"${fromName}" <noreply@bizforce-crm.online>`)
+      : `"${fromName}" <noreply@bizforce-crm.online>`
     result = await sendViaResend({
       to: toArr,
       from: resendFrom,
       subject: opts.subject,
       html: opts.html,
       text: opts.text,
-    })
+    }, cfg.resendApiKey)
     if (result.ok) {
       if (emailId) await prisma.email.update({ where: { id: emailId }, data: { emailFlag: 'Sent' } }).catch(() => {})
       return { ok: true, delivered: true, id: emailId }
@@ -309,10 +302,11 @@ export async function sendMail(
 }
 
 export async function testSmtpConnection(cfg: SmtpConfig): Promise<{ ok: boolean; error?: string }> {
-  if (process.env.RESEND_API_KEY) {
+  const key = cfg.resendApiKey || process.env.RESEND_API_KEY
+  if (key) {
     try {
-      const resend = new Resend(process.env.RESEND_API_KEY)
-      const testTo = cfg.fromEmail || 'noreply@bizforce-crm.online'
+      const resend = new Resend(key)
+      const testTo = cfg.resendFromEmail || cfg.fromEmail || 'noreply@bizforce-crm.online'
       const result = await resend.emails.send({
         from: '"BizForce CRM" <noreply@bizforce-crm.online>',
         to: testTo,

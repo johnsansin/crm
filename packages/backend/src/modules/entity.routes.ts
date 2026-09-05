@@ -914,9 +914,11 @@ export function entityRouter(moduleName: string): Router {
           subject: record.subject,
           html: record.body || undefined,
           fromOverride: smtp,
-        }).then(() => {
-          prismaModel.update({ where: { id: record.id }, data: { emailFlag: 'Sent' } }).catch(() => {})
-        }).catch(() => {})
+        }).then((mailRes) => {
+          prismaModel.update({ where: { id: record.id }, data: { emailFlag: mailRes?.ok ? 'Sent' : 'Failed' } }).catch(() => {})
+        }).catch(() => {
+          prismaModel.update({ where: { id: record.id }, data: { emailFlag: 'Failed' } }).catch(() => {})
+        })
       }
 
       res.status(201).json(record)
