@@ -989,6 +989,8 @@ export const blogPosts: BlogPost[] = [
   },
 ]
 
+blogPosts.sort((a, b) => new Date(b.isoDate).getTime() - new Date(a.isoDate).getTime())
+
 export function getAllBlogPostSlugs(): string[] {
   return blogPosts.map(post => post.slug)
 }
