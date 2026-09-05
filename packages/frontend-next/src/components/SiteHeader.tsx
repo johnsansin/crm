@@ -59,7 +59,7 @@ export function SiteHeader() {
   const initial = (user?.firstName || user?.userName || user?.email || 'U')?.[0]?.toUpperCase()
   const menuItems = [
     { to: '/', label: 'Home', description: 'Your CRM overview', icon: Home },
-    { to: '/#features', label: 'Features', description: 'Explore what BizForce can do', icon: Sparkles },
+    { to: '/features', label: 'Features', description: 'Explore what BizForce can do', icon: Sparkles },
     { to: '/pricing', label: 'Pricing', description: 'Simple plans that scale', icon: BadgeDollarSign },
     { to: '/faq', label: 'FAQ', description: 'Frequently asked questions', icon: CircleHelp },
     { to: '/blog', label: 'Blog', description: 'CRM tips and guides', icon: Sparkles },
