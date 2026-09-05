@@ -5,8 +5,9 @@ import { useSearchParams } from '@/lib/navigation'
 import { api } from '@/lib/api'
 import {
   Building2, Users, ToggleLeft, ToggleRight, Search,
-  LayoutGrid, Table2, X, Mail, Globe, Phone, MapPin, Clock, LogOut, Save, Sparkles
+  LayoutGrid, Table2, X, Mail, Globe, Phone, MapPin, Clock, LogOut, Save, Sparkles, MoreHorizontal, Eye
 } from 'lucide-react'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { useToast } from '@/lib/toast'
 import { formatDate, useOrgSettings } from '@/lib/org-format'
 import { LANGUAGES, DATE_FORMATS, TIMEZONES } from '@/lib/constants'
@@ -146,6 +147,37 @@ export function SuperAdminOrgs() {
     )
   }
 
+  const OrgActionMenu = ({ org }: { org: any }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          title="Actions"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+        >
+          <MoreHorizontal size={17} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={() => openOrganization(org.id)}>
+          <Eye size={14} className="mr-2" />View organization
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={(e) => toggleOrg(e, org.id)} disabled={toggling === org.id}>
+          {toggling === org.id ? (
+            <div className="mr-2 animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+          ) : org.isActive !== false
+            ? <ToggleLeft size={14} className="mr-2 text-red-500" />
+            : <ToggleRight size={14} className="mr-2 text-emerald-500" />}
+          {org.isActive !== false ? 'Deactivate' : 'Activate'}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={(e) => logoutOrganization(e, org)} className="text-red-500 focus:text-red-500">
+          <LogOut size={14} className="mr-2" />Logout all users
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+
   return (
     <div className="space-y-6 max-w-7xl">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -283,69 +315,91 @@ export function SuperAdminOrgs() {
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                  <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Organization</th>
-                  <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Registration Date</th>
-                  <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Phone</th>
-                  <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Address</th>
-                  <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Language</th>
-                  <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Timezone</th>
-                  <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Date Format</th>
-                  <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Package Plan</th>
-                  <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Users</th>
-                  <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Status</th>
-                  <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {filtered.map(org => (
-                  <tr key={org.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <OrgLogo org={org} size="sm" />
-                        <div>
-                          <button onClick={() => openOrganization(org.id)} className="font-semibold text-sky-700 hover:underline dark:text-sky-300">{org.name}</button>
-                          {org.email && <p className="text-xs text-slate-400">{org.email}</p>}
+        <>
+          <div className="hidden md:block rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                    <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Organization</th>
+                    <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Registration Date</th>
+                    <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Phone</th>
+                    <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Address</th>
+                    <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Language</th>
+                    <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Timezone</th>
+                    <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Date Format</th>
+                    <th className="text-left px-5 py-3 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Package Plan</th>
+                    <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Users</th>
+                    <th className="text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Status</th>
+                    <th className="w-16 text-center px-5 py-3 font-semibold text-slate-600 dark:text-slate-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filtered.map(org => (
+                    <tr key={org.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <OrgLogo org={org} size="sm" />
+                          <div>
+                            <button onClick={() => openOrganization(org.id)} className="font-semibold text-sky-700 hover:underline dark:text-sky-300">{org.name}</button>
+                            {org.email && <p className="text-xs text-slate-400">{org.email}</p>}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">{formatDate(org.createdAt)}</td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{org.phone || '-'}</td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300 max-w-[160px] truncate">{[org.addressCity, org.addressCountry].filter(Boolean).join(', ') || '-'}</td>
-                    <td className="px-5 py-3"><span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">{langLabel(org.language)}</span></td>
-                    <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400">{tzLabel(org.timezone)}</td>
-                    <td className="px-5 py-3 text-xs font-mono text-slate-500 dark:text-slate-400">{dfLabel(org.dateFormat)}</td>
-                    <td className="px-5 py-3 whitespace-nowrap"><span className="inline-flex rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700 dark:bg-violet-950/50 dark:text-violet-300">{org.subscriptionModel?.name || org.subscriptionPlan || 'Starter'}</span><p className="mt-1 text-[10px] font-medium text-slate-400">{org.subscriptionStatus || 'ACTIVE'}</p></td>
-                    <td className="px-5 py-3 text-center font-medium text-slate-700 dark:text-slate-300">{org._count?.users || 0}</td>
-                    <td className="px-5 py-3 text-center">
+                      </td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">{formatDate(org.createdAt)}</td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{org.phone || '-'}</td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300 max-w-[160px] truncate">{[org.addressCity, org.addressCountry].filter(Boolean).join(', ') || '-'}</td>
+                      <td className="px-5 py-3"><span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">{langLabel(org.language)}</span></td>
+                      <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400">{tzLabel(org.timezone)}</td>
+                      <td className="px-5 py-3 text-xs font-mono text-slate-500 dark:text-slate-400">{dfLabel(org.dateFormat)}</td>
+                      <td className="px-5 py-3 whitespace-nowrap"><span className="inline-flex rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700 dark:bg-violet-950/50 dark:text-violet-300">{org.subscriptionModel?.name || org.subscriptionPlan || 'Starter'}</span><p className="mt-1 text-[10px] font-medium text-slate-400">{org.subscriptionStatus || 'ACTIVE'}</p></td>
+                      <td className="px-5 py-3 text-center font-medium text-slate-700 dark:text-slate-300">{org._count?.users || 0}</td>
+                      <td className="px-5 py-3 text-center">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColors[org.isActive !== false ? 'active' : 'inactive']}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${org.isActive !== false ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                          {org.isActive !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <OrgActionMenu org={org} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="md:hidden space-y-3">
+            {filtered.map(org => (
+              <div key={org.id} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div className="flex items-start gap-3 p-4">
+                  <OrgLogo org={org} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <button onClick={() => openOrganization(org.id)} className="truncate text-left text-sm font-bold text-sky-700 hover:underline dark:text-sky-300">{org.name}</button>
+                    {org.email && <p className="mt-0.5 truncate text-xs text-slate-400">{org.email}</p>}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColors[org.isActive !== false ? 'active' : 'inactive']}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${org.isActive !== false ? 'bg-emerald-500' : 'bg-red-500'}`} />
                         {org.isActive !== false ? 'Active' : 'Inactive'}
                       </span>
-                    </td>
-                    <td className="px-5 py-3 text-center"><div className="inline-flex items-center gap-1">
-                      <button onClick={(e) => logoutOrganization(e, org)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30" title="Logout all organization users"><LogOut size={17} /></button>
-                      <button
-                        onClick={(e) => toggleOrg(e, org.id)}
-                        disabled={toggling === org.id}
-                        className={`p-1.5 rounded-lg transition-all ${toggling === org.id ? 'opacity-50' : ''} ${org.isActive !== false ? 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30'}`}
-                        title={org.isActive !== false ? 'Deactivate' : 'Activate'}
-                      >
-                        {toggling === org.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
-                        ) : org.isActive !== false ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
-                      </button>
-                    </div></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <span className="inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 dark:bg-violet-950/50 dark:text-violet-300">{org.subscriptionModel?.name || org.subscriptionPlan || 'Starter'}</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300"><Users size={10} />{org._count?.users || 0}</span>
+                    </div>
+                  </div>
+                  <OrgActionMenu org={org} />
+                </div>
+                {(org.phone || org.addressCity || org.addressCountry) && (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-100 px-4 py-2.5 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                    {org.phone && <span className="inline-flex items-center gap-1"><Phone size={11} />{org.phone}</span>}
+                    {(org.addressCity || org.addressCountry) && <span className="inline-flex items-center gap-1"><MapPin size={11} />{[org.addressCity, org.addressCountry].filter(Boolean).join(', ')}</span>}
+                    <span className="inline-flex items-center gap-1 ml-auto"><Clock size={11} />{formatDate(org.createdAt)}</span>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
+        </>
       )}
       {selectedOrg && <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/50 p-3" onMouseDown={event => { if (event.target === event.currentTarget) closeOrganization() }}>
         <section className="max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white shadow-2xl dark:bg-slate-900">

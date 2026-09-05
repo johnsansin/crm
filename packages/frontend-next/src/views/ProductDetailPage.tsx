@@ -15,6 +15,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { MobileActionMenu } from '@/components/ui/mobile-action-menu'
 import { UserRoleSelect, userDisplayName } from '@/components/user-role-select'
 import { VendorSearchSelect } from '@/components/vendor-search-select'
 import {
@@ -721,7 +722,7 @@ export function ProductDetailPage() {
   const lowStock = (Number(draft.reorderLevel) > 0 && Number(draft.qtyInStock) <= Number(draft.reorderLevel))
 
   return (
-    <div className="space-y-4">
+    <div className={editing ? 'space-y-4 pb-28 md:pb-0' : 'space-y-4'}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Link to="/products" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
@@ -729,26 +730,48 @@ export function ProductDetailPage() {
           </Link>
         </div>
         <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
+            {!isNew && !editing && (
+              <>
+                <Button variant="outline" onClick={() => setEditing(true)}>
+                  <Pencil size={14} className="mr-1.5" /> Edit
+                </Button>
+                <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
+                  <Trash2 size={14} className="mr-1.5" /> Delete
+                </Button>
+              </>
+            )}
+            {editing && (
+              <>
+                {!isNew && (
+                  <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+                )}
+                <Button disabled={saveMutation.isPending} onClick={handleSave}>
+                  {saveMutation.isPending ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Save size={14} className="mr-1.5" />}
+                  Save Product
+                </Button>
+              </>
+            )}
+          </div>
           {!isNew && !editing && (
-            <>
-              <Button variant="outline" onClick={() => setEditing(true)}>
-                <Pencil size={14} className="mr-1.5" /> Edit
-              </Button>
-              <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
-                <Trash2 size={14} className="mr-1.5" /> Delete
-              </Button>
-            </>
+            <MobileActionMenu
+              className="md:hidden"
+              items={[
+                { key: 'edit', label: 'Edit', icon: Pencil, onClick: () => setEditing(true) },
+                { key: 'delete', label: 'Delete', icon: Trash2, onClick: () => setDeleteOpen(true), destructive: true, separatorBefore: true },
+              ]}
+            />
           )}
           {editing && (
-            <>
+            <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t bg-background/95 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden shadow-[0_-5px_20px_rgba(15,23,42,0.10)]">
               {!isNew && (
-                <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+                <Button className="min-w-[7rem] flex-1" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
               )}
-              <Button disabled={saveMutation.isPending} onClick={handleSave}>
+              <Button className="min-w-[7rem] flex-1" disabled={saveMutation.isPending} onClick={handleSave}>
                 {saveMutation.isPending ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Save size={14} className="mr-1.5" />}
                 Save Product
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>

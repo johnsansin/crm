@@ -370,15 +370,27 @@ dashboardRouter.get('/kpis', authMiddleware, async (req, res, next) => {
 })
 
 // =====================================================================
-// GET /api/dashboard/assigned-to-me — records assigned to current user
-// =====================================================================
+// GET /api/dashboard/assigned-to-me — records assigned to current user.
+// Org admins may pass scope=organization (all), assignedTo=<userId>, or group=<groupId>.
 dashboardRouter.get('/assigned-to-me', authMiddleware, async (req, res, next) => {
   try {
     const userId = req.user!.userId
     const companyId = req.user!.companyId
     const base = companyId ? { companyId } : {}
-    const organizationScope = req.query.scope === 'organization' && (req.user!.isAdmin || req.user!.isSuperAdmin)
-    const assigned = organizationScope ? {} : { assignedTo: userId }
+    const isManager = req.user!.isAdmin || req.user!.isSuperAdmin
+
+    let assigned: any = {}
+    const { assignedTo, group, scope } = req.query
+    if (isManager && typeof group === 'string' && group) {
+      const members = await prisma.userGroupMember.findMany({ where: { groupId: group }, select: { userId: true } })
+      assigned = { assignedTo: { in: members.map(m => m.userId) } }
+    } else if (isManager && typeof assignedTo === 'string' && assignedTo) {
+      assigned = { assignedTo }
+    } else if (isManager && scope === 'organization') {
+      assigned = {}
+    } else {
+      assigned = { assignedTo: userId }
+    }
 
     const [leads, potentials, tickets, tasks, projects] = await Promise.all([
       prisma.lead.findMany({
@@ -422,6 +434,29 @@ dashboardRouter.get('/assigned-to-me', authMiddleware, async (req, res, next) =>
         projects: projects.map(p => ({ ...p, module: 'projects', name: p.projectName || 'Unnamed', link: `/projects/${p.id}` })),
       },
     })
+  } catch (err) { next(err) }
+})
+
+// GET /api/dashboard/assignees — org admin only; users + groups for dashboard filters
+dashboardRouter.get('/assignees', authMiddleware, async (req, res, next) => {
+  try {
+    if (!req.user!.isAdmin && !req.user!.isSuperAdmin) {
+      return res.status(403).json({ error: 'Admin access required' })
+    }
+    const companyId = req.user!.companyId
+    const [users, groups] = await Promise.all([
+      prisma.user.findMany({
+        where: { companyId, isActive: true, isAgent: false },
+        select: { id: true, firstName: true, lastName: true, email: true },
+        orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+      }),
+      prisma.userGroup.findMany({
+        where: { companyId, isActive: true },
+        select: { id: true, name: true, _count: { select: { members: true } } },
+        orderBy: { name: 'asc' },
+      }),
+    ])
+    res.json({ data: users, groups })
   } catch (err) { next(err) }
 })
 

@@ -73,12 +73,6 @@ const WIDGETS: { key: WidgetKey; label: string; icon: React.ElementType; tint?: 
 ]
 
 const WIDGET_KEYS = WIDGETS.map(w => w.key)
-const DEFAULT_ORDER: string[] = [
-  'totalRevenue', 'pipelineValue', 'newLeadsKpi', 'openTicketsKpi', 'notebook', 'organizationTodos', 'tagSummary',
-  'assignedToMe', 'upcoming', 'openPotentials', 'openTickets', 'upcomingFollowUps',
-  'recentLeads', 'recentPotentials', 'recentTickets', 'aiInsights',
-  'pipelineFunnel', 'salesByMonth', 'ticketStats', 'projectMilestones',
-]
 
 const PERSONAL_WIDGETS = new Set(['totalRevenue', 'pipelineValue', 'newLeadsKpi', 'openTicketsKpi', 'notebook', 'tagSummary', 'assignedToMe', 'upcoming', 'openPotentials', 'openTickets', 'upcomingFollowUps', 'recentLeads', 'recentPotentials', 'recentTickets', 'aiInsights'])
 const SALES_WIDGETS = new Set(['totalRevenue', 'pipelineValue', 'newLeadsKpi', 'notebook', 'openPotentials', 'upcomingFollowUps', 'recentLeads', 'recentPotentials', 'salesFunnel', 'pipelineChart', 'leadSources', 'leadsByStatus'])
@@ -89,7 +83,7 @@ function resolveConfig(saved: any): { order: string[]; hidden: string[] } {
   const migratedOrder = savedOrder.includes('revenueOverview') ? ['totalRevenue', 'pipelineValue', 'newLeadsKpi', 'openTicketsKpi', ...savedOrder] : savedOrder
   const order: string[] = [...new Set(migratedOrder.filter((k: any) => WIDGET_KEYS.includes(k)))] as string[]
   const hidden: string[] = [...new Set((Array.isArray(saved?.hidden) ? saved.hidden : []).filter((k: any) => WIDGET_KEYS.includes(k)))] as string[]
-  return { order: order.length ? order : [...DEFAULT_ORDER], hidden }
+  return { order, hidden }
 }
 
 export function DashboardPage() {
@@ -139,7 +133,7 @@ export function DashboardPage() {
   }, [cfg, order])
 
   const save = useMutation({
-    mutationFn: () => api.updateDashboardConfig({ order: order ?? DEFAULT_ORDER, hidden, activeTab: dashboardTab, refreshInterval, customDashboards, tabOrder, dashboardConfigs: { ...dashboardConfigs, [dashboardTab]: { order: order ?? DEFAULT_ORDER, hidden } } }),
+    mutationFn: () => api.updateDashboardConfig({ order: order ?? [], hidden, activeTab: dashboardTab, refreshInterval, customDashboards, tabOrder, dashboardConfigs: { ...dashboardConfigs, [dashboardTab]: { order: order ?? [], hidden } } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dashboard-config'] })
       setEditing(false)
@@ -158,14 +152,14 @@ export function DashboardPage() {
   const dismissCard = useCallback((key: string) => {
     setHidden(h => {
       const next = h.includes(key) ? h : [...h, key]
-      persistConfig(order ?? DEFAULT_ORDER, next)
+      persistConfig(order ?? [], next)
       return next
     })
   }, [order, persistConfig])
 
   const showCard = useCallback((key: string) => {
     const nextHidden = hidden.filter(k => k !== key)
-    const nextOrder = [...(order ?? DEFAULT_ORDER)]
+    const nextOrder = [...(order ?? [])]
     if (!nextOrder.includes(key)) nextOrder.push(key)
     setHidden(nextHidden)
     setOrder(nextOrder)
@@ -179,7 +173,7 @@ export function DashboardPage() {
   const reorderFull = (from: string, to: string) => {
     if (from === to) return
     setOrder(o => {
-      const cur = [...(o ?? [...DEFAULT_ORDER])]
+      const cur = [...(o ?? [])]
       const fromIdx = cur.indexOf(from)
       const toIdx = cur.indexOf(to)
       if (fromIdx < 0 || toIdx < 0) return cur
@@ -209,7 +203,7 @@ export function DashboardPage() {
 
   const selectTab = (tab: string) => {
     if (tab === 'admin' && !user?.isAdmin) return
-    const nextConfigs = { ...dashboardConfigs, [dashboardTab]: { order: order ?? [...DEFAULT_ORDER], hidden } }
+    const nextConfigs = { ...dashboardConfigs, [dashboardTab]: { order: order ?? [], hidden } }
     const target = resolveConfig(nextConfigs[tab])
     setDashboardConfigs(nextConfigs)
     setOrder(target.order)
@@ -225,9 +219,9 @@ export function DashboardPage() {
     const dashboard = { id: `custom-${Date.now()}`, name: name.slice(0, 40) }
     const nextDashboards = [...customDashboards, dashboard]
     const nextTabs = [...tabOrder, dashboard.id]
-    const nextConfigs = { ...dashboardConfigs, [dashboardTab]: { order: order ?? [...DEFAULT_ORDER], hidden }, [dashboard.id]: { order: [...DEFAULT_ORDER], hidden: [] } }
-    setCustomDashboards(nextDashboards); setTabOrder(nextTabs); setDashboardTab(dashboard.id); setDashboardConfigs(nextConfigs); setOrder([...DEFAULT_ORDER]); setHidden([])
-    api.updateDashboardConfig({ order: DEFAULT_ORDER, hidden: [], activeTab: dashboard.id, refreshInterval, customDashboards: nextDashboards, tabOrder: nextTabs, dashboardConfigs: nextConfigs }).catch(() => {})
+    const nextConfigs = { ...dashboardConfigs, [dashboardTab]: { order: order ?? [], hidden }, [dashboard.id]: { order: [], hidden: [] } }
+    setCustomDashboards(nextDashboards); setTabOrder(nextTabs); setDashboardTab(dashboard.id); setDashboardConfigs(nextConfigs); setOrder([]); setHidden([])
+    api.updateDashboardConfig({ order: [], hidden: [], activeTab: dashboard.id, refreshInterval, customDashboards: nextDashboards, tabOrder: nextTabs, dashboardConfigs: nextConfigs }).catch(() => {})
   }
 
   const moveTab = (from: string, to: string) => {
@@ -236,17 +230,17 @@ export function DashboardPage() {
     const fromIndex = current.indexOf(from); const toIndex = current.indexOf(to)
     if (fromIndex < 0 || toIndex < 0) return
     const [moved] = current.splice(fromIndex, 1); current.splice(toIndex, 0, moved)
-    setTabOrder(current); persistConfig(order ?? DEFAULT_ORDER, hidden, dashboardTab, refreshInterval, customDashboards, current)
+    setTabOrder(current); persistConfig(order ?? [], hidden, dashboardTab, refreshInterval, customDashboards, current)
   }
 
   const changeRefreshInterval = (seconds: number) => {
     setRefreshInterval(seconds)
-    persistConfig(order ?? DEFAULT_ORDER, hidden, dashboardTab, seconds)
+    persistConfig(order ?? [], hidden, dashboardTab, seconds)
   }
 
   const moveCard = (from: string, to: string) => {
     if (from === to) return
-    const cur = order ?? [...DEFAULT_ORDER]
+    const cur = order ?? []
     const vis = cur.filter(k => !hidden.includes(k))
     const fromIdx = vis.indexOf(from)
     const toIdx = vis.indexOf(to)
@@ -261,7 +255,7 @@ export function DashboardPage() {
 
   const clearDrag = () => { setDragKey(null); setOverKey(null); dragRef.current = null }
 
-  const effectiveOrder = order ?? [...DEFAULT_ORDER]
+  const effectiveOrder = order ?? []
   const canViewWidget = (module: string | null) => !module || viewable.has(module)
   const allWidgets = effectiveOrder
     .filter(key => !hidden.includes(key))
@@ -282,6 +276,27 @@ export function DashboardPage() {
 
   const hiddenWidgets = WIDGETS
     .filter(w => (!effectiveOrder.includes(w.key) || hidden.includes(w.key)) && canViewWidget(w.module))
+
+  const isManager = !!user?.isAdmin || !!user?.isSuperAdmin
+  const canViewDashboard = isManager || viewable.has('dashboard')
+
+  if (!canViewDashboard) {
+    return (
+      <div className="space-y-4">
+        <Card className="border-0 bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 shadow-sm">
+          <CardContent className="p-5 sm:p-6">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">{t('Welcome back, {name}', { name })}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{today}</p>
+          </CardContent>
+        </Card>
+        <div className="rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 p-12 text-center">
+          <ShieldCheck size={36} className="mx-auto mb-4 text-muted-foreground/30" />
+          <p className="text-base font-semibold text-foreground/70">{t('Your dashboard is empty')}</p>
+          <p className="mt-1.5 text-sm text-muted-foreground max-w-md mx-auto">{t('The Dashboard module is not enabled for your role. Ask your organization admin to allow Dashboard access.')}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -370,7 +385,7 @@ export function DashboardPage() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => { setOrder([...DEFAULT_ORDER]); setHidden([]) }}
+                  onClick={() => { setOrder([]); setHidden([]) }}
                   className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
                 >
                   <RotateCcw size={13} /> {t('Reset')}
@@ -1494,10 +1509,42 @@ function AiInsightsWidget() {
 }
 
 function AssignedToMeWidget() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['dashboard', 'assigned-to-me'],
-    queryFn: () => fetch('/api/dashboard/assigned-to-me', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
+  const { user } = useAuthStore()
+  const isManager = !!user?.isAdmin || !!user?.isSuperAdmin
+  const [filter, setFilter] = useState<{ type: 'all' | 'user' | 'group'; id?: string } | null>(null)
+
+  const { data: assignees } = useQuery({
+    queryKey: ['dashboard-assignees'],
+    queryFn: () => api.dashboardAssignees(),
+    enabled: isManager,
+    staleTime: 60_000,
   })
+
+  const scopeQuery = isManager
+    ? filter?.type === 'all' ? 'scope=organization'
+      : filter?.type === 'user' ? `assignedTo=${filter.id}`
+      : filter?.type === 'group' ? `group=${filter.id}`
+      : ''
+    : `assignedTo=${user?.id || ''}`
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['dashboard', 'assigned-to-me', scopeQuery],
+    queryFn: () => fetch(`/api/dashboard/assigned-to-me?${scopeQuery}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
+    enabled: Boolean(scopeQuery),
+  })
+
+  const selectionLabel = (() => {
+    if (!isManager) return ''
+    if (!filter) return ''
+    if (filter.type === 'all') return 'Everyone in organization'
+    if (filter.type === 'user') {
+      const u = (assignees?.data || []).find((x: any) => x.id === filter.id)
+      return u ? `${u.firstName || ''} ${u.lastName || ''}`.trim() : 'Selected user'
+    }
+    const g = (assignees?.groups || []).find((x: any) => x.id === filter.id)
+    return g ? g.name : 'Selected group'
+  })()
+
   const items = data?.data || {}
   const allItems = [
     ...(items.leads || []).map((i: any) => ({ ...i, _module: 'leads', _icon: UserPlus, _color: 'text-violet-600 dark:text-violet-400', _label: 'Lead' })),
@@ -1508,16 +1555,64 @@ function AssignedToMeWidget() {
   ].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
 
   return (
-    <WidgetCard title="Assigned to me" icon={UserCheck} tint="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
-      {isLoading ? (
+    <WidgetCard title={isManager ? 'Team assignments' : 'Assigned to me'} icon={UserCheck} tint="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+      {isManager && (
+        <div className="border-b border-slate-100 dark:border-slate-800 p-3">
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <Users size={11} /> View records for
+            </label>
+            {filter && (
+              <button type="button" onClick={() => setFilter(null)} className="inline-flex items-center gap-0.5 text-[10px] font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                <X size={11} /> Clear
+              </button>
+            )}
+          </div>
+          <select
+            value={filter ? `${filter.type}:${filter.id || ''}` : ''}
+            onChange={e => {
+              const v = e.target.value
+              if (!v) return setFilter(null)
+              const [type, id] = v.split(':')
+              setFilter(type === 'all' ? { type: 'all' } : { type: type as 'user' | 'group', id })
+            }}
+            className="w-full rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="">Select a user or group…</option>
+            <option value="all:">Everyone in organization</option>
+            <optgroup label="Users">
+              {(assignees?.data || []).map((u: any) => (
+                <option key={u.id} value={`user:${u.id}`}>
+                  {`${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email} · {u.email}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Groups">
+              {(assignees?.groups || []).map((g: any) => (
+                <option key={g.id} value={`group:${g.id}`}>{g.name} ({g._count?.members ?? 0} members)</option>
+              ))}
+            </optgroup>
+          </select>
+        </div>
+      )}
+      {!scopeQuery ? (
+        <div className="p-6 text-center">
+          <UserCheck size={24} className="mx-auto mb-2 text-muted-foreground/30" />
+          <p className="text-xs text-muted-foreground">Select a user or group to view their leads, opportunities, tickets and more</p>
+        </div>
+      ) : isLoading ? (
         <WidgetEmpty label="Loading..." />
       ) : allItems.length === 0 ? (
         <div className="p-6 text-center">
           <UserCheck size={24} className="mx-auto mb-2 text-muted-foreground/30" />
-          <p className="text-xs text-muted-foreground">No records assigned to you</p>
+          <p className="text-xs text-muted-foreground">
+            {isManager && selectionLabel
+              ? `No records assigned to ${selectionLabel.toLowerCase()}`
+              : 'No records assigned to you'}
+          </p>
         </div>
       ) : (
-        <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-80 overflow-y-auto">
+        <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
           {allItems.slice(0, 10).map((item: any) => {
             const Icon = item._icon
             return (

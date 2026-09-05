@@ -7,6 +7,7 @@ import { publicUser } from '../lib/public-user'
 import fs from 'fs'
 import { createDatabaseBackup, emailDatabaseBackup, getDatabaseBackupConfig, listDatabaseBackups, resolveBackupFile, saveDatabaseBackupConfig } from '../lib/database-backup'
 import { checkOrganizationLimit, getOrganizationUsage } from '../lib/organization-limits'
+import { getLogs, clearLogs } from '../lib/log-buffer'
 
 export const adminRouter = Router()
 
@@ -427,4 +428,14 @@ adminRouter.post('/users', async (req, res, next) => {
     })
     res.status(201).json(publicUser(user))
   } catch (err) { next(err) }
+})
+
+adminRouter.get('/logs', (req, res) => {
+  const { level, q, limit } = req.query
+  res.json({ data: getLogs(level as string, q as string, limit ? Number(limit) : 200) })
+})
+
+adminRouter.delete('/logs', (_req, res) => {
+  clearLogs()
+  res.json({ success: true })
 })

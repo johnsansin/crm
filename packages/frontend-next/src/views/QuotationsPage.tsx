@@ -427,19 +427,26 @@ export function QuotationsPage() {
 
   if (mode === 'form') {
     return (
-      <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
+      <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6 pb-28 md:pb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate('/quotes')} className="p-2 rounded-lg hover:bg-muted"><ArrowLeft size={20} /></button>
-            <h1 className="text-2xl font-bold">{isNew ? 'New Quotation' : 'Edit Quotation'}</h1>
+            <h1 className="text-xl md:text-2xl font-bold">{isNew ? 'New Quotation' : 'Edit Quotation'}</h1>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="hidden md:flex items-center gap-2 flex-wrap">
             <Button variant="outline" onClick={() => navigate('/quotes')}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="animate-spin mr-1 h-4 w-4" /> : <Save className="mr-1 h-4 w-4" />}
               Save
             </Button>
           </div>
+        </div>
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t bg-background/95 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden shadow-[0_-5px_20px_rgba(15,23,42,0.10)]">
+          <Button className="min-w-[7rem] flex-1" variant="outline" onClick={() => navigate('/quotes')}>Cancel</Button>
+          <Button className="min-w-[7rem] flex-1" onClick={handleSave} disabled={saving}>
+            {saving ? <Loader2 className="animate-spin mr-1 h-4 w-4" /> : <Save className="mr-1 h-4 w-4" />}
+            Save
+          </Button>
         </div>
 
         <TabsRoot value={activeTab} onValueChange={setActiveTab}>
@@ -656,13 +663,27 @@ export function QuotationsPage() {
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${r.quoteStage === 'Accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : r.quoteStage === 'Rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'}`}>
               {r.quoteStage || 'Draft'}
             </span>
-            <Button variant="outline" size="sm" onClick={() => setMode('form')}><FileText className="mr-1 h-4 w-4" />Edit</Button>
-            <Button variant="outline" size="sm" onClick={handlePdf}><FileDown className="mr-1 h-4 w-4" />PDF</Button>
-            <Button variant="outline" size="sm" onClick={handleEmail}><Mail className="mr-1 h-4 w-4" />Email</Button>
-            <label className="inline-flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs font-medium"><input type="checkbox" checked={attachPdf} onChange={e => setAttachPdf(e.target.checked)} /> Attach PDF</label>
-            <Button variant="outline" size="sm" onClick={handleConvertSalesOrder}><ShoppingCart className="mr-1 h-4 w-4" />Sales Order</Button>
-            <Button variant="outline" size="sm" onClick={handleConvertInvoice}><Printer className="mr-1 h-4 w-4" />Invoice</Button>
-            <Button variant="outline" size="sm" className="text-red-500" onClick={handleDelete}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
+            <div className="hidden md:flex items-center gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => setMode('form')}><FileText className="mr-1 h-4 w-4" />Edit</Button>
+              <Button variant="outline" size="sm" onClick={handlePdf}><FileDown className="mr-1 h-4 w-4" />PDF</Button>
+              <Button variant="outline" size="sm" onClick={handleEmail}><Mail className="mr-1 h-4 w-4" />Email</Button>
+              <label className="inline-flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs font-medium"><input type="checkbox" checked={attachPdf} onChange={e => setAttachPdf(e.target.checked)} /> Attach PDF</label>
+              <Button variant="outline" size="sm" onClick={handleConvertSalesOrder}><ShoppingCart className="mr-1 h-4 w-4" />Sales Order</Button>
+              <Button variant="outline" size="sm" onClick={handleConvertInvoice}><Printer className="mr-1 h-4 w-4" />Invoice</Button>
+              <Button variant="outline" size="sm" className="text-red-500" onClick={handleDelete}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
+            </div>
+            <MobileActionMenu
+              className="md:hidden"
+              items={[
+                { key: 'edit', label: 'Edit', icon: FileText, onClick: () => setMode('form') },
+                { key: 'pdf', label: 'PDF', icon: FileDown, onClick: handlePdf },
+                { key: 'email', label: 'Email', icon: Mail, onClick: handleEmail },
+                { key: 'attach', label: attachPdf ? 'Remove PDF attach' : 'Attach PDF', icon: FileDown, onClick: () => setAttachPdf(v => !v) },
+                { key: 'so', label: 'Sales Order', icon: ShoppingCart, onClick: handleConvertSalesOrder },
+                { key: 'invoice', label: 'Invoice', icon: Printer, onClick: handleConvertInvoice },
+                { key: 'delete', label: 'Delete', icon: Trash2, onClick: handleDelete, destructive: true, separatorBefore: true },
+              ]}
+            />
           </div>
         </div>
 

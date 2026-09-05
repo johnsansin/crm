@@ -23,6 +23,7 @@ import { AccountSearchSelect } from '@/components/account-search-select'
 import { ContactSearchSelect } from '@/components/contact-search-select'
 import { ProductSearchSelect } from '@/components/product-search-select'
 import { DateField } from '@/components/ui/date-field'
+import { MobileActionMenu } from '@/components/ui/mobile-action-menu'
 import { ArrowLeft, ArrowRight, Save, Loader2, Trash2, Pencil, ChevronRight, Asterisk, ImagePlus, Plus, Package, History, GitMerge, Star, Clock, AlertTriangle, CheckCircle2, Users, DollarSign, Shield, Calendar, UserCheck, Percent, Target, Zap, AlertCircle, Timer, CircleDollarSign, MapPin, Building2, Activity as ActivityIcon, FileText, Wrench, X, Sparkles, ExternalLink, User, Building } from 'lucide-react'
 import { MergeRecordsDialog, MERGEABLE_MODULES } from '@/components/merge-records-dialog'
 import { fieldConfigs } from '@/lib/module-fields'
@@ -641,40 +642,60 @@ export function ModuleDetailPage() {
                 <h1 className="text-xl md:text-2xl font-bold tracking-tight truncate">{record?.[fields[0]?.name] || label}</h1>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => navigate(`/${mod}/${id}?edit=true`)}>
-                <Pencil size={16} className="mr-2" /> <span className="hidden sm:inline">{t('Edit')}</span>
-              </Button>
-              {mod === 'potentials' && (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => aiPredictionMutation.mutate()}
-                    disabled={aiPredictionMutation.isPending}
-                    className="bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 border-violet-200 dark:border-violet-800"
-                  >
-                    {aiPredictionMutation.isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Sparkles size={16} className="mr-2 text-violet-500" />}
-                    <span className="hidden sm:inline">AI Predict</span>
-                  </Button>
-                  {record?.stage !== 'Closed Won' && record?.stage !== 'Closed Lost' && (
-                    <Button
-                      onClick={() => setCloseWonOpen(true)}
-                      className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-none shadow-lg shadow-emerald-500/20"
-                    >
-                      <CheckCircle2 size={16} className="mr-2" />
-                      <span className="hidden sm:inline">Close as Won</span>
-                    </Button>
-                  )}
-                </>
-              )}
-              {MERGEABLE_MODULES.includes(mod) && (
-                <Button variant="outline" onClick={() => setMergeOpen(true)}>
-                  <GitMerge size={16} className="mr-2" /> <span className="hidden sm:inline">{t('Merge')}</span>
+            <div className="flex items-center gap-2">
+              <div className="hidden md:flex gap-2">
+                <Button variant="outline" onClick={() => navigate(`/${mod}/${id}?edit=true`)}>
+                  <Pencil size={16} className="mr-2" /> <span className="hidden sm:inline">{t('Edit')}</span>
                 </Button>
-              )}
-              <Button variant="destructive" onClick={() => setShowDelete(true)}>
-                <Trash2 size={16} className="mr-2" /> <span className="hidden sm:inline">{t('Delete')}</span>
-              </Button>
+                {mod === 'potentials' && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => aiPredictionMutation.mutate()}
+                      disabled={aiPredictionMutation.isPending}
+                      className="bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 border-violet-200 dark:border-violet-800"
+                    >
+                      {aiPredictionMutation.isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Sparkles size={16} className="mr-2 text-violet-500" />}
+                      <span className="hidden sm:inline">AI Predict</span>
+                    </Button>
+                    {record?.stage !== 'Closed Won' && record?.stage !== 'Closed Lost' && (
+                      <Button
+                        onClick={() => setCloseWonOpen(true)}
+                        className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-none shadow-lg shadow-emerald-500/20"
+                      >
+                        <CheckCircle2 size={16} className="mr-2" />
+                        <span className="hidden sm:inline">Close as Won</span>
+                      </Button>
+                    )}
+                  </>
+                )}
+                {MERGEABLE_MODULES.includes(mod) && (
+                  <Button variant="outline" onClick={() => setMergeOpen(true)}>
+                    <GitMerge size={16} className="mr-2" /> <span className="hidden sm:inline">{t('Merge')}</span>
+                  </Button>
+                )}
+                <Button variant="destructive" onClick={() => setShowDelete(true)}>
+                  <Trash2 size={16} className="mr-2" /> <span className="hidden sm:inline">{t('Delete')}</span>
+                </Button>
+              </div>
+              <MobileActionMenu
+                className="md:hidden"
+                items={[
+                  { key: 'edit', label: t('Edit'), icon: Pencil, onClick: () => navigate(`/${mod}/${id}?edit=true`) },
+                  ...(mod === 'potentials'
+                    ? [
+                        { key: 'ai', label: 'AI Predict', icon: Sparkles, onClick: () => aiPredictionMutation.mutate() },
+                        ...(record?.stage !== 'Closed Won' && record?.stage !== 'Closed Lost'
+                          ? [{ key: 'close', label: 'Close as Won', icon: CheckCircle2, onClick: () => setCloseWonOpen(true) }]
+                          : []),
+                      ]
+                    : []),
+                  ...(MERGEABLE_MODULES.includes(mod)
+                    ? [{ key: 'merge', label: t('Merge'), icon: GitMerge, onClick: () => setMergeOpen(true), separatorBefore: true }]
+                    : []),
+                  { key: 'delete', label: t('Delete'), icon: Trash2, onClick: () => setShowDelete(true), destructive: true, separatorBefore: true },
+                ]}
+              />
             </div>
           </div>
         </div>

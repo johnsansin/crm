@@ -12,6 +12,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ArrowLeft, Save, Loader2, Trash2, Plus, FileDown, Mail, Copy, Building2, Users, ShoppingCart, MessageSquare, FileText, Search, Eye, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { MobileActionMenu } from '@/components/ui/mobile-action-menu'
 import { formatDate, orgCurrency, useOrgSettings } from '@/lib/org-format'
 import { ProductSearchSelect } from '@/components/product-search-select'
 import { ServiceSearchSelect } from '@/components/service-search-select'
@@ -421,19 +422,26 @@ export function PurchaseOrderDetailPage() {
 
   if (mode === 'form') {
     return (
-      <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
+      <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6 pb-28 md:pb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate('/purchaseorders')} className="p-2 rounded-lg hover:bg-muted"><ArrowLeft size={20} /></button>
-            <h1 className="text-2xl font-bold">{isNew ? 'New Purchase Order' : 'Edit Purchase Order'}</h1>
+            <h1 className="text-xl md:text-2xl font-bold">{isNew ? 'New Purchase Order' : 'Edit Purchase Order'}</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate('/purchaseorders')}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="animate-spin mr-1 h-4 w-4" /> : <Save className="mr-1 h-4 w-4" />}
               Save
             </Button>
           </div>
+        </div>
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t bg-background/95 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden shadow-[0_-5px_20px_rgba(15,23,42,0.10)]">
+          <Button className="min-w-[7rem] flex-1" variant="outline" onClick={() => navigate('/purchaseorders')}>Cancel</Button>
+          <Button className="min-w-[7rem] flex-1" onClick={handleSave} disabled={saving}>
+            {saving ? <Loader2 className="animate-spin mr-1 h-4 w-4" /> : <Save className="mr-1 h-4 w-4" />}
+            Save
+          </Button>
         </div>
 
         <TabsRoot value={activeTab} onValueChange={setActiveTab}>
@@ -639,11 +647,23 @@ export function PurchaseOrderDetailPage() {
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${r.poStatus === 'Approved' || r.poStatus === 'Received Shipment' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : r.poStatus === 'Cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'}`}>
               {r.poStatus || 'Created'}
             </span>
-            <Button variant="outline" size="sm" onClick={() => setMode('form')}><FileText className="mr-1 h-4 w-4" />Edit</Button>
-            <Button variant="outline" size="sm" onClick={handlePdf}><FileDown className="mr-1 h-4 w-4" />PDF</Button>
-            <Button variant="outline" size="sm" onClick={handleEmail}><Mail className="mr-1 h-4 w-4" />Email</Button>
-            <label className="inline-flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs font-medium"><input type="checkbox" checked={attachPdf} onChange={e => setAttachPdf(e.target.checked)} /> Attach PDF</label>
-            <Button variant="outline" size="sm" className="text-red-500" onClick={() => setDeleteTarget(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
+            <div className="hidden md:flex items-center gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => setMode('form')}><FileText className="mr-1 h-4 w-4" />Edit</Button>
+              <Button variant="outline" size="sm" onClick={handlePdf}><FileDown className="mr-1 h-4 w-4" />PDF</Button>
+              <Button variant="outline" size="sm" onClick={handleEmail}><Mail className="mr-1 h-4 w-4" />Email</Button>
+              <label className="inline-flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs font-medium"><input type="checkbox" checked={attachPdf} onChange={e => setAttachPdf(e.target.checked)} /> Attach PDF</label>
+              <Button variant="outline" size="sm" className="text-red-500" onClick={() => setDeleteTarget(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
+            </div>
+            <MobileActionMenu
+              className="md:hidden"
+              items={[
+                { key: 'edit', label: 'Edit', icon: FileText, onClick: () => setMode('form') },
+                { key: 'pdf', label: 'PDF', icon: FileDown, onClick: handlePdf },
+                { key: 'email', label: 'Email', icon: Mail, onClick: handleEmail },
+                { key: 'attach', label: attachPdf ? 'Remove PDF attach' : 'Attach PDF', icon: FileDown, onClick: () => setAttachPdf(v => !v) },
+                { key: 'delete', label: 'Delete', icon: Trash2, onClick: () => setDeleteTarget(true), destructive: true, separatorBefore: true },
+              ]}
+            />
           </div>
         </div>
 

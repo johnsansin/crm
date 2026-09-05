@@ -9,7 +9,8 @@ import { useTheme } from '@/lib/theme'
 import { api } from '@/lib/api'
 import { AppBreadcrumbs } from '@/components/layout/AppBreadcrumbs'
 import { useSupportSocket } from '@/hooks/useSupportSocket'
-import { Building2, LayoutDashboard, Users, History, Settings, LogOut, Sun, Moon, Menu, X, Shield, Bell, Search, Loader2, Mail, Phone, Globe, Headphones } from 'lucide-react'
+import { Building2, LayoutDashboard, Users, History, Settings, LogOut, Sun, Moon, Menu, X, Shield, Bell, Search, Loader2, Mail, Phone, Globe, Headphones, User } from 'lucide-react'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 
 const navItems = [
   { path: '/superadmin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -305,7 +306,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="ml-auto flex items-center gap-1 sm:gap-1.5 shrink-0">
             <div className="relative">
               <button onClick={() => setShowNotifications(value => !value)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 relative" title="Notifications">
                 <Bell size={17} />
@@ -323,16 +324,30 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
             >
               {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </button>
-            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1" />
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-md">
-                {(user?.firstName?.[0] || 'S') + (user?.lastName?.[0] || 'A')}
-              </div>
-              <span className="hidden lg:inline text-xs font-medium text-slate-600 dark:text-slate-400 max-w-[100px] truncate">{user?.firstName} {user?.lastName}</span>
-            </div>
-            <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 text-red-500 ml-1" title="Logout">
-              <LogOut size={17} />
-            </button>
+            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" title="Account" className="flex items-center gap-2 rounded-lg p-1 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-xs font-bold text-white shadow-md">
+                    {(user?.firstName?.[0] || 'S') + (user?.lastName?.[0] || 'A')}
+                  </span>
+                  <span className="hidden xl:inline text-xs font-medium text-slate-600 dark:text-slate-400 truncate">{user?.firstName} {user?.lastName}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <div className="px-3 py-2">
+                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{user?.firstName} {user?.lastName}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User size={14} className="mr-2" />Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
+                  <LogOut size={14} className="mr-2" />Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
         <div className={`min-h-0 min-w-0 flex-1 bg-slate-100/80 dark:bg-slate-950/70 ${isSupportInbox ? 'overflow-hidden' : 'overflow-x-hidden overflow-y-auto overscroll-contain p-2.5 sm:p-4 md:p-6 lg:p-8'}`}>

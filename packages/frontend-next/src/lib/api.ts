@@ -247,6 +247,15 @@ export const api = {
 
   // Super admin
   adminSearch: (q: string) => request<{ data: { companies: any[]; users: any[] } }>(`/admin/search?q=${encodeURIComponent(q)}`),
+  adminGetLogs: (params: { level?: string; q?: string; limit?: number }) => {
+    const sp = new URLSearchParams()
+    if (params.level) sp.set('level', params.level)
+    if (params.q) sp.set('q', params.q)
+    if (params.limit) sp.set('limit', String(params.limit))
+    const qs = sp.toString()
+    return request<{ data: any[] }>(`/admin/logs${qs ? `?${qs}` : ''}`)
+  },
+  adminClearLogs: () => request<{ success: boolean }>('/admin/logs', { method: 'DELETE' }),
   adminListCompanies: () => request<{ data: any[] }>('/admin/companies'),
   adminRecentCompanies: (limit = 10, since?: string) => {
     const qs = new URLSearchParams({ limit: String(limit) })
@@ -429,6 +438,7 @@ export const api = {
   deleteCalendarActivity: (id: string) => request<any>(`/calendar/${id}`, { method: 'DELETE' }),
 
   getDashboardConfig: () => request<{ config: any }>('/auth/me/dashboard'),
+  dashboardAssignees: () => request<{ data: any[]; groups: any[] }>('/dashboard/assignees'),
   updateDashboardConfig: (config: any) =>
     request<any>('/auth/me/dashboard', { method: 'PUT', body: JSON.stringify({ config }) }),
 

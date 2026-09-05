@@ -17,8 +17,14 @@ ENV NODE_ENV=production \
     PORT=3000
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends gnupg ca-certificates curl \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list' \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-16 \
+    && rm -rf /var/lib/apt/lists/* \
+    && pg_dump --version
 
 WORKDIR /app
 

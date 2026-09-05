@@ -7,6 +7,7 @@ dist/
 .spc.cache.php
 data/pg/
 uploads/
+backups/
 packages/backend/private/
 data/*.sql
 data/*.dump

@@ -14,6 +14,19 @@ const PRISMA_SCHEMA_PATH = path.resolve(process.cwd(), 'prisma', 'schema.prisma'
 const PACKAGE_JSON_PATH = path.resolve(process.cwd(), 'package.json')
 export const BACKUP_FILE_PATTERN = /^bizforce-backup-[\w.-]+(\.tar\.gz|\.dump)$/
 
+// DATABASE_URL may contain Prisma-only query params (?schema=public, ?connection_limit=…)
+// that pg_dump/postgres tooling rejects with "invalid URI query parameter". Strip them
+// before handing the URL to pg_dump while keeping connectivity params such as sslmode.
+export function toPgDumpUrl(dbUrl: string): string {
+  if (!dbUrl.includes('?')) return dbUrl
+  const [base, query] = dbUrl.split('?')
+  const kept = query.split('&').filter(p => {
+    const key = p.split('=')[0].toLowerCase()
+    return !['schema', 'connection_limit', 'pgbouncer', 'pool_timeout'].includes(key)
+  })
+  return kept.length ? `${base}?${kept.join('&')}` : base
+}
+
 export type BackupFrequency = 'daily' | 'weekly' | 'monthly'
 export interface DatabaseBackupConfig {
   enabled: boolean
@@ -141,7 +154,7 @@ export async function createDatabaseBackup(configOverride?: DatabaseBackupConfig
     await fs.promises.mkdir(stagingDir, { recursive: true, mode: 0o700 })
 
     await fs.promises.mkdir(path.join(stagingDir, 'database'), { recursive: true })
-    await execFileAsync('pg_dump', ['--dbname', dbUrl, '--no-owner', '--no-privileges', '--format=custom', '--file', path.join(stagingDir, 'database', 'postgres.dump')], { timeout: 30 * 60 * 1000 })
+    await execFileAsync('pg_dump', ['--dbname', toPgDumpUrl(dbUrl), '--no-owner', '--no-privileges', '--format=custom', '--file', path.join(stagingDir, 'database', 'postgres.dump')], { timeout: 30 * 60 * 1000 })
 
     if (fs.existsSync(UPLOAD_DIR)) {
       await fs.promises.cp(UPLOAD_DIR, path.join(stagingDir, 'uploads'), {

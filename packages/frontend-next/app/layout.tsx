@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import { Suspense } from 'react'
-import Script from 'next/script'
 import './globals.css'
 import { Providers } from './providers'
+import { CookieConsent } from '@/components/ui/cookie-consent'
+import { ConsentScripts } from '@/components/ui/consent-scripts'
 
 const gaMeasurementId = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || ''
 
@@ -77,15 +78,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="ICBM" content="31.5204, 74.3587" />
       </head>
       <body>
-        {gaMeasurementId && (
-          <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} strategy="afterInteractive" />
-            <Script id="gtag-init" strategy="afterInteractive">
-              {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${gaMeasurementId}');`}
-            </Script>
-          </>
-        )}
+        {gaMeasurementId && <Suspense fallback={null}><ConsentScripts measurementId={gaMeasurementId} /></Suspense>}
         <Suspense fallback={null}><Providers>{children}</Providers></Suspense>
+        <Suspense fallback={null}><CookieConsent /></Suspense>
       </body>
     </html>
   )

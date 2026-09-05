@@ -1,4 +1,5 @@
 import './loadEnv'
+import './lib/log-buffer'
 import dns from 'node:dns'
 import net from 'node:net'
 // Prefer IPv4 and disable happy-eyeballs: on hosts without a working IPv6 route,
