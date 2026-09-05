@@ -37,6 +37,7 @@ services:
     build:
       context: .
       dockerfile: packages/backend/Dockerfile
+    init: true
     restart: unless-stopped
     environment:
       NODE_ENV: production
