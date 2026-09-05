@@ -1586,8 +1586,24 @@ model Company {
 
   users User[]
   subscriptionModel SubscriptionModel? @relation(fields: [subscriptionModelId], references: [id], onDelete: SetNull)
+  ssoConfig SsoConfig?
 
   @@index([subscriptionModelId])
+}
+
+model SsoConfig {
+  id                           String   @id @default(uuid())
+  companyId                    String?  @unique
+  company                      Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  idpEntryPoint                String   @db.VarChar(500)
+  issuer                       String   @db.VarChar(300)
+  cert                         String   @db.Text
+  signatureAlgorithm           String   @default("sha256") @db.VarChar(20)
+  disableRequestedAuthnContext Boolean  @default(false)
+  wantAuthnResponseSigned      Boolean  @default(true)
+  isEnabled                    Boolean  @default(false)
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
 }
 
 model SubscriptionModel {

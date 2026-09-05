@@ -2,7 +2,7 @@
 
 import { Link, useLocation, useNavigate } from '@/lib/navigation'
 import { Button } from '@/components/ui/button'
-import { Menu, X, ChevronUp, Home, Sparkles, CircleHelp, Mail, BadgeDollarSign, ArrowRight, LayoutDashboard } from 'lucide-react'
+import { Menu, X, ChevronUp, Home, Sparkles, CircleHelp, Mail, BadgeDollarSign, ArrowRight, LayoutDashboard, PlugZap } from 'lucide-react'
 import { useState, useEffect, type MouseEvent } from 'react'
 import { useAuthStore } from '@/lib/auth'
 
@@ -60,6 +60,7 @@ export function SiteHeader() {
   const menuItems = [
     { to: '/', label: 'Home', description: 'Your CRM overview', icon: Home },
     { to: '/features', label: 'Features', description: 'Explore what BizForce can do', icon: Sparkles },
+    { to: '/integrations', label: 'Integrations', description: 'Connect with the tools you use', icon: PlugZap },
     { to: '/pricing', label: 'Pricing', description: 'Simple plans that scale', icon: BadgeDollarSign },
     { to: '/faq', label: 'FAQ', description: 'Frequently asked questions', icon: CircleHelp },
     { to: '/blog', label: 'Blog', description: 'CRM tips and guides', icon: Sparkles },

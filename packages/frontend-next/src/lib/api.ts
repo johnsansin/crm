@@ -103,6 +103,12 @@ export const api = {
       body: JSON.stringify({ challenge, code }),
     }),
 
+  ssoInit: (email: string, companyId?: string) =>
+    request<{ redirectUrl: string }>('/auth/sso/init', {
+      method: 'POST',
+      body: JSON.stringify({ email, companyId }),
+    }),
+
   orgRegister: (data: { userName: string; email: string; firstName: string; lastName: string; password: string; companyName: string }) =>
     request<{ needsVerification: boolean; verificationId: string; email: string; delivered: boolean }>('/auth/register', {
       method: 'POST',
@@ -539,6 +545,32 @@ export const api = {
     request<any>(`/settings/customviews/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCustomView: (id: string) =>
     request<any>(`/settings/customviews/${id}`, { method: 'DELETE' }),
+
+  // ---- Scorecards ----
+  getScorecards: () => request<{ data: any[] }>('/scorecards'),
+  createScorecard: (data: any) => request<any>('/scorecards', { method: 'POST', body: JSON.stringify(data) }),
+  updateScorecard: (id: string, data: any) => request<any>(`/scorecards/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteScorecard: (id: string) => request<any>(`/scorecards/${id}`, { method: 'DELETE' }),
+
+  // ---- Report schedules ----
+  getReportSchedules: () => request<{ data: any[] }>('/report-schedules'),
+  createReportSchedule: (data: any) => request<any>('/report-schedules', { method: 'POST', body: JSON.stringify(data) }),
+  updateReportSchedule: (id: string, data: any) => request<any>(`/report-schedules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteReportSchedule: (id: string) => request<any>(`/report-schedules/${id}`, { method: 'DELETE' }),
+
+  // ---- Related lists ----
+  getRelatedLists: () => request<{ data: any[] }>('/related-lists'),
+  createRelatedList: (data: any) => request<any>('/related-lists', { method: 'POST', body: JSON.stringify(data) }),
+  deleteRelatedList: (id: string) => request<any>(`/related-lists/${id}`, { method: 'DELETE' }),
+
+  // ---- Admin data tools (user profiles, attachments) ----
+  getUserProfiles: () => request<{ data: any[] }>('/admin-data/user-profiles'),
+  getAttachments: () => request<{ data: any[] }>('/admin-data/attachments'),
+  deleteAttachment: (id: string) => request<any>(`/admin-data/attachments/${id}`, { method: 'DELETE' }),
+
+  // ---- SAML SSO ----
+  getSsoConfig: () => request<{ data: any | null; enterprise: boolean }>('/settings/sso'),
+  saveSsoConfig: (data: any) => request<any>('/settings/sso', { method: 'PUT', body: JSON.stringify(data) }),
 
   // ---- Report export (printable HTML) ----
   exportReport: async (report: any, rows: any[]): Promise<{ ok: boolean; error?: string }> => {

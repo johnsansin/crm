@@ -93,7 +93,7 @@ export function FeaturesPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/70 dark:border-white/10 bg-white/70 dark:bg-white/10 backdrop-blur text-sm text-slate-600 dark:text-slate-300 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            24+ modules · 113+ data models · AI-powered
+            24+ modules · 120+ data models · AI-powered
           </div>
           <h1 className="mt-8 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight text-slate-900 dark:text-white">
             Everything your business needs to{' '}
@@ -125,9 +125,9 @@ export function FeaturesPage() {
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
             {[
               { value: '24+', label: 'CRM modules' },
-              { value: '113+', label: 'Data models' },
+              { value: '120+', label: 'Data models' },
               { value: '99.9%', label: 'Uptime SLA' },
-              { value: '50+', label: 'Integrations' },
+              { value: '25+', label: 'Integrations' },
             ].map(stat => (
               <div key={stat.label} className="rounded-2xl border border-white/70 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur px-4 py-5 shadow-sm">
                 <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-sky-600 to-indigo-600 dark:from-sky-400 dark:to-indigo-400 bg-clip-text text-transparent">{stat.value}</p>
@@ -199,7 +199,7 @@ export function FeaturesPage() {
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">Deep capabilities in every module</h2>
               <ul className="mt-8 space-y-4">
                 {[
-                  'Full CRUD on 113+ data models with advanced filters and saved views',
+                  'Full CRUD on 120+ data models with advanced filters and saved views',
                   'Custom fields, layouts, and module configuration to match your process',
                   'Role-based permissions and granular access control for every team',
                   'Audit trails, activity logs, and real-time notificationalerting',

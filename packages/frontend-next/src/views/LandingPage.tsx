@@ -87,7 +87,7 @@ const pricingPlans = [
 
 const integrations = [
   'Gmail', 'Outlook', 'Slack', 'Zapier', 'Stripe', 'Twilio',
-  'Google Calendar', 'Mailchimp', 'Stripe', 'WordPress',
+  'Google Calendar', 'Mailchimp', 'WordPress',
 ]
 
 export function LandingPage() {
@@ -225,7 +225,7 @@ export function LandingPage() {
                 close deals faster, and deliver exceptional customer experiences.
               </p>
               <ul className="mt-8 space-y-3 stagger">
-                {['113+ data models with full CRUD', 'Real-time collaboration & chat', 'AI-powered assistant & insights', 'Multi-language support (17+ languages)'].map(item => (
+                {['120+ data models with full CRUD', 'Real-time collaboration & chat', 'AI-powered assistant & insights', 'Multi-language support (17+ languages)'].map(item => (
                   <li key={item} className="reveal reveal-left flex items-center gap-3 text-slate-700 dark:text-slate-300">
                     <CheckCircle size={18} className="text-green-500 shrink-0" />
                     <span className="text-sm font-medium">{item}</span>

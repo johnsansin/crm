@@ -11,7 +11,7 @@ import {
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, Menu, X,
   ChevronDown, LogOut, Shield, CalendarDays, CreditCard, Repeat, Phone,
   BarChart3, Inbox, Rss, Trash2, LineChart, Zap, Send, MessageCircle,
-  Globe, Share2, Webhook, Sparkles, UserCog, Tag, Star, Store
+  Globe, Share2, Webhook, Sparkles, UserCog, Tag, Star, Store, Target
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { t } from '@/lib/i18n'
@@ -23,7 +23,7 @@ const iconMap: Record<string, React.ElementType> = {
   Receipt, LifeBuoy, HelpCircle, HardDrive, FileSignature, FolderKanban,
   CheckSquare, Flag, File, Mail, MessageSquare, Settings, CalendarDays,
   CreditCard, Repeat, Phone, BarChart3, Inbox, Rss, Trash2, LineChart, Zap,
-  Send, MessageCircle, Globe, Share2, Webhook, Sparkles, UserCog, Tag, Store
+  Send, MessageCircle, Globe, Share2, Webhook, Sparkles, UserCog, Tag, Store, Target
 }
 
 const GROUP_ORDER = ['Essentials', 'POS', 'Marketing', 'Sales', 'Inventory', 'Purchasing', 'Support', 'Projects', 'Tools']

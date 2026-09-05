@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from '@/lib/navigation'
 import { useAuthStore } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Loader2, Mail, Lock, Sparkles, ShieldCheck } from 'lucide-react'
 import { SiteLayout } from '@/components/SiteLayout'
+import { api } from '@/lib/api'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -16,7 +17,60 @@ export function LoginPage() {
   const [twoFactorChallenge, setTwoFactorChallenge] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [ssoEmail, setSsoEmail] = useState('')
+  const [ssoLoading, setSsoLoading] = useState(false)
   const { login, login2fa } = useAuthStore()
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const hash = window.location.hash
+    if (hash.startsWith('#token=')) {
+      const token = decodeURIComponent(hash.replace('#token=', ''))
+      setLoading(true)
+      useAuthStore.getState().setToken(token)
+      useAuthStore.getState().loadUser().then(() => {
+        const u = useAuthStore.getState().user
+        if (u) {
+          window.history.replaceState(null, '', window.location.pathname)
+          navigate(u?.isSuperAdmin ? '/superadmin' : u?.isAgent ? '/support-agent' : '/dashboard')
+        } else {
+          setLoading(false)
+        }
+      }).catch(() => {
+        setLoading(false)
+        setError('SSO sign-in could not be completed. Please try again.')
+      })
+    } else if (window.location.search.includes('sso=error')) {
+      const reason = new URLSearchParams(window.location.search).get('reason') || 'unknown'
+      const messages: Record<string, string> = {
+        'not-enabled': 'Single sign-on is not enabled for your organization. Contact your administrator.',
+        'company-inactive': 'Your organization is deactivated. Contact your super admin.',
+        'invalid-assertion': 'The identity provider response could not be verified. Check your SSO configuration.',
+        'no-email': 'Your identity provider did not return an email address.',
+        subscription: 'Your organization subscription is inactive. Contact your super admin.',
+        'account-inactive': 'Your account is blocked. Contact your organization administrator.',
+      }
+      setError(messages[reason] || 'Single sign-on failed. Please contact your administrator.')
+      window.history.replaceState(null, '', window.location.pathname)
+    }
+  }, [navigate])
+
+  const handleSso = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!ssoEmail) {
+      setError('Enter your work email to continue')
+      return
+    }
+    setSsoLoading(true)
+    try {
+      const res = await api.ssoInit(ssoEmail)
+      window.location.href = res.redirectUrl
+    } catch (err: any) {
+      setError(err.message || 'Single sign-on is not available for this organization')
+      setSsoLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -131,6 +185,7 @@ export function LoginPage() {
                 </button>
               </form>
             ) : (
+              <>
               <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900 px-3 py-2 rounded-lg">
@@ -172,19 +227,49 @@ export function LoginPage() {
               </div>
 
               {/* Glossy sign-in button */}
-              <Button
-                type="submit"
-                disabled={loading}
-                className="relative w-full h-12 overflow-hidden rounded-lg text-white font-semibold text-sm border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 hover:from-sky-400 hover:via-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/40 transition-all"
-              >
-                <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
-                {loading ? (
-                  <span className="relative inline-flex items-center"><Loader2 size={16} className="mr-2 animate-spin" /> Signing in...</span>
-                ) : (
-                  <span className="relative inline-flex items-center"><Sparkles size={16} className="mr-2" /> Sign In</span>
-                )}
-              </Button>
-            </form>
+<Button
+                  type="submit"
+                  disabled={loading}
+                  className="relative w-full h-12 overflow-hidden rounded-lg text-white font-semibold text-sm border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 hover:from-sky-400 hover:via-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/40 transition-all"
+                >
+                  <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
+                  {loading ? (
+                    <span className="relative inline-flex items-center"><Loader2 size={16} className="mr-2 animate-spin" /> Signing in...</span>
+                  ) : (
+                    <span className="relative inline-flex items-center"><Sparkles size={16} className="mr-2" /> Sign In</span>
+                  )}
+                </Button>
+              </form>
+
+              <div className="my-5 flex items-center gap-3">
+                <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                <span className="text-xs text-slate-500 dark:text-slate-400">or</span>
+                <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+              </div>
+
+              <form onSubmit={handleSso} className="space-y-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Sign in with SSO</label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    placeholder="you@company.com"
+                    value={ssoEmail}
+                    onChange={e => setSsoEmail(e.target.value)}
+                    className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-1 text-sm text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={ssoLoading}
+                  className="w-full h-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  {ssoLoading ? <Loader2 size={16} className="mr-2 animate-spin" /> : <ShieldCheck size={16} className="mr-2" />}
+                  Continue with SSO
+                </Button>
+                <p className="text-center text-[11px] text-slate-400 dark:text-slate-500">Only available for organizations with SAML SSO enabled.</p>
+              </form>
+            </>
             )}
 
             <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">

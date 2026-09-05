@@ -312,6 +312,16 @@ const modules: Record<string, ModuleConfig> = {
     listFields: ['name', 'moduleName', 'reportType'],
     relatedModules: []
   },
+  scorecards: {
+    modelName: '',
+    label: 'Scorecards',
+    parent: 'Sales',
+    icon: 'Target',
+    sequence: 161,
+    searchFields: ['name'],
+    listFields: ['name', 'moduleName', 'period', 'status'],
+    relatedModules: []
+  },
   mailboxes: {
     modelName: 'mailbox',
     label: 'Mailboxes',

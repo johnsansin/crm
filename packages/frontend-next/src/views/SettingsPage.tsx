@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DataTable } from '@/components/ui/data-table'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, Target, Languages, LogOut, CreditCard, type LucideIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, Users, Shield, Banknote, Percent, Building2, Sun, Moon, UserCircle, Loader2, Save, Globe, MapPin, Settings2, Share2, ListChecks, ScrollText, Mail, Workflow, Database, Megaphone, FileText, Search, ArrowLeft, ChevronRight, Sparkles, PlugZap, Tag, LayoutDashboard, Trash2 as TrashIcon, Eye, Upload, Download, TrendingUp, Package, LifeBuoy, FolderKanban, Wrench, CheckCircle2, UserCheck, Power, Target, Languages, LogOut, CreditCard, type LucideIcon, MessageCircle, ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth'
 import { useTheme, type Accent } from '@/lib/theme'
 import { withAppBasePath } from '@/lib/base-path'
@@ -30,6 +30,10 @@ import { CommunicationSettings } from '@/views/settings/CommunicationSettings'
 import { DataSettings } from '@/views/settings/DataSettings'
 import { TermsSettings } from '@/views/settings/TermsSettings'
 import { IntegrationSettings } from '@/views/settings/IntegrationSettings'
+import { CustomViewsSettings } from '@/views/settings/CustomViewsSettings'
+import { ChatWidgetSettings } from '@/views/settings/ChatWidgetSettings'
+import { AdminDataSettings } from '@/views/settings/AdminDataSettings'
+import { SsoSettings } from '@/views/settings/SsoSettings'
 import { TagsSettings } from '@/views/settings/TagsSettings'
 import { MenuSettings } from '@/views/settings/MenuSettings'
 import { LanguageSettings } from '@/views/settings/LanguageSettings'
@@ -115,8 +119,12 @@ const settingSections = [
   { key: 'data', label: 'Data Management', icon: Database, desc: 'Backup, export, and CSV import' },
   { key: 'announcements', label: 'Announcements', icon: Megaphone, desc: 'Announcements, notifications, and holidays' },
   { key: 'integrations', label: 'Integrations', icon: PlugZap, desc: 'REST API keys, customer portal, Google sync, picklist dependencies, layout editor, payment reminders' },
+  { key: 'chat', label: 'Chat Widget', icon: MessageCircle, desc: 'Configure the website chat widget name, colors, messages, and position' },
+  { key: 'sso', label: 'SAML SSO', icon: ShieldCheck, desc: 'Enterprise single sign-on through your identity provider' },
+  { key: 'datatools', label: 'Data Tools', icon: Database, desc: 'Related lists, report schedules, user profiles, and file attachments' },
   { key: 'tags', label: 'Tags', icon: Tag, desc: 'Manage organisation-wide tags for records' },
   { key: 'menu', label: 'Menu Editor', icon: LayoutDashboard, desc: 'Reorder modules, group under parents, and hide modules in the sidebar' },
+  { key: 'views', label: 'Saved Views', icon: LayoutDashboard, desc: 'Create and manage saved filters and column layouts per module' },
   { key: 'trash', label: 'Recycle Bin', icon: TrashIcon, desc: 'Restore or permanently delete soft-deleted records' },
   { key: 'language', label: 'Language & i18n', icon: Languages, desc: 'Manage interface languages and translations' },
 ]
@@ -176,6 +184,10 @@ export function SettingsPage() {
         {activeSection === 'integrations' && <IntegrationSettings />}
         {activeSection === 'tags' && <TagsSettings />}
         {activeSection === 'menu' && <MenuSettings />}
+        {activeSection === 'views' && <CustomViewsSettings />}
+        {activeSection === 'chat' && <ChatWidgetSettings />}
+        {activeSection === 'sso' && <SsoSettings />}
+        {activeSection === 'datatools' && <AdminDataSettings />}
         {activeSection === 'trash' && <RecycleBinPage />}
         {activeSection === 'language' && <LanguageSettings onBack={() => setActiveSection(null)} />}
         {activeSection === 'subscription' && <SubscriptionSettings />}

@@ -16,6 +16,7 @@ import helmet from 'helmet'
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
 import path from 'path'
 import { authRouter } from './auth/auth.routes'
+import { ssoRouter } from './auth/sso.routes'
 import { entityRouter } from './modules/entity.routes'
 import { userRouter } from './modules/users.routes'
 import { companyRouter } from './modules/company.routes'
@@ -37,6 +38,7 @@ import { pbxRouter } from './modules/pbx.routes'
 import { presenceRouter } from './modules/presence.routes'
 import { chatRouter } from './modules/chat.routes'
 import { dashboardRouter } from './modules/dashboard.routes'
+import { scorecardsRouter, reportSchedulesRouter, relatedListsRouter, adminDataRouter } from './modules/tools.routes'
 import { reportEnhancedRouter } from './modules/report-enhanced.routes'
 import { emailCampaignsRouter } from './modules/email-campaigns.routes'
 import { smsRouter } from './modules/sms.routes'
@@ -209,6 +211,7 @@ app.post('/api/newsletter/subscribe', async (req, res) => {
 })
 
 app.use('/api/auth', authRouter)
+app.use('/api/auth', ssoRouter)
 // Support agents are platform staff, not CRM tenant users. Even if an agent was
 // accidentally linked to a company, their token is restricted to support-only APIs.
 app.use('/api', (req, res, next) => {
@@ -245,6 +248,10 @@ app.use('/api/pos', posRouter)
 app.use('/api/presence', presenceRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/dashboard', dashboardRouter)
+app.use('/api/scorecards', scorecardsRouter)
+app.use('/api/report-schedules', reportSchedulesRouter)
+app.use('/api/related-lists', relatedListsRouter)
+app.use('/api/admin-data', adminDataRouter)
 app.use('/api/reports', reportEnhancedRouter)
 app.use('/api/email-campaigns', emailCampaignsRouter)
 app.use('/api/sms', smsRouter)

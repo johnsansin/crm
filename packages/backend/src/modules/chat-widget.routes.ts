@@ -54,6 +54,33 @@ chatWidgetRouter.get('/sessions/:id/messages', async (req, res, next) => {
 
 chatWidgetAdminRouter.use(authMiddleware)
 
+chatWidgetAdminRouter.get('/admin/config', async (req, res, next) => {
+  try {
+    const widget = await prisma.chatWidget.findFirst({ where: { companyId: req.user!.companyId || undefined } })
+    res.json({ data: widget || null })
+  } catch (err) { next(err) }
+})
+
+chatWidgetAdminRouter.put('/admin/config', async (req, res, next) => {
+  try {
+    const { name, color, welcomeMsg, offlineMsg, position, isActive } = req.body || {}
+    const companyId = req.user!.companyId
+    if (!companyId) return res.status(400).json({ error: 'Organization required' })
+    const existing = await prisma.chatWidget.findFirst({ where: { companyId } })
+    const data: any = {}
+    if (name !== undefined) data.name = String(name).slice(0, 200)
+    if (color !== undefined) data.color = String(color).slice(0, 20)
+    if (welcomeMsg !== undefined) data.welcomeMsg = String(welcomeMsg).slice(0, 500) || null
+    if (offlineMsg !== undefined) data.offlineMsg = String(offlineMsg).slice(0, 500) || null
+    if (position !== undefined) data.position = ['bottom-right', 'bottom-left', 'bottom-center'].includes(position) ? position : 'bottom-right'
+    if (isActive !== undefined) data.isActive = !!isActive
+    const widget = existing
+      ? await prisma.chatWidget.update({ where: { id: existing.id }, data })
+      : await prisma.chatWidget.create({ data: { name: name || 'Live Chat', companyId, createdBy: req.user!.userId, ...data } })
+    res.json({ data: widget })
+  } catch (err) { next(err) }
+})
+
 chatWidgetAdminRouter.get('/admin/sessions', async (req, res, next) => {
   try {
     const { status } = req.query

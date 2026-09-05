@@ -101,6 +101,52 @@ settingsRouter.get('/subscription', requireAdmin, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+settingsRouter.get('/sso', requireAdmin, async (req, res, next) => {
+  try {
+    const company = await prisma.company.findUnique({
+      where: { id: req.user!.companyId! },
+      include: { subscriptionModel: true },
+    })
+    if (!company) return res.status(404).json({ error: 'Organisation not found' })
+    const enterprise = String(company.subscriptionModel?.code || company.subscriptionPlan || '').toUpperCase() === 'ENTERPRISE'
+    const config = await prisma.ssoConfig.findUnique({ where: { companyId: company.id } })
+    res.json({ data: config || null, enterprise: !!company.subscriptionModel ? enterprise : company.subscriptionPlan === 'ENTERPRISE' })
+  } catch (err) { next(err) }
+})
+
+settingsRouter.put('/sso', requireAdmin, async (req, res, next) => {
+  try {
+    const company = await prisma.company.findUnique({
+      where: { id: req.user!.companyId! },
+      include: { subscriptionModel: true },
+    })
+    if (!company) return res.status(404).json({ error: 'Organisation not found' })
+    const isEnterprise = String(company.subscriptionModel?.code || company.subscriptionPlan || '').toUpperCase() === 'ENTERPRISE'
+    if (!isEnterprise) return res.status(403).json({ error: 'SAML SSO is available on the Enterprise plan' })
+    if (!req.user!.companyId) return res.status(400).json({ error: 'Organization required' })
+
+    const { idpEntryPoint, issuer, cert, signatureAlgorithm, disableRequestedAuthnContext, wantAuthnResponseSigned, isEnabled } = req.body || {}
+    if (!idpEntryPoint || !/^https:\/\//i.test(String(idpEntryPoint))) return res.status(400).json({ error: 'Identity Provider entry point must be an https URL' })
+    if (!cert) return res.status(400).json({ error: 'Identity Provider signing certificate is required' })
+
+    const data: any = {
+      idpEntryPoint: String(idpEntryPoint).slice(0, 500),
+      issuer: issuer ? String(issuer).slice(0, 300) : null,
+      cert: String(cert),
+      signatureAlgorithm: ['sha256', 'sha1'].includes(signatureAlgorithm) ? signatureAlgorithm : 'sha256',
+      disableRequestedAuthnContext: !!disableRequestedAuthnContext,
+      wantAuthnResponseSigned: wantAuthnResponseSigned !== false,
+      isEnabled: !!isEnabled,
+    }
+    const existing = await prisma.ssoConfig.findUnique({ where: { companyId: req.user!.companyId } })
+    const config = existing
+      ? await prisma.ssoConfig.update({ where: { id: existing.id }, data })
+      : await prisma.ssoConfig.create({ data: { companyId: req.user!.companyId, ...data } })
+    await writeAudit({ moduleName: 'settings', action: 'UPDATE', fieldName: 'ssoConfig', newValue: JSON.stringify({ isEnabled: data.isEnabled, idpEntryPoint: data.idpEntryPoint }), userId: req.user!.userId, req })
+    res.json({ data: config })
+  } catch (err) { next(err) }
+})
+
 settingsRouter.get('/', requireAdmin, async (req, res, next) => {
   try {
     const settings = await getAllOrgSettings(req.user!.companyId)
@@ -334,7 +380,7 @@ settingsRouter.get('/modules', requireAdmin, async (req, res, next) => {
 function getModuleConfigCache() {
   // @ts-ignore - imported lazily to avoid circular dep at module load time
   const configs: Record<string, any> = {}
-  for (const mod of ['pos', 'accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'currencies', 'taxinfo', 'roles', 'usergroups', 'rolepermissions']) {
+  for (const mod of ['pos', 'accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'currencies', 'taxinfo', 'roles', 'usergroups', 'rolepermissions', 'scorecards']) {
     const c = getModuleConfig(mod)
     if (c) configs[mod] = c
   }
