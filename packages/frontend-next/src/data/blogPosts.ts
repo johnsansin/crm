@@ -916,6 +916,77 @@ export const blogPosts: BlogPost[] = [
       },
     ],
   },
+  {
+    slug: 'what-is-agentic-crm',
+    title: 'What is an Agentic CRM? How AI Agents Are Changing Customer Management',
+    excerpt: 'Agentic CRM takes traditional customer management further by letting AI agents score leads, make decisions, and take actions automatically. Learn how it works and why 2026 is the year it matters.',
+    description: 'A clear guide to agentic CRM: what AI agents do inside a CRM, how autonomous lead decisions and intelligent intake work, and how to keep human oversight with agentic features.',
+    category: 'AI & Technology',
+    date: 'September 5, 2026',
+    isoDate: '2026-09-05',
+    readTime: '8 min read',
+    keywords: ['agentic CRM', 'AI agents CRM', 'agentic AI', 'AI CRM', 'autonomous CRM', 'AI lead scoring'],
+    author: 'Sajjad Hussain',
+    authorRole: 'Founder, BizForce CRM',
+    sections: [
+      {
+        heading: 'What Does "Agentic" Mean in a CRM?',
+        paragraphs: [
+          'Agentic CRM is customer relationship management where software agents do more than assist — they make decisions and take actions on their own. Where a traditional CRM waits for you to click, an agentic CRM actively works: it captures a lead, scores it, decides what to do next, and carries out that action without being told each step.',
+          'The word "agentic" describes software that pursues a goal independently. Inside a CRM, that goal is usually more revenue: qualify the right leads faster, keep deals moving, and never let a follow-up slip. The agent uses the same CRM data your team uses, so its decisions are grounded in your actual records — not guesswork.',
+          'This is a meaningful shift. For decades CRMs stored information and generated reports. An agentic CRM turns that stored information into automated, ongoing action.',
+        ],
+      },
+      {
+        heading: 'From Assistants to Agents: The Shift',
+        paragraphs: [
+          'You have probably used AI assistants inside a CRM — tools that draft an email, summarize a call, or suggest a reply. Those are helpful, but they stop at the point of action: a human still decides what to send and when.',
+          'Agents close that gap. Instead of merely recommending "this lead looks hot," an agent updates the lead status, raises its score, assigns ownership, and records every change. Instead of flagging a ticket that is overdue, an agent reopens it, escalates it, and notifies the responsible person.',
+          'The practical difference is speed and consistency. Agents act in seconds, every time, without fatigue. They apply the same policy to every record, which removes the inconsistency that creeps into manual handling as teams get busy.',
+        ],
+      },
+      {
+        heading: 'How an Agentic CRM Works',
+        paragraphs: [
+          'Agentic behavior usually follows a simple loop: observe, reason, act, and log. First the agent observes a trigger — a new lead arrives, a deal changes stage, a ticket ages past a service level. Then it reasons, scoring the record and deciding the appropriate action using your configured thresholds and rules.',
+          'Next it acts. Depending on the mode you choose, it may apply changes automatically or prepare them for your approval. Finally it logs everything, so every decision is visible and auditable. This transparency is what makes autonomous operation trustworthy in a business setting.',
+          'The quality of the agent\'s decisions depends on the quality of the data it can see. A shared CRM record, covering history, communications, and deal stage, gives the agent the context it needs to make sensible choices.',
+        ],
+      },
+      {
+        heading: 'Agentic CRM in Practice: Lead Decisions and Intake',
+        paragraphs: [
+          'Lead management is where agentic capability pays off most quickly. An agentic lead system captures an inquiry, enriches it, checks for duplicates, and scores it against your criteria — then flags the high-value lead for sales priority while archiving the noise.',
+          'Because the scoring is transparent, you stay in control. You define thresholds and the actions each score triggers: a high-scoring lead is marked Qualified and Hot, a medium one is Contacted, a low one is Not Contacted. You can let the agent apply these changes in automatic mode, or review candidates first before any change is written to the record.',
+          'Every decision the agent makes is recorded in an AI log, so you can inspect what happened and why. That audit trail turns an otherwise opaque "black box" into a system you can trust, tune, and improve over time.',
+        ],
+      },
+      {
+        heading: 'The Business Benefits of Agentic Automation',
+        paragraphs: [
+          'The most immediate benefit is speed-to-lead. Because an agent scores and routes an inquiry within seconds, response times drop dramatically — and faster response is one of the strongest predictors of converting a lead.',
+          'Consistency is the second benefit. Manual scoring varies by mood, workload, and experience. Agents apply the same rulebook every time, so your pipeline stays clean and your forecasts stay coherent.',
+          'The third benefit is time returned to your team. When routine triage is handled automatically, salespeople focus on talking to buyers and support agents focus on resolving issues instead of sorting and labeling records. Teams typically reclaim hours every week from work that software can now handle.',
+        ],
+      },
+      {
+        heading: 'Human Oversight Still Matters',
+        paragraphs: [
+          'Agentic does not mean unsupervised. The best approach pairs automation with review. Run agents in a review-only mode while you learn their behavior, and switch to automatic actions only when you are confident in the outcomes.',
+          'Define clear policies before you enable actions: what scores qualify a lead, who gets the assignment, which changes require approval. Document the thresholds, then audit the logs periodically. This discipline keeps the agent aligned with your business while it runs unattended.',
+          'Start small. Enable agentic scoring on one source, review the decisions for a week, refine the thresholds, and then expand. Most businesses find that a gradual rollout builds trust and produces far better results than switching everything on at once.',
+        ],
+      },
+      {
+        heading: 'Is an Agentic CRM Right for Your Business?',
+        paragraphs: [
+          'If you handle a steady flow of inbound leads, run a marketing-to-sales handoff, or struggle to keep follow-ups consistent, agentic features can pay for themselves quickly. They are equally valuable for small teams that lack the staff to triage every inquiry rapidly.',
+          'Choose a platform where the agent\'s decisions are transparent and auditable, where you control the thresholds, and where you can run in review mode first. Those safeguards matter more than any single feature.',
+          'An agentic CRM is not about removing people from the sale. It is about removing the repetitive work that keeps people from selling. Let the agents triage and route the routine volume, and your team will spend its time where humans still excel — building relationships.',
+        ],
+      },
+    ],
+  },
 ]
 
 export function getAllBlogPostSlugs(): string[] {
