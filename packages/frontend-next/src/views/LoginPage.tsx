@@ -19,7 +19,21 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [ssoEmail, setSsoEmail] = useState('')
   const [ssoLoading, setSsoLoading] = useState(false)
+  const [ssoEnabled, setSsoEnabled] = useState(false)
   const { login, login2fa } = useAuthStore()
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    setSsoEnabled(localStorage.getItem('bizforce.sso.enabled') === '1')
+  }, [])
+
+  const toggleSso = (on: boolean) => {
+    setSsoEnabled(on)
+    if (typeof window !== 'undefined') {
+      if (on) localStorage.setItem('bizforce.sso.enabled', '1')
+      else localStorage.removeItem('bizforce.sso.enabled')
+    }
+  }
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -247,8 +261,31 @@ export function LoginPage() {
                 <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
               </div>
 
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                <button
+                  type="button"
+                  onClick={() => toggleSso(!ssoEnabled)}
+                  className="flex w-full items-center justify-between gap-3"
+                  aria-pressed={ssoEnabled}
+                >
+                  <span className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                    <ShieldCheck size={16} className="text-slate-400" />
+                    Sign in with SSO
+                  </span>
+                  <span
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${ssoEnabled ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${ssoEnabled ? 'translate-x-5' : 'translate-x-0.5'}`}
+                    />
+                  </span>
+                </button>
+                <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">Remembered on this browser. Only for organizations with SAML SSO enabled.</p>
+              </div>
+
+              {ssoEnabled && (
               <form onSubmit={handleSso} className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Sign in with SSO</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Work email</label>
                 <div className="relative">
                   <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
@@ -267,8 +304,8 @@ export function LoginPage() {
                   {ssoLoading ? <Loader2 size={16} className="mr-2 animate-spin" /> : <ShieldCheck size={16} className="mr-2" />}
                   Continue with SSO
                 </Button>
-                <p className="text-center text-[11px] text-slate-400 dark:text-slate-500">Only available for organizations with SAML SSO enabled.</p>
               </form>
+              )}
             </>
             )}
 
