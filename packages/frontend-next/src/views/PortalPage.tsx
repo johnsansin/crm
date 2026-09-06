@@ -15,7 +15,7 @@ import { DataTable } from '@/components/ui/data-table'
 import { cn } from '@/lib/utils'
 import {
   Lock, User, Mail, Phone, FileText, Ticket, Loader2, LogOut, Plus, Send, Eye,
-  ArrowLeft, Download, CreditCard, CheckCircle2, MessageSquare, ShieldCheck, LayoutGrid, List,
+  ArrowLeft, Download, CreditCard, CheckCircle2, MessageSquare, ShieldCheck, LayoutGrid, List, Globe,
 } from 'lucide-react'
 
 const PORTAL_API = '/api/portal'
@@ -65,11 +65,27 @@ function Avatar({ name, className = '' }: { name: string; className?: string }) 
   )
 }
 
+interface PortalSupplier {
+  name?: string
+  logo?: string
+  phone?: string
+  email?: string
+  website?: string
+  address?: string
+}
+
+interface PortalManager {
+  name?: string
+  email?: string
+}
+
 interface PortalUser {
   id: string
   name: string
   email: string
   sharedBy?: string
+  supplier?: PortalSupplier | null
+  accountManager?: PortalManager | null
 }
 
 const KANBAN_ORDER = ['Open', 'In Progress', 'Wait for Response', 'Closed']
@@ -363,7 +379,9 @@ export function PortalPage() {
             <img src="/bizforce-mark.svg" alt="BizForce" className="h-8 w-8 rounded-lg shadow-sm" />
             <div className="min-w-0">
               <h1 className="text-sm font-bold text-slate-900 dark:text-white truncate">Customer Portal</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{portalUser?.email || ''}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                {portalUser?.email || ''}{portalUser?.supplier?.name ? ` · ${portalUser.supplier.name}` : ''}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -383,15 +401,31 @@ export function PortalPage() {
           <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-10 w-64 h-64 rounded-full bg-sky-300/20 blur-2xl pointer-events-none" />
           <div className="relative">
-            <h2 className="text-2xl font-bold">Welcome back, {firstName}</h2>
+            <div className="flex items-center gap-3">
+              {portalUser?.supplier?.logo && (
+                <img src={portalUser.supplier.logo} alt={portalUser.supplier.name || 'supplier'} className="h-10 w-10 rounded-xl bg-white/10 border border-white/15 object-cover" />
+              )}
+              <h2 className="text-2xl font-bold">Welcome back, {firstName}</h2>
+            </div>
             <p className="mt-1 text-sm text-blue-100">
-              Here is a quick snapshot of your organization account.
-              {portalUser?.sharedBy ? (
+              {portalUser?.supplier?.name ? (
                 <>
-                  {' '}Portal access was shared with you by <span className="font-semibold text-white">{portalUser.sharedBy}</span>.
+                  Your supplier: <span className="font-semibold text-white">{portalUser.supplier.name}</span>
+                </>
+              ) : (
+                'Here is a quick snapshot of your account.'
+              )}
+              {portalUser?.accountManager?.name ? (
+                <>
+                  {' '}· Account manager: <span className="font-semibold text-white">{portalUser.accountManager.name}</span>
                 </>
               ) : null}
             </p>
+            {portalUser?.sharedBy ? (
+              <p className="mt-1 text-xs text-blue-200/80">
+                Portal access was shared with you by <span className="font-semibold text-white">{portalUser.sharedBy}</span>.
+              </p>
+            ) : null}
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {stats.map((s) => (
                 <div key={s.label} className="rounded-xl bg-white/10 backdrop-blur border border-white/15 p-3">
@@ -733,6 +767,41 @@ export function PortalPage() {
                   <h2 className="text-lg font-bold text-slate-900 dark:text-white">My Profile</h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">Keep your contact details up to date.</p>
                 </div>
+                {portalUser?.supplier && (
+                  <Card>
+                    <CardContent className="pt-5">
+                      <div className="flex items-start gap-3">
+                        {portalUser.supplier.logo ? (
+                          <img src={portalUser.supplier.logo} alt={portalUser.supplier.name || 'supplier'} className="h-12 w-12 rounded-xl border border-slate-200 dark:border-slate-800 object-cover" />
+                        ) : (
+                          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shrink-0">
+                            {(portalUser.supplier.name || 'S')[0]}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-[11px] uppercase tracking-wide text-slate-400">Your supplier</p>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white">{portalUser.supplier.name || '—'}</p>
+                          {portalUser.supplier.address && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{portalUser.supplier.address}</p>}
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                            {portalUser.supplier.email && <span className="inline-flex items-center gap-1"><Mail size={12} /> {portalUser.supplier.email}</span>}
+                            {portalUser.supplier.phone && <span className="inline-flex items-center gap-1"><Phone size={12} /> {portalUser.supplier.phone}</span>}
+                            {portalUser.supplier.website && <a href={portalUser.supplier.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sky-600 hover:underline"><Globe size={12} /> {portalUser.supplier.website}</a>}
+                          </div>
+                        </div>
+                      </div>
+                      {portalUser.accountManager?.name && (
+                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                          <Avatar name={portalUser.accountManager.name} className="h-8 w-8 text-xs" />
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-slate-400">Account manager</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-white">{portalUser.accountManager.name}</p>
+                          </div>
+                          {portalUser.accountManager.email && <a href={`mailto:${portalUser.accountManager.email}`} className="ml-auto text-xs text-sky-600 hover:underline">{portalUser.accountManager.email}</a>}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
                 <Card>
                   <CardContent className="pt-5">
                     <form onSubmit={e => { e.preventDefault(); updateProfileMutation.mutate(profileForm) }} className="space-y-4">

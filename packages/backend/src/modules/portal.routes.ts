@@ -8,6 +8,38 @@ const PORTAL_JWT_SECRET = signingSecret('PORTAL_JWT_SECRET', 'bizforce-portal-jw
 
 export const portalRouter = Router()
 
+async function supplierFor(portalUser: any) {
+  if (!portalUser.companyId) return null
+  const company = await prisma.company.findUnique({
+    where: { id: portalUser.companyId },
+    select: { name: true, logo: true, phone: true, email: true, website: true, addressStreet: true, addressCity: true, addressState: true, addressCountry: true, addressPostalCode: true },
+  })
+  if (!company) return null
+  return {
+    name: company.name,
+    logo: company.logo,
+    phone: company.phone,
+    email: company.email,
+    website: company.website,
+    address: [company.addressStreet, company.addressCity, company.addressState, company.addressCountry, company.addressPostalCode].filter(Boolean).join(', '),
+  }
+}
+
+async function accountManagerFor(portalUser: any) {
+  if (!portalUser.contactId) return null
+  const contact = await prisma.contact.findUnique({
+    where: { id: portalUser.contactId },
+    select: { assignedTo: true },
+  })
+  if (!contact?.assignedTo) return null
+  const user = await prisma.user.findUnique({
+    where: { id: contact.assignedTo },
+    select: { firstName: true, lastName: true, email: true },
+  })
+  if (!user) return null
+  return { name: [user.firstName, user.lastName].filter(Boolean).join(' '), email: user.email }
+}
+
 export const ticketFields = (t: any) => ({
   id: t.id,
   ticketNo: t.ticketNo,
@@ -115,6 +147,8 @@ portalRouter.post('/auth/login', async (req, res) => {
       PORTAL_JWT_SECRET,
       { expiresIn: '7d' }
     )
+    const supplier = await supplierFor(user)
+    const accountManager = await accountManagerFor(user)
     res.json({
       data: {
         token,
@@ -123,6 +157,8 @@ portalRouter.post('/auth/login', async (req, res) => {
           name: user.name,
           email: user.email,
           sharedBy: user.sharedByName || user.sharedByEmail || '',
+          supplier,
+          accountManager,
         },
       },
     })
@@ -135,10 +171,23 @@ portalRouter.get('/profile', portalAuth, async (req: any, res) => {
   try {
     const user = await prisma.portalUser.findUnique({
       where: { id: req.portalUser.portalUserId },
-      select: { id: true, name: true, email: true, phone: true, lastLogin: true, createdAt: true, sharedByName: true, sharedByEmail: true },
     })
     if (!user) { res.status(404).json({ error: 'Not found' }); return }
-    res.json({ data: user })
+    const supplier = await supplierFor(user)
+    const accountManager = await accountManagerFor(user)
+    res.json({
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        sharedBy: user.sharedByName || user.sharedByEmail || '',
+        supplier,
+        accountManager,
+        lastLogin: user.lastLogin,
+        createdAt: user.createdAt,
+      },
+    })
   } catch (err: any) {
     res.status(500).json({ error: err.message })
   }
