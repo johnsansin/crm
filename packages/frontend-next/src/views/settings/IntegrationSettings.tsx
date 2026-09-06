@@ -137,7 +137,7 @@ function PortalTab() {
   const [contactId, setContactId] = useState('')
   const [accessCode, setAccessCode] = useState('')
   const { data: contacts } = useQuery({ queryKey: ['contacts', 'portal'], queryFn: () => api.list('contacts', { limit: '200' }) })
-  const { data: portalUsers } = useQuery({ queryKey: ['portal-users'], queryFn: () => api.list('portalusers', { limit: '200' }).catch(() => ({ data: [] })) })
+  const { data: portalUsers } = useQuery({ queryKey: ['portal-users'], queryFn: () => api.portalUsers().catch(() => ({ data: [] })) })
 
   const registerMutation = useMutation({
     mutationFn: (d: any) => api.registerPortal(d.contactId, d.accessCode),

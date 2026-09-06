@@ -830,6 +830,7 @@ export const api = {
     request<any>('/portal/register', { method: 'POST', body: JSON.stringify({ contactId, accessCode }) }),
   unregisterPortal: (contactId: string) =>
     request<any>('/portal/unregister', { method: 'POST', body: JSON.stringify({ contactId }) }),
+  portalUsers: () => request<{ data: any[] }>('/portal/users'),
 
   // ---- AI ----
   getAiPrompts: () => request<{ data: any[] }>('/ai/prompts'),

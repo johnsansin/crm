@@ -802,6 +802,20 @@ extrasRouter.post('/portal/unregister', authMiddleware, requireTenant, requireAd
   } catch (err) { next(err) }
 })
 
+extrasRouter.get('/portal/users', authMiddleware, requireTenant, requireAdmin, async (req, res, next) => {
+  try {
+    const users = await prisma.portalUser.findMany({
+      where: { companyId: req.user!.companyId || undefined },
+      orderBy: [{ isActive: 'desc' }, { updatedAt: 'desc' }],
+      select: {
+        id: true, userId: true, contactId: true, email: true, name: true,
+        password: true, isActive: true, lastLogin: true, createdAt: true, updatedAt: true,
+      },
+    })
+    res.json({ data: users })
+  } catch (err) { next(err) }
+})
+
 // ---- Public portal login ----
 extrasRouter.post('/portal/login', async (req, res, next) => {
   try {
