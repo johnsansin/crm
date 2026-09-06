@@ -415,7 +415,7 @@ dashboardRouter.get('/assigned-to-me', authMiddleware, async (req, res, next) =>
         where: { ...base, ...assigned, isActive: true, status: { notIn: ['Completed', 'Cancelled'] } },
         orderBy: { dueAt: 'asc' },
         take: 5,
-        select: { id: true, subject: true, activityType: true, status: true, dueAt: true, updatedAt: true },
+        select: { id: true, subject: true, activityType: true, status: true, dueAt: true, updatedAt: true, parentModule: true, parentId: true },
       }),
       prisma.project.findMany({
         where: { ...base, ...assigned, isActive: true, status: { notIn: ['Completed', 'Cancelled'] } },
@@ -430,7 +430,7 @@ dashboardRouter.get('/assigned-to-me', authMiddleware, async (req, res, next) =>
         leads: leads.map(l => ({ ...l, module: 'leads', name: `${l.firstName || ''} ${l.lastName || ''}`.trim() || 'Unnamed', link: `/leads/${l.id}` })),
         opportunities: potentials.map(p => ({ ...p, module: 'potentials', name: p.potentialName || 'Unnamed', link: `/potentials/${p.id}` })),
         tickets: tickets.map(t => ({ ...t, module: 'tickets', name: t.title || 'Untitled', link: `/tickets/${t.id}` })),
-        tasks: tasks.map(a => ({ ...a, module: 'activities', name: a.subject || 'Untitled', link: `/activities/${a.id}` })),
+        tasks: tasks.map(a => ({ ...a, module: 'activities', name: a.subject || 'Untitled', link: a.parentId && a.parentModule ? `/${a.parentModule}/${a.parentId}` : '/activities' })),
         projects: projects.map(p => ({ ...p, module: 'projects', name: p.projectName || 'Unnamed', link: `/projects/${p.id}` })),
       },
     })

@@ -1584,12 +1584,14 @@ model Company {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  users             User[]
-  subscriptionModel SubscriptionModel? @relation(fields: [subscriptionModelId], references: [id], onDelete: SetNull)
-  ssoConfig         SsoConfig?
-  socialForcePosts  SocialForcePost[]
-  socialForceBrand  SocialForceBrand?
-  socialForceEvents SocialForceEvent[]
+  users                  User[]
+  subscriptionModel      SubscriptionModel?      @relation(fields: [subscriptionModelId], references: [id], onDelete: SetNull)
+  ssoConfig              SsoConfig?
+  socialForcePosts       SocialForcePost[]
+  socialForceBrand       SocialForceBrand?
+  socialForceEvents      SocialForceEvent[]
+  socialForceAccounts    SocialForceAccount[]
+  socialForceConnections SocialForceConnection[]
 
   @@index([subscriptionModelId])
 }
@@ -1601,6 +1603,7 @@ model SocialForcePost {
   title      String    @db.VarChar(200)
   content    String    @db.Text
   variants   Json      @default("[]")
+  accountIds String[]  @default([])
   status     String    @default("DRAFT") @db.VarChar(30)
   plannedAt  DateTime?
   timezone   String    @default("UTC") @db.VarChar(100)
@@ -1614,6 +1617,44 @@ model SocialForcePost {
   @@unique([companyId, id])
   @@index([companyId, status, createdAt])
   @@index([companyId, plannedAt])
+}
+
+model SocialForceAccount {
+  id          String    @id @default(uuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  platform    String    @db.VarChar(30)
+  externalId  String    @db.VarChar(200)
+  name        String    @db.VarChar(200)
+  accountType String    @db.VarChar(50)
+  credentials String?   @db.Text
+  permissions String[]  @default([])
+  expiresAt   DateTime?
+  status      String    @default("CONNECTED") @db.VarChar(30)
+  connectedBy String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([companyId, platform, externalId])
+  @@unique([companyId, id])
+  @@index([companyId, status])
+}
+
+model SocialForceConnection {
+  id           String   @id @default(uuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  userId       String
+  tokenVersion Int
+  platform     String   @db.VarChar(30)
+  stateHash    String   @unique @db.VarChar(64)
+  browserHash  String   @db.VarChar(64)
+  status       String   @default("PENDING") @db.VarChar(30)
+  candidates   String?  @db.Text
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([companyId, userId, expiresAt])
 }
 
 model SocialForceBrand {

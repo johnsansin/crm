@@ -1482,6 +1482,7 @@ exports.Prisma.SocialForcePostScalarFieldEnum = {
   title: 'title',
   content: 'content',
   variants: 'variants',
+  accountIds: 'accountIds',
   status: 'status',
   plannedAt: 'plannedAt',
   timezone: 'timezone',
@@ -1491,6 +1492,36 @@ exports.Prisma.SocialForcePostScalarFieldEnum = {
   version: 'version',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.SocialForceAccountScalarFieldEnum = {
+  id: 'id',
+  companyId: 'companyId',
+  platform: 'platform',
+  externalId: 'externalId',
+  name: 'name',
+  accountType: 'accountType',
+  credentials: 'credentials',
+  permissions: 'permissions',
+  expiresAt: 'expiresAt',
+  status: 'status',
+  connectedBy: 'connectedBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.SocialForceConnectionScalarFieldEnum = {
+  id: 'id',
+  companyId: 'companyId',
+  userId: 'userId',
+  tokenVersion: 'tokenVersion',
+  platform: 'platform',
+  stateHash: 'stateHash',
+  browserHash: 'browserHash',
+  status: 'status',
+  candidates: 'candidates',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.SocialForceBrandScalarFieldEnum = {
@@ -2590,6 +2621,8 @@ exports.Prisma.ModelName = {
   SupportAuditEvent: 'SupportAuditEvent',
   Company: 'Company',
   SocialForcePost: 'SocialForcePost',
+  SocialForceAccount: 'SocialForceAccount',
+  SocialForceConnection: 'SocialForceConnection',
   SocialForceBrand: 'SocialForceBrand',
   SocialForceEvent: 'SocialForceEvent',
   SsoConfig: 'SsoConfig',

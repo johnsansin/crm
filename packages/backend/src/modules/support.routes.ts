@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
 import { publishSupportEvent } from '../lib/support-events'
 import { activeSupportUserIds } from '../lib/support-websocket'
+import { answerSupportQuery } from '../lib/support-bot'
 
 const messageLimiter = rateLimit({ windowMs: 60_000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false })
 const createLimiter = rateLimit({ windowMs: 60_000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false })
@@ -63,14 +64,7 @@ async function enrich(conversations: any[]) {
 }
 
 function aiAnswer(message: string) {
-  const lower = message.toLowerCase()
-  if (/upgrade|plan|subscription|billing/.test(lower)) return 'An organisation admin can review subscription and billing information from Settings. If the required billing action is unavailable, select “Talk to an Agent” and our support team will assist without losing this conversation.'
-  if (/add.*user|create.*user|invite/.test(lower)) return 'Open Settings → Users and select New User. Complete the user details, assign a role and group, then save. Confirm that the selected role has the required module permissions.'
-  if (/currency/.test(lower)) return 'Organisation currencies are managed in Settings → Currencies. The active default currency is used on new quotes and sales documents, while other active currencies remain selectable.'
-  if (/pdf|letter.?head|logo/.test(lower)) return 'Configure the active master document in Settings → Master Documents. Its organisation logo, header and footer are then used by supported quotation, order and invoice print views.'
-  if (/backup/.test(lower)) return 'Full system backups (database, uploaded files and configuration) are available to Super Admins from Super Admin → Settings → System Backups.'
-  if (/error|failed|not working|technical|bug/.test(lower)) return 'I can help troubleshoot this. Please include the page address, the action you attempted, and the exact error message. You can also select “Talk to an Agent” at any time.'
-  return 'I can help with users, permissions, currencies, PDF templates, reports, backups and common CRM workflows. If you need hands-on assistance, select “Talk to an Agent” and the complete conversation will be transferred.'
+  return answerSupportQuery(message)
 }
 
 async function notifyStaff(conversation: any) {
