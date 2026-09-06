@@ -217,6 +217,7 @@ app.use('/api/auth', socialAuthRouter)
 // Support agents are platform staff, not CRM tenant users. Even if an agent was
 // accidentally linked to a company, their token is restricted to support-only APIs.
 app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/portal')) return next()
   if (!req.headers.authorization) return next()
   authMiddleware(req, res, () => {
     if (!req.user?.isAgent || req.user.isSuperAdmin) return next()
@@ -225,6 +226,7 @@ app.use('/api', (req, res, next) => {
     return res.status(403).json({ error: 'Support agents can only access the Support Workspace' })
   })
 })
+app.use('/api/portal', portalRouter)
 app.use('/api', extrasRouter)
 app.use('/api/pbx', pbxRouter)
 app.use('/api/users', userRouter)
@@ -264,7 +266,6 @@ app.use('/api/social', socialRouter)
 app.use('/api/webhooks', webhooksRouter)
 app.use('/api/webhooks', incomingWebhookRouter)
 app.use('/api/i18n', i18nRouter)
-app.use('/api/portal', portalRouter)
 app.use('/api/ai', aiRouter)
 app.use('/api/support', supportRouter)
 // Legacy backup files may exist under uploads/backups. Never expose database dumps publicly.

@@ -143,10 +143,10 @@ export function PortalPage() {
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium">Password</label>
+                <label className="text-sm font-medium">Access code</label>
                 <div className="relative">
                   <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" className="pl-9" required />
+                  <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter access code" className="pl-9" required />
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={loginMutation.isPending}>

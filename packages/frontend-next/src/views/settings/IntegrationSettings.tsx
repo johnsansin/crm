@@ -141,7 +141,7 @@ function PortalTab() {
 
   const registerMutation = useMutation({
     mutationFn: (d: any) => api.registerPortal(d.contactId, d.accessCode),
-    onSuccess: (r: any) => { queryClient.invalidateQueries({ queryKey: ['portal-users'] }); addToast({ title: 'Portal enabled', description: `Access code: ${r.accessCode}`, variant: 'success' }); setContactId(''); setAccessCode('') },
+    onSuccess: (r: any) => { queryClient.invalidateQueries({ queryKey: ['portal-users'] }); addToast({ title: 'Portal enabled', description: r.accessCode ? `Access code: ${r.accessCode} — share it with the customer.` : 'Portal access is active (access code unchanged).', variant: 'success' }); setContactId(''); setAccessCode('') },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
@@ -154,7 +154,7 @@ function PortalTab() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Customers log in at <code className="text-xs bg-muted px-1 rounded">POST /api/portal/login</code> with their contact email and access code, then view their invoices and manage tickets.
+        Customers sign in at <code className="text-xs bg-muted px-1 rounded">/portal</code> with their contact email and their access code, then view their invoices and manage tickets.
       </p>
       <div className="rounded-lg border p-4 space-y-3">
         <p className="text-sm font-medium">Enable portal for a contact</p>
@@ -177,8 +177,8 @@ function PortalTab() {
             const c = (contacts?.data || []).find((x: any) => x.id === v)
             return <span className="font-medium">{c ? `${c.firstName} ${c.lastName}` : v}</span>
           } },
-          { key: 'accessCode', label: 'Access Code', render: (v) => <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{v || '—'}</code> },
-          { key: 'lastLoginAt', label: 'Last Login', render: (v) => <span className="text-muted-foreground">{v ? formatDateTime(v) : 'Never'}</span> },
+          { key: 'password', label: 'Access Code', render: (v) => <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{v ? 'Set' : '—'}</code> },
+          { key: 'lastLogin', label: 'Last Login', render: (v) => <span className="text-muted-foreground">{v ? formatDateTime(v) : 'Never'}</span> },
           { key: 'isActive', label: 'Active', render: (v) => <span className={`text-xs font-medium ${v ? 'text-emerald-600' : 'text-muted-foreground'}`}>{v ? 'Yes' : 'No'}</span> },
         ]}
         data={(portalUsers?.data || []).filter((p: any) => p.isActive)}

@@ -1,3 +1,4 @@
+import { randomInt } from 'crypto'
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
@@ -771,14 +772,27 @@ extrasRouter.post('/portal/register', authMiddleware, requireTenant, requireAdmi
     const contact = await prisma.contact.findFirst({ where: { id: contactId, companyId: req.user!.companyId || undefined } })
     if (!contact) return res.status(404).json({ error: 'Contact not found' })
     const email = contact.email || `${contact.firstName.toLowerCase()}@portal.local`
+    const existing = await prisma.portalUser.findUnique({ where: { email } })
+    const customCode = String(req.body.accessCode || '').trim()
+    const code = !existing || customCode ? customCode || generateAccessCode() : null
+    const hash = code ? await bcrypt.hash(code, 10) : null
     const portal = await prisma.portalUser.upsert({
       where: { email },
-      update: { isActive: true, contactId, userId: contactId },
-      create: { email, password: '', name: [contact.firstName, contact.lastName].filter(Boolean).join(' '), contactId, userId: contactId, companyId: req.user!.companyId },
+      update: customCode
+        ? { isActive: true, contactId, userId: contactId, password: hash! }
+        : { isActive: true, contactId, userId: contactId },
+      create: { email, password: hash ?? existing?.password ?? '', name: [contact.firstName, contact.lastName].filter(Boolean).join(' '), contactId, userId: contactId, companyId: req.user!.companyId },
     })
-    res.status(201).json({ data: portal })
+    res.status(existing ? 200 : 201).json({ data: { ...portal, accessCode: code } })
   } catch (err) { next(err) }
 })
+
+function generateAccessCode(length = 8) {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  const out: string[] = []
+  for (let i = 0; i < length; i++) out.push(chars[randomInt(chars.length)])
+  return out.join('')
+}
 
 extrasRouter.post('/portal/unregister', authMiddleware, requireTenant, requireAdmin, async (req, res, next) => {
   try {
@@ -803,6 +817,9 @@ extrasRouter.post('/portal/login', async (req, res, next) => {
     }
     const portal = await prisma.portalUser.findFirst({ where: { contactId: contact.id } })
     if (!portal || !portal.isActive) return res.status(403).json({ error: 'Portal access is not enabled for this contact' })
+    if (!portal.password) return res.status(401).json({ error: 'No access code set for this portal account' })
+    const validCode = await bcrypt.compare(accessCode, portal.password)
+    if (!validCode) return res.status(401).json({ error: 'Invalid access code' })
     const token = jwt.sign({ contactId: contact.id, companyId: contact.companyId, type: 'portal', email }, JWT_SECRET, { expiresIn: '24h' })
     await prisma.portalUser.update({ where: { id: portal.id }, data: { lastLogin: new Date() } })
     const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email
