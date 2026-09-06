@@ -17,6 +17,7 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
 import path from 'path'
 import { authRouter } from './auth/auth.routes'
 import { ssoRouter } from './auth/sso.routes'
+import { socialAuthRouter } from './auth/social.routes'
 import { entityRouter } from './modules/entity.routes'
 import { userRouter } from './modules/users.routes'
 import { companyRouter } from './modules/company.routes'
@@ -212,6 +213,7 @@ app.post('/api/newsletter/subscribe', async (req, res) => {
 
 app.use('/api/auth', authRouter)
 app.use('/api/auth', ssoRouter)
+app.use('/api/auth', socialAuthRouter)
 // Support agents are platform staff, not CRM tenant users. Even if an agent was
 // accidentally linked to a company, their token is restricted to support-only APIs.
 app.use('/api', (req, res, next) => {

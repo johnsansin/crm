@@ -16,6 +16,7 @@ export function SignUpPage() {
   const navigate = useNavigate()
   const { register, verifyRegister } = useAuthStore()
   const [step, setStep] = useState<'form' | 'verify'>('form')
+  const [socialLoading, setSocialLoading] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -36,6 +37,12 @@ export function SignUpPage() {
       if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [])
+
+  const handleSocial = (provider: 'google' | 'facebook') => {
+    setError('')
+    setSocialLoading(provider)
+    window.location.href = `/api/auth/${provider}`
+  }
 
   const startCooldown = () => {
     setCooldown(CODE_RESEND_COOLDOWN)
@@ -334,6 +341,34 @@ export function SignUpPage() {
               </form>
             )}
 
+            {step === 'form' && (
+              <>
+                <div className="my-5 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                  <span className="text-xs text-slate-500 dark:text-slate-400">or continue with</span>
+                  <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                </div>
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    onClick={() => handleSocial('google')}
+                    disabled={socialLoading !== null}
+                    className="flex w-full h-11 items-center justify-center gap-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <GoogleIcon /> Continue with Google
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleSocial('facebook')}
+                    disabled={socialLoading !== null}
+                    className="flex w-full h-11 items-center justify-center gap-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <FacebookIcon /> Continue with Facebook
+                  </Button>
+                </div>
+              </>
+            )}
+
             <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
               Already have an account?{' '}
               <Link to="/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">Sign in</Link>
@@ -346,5 +381,24 @@ export function SignUpPage() {
       </div>
       </section>
     </SiteLayout>
+  )
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z" />
+      <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z" />
+      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z" />
+    </svg>
+  )
+}
+
+function FacebookIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2" aria-hidden="true">
+      <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.09 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.23 2.68.23v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.09 24 18.1 24 12.07z" />
+    </svg>
   )
 }

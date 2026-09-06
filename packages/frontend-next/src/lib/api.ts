@@ -109,6 +109,9 @@ export const api = {
       body: JSON.stringify({ email, companyId }),
     }),
 
+  getSocialProviders: () =>
+    request<{ google: boolean; facebook: boolean }>('/auth/providers'),
+
   orgRegister: (data: { userName: string; email: string; firstName: string; lastName: string; password: string; companyName: string }) =>
     request<{ needsVerification: boolean; verificationId: string; email: string; delivered: boolean }>('/auth/register', {
       method: 'POST',

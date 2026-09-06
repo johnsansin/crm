@@ -22,5 +22,10 @@
   "devDependencies": {
     "@isomorphic-git/lightning-fs": "^4.7.0",
     "isomorphic-git": "^1.40.0"
+  },
+  "dependencies": {
+    "google-auth-library": "^11.0.2",
+    "passport-facebook": "^3.0.0",
+    "passport-google-oauth20": "^2.0.0"
   }
 }
