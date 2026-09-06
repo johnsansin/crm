@@ -46,6 +46,7 @@ import { smsRouter } from './modules/sms.routes'
 import { chatWidgetRouter, chatWidgetAdminRouter } from './modules/chat-widget.routes'
 import { landingPagesRouter } from './modules/landing-pages.routes'
 import { socialRouter } from './modules/social.routes'
+import { socialForceRouter } from './socialforce/routes'
 import { webhooksRouter, incomingWebhookRouter } from './modules/webhooks.routes'
 import { i18nRouter } from './modules/i18n.routes'
 import { portalRouter } from './modules/portal.routes'
@@ -263,6 +264,7 @@ app.use('/api/chat-widget', chatWidgetRouter)
 app.use('/api/chat-widget', chatWidgetAdminRouter)
 app.use('/api/landing-pages', landingPagesRouter)
 app.use('/api/social', socialRouter)
+app.use('/api/socialforce', socialForceRouter)
 app.use('/api/webhooks', webhooksRouter)
 app.use('/api/webhooks', incomingWebhookRouter)
 app.use('/api/i18n', i18nRouter)

@@ -13,7 +13,10 @@
     "db:seed": "tsx src/seed.ts",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "prebuild": "npm run db:generate",
+    "prelint": "npm run db:generate",
+    "pretypecheck": "npm run db:generate"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -23,6 +26,7 @@
     "express": "^4.21.0",
     "express-rate-limit": "^8.6.2",
     "fast-xml-parser": "^5.10.1",
+    "google-auth-library": "^11.0.2",
     "helmet": "^8.3.0",
     "imapflow": "^1.6.5",
     "jsonwebtoken": "^9.0.2",

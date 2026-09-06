@@ -10,7 +10,7 @@ import { createSupportMessageId, useSupportSocket } from '@/hooks/useSupportSock
 import { useAuthStore } from '@/lib/auth'
 
 const openStatuses = ['AI_ACTIVE', 'WAITING_FOR_AGENT', 'AGENT_ASSIGNED', 'AGENT_ACTIVE', 'RESOLVED']
-const suggestions = ['How can I add a user?', 'How do I configure currencies?', 'My PDF logo is missing']
+const suggestions = ['How do I add a user?', 'How do I create a quote?', 'How do I configure currencies?', 'How do I set up a workflow?', 'My PDF logo is missing']
 
 export function SupportChatWidget() {
   const router = useRouter()

@@ -1476,6 +1476,92 @@ exports.Prisma.CompanyScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.SocialForcePostScalarFieldEnum = {
+  id: 'id',
+  companyId: 'companyId',
+  title: 'title',
+  content: 'content',
+  variants: 'variants',
+  accountIds: 'accountIds',
+  status: 'status',
+  plannedAt: 'plannedAt',
+  timezone: 'timezone',
+  createdBy: 'createdBy',
+  reviewedBy: 'reviewedBy',
+  reviewNote: 'reviewNote',
+  version: 'version',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.SocialForceAccountScalarFieldEnum = {
+  id: 'id',
+  companyId: 'companyId',
+  platform: 'platform',
+  externalId: 'externalId',
+  name: 'name',
+  accountType: 'accountType',
+  credentials: 'credentials',
+  permissions: 'permissions',
+  expiresAt: 'expiresAt',
+  status: 'status',
+  connectedBy: 'connectedBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.SocialForceConnectionScalarFieldEnum = {
+  id: 'id',
+  companyId: 'companyId',
+  userId: 'userId',
+  tokenVersion: 'tokenVersion',
+  platform: 'platform',
+  stateHash: 'stateHash',
+  browserHash: 'browserHash',
+  status: 'status',
+  candidates: 'candidates',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.SocialForceBrandScalarFieldEnum = {
+  companyId: 'companyId',
+  name: 'name',
+  description: 'description',
+  audience: 'audience',
+  tone: 'tone',
+  language: 'language',
+  timezone: 'timezone',
+  website: 'website',
+  hashtags: 'hashtags',
+  forbiddenWords: 'forbiddenWords',
+  requireApproval: 'requireApproval',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.SocialForceEventScalarFieldEnum = {
+  id: 'id',
+  companyId: 'companyId',
+  actorId: 'actorId',
+  action: 'action',
+  resourceId: 'resourceId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.SsoConfigScalarFieldEnum = {
+  id: 'id',
+  companyId: 'companyId',
+  idpEntryPoint: 'idpEntryPoint',
+  issuer: 'issuer',
+  cert: 'cert',
+  signatureAlgorithm: 'signatureAlgorithm',
+  disableRequestedAuthnContext: 'disableRequestedAuthnContext',
+  wantAuthnResponseSigned: 'wantAuthnResponseSigned',
+  isEnabled: 'isEnabled',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SubscriptionModelScalarFieldEnum = {
   id: 'id',
   code: 'code',
@@ -2394,6 +2480,28 @@ exports.Prisma.WebhookLogScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.WebsiteEnquiryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  email: 'email',
+  subject: 'subject',
+  message: 'message',
+  source: 'source',
+  ip: 'ip',
+  companyId: 'companyId',
+  status: 'status',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.NewsletterSubscriberScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  name: 'name',
+  source: 'source',
+  status: 'status',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2512,6 +2620,12 @@ exports.Prisma.ModelName = {
   SupportMessage: 'SupportMessage',
   SupportAuditEvent: 'SupportAuditEvent',
   Company: 'Company',
+  SocialForcePost: 'SocialForcePost',
+  SocialForceAccount: 'SocialForceAccount',
+  SocialForceConnection: 'SocialForceConnection',
+  SocialForceBrand: 'SocialForceBrand',
+  SocialForceEvent: 'SocialForceEvent',
+  SsoConfig: 'SsoConfig',
   SubscriptionModel: 'SubscriptionModel',
   LoginLog: 'LoginLog',
   PendingRegistration: 'PendingRegistration',
@@ -2572,7 +2686,9 @@ exports.Prisma.ModelName = {
   SocialMediaProfile: 'SocialMediaProfile',
   SocialMediaPost: 'SocialMediaPost',
   WebhookEndpoint: 'WebhookEndpoint',
-  WebhookLog: 'WebhookLog'
+  WebhookLog: 'WebhookLog',
+  WebsiteEnquiry: 'WebsiteEnquiry',
+  NewsletterSubscriber: 'NewsletterSubscriber'
 };
 
 /**

@@ -57,7 +57,6 @@ const TAB_ACTIVE_COLORS = [
 
 const SELECT_OPTIONS: Record<string, Record<string, string[]>> = {
   accounts: {
-    rating: ['--None--','Hot','Warm','Cold','Acquired','Active','Inactive'],
     interest: ['--None--','Buying signals','Product details','Quotation negotiation','Requested Sample','Specification','Support','Other'],
     industry: ['--None--','Apparel','Banking','Biotechnology','Chemicals','Communications','Construction','Consulting','Education','Electronics','Energy','Engineering','Entertainment','Environmental','Finance','Food & Beverage','Government','Healthcare','Hospitality','Insurance','Machinery','Manufacturing','Media','Not For Profit','Other','Recreation','Retail','Shipping','Technology','Telecommunications','Transportation','Utilities'],
     accountType: ['--None--','Analyst','Competitor','Customer','Integrator','Investor','Partner','Press','Prospect','Reseller','Other'],
@@ -534,7 +533,7 @@ export function ModuleDetailPage() {
     for (const field of config) {
       if (field.required && (formData[field.name] === '' || formData[field.name] == null)) {
         newErrors[field.name] = 'This field is required'
-        missingRequiredLabels.push(field.label ? t(field.label) : getFieldLabel(field.name))
+        missingRequiredLabels.push(getFieldLabel(field.name))
       }
     }
     for (const field of customFields) {

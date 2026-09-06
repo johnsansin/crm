@@ -18,7 +18,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   try {
     res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers })
   } catch {
-    throw new Error('Network error — server may be offline')
+    throw new Error(SERVICE_UNAVAILABLE_MESSAGE)
   }
 
   if (!res.ok) throw new Error(await apiErrorMessage(res))
@@ -40,18 +40,41 @@ const STATUS_MESSAGES: Record<number, string> = {
   503: 'The service is temporarily unavailable. Please try again shortly.',
 }
 
+const SERVICE_UNAVAILABLE_MESSAGE = 'The BizForce service is temporarily unavailable. Please try again in a few minutes.'
+
+const SERVER_DOWN_PATTERNS = [
+  /\bprisma\b/i,
+  /invalid\s*`prisma\./i,
+  /authentication\s+failed\s+against\s+database/i,
+  /could\s+not\s+(connect|reach)\s+(the\s+)?(database|server)/i,
+  /database\s+(is\s+|server\s+)?(down|unreachable|unavailable)/i,
+  /connection\s+refused/i,
+  /connection\s+(timed\s*out|reset)/i,
+  /server\s+has\s+closed\s+the\s+connection/i,
+  /econnrefused/i,
+  /etimedout/i,
+  /enotfound/i,
+  /getaddrinfo/i,
+  /sqlstate/i,
+  /socket\s+hang\s+up/i,
+]
+
+function friendlyServerError(message: string): string {
+  return SERVER_DOWN_PATTERNS.some((pattern) => pattern.test(message)) ? SERVICE_UNAVAILABLE_MESSAGE : message
+}
+
 export async function apiErrorMessage(res: Response): Promise<string> {
   try {
     const body = await res.clone().json()
     const message = body?.error || body?.message || body?.details
-    if (typeof message === 'string' && message.trim()) return message.trim()
+    if (typeof message === 'string' && message.trim()) return friendlyServerError(message.trim())
     if (Array.isArray(body?.errors) && body.errors.length) {
-      return body.errors.map((item: any) => item?.message || item?.error || String(item)).filter(Boolean).join('; ')
+      return body.errors.map((item: any) => item?.message || item?.error || String(item)).filter(Boolean).map(friendlyServerError).join('; ')
     }
   } catch {
     try {
       const value = (await res.text()).trim()
-      if (value && !value.startsWith('<')) return value.slice(0, 500)
+      if (value && !value.startsWith('<')) return friendlyServerError(value.slice(0, 500))
     } catch {}
   }
   return STATUS_MESSAGES[res.status] || `The request could not be completed (error ${res.status}). Please try again.`
