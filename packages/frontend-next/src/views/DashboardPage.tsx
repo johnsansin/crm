@@ -1511,7 +1511,7 @@ function AiInsightsWidget() {
 function AssignedToMeWidget() {
   const { user } = useAuthStore()
   const isManager = !!user?.isAdmin || !!user?.isSuperAdmin
-  const [filter, setFilter] = useState<{ type: 'all' | 'user' | 'group'; id?: string } | null>(null)
+  const [filter, setFilter] = useState<{ type: 'all' | 'user' | 'group'; id?: string } | null>(isManager && user?.id ? { type: 'user', id: user.id } : null)
 
   const { data: assignees } = useQuery({
     queryKey: ['dashboard-assignees'],
