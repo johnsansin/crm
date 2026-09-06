@@ -12,7 +12,7 @@ import { DataTable } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { KeyRound, Lock, Plus, Trash2, Loader2, Link2, Copy, RefreshCw, LayoutTemplate, ListTree, BellRing, Phone } from 'lucide-react'
+import { KeyRound, Lock, Plus, Trash2, Loader2, Link2, Copy, RefreshCw, LayoutTemplate, ListTree, BellRing, Phone, ExternalLink } from 'lucide-react'
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
@@ -151,8 +151,33 @@ function PortalTab() {
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
+  const portalUrl = typeof window !== 'undefined' ? `${window.location.origin}/portal` : 'https://bizforce-crm.online/portal'
+  const copyPortalLink = () => {
+    navigator.clipboard?.writeText(portalUrl)
+      .then(() => addToast({ title: 'Link copied to clipboard', variant: 'success' }))
+      .catch(() => addToast({ title: 'Could not copy link', variant: 'destructive' }))
+  }
+
   return (
     <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border bg-slate-50 dark:bg-slate-900/40 dark:border-slate-800 p-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center shrink-0">
+            <ExternalLink size={16} className="text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold flex items-center gap-2">Customer portal <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /></p>
+            <a href={portalUrl} target="_blank" rel="noreferrer" className="text-xs text-sky-600 dark:text-sky-400 hover:underline truncate block">{portalUrl}</a>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={copyPortalLink}><Copy size={13} className="mr-1" /> Copy link</Button>
+          <a href={portalUrl} target="_blank" rel="noreferrer">
+            <Button size="sm" className="bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700">Open portal <ExternalLink size={13} className="ml-1" /></Button>
+          </a>
+        </div>
+      </div>
+
       <p className="text-sm text-muted-foreground">
         Customers sign in at <code className="text-xs bg-muted px-1 rounded">/portal</code> with their contact email and their access code, then view their invoices and manage tickets.
       </p>

@@ -11,9 +11,11 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DataTable } from '@/components/ui/data-table'
+import { cn } from '@/lib/utils'
 import {
   Lock, User, Mail, Phone, Building2, FileText, Ticket, Loader2, LogOut, Plus, Send, Eye,
-  ArrowLeft, Download, CreditCard, CheckCircle2, MessageSquare, ShieldCheck,
+  ArrowLeft, Download, CreditCard, CheckCircle2, MessageSquare, ShieldCheck, LayoutGrid, List,
 } from 'lucide-react'
 
 const PORTAL_API = '/api/portal'
@@ -61,6 +63,65 @@ interface PortalUser {
   company?: string
 }
 
+const KANBAN_ORDER = ['Open', 'In Progress', 'Wait for Response', 'Closed']
+
+function kanbanDot(status: string): string {
+  const s = status.toLowerCase()
+  if (/closed|cancelled|resolved/.test(s)) return 'bg-slate-400'
+  if (/wait|await|pending/.test(s)) return 'bg-blue-500'
+  if (/progress|working/.test(s)) return 'bg-amber-500'
+  if (/open|new|active/.test(s)) return 'bg-rose-500'
+  return 'bg-sky-500'
+}
+
+function PortalKanban({ tickets, onSelect }: { tickets: any[]; onSelect: (id: string) => void }) {
+  const statuses = [...new Set(tickets.map((t: any) => (t.status || 'Open').trim()))].sort((a, b) => {
+    const ai = KANBAN_ORDER.indexOf(a)
+    const bi = KANBAN_ORDER.indexOf(b)
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi) || a.localeCompare(b)
+  })
+
+  return (
+    <div className="overflow-x-auto pb-2">
+      <div className="flex gap-4 min-w-max">
+        {statuses.map((s) => {
+          const items = tickets.filter((t: any) => (t.status || 'Open').trim() === s)
+          return (
+            <div key={s} className="flex-1 min-w-[270px] max-w-[300px]">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 p-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={cn('h-2 w-2 rounded-full', kanbanDot(s))} />
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{s}</h3>
+                  <span className="ml-auto text-xs font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
+                    {items.length}
+                  </span>
+                </div>
+                <div className="space-y-2 min-h-[120px]">
+                  {items.map((t: any) => (
+                    <button
+                      key={t.id}
+                      onClick={() => onSelect(t.id)}
+                      className="w-full text-left rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all"
+                    >
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={cn('text-[11px] font-medium', priorityText(t.priority))}>{t.priority || 'Normal'}</span>
+                        {t.category && <span className="text-[11px] text-slate-400">{t.category}</span>}
+                        <span className="ml-auto text-[11px] text-slate-400">{formatDate(t.createdAt)}</span>
+                      </div>
+                      <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">{t.title}</p>
+                      {t.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{t.description}</p>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function PortalPage() {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
@@ -70,6 +131,7 @@ export function PortalPage() {
   const [password, setPassword] = useState('')
   const [loggingIn, setLoggingIn] = useState(false)
   const [activeTab, setActiveTab] = useState('tickets')
+  const [ticketView, setTicketView] = useState<'table' | 'kanban'>('table')
   const [showTicketForm, setShowTicketForm] = useState(false)
   const [ticketForm, setTicketForm] = useState({ title: '', description: '', priority: 'Normal', category: '' })
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
@@ -324,14 +386,22 @@ export function PortalPage() {
 
             <TabsContent value="tickets" className="p-4 sm:p-6">
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-2">
                   <div>
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">My Requests</h2>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Track or start a support request.</p>
                   </div>
-                  <Button size="sm" className="bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700" onClick={() => setShowTicketForm(true)}>
-                    <Plus size={14} className="mr-1" /> New Ticket
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {tickets.length > 0 && (
+                      <Button variant="outline" size="sm" onClick={() => setTicketView(v => v === 'table' ? 'kanban' : 'table')}>
+                        {ticketView === 'table' ? <LayoutGrid size={14} className="mr-1" /> : <List size={14} className="mr-1" />}
+                        {ticketView === 'table' ? 'Kanban' : 'Table'}
+                      </Button>
+                    )}
+                    <Button size="sm" className="bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700" onClick={() => setShowTicketForm(true)}>
+                      <Plus size={14} className="mr-1" /> New Ticket
+                    </Button>
+                  </div>
                 </div>
 
                 {selectedTicketId && ticket ? (
@@ -389,23 +459,35 @@ export function PortalPage() {
                       <Plus size={14} className="mr-1" /> Create your first ticket
                     </Button>
                   </div>
+                ) : ticketView === 'table' ? (
+                  <DataTable
+                    columns={[
+                      {
+                        key: 'title',
+                        label: 'Request',
+                        render: (v: any, rec: any) => (
+                          <div className="min-w-0">
+                            <p className="font-medium text-slate-900 dark:text-white truncate">{v}</p>
+                            {rec.category && <p className="text-xs text-slate-400">{rec.category}</p>}
+                          </div>
+                        ),
+                      },
+                      { key: 'status', label: 'Status', render: (v: any) => <Chip className={statusTone(v)}>{v || 'Open'}</Chip> },
+                      { key: 'priority', label: 'Priority', render: (v: any) => <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{v || 'Normal'}</span> },
+                      { key: 'createdAt', label: 'Opened', render: (v: any) => <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(v)}</span> },
+                    ]}
+                    data={tickets}
+                    onRowClick={(t: any) => setSelectedTicketId(t.id)}
+                    emptyMessage="No requests yet."
+                    pageSize={10}
+                    actions={(t: any) => (
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedTicketId(t.id)}>
+                        <Eye size={13} className="mr-1" /> View
+                      </Button>
+                    )}
+                  />
                 ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {tickets.map((t: any) => (
-                      <button key={t.id} onClick={() => setSelectedTicketId(t.id)} className="text-left rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Chip className={statusTone(t.status)}>{t.status || 'Open'}</Chip>
-                          <span className={`text-[11px] font-medium ${priorityText(t.priority)}`}>{t.priority || 'Normal'}</span>
-                          <span className="ml-auto text-[11px] text-slate-400">{formatDate(t.createdAt)}</span>
-                        </div>
-                        <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">{t.title}</p>
-                        {t.description && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{t.description}</p>}
-                        <span className="mt-3 inline-flex items-center text-xs font-medium text-sky-600 dark:text-sky-400">
-                          View details <Eye size={12} className="ml-1" />
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                  <PortalKanban tickets={tickets} onSelect={(id) => setSelectedTicketId(id)} />
                 )}
               </div>
             </TabsContent>
