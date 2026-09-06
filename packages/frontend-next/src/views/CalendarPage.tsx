@@ -272,9 +272,9 @@ export function CalendarPage() {
             <Loader2 size={16} className="mr-2 animate-spin" /> {t('Loading...')}
           </div>
         ) : view === 'month' ? (
-          <><div className="sm:hidden"><MobileAgenda activities={activities} anchor={anchor} view="month" onCreate={openCreate} onEdit={openEdit} /></div><div className="hidden sm:block"><MonthView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} onToggleComplete={(a) => mutateComplete.mutate(a)} /></div></>
+          <><div className="sm:hidden"><MobileAgenda activities={activities} anchor={anchor} view="month" onCreate={openCreate} onEdit={openEdit} onToggleComplete={(a) => mutateComplete.mutate(a)} /></div><div className="hidden sm:block"><MonthView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} onToggleComplete={(a) => mutateComplete.mutate(a)} /></div></>
         ) : view === 'week' ? (
-          <><div className="sm:hidden"><MobileAgenda activities={activities} anchor={anchor} view="week" onCreate={openCreate} onEdit={openEdit} /></div><div className="hidden sm:block"><WeekView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} onToggleComplete={(a) => mutateComplete.mutate(a)} /></div></>
+          <><div className="sm:hidden"><MobileAgenda activities={activities} anchor={anchor} view="week" onCreate={openCreate} onEdit={openEdit} onToggleComplete={(a) => mutateComplete.mutate(a)} /></div><div className="hidden sm:block"><WeekView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} onToggleComplete={(a) => mutateComplete.mutate(a)} /></div></>
         ) : view === 'list' ? (
           <ListView activities={activities} anchor={anchor} onEdit={openEdit} todoOnly={isTodoPage} onToggleComplete={(a) => mutateComplete.mutate(a)} />
         ) : view === 'year' ? (
@@ -322,7 +322,6 @@ function ActivityChip({ a, onClick, onToggleComplete }: { a: any; onClick: () =>
   const t = a.startAt ? timeLabel(new Date(a.startAt)) : a.dueAt ? timeLabel(new Date(a.dueAt)) : ''
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); onClick() }}
       draggable
       onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData('text/plain', a.id) }}
       onDragEnd={(e) => e.stopPropagation()}
@@ -370,7 +369,7 @@ function DayDropTarget({ date, children, onMove }: { date: Date; children: React
   )
 }
 
-function MobileAgenda({ activities, anchor, view, onCreate, onEdit }: { activities: any[]; anchor: Date; view: 'month' | 'week'; onCreate: (type: string, date: Date) => void; onEdit: (a: any) => void }) {
+function MobileAgenda({ activities, anchor, view, onCreate, onEdit, onToggleComplete }: { activities: any[]; anchor: Date; view: 'month' | 'week'; onCreate: (type: string, date: Date) => void; onEdit: (a: any) => void; onToggleComplete?: (a: any) => void }) {
   const days = useMemo(() => {
     const start = new Date(anchor)
     if (view === 'month') start.setDate(1)
