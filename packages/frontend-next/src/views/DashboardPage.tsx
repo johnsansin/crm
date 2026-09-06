@@ -1567,48 +1567,63 @@ function AssignedToMeWidget() {
   const taskList = allItems.filter(i => i._module === 'activities')
   const otherItems = allItems.filter(i => i._module !== 'activities')
 
-  const statusOptions = ['Planned', 'In Progress', 'Deferred', 'Not Started', 'All']
-  const selected = statusFilter.split(',').filter(Boolean)
-  const isAllStatus = selected.length === 0 || selected.includes('All')
-  const visibleTasks = isAllStatus ? taskList : taskList.filter(t => t.status && selected.includes(t.status))
+  const isAllStatus = statusFilter === 'All'
+  const visibleTasks = isAllStatus ? taskList : taskList.filter(t => t.status && statusFilter.split(',').includes(t.status))
 
-  const toggleStatus = (s: string) => {
-    if (s === 'All') { setStatusFilter('All'); return }
-    let next = selected.filter(x => x !== 'All')
-    if (next.includes(s)) next = next.filter(x => x !== s)
-    else next = [...next, s]
-    if (next.length === 0) next = ['Planned', 'In Progress']
-    setStatusFilter(next.join(','))
-  }
+  const selectCls = "max-w-[110px] shrink-0 rounded-md border border-slate-200 bg-background px-1.5 py-1 text-[10px] font-medium text-muted-foreground outline-none focus:ring-2 focus:ring-indigo-500 sm:max-w-[150px] dark:border-slate-700"
 
-  const headerAction = isManager ? (
-    <select
-      value={filter ? `${filter.type}:${filter.id || ''}` : ''}
-      onChange={e => {
-        const v = e.target.value
-        if (!v) return setFilter(null)
-        const [type, id] = v.split(':')
-        setFilter(type === 'all' ? { type: 'all' } : { type: type as 'user' | 'group', id })
-      }}
-      title="View records for"
-      className="w-28 shrink-0 rounded-md border border-slate-200 bg-background px-1.5 py-1 text-[10px] font-medium text-muted-foreground outline-none focus:ring-2 focus:ring-indigo-500 sm:w-36 dark:border-slate-700"
-    >
-      <option value="">Team / member…</option>
-      <option value="all:">Everyone</option>
-      <optgroup label="Users">
-        {(assignees?.data || []).map((u: any) => (
-          <option key={u.id} value={`user:${u.id}`}>
-            {`${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email}
-          </option>
-        ))}
-      </optgroup>
-      <optgroup label="Groups">
-        {(assignees?.groups || []).map((g: any) => (
-          <option key={g.id} value={`group:${g.id}`}>{g.name} ({g._count?.members ?? 0})</option>
-        ))}
-      </optgroup>
-    </select>
-  ) : undefined
+  const headerAction = (
+    <div className="flex min-w-0 items-center gap-1.5">
+      {isManager && (
+        <select
+          value={filter ? `${filter.type}:${filter.id || ''}` : ''}
+          onChange={e => {
+            const v = e.target.value
+            if (!v) return setFilter(null)
+            const [type, id] = v.split(':')
+            setFilter(type === 'all' ? { type: 'all' } : { type: type as 'user' | 'group', id })
+          }}
+          title="View records for"
+          className={selectCls}
+        >
+          <option value="">Team / member…</option>
+          <option value="all:">Everyone</option>
+          <optgroup label="Users">
+            {(assignees?.data || []).map((u: any) => (
+              <option key={u.id} value={`user:${u.id}`}>
+                {`${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Groups">
+            {(assignees?.groups || []).map((g: any) => (
+              <option key={g.id} value={`group:${g.id}`}>{g.name} ({g._count?.members ?? 0})</option>
+            ))}
+          </optgroup>
+        </select>
+      )}
+      <select
+        value={statusFilter}
+        onChange={e => setStatusFilter(e.target.value)}
+        title="Task status"
+        className={selectCls}
+      >
+        <option value="Planned,In Progress">Status: Open</option>
+        <option value="Planned">Status: Planned</option>
+        <option value="In Progress">Status: In Progress</option>
+        <option value="Deferred">Status: Deferred</option>
+        <option value="Not Started">Status: Not Started</option>
+        <option value="All">Status: All</option>
+      </select>
+    </div>
+  )
+
+  const sectionHeading = (label: string, count: number) => (
+    <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:text-slate-500">
+      <span>{label}</span>
+      <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">{count}</span>
+    </div>
+  )
 
   return (
     <WidgetCard title={isManager ? 'Team assignments' : 'Assigned to me'} icon={UserCheck} tint="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400" action={headerAction}>
@@ -1632,46 +1647,24 @@ function AssignedToMeWidget() {
         <div className="max-h-96 overflow-y-auto">
           {taskList.length > 0 && (
             <div>
-              <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <span>To-Dos</span>
-                <span className="rounded-full bg-background px-2 py-0.5 text-[10px]">{visibleTasks.length}</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5 border-b px-3 py-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</span>
-                {statusOptions.map(s => {
-                  const active = isAllStatus ? s === 'All' : selected.includes(s)
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => toggleStatus(s)}
-                      className={cn(
-                        'rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors',
-                        active ? 'bg-indigo-600 text-white' : 'bg-muted text-muted-foreground hover:bg-indigo-100 dark:hover:bg-indigo-500/20'
-                      )}
-                    >
-                      {s}
-                    </button>
-                  )
-                })}
-              </div>
+              {sectionHeading('To-Dos', visibleTasks.length)}
               {visibleTasks.length === 0 ? (
                 <p className="px-4 py-3 text-center text-xs text-muted-foreground">No tasks with the selected status</p>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {visibleTasks.map(t => (
-                    <div key={`task-${t.id}`} className="flex items-center gap-2.5 px-3 py-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <div key={`task-${t.id}`} className="flex items-center gap-2 px-4 py-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40">
                       <button
                         type="button"
                         onClick={() => completeMutation.mutate(t.id)}
                         disabled={completeMutation.isPending}
                         title="Mark task as complete"
-                        className={cn('grid h-5 w-5 shrink-0 cursor-pointer place-items-center rounded-full border transition-colors', 'border-slate-300 text-transparent hover:border-green-500 hover:bg-green-50 hover:text-green-500 dark:border-slate-600')}
+                        className={cn('grid h-5 w-5 shrink-0 cursor-pointer place-items-center rounded-full border border-slate-300 text-transparent transition-colors hover:border-green-500 hover:bg-green-50 hover:text-green-500 dark:border-slate-600')}
                       >
                         <CheckCircle2 size={13} strokeWidth={2.5} />
                       </button>
                       <Link to={t.link || '/activities'} className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium text-slate-800 dark:text-slate-100">{t.name}</p>
+                        <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-200">{t.name}</p>
                         <p className="truncate text-[10px] text-muted-foreground">
                           {t.dueAt ? `Due ${formatDateTime(t.dueAt)}` : 'No due date'}
                           {t.parentModule ? ` · ${t.parentModule}` : ''}
@@ -1688,10 +1681,7 @@ function AssignedToMeWidget() {
           )}
           {otherItems.length > 0 && (
             <div>
-              <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <span>Records</span>
-                <span className="rounded-full bg-background px-2 py-0.5 text-[10px]">{otherItems.length}</span>
-              </div>
+              {sectionHeading('Records', otherItems.length)}
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {otherItems.slice(0, 8).map((item: any) => {
                   const Icon = item._icon
@@ -1727,4 +1717,5 @@ function AssignedToMeWidget() {
     </WidgetCard>
   )
 }
+
 
