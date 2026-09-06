@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Card, CardContent } from '@/components/ui/card'
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, CalendarPlus, Pencil, Trash2, Loader2, Clock, MapPin, Search, SlidersHorizontal } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, CalendarPlus, Pencil, Trash2, Loader2, Clock, MapPin, Search, SlidersHorizontal, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   useOrgSettings, formatDate, formatTime, monthNames, weekDayNames,
@@ -176,6 +176,19 @@ export function CalendarPage() {
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 
+  const mutateComplete = useMutation({
+    mutationFn: (a: any) => {
+      const newStatus = a.status === 'Completed' ? 'Planned' : 'Completed'
+      return api.updateCalendarActivity(a.id, { status: newStatus })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar'] })
+      queryClient.invalidateQueries({ queryKey: ['activities-upcoming'] })
+      addToast({ title: 'Task updated', variant: 'success' })
+    },
+    onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  })
+
   const openCreate = (type: string, date?: Date) => {
     setEditing(null)
     setPreset({ type, date: date || new Date() })
@@ -259,15 +272,15 @@ export function CalendarPage() {
             <Loader2 size={16} className="mr-2 animate-spin" /> {t('Loading...')}
           </div>
         ) : view === 'month' ? (
-          <><div className="sm:hidden"><MobileAgenda activities={activities} anchor={anchor} view="month" onCreate={openCreate} onEdit={openEdit} /></div><div className="hidden sm:block"><MonthView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} /></div></>
+          <><div className="sm:hidden"><MobileAgenda activities={activities} anchor={anchor} view="month" onCreate={openCreate} onEdit={openEdit} /></div><div className="hidden sm:block"><MonthView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} onToggleComplete={(a) => mutateComplete.mutate(a)} /></div></>
         ) : view === 'week' ? (
-          <><div className="sm:hidden"><MobileAgenda activities={activities} anchor={anchor} view="week" onCreate={openCreate} onEdit={openEdit} /></div><div className="hidden sm:block"><WeekView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} /></div></>
+          <><div className="sm:hidden"><MobileAgenda activities={activities} anchor={anchor} view="week" onCreate={openCreate} onEdit={openEdit} /></div><div className="hidden sm:block"><WeekView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onMove={(id, d) => mutateMove.mutate({ id, date: d })} onToggleComplete={(a) => mutateComplete.mutate(a)} /></div></>
         ) : view === 'list' ? (
-          <ListView activities={activities} anchor={anchor} onEdit={openEdit} todoOnly={isTodoPage} />
+          <ListView activities={activities} anchor={anchor} onEdit={openEdit} todoOnly={isTodoPage} onToggleComplete={(a) => mutateComplete.mutate(a)} />
         ) : view === 'year' ? (
           <YearView activities={activities} anchor={anchor} onSelect={(d) => { setAnchor(d); setView('month') }} />
         ) : (
-          <DayView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} />
+          <DayView activities={activities} anchor={anchor} onCreate={openCreate} onEdit={openEdit} onToggleComplete={(a) => mutateComplete.mutate(a)} />
         )}
       </div>
 
@@ -303,7 +316,7 @@ function formatAnchor(view: View, anchor: Date) {
   return `${weekDayNames('long')[anchor.getDay()]}, ${formatDate(anchor)}`
 }
 
-function ActivityChip({ a, onClick }: { a: any; onClick: () => void }) {
+function ActivityChip({ a, onClick, onToggleComplete }: { a: any; onClick: () => void; onToggleComplete?: (a: any) => void }) {
   const style = TYPE_STYLE[a.activityType] || TYPE_STYLE.Other
   const done = a.activityType === 'Task' && a.status === 'Completed'
   const t = a.startAt ? timeLabel(new Date(a.startAt)) : a.dueAt ? timeLabel(new Date(a.dueAt)) : ''
@@ -314,12 +327,29 @@ function ActivityChip({ a, onClick }: { a: any; onClick: () => void }) {
       onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData('text/plain', a.id) }}
       onDragEnd={(e) => e.stopPropagation()}
       className={cn(
-        'flex w-full items-center gap-1 truncate rounded border-l-2 px-1.5 py-0.5 text-left text-[11px] font-medium transition-opacity hover:brightness-95 cursor-grab active:cursor-grabbing',
+        'flex w-full items-center gap-1 truncate rounded border-l-2 px-1 pl-0.5 py-0.5 text-left text-[11px] font-medium transition-opacity hover:brightness-95 cursor-grab active:cursor-grabbing',
         style.chip,
         done && 'opacity-50 line-through'
       )}
       title={a.subject}
+      onClick={(e) => {
+        e.stopPropagation()
+        if (onToggleComplete && a.activityType === 'Task') { onToggleComplete(a); return }
+        onClick()
+      }}
     >
+      {a.activityType === 'Task' && onToggleComplete && (
+        <span
+          role="button"
+          tabIndex={-1}
+          onClick={(e) => { e.stopPropagation(); onToggleComplete(a) }}
+          onDragStart={(e) => e.stopPropagation()}
+          className={cn('shrink-0 cursor-pointer', done ? 'text-green-600' : 'text-slate-400 hover:text-green-600')}
+          title={done ? 'Mark as not done' : 'Mark as complete'}
+        >
+          <CheckCircle2 size={13} strokeWidth={2.25} />
+        </span>
+      )}
       {t && <span className="shrink-0 font-semibold tabular-nums opacity-80">{t}</span>}
       <span className="truncate">{a.subject}</span>
     </button>
@@ -360,12 +390,12 @@ function MobileAgenda({ activities, anchor, view, onCreate, onEdit }: { activiti
         <div className="flex min-w-0 items-center gap-2"><span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold', today ? 'bg-indigo-600 text-white' : 'bg-muted')}>{day.getDate()}</span><div className="min-w-0"><p className="truncate text-sm font-semibold">{weekDayNames('long')[day.getDay()]}</p><p className="text-[11px] text-muted-foreground">{formatDate(day)}{today ? ` · ${t('Today')}` : ''}</p></div></div>
         <Button type="button" size="sm" variant="ghost" className="h-8 shrink-0 px-2 text-xs" onClick={() => onCreate('Meeting', day)}><Plus size={14} className="mr-1" />{t('Add')}</Button>
       </div>
-      {items.length ? <div className="space-y-1.5">{items.map(item => <ActivityChip key={item.id} a={item} onClick={() => onEdit(item)} />)}</div> : <p className="rounded-lg border border-dashed px-3 py-3 text-center text-xs text-muted-foreground">{t('No activities')}</p>}
+      {items.length ? <div className="space-y-1.5">{items.map(item => <ActivityChip key={item.id} a={item} onClick={() => onEdit(item)} onToggleComplete={onToggleComplete} />)}</div> : <p className="rounded-lg border border-dashed px-3 py-3 text-center text-xs text-muted-foreground">{t('No activities')}</p>}
     </section>
   })}</div>
 }
 
-function MonthView({ activities, anchor, onCreate, onEdit, onMove }: { activities: any[]; anchor: Date; onCreate: (type: string, date: Date) => void; onEdit: (a: any) => void; onMove?: (id: string, d: Date) => void }) {
+function MonthView({ activities, anchor, onCreate, onEdit, onMove, onToggleComplete }: { activities: any[]; anchor: Date; onCreate: (type: string, date: Date) => void; onEdit: (a: any) => void; onMove?: (id: string, d: Date) => void; onToggleComplete?: (a: any) => void }) {
   const days = useMemo(() => {
     const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1)
     const start = new Date(first)
@@ -413,7 +443,7 @@ function MonthView({ activities, anchor, onCreate, onEdit, onMove }: { activitie
                     {day.getDate()}
                   </span>
                   <div className="flex flex-col gap-1 overflow-hidden">
-                    {dayActs.slice(0, 3).map(a => <ActivityChip key={a.id} a={a} onClick={() => onEdit(a)} />)}
+                    {dayActs.slice(0, 3).map(a => <ActivityChip key={a.id} a={a} onClick={() => onEdit(a)} onToggleComplete={onToggleComplete} />)}
                     {dayActs.length > 3 && <span className="px-1 text-[10px] font-medium text-sky-600 dark:text-sky-400">+{dayActs.length - 3} more</span>}
                   </div>
                 </button>
@@ -426,7 +456,7 @@ function MonthView({ activities, anchor, onCreate, onEdit, onMove }: { activitie
   )
 }
 
-function WeekView({ activities, anchor, onCreate, onEdit, onMove }: { activities: any[]; anchor: Date; onCreate: (type: string, date: Date) => void; onEdit: (a: any) => void; onMove?: (id: string, d: Date) => void }) {
+function WeekView({ activities, anchor, onCreate, onEdit, onMove, onToggleComplete }: { activities: any[]; anchor: Date; onCreate: (type: string, date: Date) => void; onEdit: (a: any) => void; onMove?: (id: string, d: Date) => void; onToggleComplete?: (a: any) => void }) {
   const days = useMemo(() => {
     const start = new Date(anchor)
     start.setDate(anchor.getDate() - firstDayOffset(anchor))
@@ -455,7 +485,7 @@ function WeekView({ activities, anchor, onCreate, onEdit, onMove }: { activities
               </button>
               <DayDropTarget date={day} onMove={onMove}>
                 <div className="flex min-h-32 flex-col gap-1 p-1.5">
-                  {dayActs.map(a => <ActivityChip key={a.id} a={a} onClick={() => onEdit(a)} />)}
+                  {dayActs.map(a => <ActivityChip key={a.id} a={a} onClick={() => onEdit(a)} onToggleComplete={onToggleComplete} />)}
                   {dayActs.length === 0 && <span className="px-1.5 py-1 text-[11px] text-muted-foreground/60">{t('No activities')}</span>}
                 </div>
               </DayDropTarget>
@@ -467,7 +497,7 @@ function WeekView({ activities, anchor, onCreate, onEdit, onMove }: { activities
   )
 }
 
-function DayView({ activities, anchor, onCreate, onEdit }: { activities: any[]; anchor: Date; onCreate: (type: string, date: Date) => void; onEdit: (a: any) => void }) {
+function DayView({ activities, anchor, onCreate, onEdit, onToggleComplete }: { activities: any[]; anchor: Date; onCreate: (type: string, date: Date) => void; onEdit: (a: any) => void; onToggleComplete?: (a: any) => void }) {
   const dayActs = activities
     .filter(a => sameDay(activityDay(a), anchor))
     .sort((a, b) => activityDay(a).getTime() - activityDay(b).getTime())
@@ -529,7 +559,7 @@ function DayView({ activities, anchor, onCreate, onEdit }: { activities: any[]; 
   )
 }
 
-function ListView({ activities, anchor, onEdit, todoOnly = false }: { activities: any[]; anchor: Date; onEdit: (a: any) => void; todoOnly?: boolean }) {
+function ListView({ activities, anchor, onEdit, todoOnly = false, onToggleComplete }: { activities: any[]; anchor: Date; onEdit: (a: any) => void; todoOnly?: boolean; onToggleComplete?: (a: any) => void }) {
   const sorted = [...activities].sort((a, b) => activityDay(a).getTime() - activityDay(b).getTime())
   const events = sorted.filter(a => a.activityType !== 'Task')
   const tasks = sorted.filter(a => a.activityType === 'Task')
@@ -544,24 +574,40 @@ function ListView({ activities, anchor, onEdit, todoOnly = false }: { activities
         <p className="px-4 py-4 text-center text-sm text-muted-foreground">{t(`No ${title.toLowerCase()} this month.`)}</p>
       ) : (
         <div className="divide-y">
-          {items.map(a => (
+          {items.map(a => {
+            const isTask = a.activityType === 'Task'
+            const isDone = isTask && a.status === 'Completed'
+            return (
             <button key={a.id} onClick={() => onEdit(a)} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-accent/40">
-              <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', (TYPE_STYLE[a.activityType] || TYPE_STYLE.Other).dot)} />
+              {isTask && onToggleComplete ? (
+                <span
+                  role="button"
+                  tabIndex={-1}
+                  onClick={(e) => { e.stopPropagation(); onToggleComplete(a) }}
+                  title={isDone ? 'Mark as not done' : 'Mark as complete'}
+                  className={cn('grid h-5 w-5 shrink-0 cursor-pointer place-items-center rounded border', isDone ? 'border-green-500 bg-green-500 text-white' : 'border-slate-300 text-transparent hover:border-green-500 hover:text-green-500 dark:border-slate-600')}
+                >
+                  <CheckCircle2 size={14} strokeWidth={2.5} />
+                </span>
+              ) : (
+                <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', (TYPE_STYLE[a.activityType] || TYPE_STYLE.Other).dot)} />
+              )}
               <span className="w-28 shrink-0 text-xs text-muted-foreground">
                 {formatDate(activityDay(a))}
                 {a.startAt ? ' · ' + timeLabel(new Date(a.startAt)) : a.dueAt ? ' · ' + timeLabel(new Date(a.dueAt)) : ''}
               </span>
-              <span className="min-w-0 flex-1 truncate text-left font-medium">{a.subject}</span>
+              <span className={cn('min-w-0 flex-1 truncate text-left font-medium', isDone && 'line-through text-muted-foreground')}>{a.subject}</span>
               <span className="hidden items-center gap-1 text-xs text-muted-foreground shrink-0 sm:flex">
                 {a.location && <span className="flex items-center gap-1"><MapPin size={11} />{a.location}</span>}
                 {a.status && (
-                  <span className={cn('rounded px-1.5 py-0.5 text-[11px]', a.activityType === 'Task' && a.status === 'Completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-muted text-muted-foreground')}>
+                  <span className={cn('rounded px-1.5 py-0.5 text-[11px]', isDone ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-muted text-muted-foreground')}>
                     {a.status}
                   </span>
                 )}
               </span>
             </button>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
