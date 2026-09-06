@@ -226,7 +226,7 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'crm-integration-guide',
     title: 'CRM Integration Guide: Connect All Your Business Tools',
-    excerpt: 'Learn how to integrate your CRM with Gmail, Outlook, Slack, Zapier, Stripe, and 50+ other tools to create a unified business ecosystem.',
+    excerpt: 'Learn how to integrate your CRM with Gmail, Google Calendar, Twilio, and webhooks to create a unified business ecosystem.',
     description: 'An introduction to CRM integrations covering email, calendars, payments, and third-party tools — and how connecting them creates a unified business ecosystem.',
     category: 'Integrations',
     date: 'August 10, 2026',
@@ -247,15 +247,15 @@ export const blogPosts: BlogPost[] = [
       {
         heading: 'Essential Integrations to Start With',
         paragraphs: [
-          'Email is the most valuable integration. Syncing your Gmail or Outlook means every conversation is automatically logged against the right contact. You reply from your inbox, and the CRM captures it — no manual entry, no missed context.',
+          'Email is the most valuable integration. Syncing your Gmail means every conversation is automatically logged against the right contact. You reply from your inbox, and the CRM captures it — no manual entry, no missed context.',
           'Calendars and meetings come next. Integrate your calendar to track events against contacts and deals, and let customers book time directly based on your availability. This keeps scheduling and follow-ups organized.',
-          'Payments and billing integrations, such as Stripe, connect revenue directly to your CRM. When a payment is received, the related deal and contact update automatically. Similarly, chat and support tools route conversations and tickets into the CRM so customer issues never get lost.',
+          'Payments and billing integrations connect revenue directly to your CRM. When a payment is received, the related deal and contact update automatically. Similarly, chat and support tools route conversations and tickets into the CRM so customer issues never get lost.',
         ],
       },
       {
         heading: 'Integration Platforms and APIs',
         paragraphs: [
-          'For connecting the long tail of tools — spreadsheets, project management, social media, and niche apps — integration platforms like Zapier are invaluable. They let you create connections between hundreds of apps without writing code.',
+          'For connecting the long tail of tools — spreadsheets, project management, social media, and niche apps — integration platforms are invaluable. They let you create connections between hundreds of apps without writing code.',
           'For deeper, custom needs, a RESTful API gives you full control. With an API, you can build bespoke integrations that match your exact workflows, sync data in real time, and automate complex processes. This is especially valuable for growing businesses with unique requirements.',
           'BizForce CRM supports both approaches: built-in integrations for the most common tools and a robust RESTful API for custom work, available on the Enterprise plan.',
         ],

@@ -21,11 +21,17 @@ export function LoginPage() {
   const [ssoLoading, setSsoLoading] = useState(false)
   const [ssoEnabled, setSsoEnabled] = useState(false)
   const [socialLoading, setSocialLoading] = useState<string | null>(null)
+  const [socialProviders, setSocialProviders] = useState<{ google: boolean; facebook: boolean }>({ google: false, facebook: false })
   const { login, login2fa } = useAuthStore()
 
   useEffect(() => {
     if (typeof window === 'undefined') return
     setSsoEnabled(localStorage.getItem('bizforce.sso.enabled') === '1')
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    api.getSocialProviders().then(setSocialProviders).catch(() => {})
   }, [])
 
   const toggleSso = (on: boolean) => {
@@ -263,6 +269,8 @@ export function LoginPage() {
                 </Button>
               </form>
 
+              {(socialProviders.google || socialProviders.facebook) && (
+              <>
               <div className="my-5 flex items-center gap-3">
                 <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
                 <span className="text-xs text-slate-500 dark:text-slate-400">or</span>
@@ -270,6 +278,7 @@ export function LoginPage() {
               </div>
 
               <div className="space-y-2">
+                {socialProviders.google && (
                 <Button
                   type="button"
                   onClick={() => handleSocial('google')}
@@ -278,6 +287,8 @@ export function LoginPage() {
                 >
                   <GoogleIcon /> Continue with Google
                 </Button>
+                )}
+                {socialProviders.facebook && (
                 <Button
                   type="button"
                   onClick={() => handleSocial('facebook')}
@@ -286,7 +297,10 @@ export function LoginPage() {
                 >
                   <FacebookIcon /> Continue with Facebook
                 </Button>
+                )}
               </div>
+              </>
+              )}
 
               <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
                 <button

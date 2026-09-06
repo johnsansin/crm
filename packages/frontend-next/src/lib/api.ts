@@ -112,6 +112,12 @@ export const api = {
   getSocialProviders: () =>
     request<{ google: boolean; facebook: boolean }>('/auth/providers'),
 
+  getSocialLoginConfig: () =>
+    request<{ google: { clientID: string; clientSecret: string; google: boolean }; facebook: { clientID: string; clientSecret: string; facebook: boolean } }>('/auth/config'),
+
+  saveSocialLoginConfig: (data: any) =>
+    request<{ ok: boolean }>('/auth/config', { method: 'PUT', body: JSON.stringify(data) }),
+
   orgRegister: (data: { userName: string; email: string; firstName: string; lastName: string; password: string; companyName: string }) =>
     request<{ needsVerification: boolean; verificationId: string; email: string; delivered: boolean }>('/auth/register', {
       method: 'POST',

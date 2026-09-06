@@ -86,8 +86,8 @@ const pricingPlans = [
 ]
 
 const integrations = [
-  'Gmail', 'Outlook', 'Slack', 'Zapier', 'Stripe', 'Twilio',
-  'Google Calendar', 'Mailchimp', 'WordPress',
+  'Gmail', 'Google Calendar', 'Google Workspace', 'Twilio',
+  'REST API', 'Webhooks', 'Customer Portal', 'PBX / Phone', 'Webforms', 'AI Assistant',
 ]
 
 export function LandingPage() {

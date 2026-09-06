@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Mail, Calendar, MessageSquare, CreditCard, Phone, Globe, Cloud, Boxes, Plug, ArrowRight } from 'lucide-react'
+import { Search, Mail, Calendar, Phone, Globe, Cloud, Boxes, Plug, ArrowRight } from 'lucide-react'
 import { useNavigate } from '@/lib/navigation'
 import { SiteLayout } from '@/components/SiteLayout'
 import { cn } from '@/lib/utils'
@@ -16,16 +16,9 @@ interface Integration {
 
 const INTEGRATIONS: Integration[] = [
   { name: 'Gmail', category: 'Email', desc: 'Send and log emails, track conversations in your contact records.', icon: Mail, type: 'connect' },
-  { name: 'Outlook', category: 'Email', desc: 'Sync your Microsoft inbox for logged communications.', icon: Mail, type: 'connect' },
   { name: 'Google Calendar', category: 'Calendar', desc: 'Two-way calendar sync for meetings and follow-ups.', icon: Calendar, type: 'connect' },
   { name: 'Google Workspace / Cloud Identity SSO', category: 'Security', desc: 'Sign in with your Google company account.', icon: Cloud, type: 'connect' },
-  { name: 'Slack', category: 'Collaboration', desc: 'Post CRM updates and sales events to your channels.', icon: MessageSquare, type: 'connect' },
-  { name: 'Zapier', category: 'Automation', desc: 'Connect BizForce to 5,000+ apps with no-code zaps.', icon: ZapApp, type: 'connect' },
-  { name: 'Stripe', category: 'Payments', desc: 'Track payments and link revenue to your deals.', icon: CreditCard, type: 'connect' },
-  { name: 'PayPal', category: 'Payments', desc: 'Record receipts and payment status against invoices.', icon: CreditCard, type: 'connect' },
-  { name: 'Twilio', category: 'Voice & SMS', desc: 'Make calls and send SMS campaigns.', icon: Phone, type: 'connect' },
-  { name: 'Mailchimp', category: 'Marketing', desc: 'Sync audiences and campaigns from your CRM.', icon: Boxes, type: 'connect' },
-  { name: 'WordPress', category: 'Web', desc: 'Add lead-capture forms to your WordPress site.', icon: Globe, type: 'connect' },
+  { name: 'Twilio', category: 'SMS', desc: 'Send SMS messages and notifications through Twilio.', icon: Phone, type: 'connect' },
   { name: 'REST API', category: 'Developer', desc: 'Full programmatic access to your data and modules.', icon: Plug, type: 'built-in' },
   { name: 'Webhooks', category: 'Developer', desc: 'Send real-time events to your own applications.', icon: ZapApp, type: 'built-in' },
   { name: 'Customer Portal', category: 'Built-in', desc: 'Self-service client portal with login and status tracking.', icon: Boxes, type: 'built-in' },
@@ -72,7 +65,7 @@ export function IntegrationsPage() {
               </span>
             </h1>
             <p className="mt-5 text-lg text-slate-600 dark:text-slate-300">
-              Native capabilities and integrations for email, calendars, payments, voice, and web — plus a full REST API and webhooks.
+              Native capabilities and integrations for email, calendars, voice, SMS, and web — plus a full REST API and webhooks.
             </p>
             <div className="relative max-w-xl mx-auto mt-8">
               <div className="absolute inset-y-0 left-4 flex items-center text-slate-400"><Search size={18} /></div>

@@ -17,6 +17,7 @@ export function SignUpPage() {
   const { register, verifyRegister } = useAuthStore()
   const [step, setStep] = useState<'form' | 'verify'>('form')
   const [socialLoading, setSocialLoading] = useState<string | null>(null)
+  const [socialProviders, setSocialProviders] = useState<{ google: boolean; facebook: boolean }>({ google: false, facebook: false })
   const [companyName, setCompanyName] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -36,6 +37,10 @@ export function SignUpPage() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
     }
+  }, [])
+
+  useEffect(() => {
+    api.getSocialProviders().then(setSocialProviders).catch(() => {})
   }, [])
 
   const handleSocial = (provider: 'google' | 'facebook') => {
@@ -341,7 +346,7 @@ export function SignUpPage() {
               </form>
             )}
 
-            {step === 'form' && (
+            {(step === 'form' && (socialProviders.google || socialProviders.facebook)) && (
               <>
                 <div className="my-5 flex items-center gap-3">
                   <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
@@ -349,6 +354,7 @@ export function SignUpPage() {
                   <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
                 </div>
                 <div className="space-y-2">
+                  {socialProviders.google && (
                   <Button
                     type="button"
                     onClick={() => handleSocial('google')}
@@ -357,6 +363,8 @@ export function SignUpPage() {
                   >
                     <GoogleIcon /> Continue with Google
                   </Button>
+                  )}
+                  {socialProviders.facebook && (
                   <Button
                     type="button"
                     onClick={() => handleSocial('facebook')}
@@ -365,6 +373,7 @@ export function SignUpPage() {
                   >
                     <FacebookIcon /> Continue with Facebook
                   </Button>
+                  )}
                 </div>
               </>
             )}

@@ -5,6 +5,7 @@ import crypto from 'crypto'
 import { prisma } from '../lib/prisma'
 import { signingSecret } from '../lib/secrets'
 import { writeAudit } from '../lib/audit'
+import { authMiddleware, requireAdmin } from '../middleware/auth'
 import { PERMISSION_MODULES } from '../lib/module-permissions'
 
 export const socialAuthRouter = Router()
@@ -19,32 +20,55 @@ function backendOrigin(): string {
   return process.env.BACKEND_PUBLIC_ORIGIN || frontendOrigin()
 }
 
-function providerConfig(provider: 'google' | 'facebook') {
+const SOCIAL_KEY = 'social-login'
+
+async function savedSocialConfig(): Promise<any> {
+  const row = await prisma.globalSetting.findUnique({ where: { key: SOCIAL_KEY } }).catch(() => null)
+  return (row?.value as any) || {}
+}
+
+function providerConfigSaved(provider: 'google' | 'facebook', saved: any) {
+  const block = saved?.[provider] || {}
+  return {
+    clientID: String(block.clientID || block.clientId || '').trim(),
+    clientSecret: String(block.clientSecret || '').trim(),
+  }
+}
+
+async function providerConfig(provider: 'google' | 'facebook') {
   const prefix = provider === 'google' ? 'GOOGLE' : 'FACEBOOK'
-  const clientID = process.env[`${prefix}_CLIENT_ID`] || ''
-  const clientSecret = process.env[`${prefix}_CLIENT_SECRET`] || ''
+  const saved = await savedSocialConfig()
+  const fromSaved = providerConfigSaved(provider, saved)
+  const clientID = process.env[`${prefix}_CLIENT_ID`] || fromSaved.clientID
+  const clientSecret = process.env[`${prefix}_CLIENT_SECRET`] || fromSaved.clientSecret
   const callbackURL = `${backendOrigin()}/api/auth/${provider}/callback`
   return { clientID, clientSecret, callbackURL }
 }
 
-function providersReady(): boolean {
-  return Boolean(
-    (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) ||
-    (process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET)
-  )
+function maskSecret(secret: string) {
+  if (!secret) return ''
+  if (secret.length <= 8) return '••••'
+  return `${secret.slice(0, 3)}••••••${secret.slice(-3)}`
 }
 
-// Build and cache passport strategies lazily so the app starts even when no
-// social credentials are configured yet.
-type Builder = () => Promise<string>
-const authUrlBuilders: Record<'google' | 'facebook', Builder | null> = { google: null, facebook: null }
+async function providerStates() {
+  const saved = await savedSocialConfig()
+  const google = await providerConfig('google')
+  const facebook = await providerConfig('facebook')
+  return {
+    google: Boolean(google.clientID && google.clientSecret),
+    facebook: Boolean(facebook.clientID && facebook.clientSecret),
+    googleConfigured: Boolean(google.clientID),
+    facebookConfigured: Boolean(facebook.clientID),
+  }
+}
 
 function stateValue(): string {
   return crypto.randomBytes(16).toString('hex')
 }
 
 async function buildAuthUrl(provider: 'google' | 'facebook', state: string): Promise<string | null> {
-  const cfg = providerConfig(provider)
+  const cfg = await providerConfig(provider)
   if (!cfg.clientID || !cfg.clientSecret) return null
 
   if (provider === 'google') {
@@ -140,7 +164,7 @@ async function handleCallback(provider: 'google' | 'facebook', code: string, req
 
     if (provider === 'google') {
       const { OAuth2Client } = await import('google-auth-library')
-      const cfg = providerConfig('google')
+      const cfg = await providerConfig('google')
       const client = new OAuth2Client(cfg.clientID, cfg.clientSecret, cfg.callbackURL)
       const { tokens } = await client.getToken(code)
       const idToken = (tokens as any).id_token as string | undefined
@@ -149,7 +173,7 @@ async function handleCallback(provider: 'google' | 'facebook', code: string, req
       const payload = ticket.getPayload()
       oauthProfile = { id: payload?.sub || '', email: payload?.email, name: payload?.name }
     } else {
-      const cfg = providerConfig('facebook')
+      const cfg = await providerConfig('facebook')
       const tokenRes = await fetch(`https://graph.facebook.com/v18.0/oauth/access_token?client_id=${cfg.clientID}&client_secret=${cfg.clientSecret}&redirect_uri=${cfg.callbackURL}&code=${code}`)
       const tokenJson: any = await tokenRes.json()
       if (!tokenJson.access_token) throw new Error('facebook-code-exchange-failed')
@@ -186,17 +210,18 @@ async function handleCallback(provider: 'google' | 'facebook', code: string, req
 }
 
 // ---- Status: tells the frontend which providers are configured ----
-socialAuthRouter.get('/providers', (_req, res) => {
-  res.json({
-    google: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-    facebook: !!(process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET),
-  })
+socialAuthRouter.get('/providers', async (_req, res, next) => {
+  try {
+    const states = await providerStates()
+    res.json({ google: states.google, facebook: states.facebook })
+  } catch (err) { next(err) }
 })
 
 // ---- Initiate google ----
 socialAuthRouter.get('/google', async (req, res, next) => {
   try {
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    const cfg = await providerConfig('google')
+    if (!cfg.clientID || !cfg.clientSecret) {
       return res.redirect(`${frontendOrigin()}/login?sso=error&reason=not-configured`)
     }
     const url = await buildAuthUrl('google', stateValue())
@@ -213,7 +238,8 @@ socialAuthRouter.get('/google/callback', (req, res, next) => {
 // ---- Initiate facebook ----
 socialAuthRouter.get('/facebook', async (req, res, next) => {
   try {
-    if (!process.env.FACEBOOK_CLIENT_ID || !process.env.FACEBOOK_CLIENT_SECRET) {
+    const cfg = await providerConfig('facebook')
+    if (!cfg.clientID || !cfg.clientSecret) {
       return res.redirect(`${frontendOrigin()}/login?sso=error&reason=not-configured`)
     }
     const url = await buildAuthUrl('facebook', stateValue())
@@ -227,4 +253,67 @@ socialAuthRouter.get('/facebook/callback', (req, res, next) => {
   handleCallback('facebook', String(req.query?.code || ''), req, res, next)
 })
 
-export { frontendOrigin, providersReady }
+// ---- Admin config: read (masked) ----
+socialAuthRouter.get('/config', authMiddleware, requireAdmin, async (req, res, next) => {
+  try {
+    const saved = await savedSocialConfig()
+    const states = await providerStates()
+    res.json({
+      google: {
+        clientID: saved?.google?.clientID || saved?.google?.clientId || '',
+        clientSecret: maskSecret(saved?.google?.clientSecret || ''),
+        ...states,
+      },
+      facebook: {
+        clientID: saved?.facebook?.clientID || saved?.facebook?.clientId || '',
+        clientSecret: maskSecret(saved?.facebook?.clientSecret || ''),
+        ...states,
+      },
+    })
+  } catch (err) { next(err) }
+})
+
+// ---- Admin config: save ----
+socialAuthRouter.put('/config', authMiddleware, requireAdmin, async (req, res, next) => {
+  try {
+    const body = req.body || {}
+    const saved = await savedSocialConfig()
+
+    const google = {
+      clientID: String(body?.google?.clientID || '').trim(),
+      clientSecret: String(body?.google?.clientSecret || '').trim(),
+    }
+    const facebook = {
+      clientID: String(body?.facebook?.clientID || '').trim(),
+      clientSecret: String(body?.facebook?.clientSecret || '').trim(),
+    }
+
+    // Keep existing secrets when blank is submitted; a blank clientID clears the whole provider
+    if (!google.clientID) {
+      google.clientSecret = ''
+    } else if (!google.clientSecret && saved?.google?.clientSecret) google.clientSecret = String(saved.google.clientSecret)
+    if (!facebook.clientID) {
+      facebook.clientSecret = ''
+    } else if (!facebook.clientSecret && saved?.facebook?.clientSecret) facebook.clientSecret = String(saved.facebook.clientSecret)
+
+    const value = {
+      google: { clientID: google.clientID, clientSecret: google.clientSecret },
+      facebook: { clientID: facebook.clientID, clientSecret: facebook.clientSecret },
+    }
+    await prisma.globalSetting.upsert({
+      where: { key: SOCIAL_KEY },
+      update: { value },
+      create: { key: SOCIAL_KEY, value },
+    })
+    await writeAudit({
+      moduleName: 'settings',
+      action: 'UPDATE',
+      fieldName: 'socialLogin',
+      newValue: `google=${google.clientID ? 'set' : 'blank'}, facebook=${facebook.clientID ? 'set' : 'blank'}`,
+      req,
+    })
+    res.json({ ok: true })
+  } catch (err) { next(err) }
+})
+
+export { frontendOrigin }

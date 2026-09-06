@@ -34,6 +34,7 @@ import { CustomViewsSettings } from '@/views/settings/CustomViewsSettings'
 import { ChatWidgetSettings } from '@/views/settings/ChatWidgetSettings'
 import { AdminDataSettings } from '@/views/settings/AdminDataSettings'
 import { SsoSettings } from '@/views/settings/SsoSettings'
+import { SocialLoginSettings } from '@/views/settings/SocialLoginSettings'
 import { TagsSettings } from '@/views/settings/TagsSettings'
 import { MenuSettings } from '@/views/settings/MenuSettings'
 import { LanguageSettings } from '@/views/settings/LanguageSettings'
@@ -90,7 +91,7 @@ const CATEGORIES = [
   {
     label: 'Integrations & Security',
     blurb: 'REST API, portal, Google sync, SSO, layouts and dependencies',
-    keys: ['integrations', 'sso', 'menu'],
+    keys: ['integrations', 'sso', 'sociallogin', 'menu'],
   },
   {
     label: 'Data Tools',
@@ -121,6 +122,7 @@ const settingSections = [
   { key: 'integrations', label: 'Integrations', icon: PlugZap, desc: 'REST API keys, customer portal, Google sync, picklist dependencies, layout editor, payment reminders' },
   { key: 'chat', label: 'Chat Widget', icon: MessageCircle, desc: 'Configure the website chat widget name, colors, messages, and position' },
   { key: 'sso', label: 'SAML SSO', icon: ShieldCheck, desc: 'Enterprise single sign-on through your identity provider' },
+  { key: 'sociallogin', label: 'Social Login', icon: UserCircle, desc: 'Google and Facebook sign-in buttons on the login and signup pages' },
   { key: 'datatools', label: 'Data Tools', icon: Database, desc: 'Related lists, report schedules, user profiles, and file attachments' },
   { key: 'tags', label: 'Tags', icon: Tag, desc: 'Manage organisation-wide tags for records' },
   { key: 'menu', label: 'Menu Editor', icon: LayoutDashboard, desc: 'Reorder modules, group under parents, and hide modules in the sidebar' },
@@ -187,6 +189,7 @@ export function SettingsPage() {
         {activeSection === 'views' && <CustomViewsSettings />}
         {activeSection === 'chat' && <ChatWidgetSettings />}
         {activeSection === 'sso' && <SsoSettings />}
+        {activeSection === 'sociallogin' && <SocialLoginSettings />}
         {activeSection === 'datatools' && <AdminDataSettings />}
         {activeSection === 'trash' && <RecycleBinPage />}
         {activeSection === 'language' && <LanguageSettings onBack={() => setActiveSection(null)} />}
