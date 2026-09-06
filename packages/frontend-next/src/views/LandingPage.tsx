@@ -79,7 +79,7 @@ const pricingPlans = [
     price: 'Custom',
     period: '',
     description: 'For large organizations with advanced needs.',
-    features: ['Unlimited users', 'Unlimited contacts', 'Advanced permissions', 'API access', 'SSO / SAML', 'Dedicated support'],
+    features: ['Unlimited users', 'Unlimited contacts', 'Advanced permissions', 'API access', 'Dedicated support'],
     cta: 'Contact Sales',
     highlight: false,
   },

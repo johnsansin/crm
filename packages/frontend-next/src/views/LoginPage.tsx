@@ -17,29 +17,19 @@ export function LoginPage() {
   const [twoFactorChallenge, setTwoFactorChallenge] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [ssoEmail, setSsoEmail] = useState('')
-  const [ssoLoading, setSsoLoading] = useState(false)
-  const [ssoEnabled, setSsoEnabled] = useState(false)
   const [socialLoading, setSocialLoading] = useState<string | null>(null)
   const [socialProviders, setSocialProviders] = useState<{ google: boolean; facebook: boolean }>({ google: false, facebook: false })
   const { login, login2fa } = useAuthStore()
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    setSsoEnabled(localStorage.getItem('bizforce.sso.enabled') === '1')
-  }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
     api.getSocialProviders().then(setSocialProviders).catch(() => {})
   }, [])
 
-  const toggleSso = (on: boolean) => {
-    setSsoEnabled(on)
-    if (typeof window !== 'undefined') {
-      if (on) localStorage.setItem('bizforce.sso.enabled', '1')
-      else localStorage.removeItem('bizforce.sso.enabled')
-    }
+  const handleSocial = (provider: 'google' | 'facebook') => {
+    setError('')
+    setSocialLoading(provider)
+    window.location.href = `/api/auth/${provider}`
   }
 
   useEffect(() => {
@@ -59,46 +49,22 @@ export function LoginPage() {
         }
       }).catch(() => {
         setLoading(false)
-        setError('SSO sign-in could not be completed. Please try again.')
+        setError('Sign-in could not be completed. Please try again.')
       })
     } else if (window.location.search.includes('sso=error')) {
       const reason = new URLSearchParams(window.location.search).get('reason') || 'unknown'
       const messages: Record<string, string> = {
         'not-configured': 'Social sign-in is not configured yet. Please use your email and password.',
-        'not-enabled': 'Single sign-on is not enabled for your organization. Contact your administrator.',
         'company-inactive': 'Your organization is deactivated. Contact your super admin.',
-        'invalid-assertion': 'The identity provider response could not be verified. Check your SSO configuration.',
+        'invalid-assertion': 'The identity provider response could not be verified. Please try again.',
         'no-email': 'Your identity provider did not return an email address.',
         subscription: 'Your organization subscription is inactive. Contact your super admin.',
         'account-inactive': 'Your account is blocked. Contact your organization administrator.',
       }
-      setError(messages[reason] || 'Single sign-on failed. Please contact your administrator.')
+      setError(messages[reason] || 'Sign-in failed. Please contact your administrator.')
       window.history.replaceState(null, '', window.location.pathname)
     }
   }, [navigate])
-
-  const handleSso = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (!ssoEmail) {
-      setError('Enter your work email to continue')
-      return
-    }
-    setSsoLoading(true)
-    try {
-      const res = await api.ssoInit(ssoEmail)
-      window.location.href = res.redirectUrl
-    } catch (err: any) {
-      setError(err.message || 'Single sign-on is not available for this organization')
-      setSsoLoading(false)
-    }
-  }
-
-  const handleSocial = (provider: 'google' | 'facebook') => {
-    setError('')
-    setSocialLoading(provider)
-    window.location.href = `/api/auth/${provider}`
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -300,52 +266,6 @@ export function LoginPage() {
                 )}
               </div>
               </>
-              )}
-
-              <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-                <button
-                  type="button"
-                  onClick={() => toggleSso(!ssoEnabled)}
-                  className="flex w-full items-center justify-between gap-3"
-                  aria-pressed={ssoEnabled}
-                >
-                  <span className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-                    <ShieldCheck size={16} className="text-slate-400" />
-                    Sign in with SSO
-                  </span>
-                  <span
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${ssoEnabled ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${ssoEnabled ? 'translate-x-5' : 'translate-x-0.5'}`}
-                    />
-                  </span>
-                </button>
-                <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">Remembered on this browser. Only for organizations with SAML SSO enabled.</p>
-              </div>
-
-              {ssoEnabled && (
-              <form onSubmit={handleSso} className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Work email</label>
-                <div className="relative">
-                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="email"
-                    placeholder="you@company.com"
-                    value={ssoEmail}
-                    onChange={e => setSsoEmail(e.target.value)}
-                    className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-1 text-sm text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-shadow"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={ssoLoading}
-                  className="w-full h-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  {ssoLoading ? <Loader2 size={16} className="mr-2 animate-spin" /> : <ShieldCheck size={16} className="mr-2" />}
-                  Continue with SSO
-                </Button>
-              </form>
               )}
             </>
             )}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Mail, Calendar, Phone, Globe, Cloud, Boxes, Plug, ArrowRight } from 'lucide-react'
+import { Search, Mail, Calendar, Phone, Globe, Boxes, Plug, ArrowRight } from 'lucide-react'
 import { useNavigate } from '@/lib/navigation'
 import { SiteLayout } from '@/components/SiteLayout'
 import { cn } from '@/lib/utils'
@@ -17,7 +17,6 @@ interface Integration {
 const INTEGRATIONS: Integration[] = [
   { name: 'Gmail', category: 'Email', desc: 'Send and log emails, track conversations in your contact records.', icon: Mail, type: 'connect' },
   { name: 'Google Calendar', category: 'Calendar', desc: 'Two-way calendar sync for meetings and follow-ups.', icon: Calendar, type: 'connect' },
-  { name: 'Google Workspace / Cloud Identity SSO', category: 'Security', desc: 'Sign in with your Google company account.', icon: Cloud, type: 'connect' },
   { name: 'Twilio', category: 'SMS', desc: 'Send SMS messages and notifications through Twilio.', icon: Phone, type: 'connect' },
   { name: 'REST API', category: 'Developer', desc: 'Full programmatic access to your data and modules.', icon: Plug, type: 'built-in' },
   { name: 'Webhooks', category: 'Developer', desc: 'Send real-time events to your own applications.', icon: ZapApp, type: 'built-in' },
