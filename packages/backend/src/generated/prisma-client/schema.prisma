@@ -2039,19 +2039,24 @@ model RecurringInvoice {
 }
 
 model PortalUser {
-  id        String    @id @default(uuid())
-  userId    String?
-  contactId String?
-  email     String    @unique @default("") @db.VarChar(200)
-  password  String    @default("") @db.VarChar(255)
-  name      String    @default("") @db.VarChar(200)
-  company   String?   @db.VarChar(200)
-  phone     String?   @db.VarChar(30)
-  isActive  Boolean   @default(true)
-  lastLogin DateTime?
-  companyId String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                     String    @id @default(uuid())
+  userId                 String?
+  contactId              String?
+  email                  String    @unique @default("") @db.VarChar(200)
+  password               String    @default("") @db.VarChar(255)
+  name                   String    @default("") @db.VarChar(200)
+  company                String?   @db.VarChar(200)
+  phone                  String?   @db.VarChar(30)
+  sharedByName           String?   @db.VarChar(200)
+  sharedByEmail          String?   @db.VarChar(200)
+  twoFactorSecret        String?
+  twoFactorPendingSecret String?
+  twoFactorEnabled       Boolean   @default(false)
+  isActive               Boolean   @default(true)
+  lastLogin              DateTime?
+  companyId              String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   @@index([companyId])
 }

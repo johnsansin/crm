@@ -106673,6 +106673,11 @@ export namespace Prisma {
     name: string | null
     company: string | null
     phone: string | null
+    sharedByName: string | null
+    sharedByEmail: string | null
+    twoFactorSecret: string | null
+    twoFactorPendingSecret: string | null
+    twoFactorEnabled: boolean | null
     isActive: boolean | null
     lastLogin: Date | null
     companyId: string | null
@@ -106689,6 +106694,11 @@ export namespace Prisma {
     name: string | null
     company: string | null
     phone: string | null
+    sharedByName: string | null
+    sharedByEmail: string | null
+    twoFactorSecret: string | null
+    twoFactorPendingSecret: string | null
+    twoFactorEnabled: boolean | null
     isActive: boolean | null
     lastLogin: Date | null
     companyId: string | null
@@ -106705,6 +106715,11 @@ export namespace Prisma {
     name: number
     company: number
     phone: number
+    sharedByName: number
+    sharedByEmail: number
+    twoFactorSecret: number
+    twoFactorPendingSecret: number
+    twoFactorEnabled: number
     isActive: number
     lastLogin: number
     companyId: number
@@ -106723,6 +106738,11 @@ export namespace Prisma {
     name?: true
     company?: true
     phone?: true
+    sharedByName?: true
+    sharedByEmail?: true
+    twoFactorSecret?: true
+    twoFactorPendingSecret?: true
+    twoFactorEnabled?: true
     isActive?: true
     lastLogin?: true
     companyId?: true
@@ -106739,6 +106759,11 @@ export namespace Prisma {
     name?: true
     company?: true
     phone?: true
+    sharedByName?: true
+    sharedByEmail?: true
+    twoFactorSecret?: true
+    twoFactorPendingSecret?: true
+    twoFactorEnabled?: true
     isActive?: true
     lastLogin?: true
     companyId?: true
@@ -106755,6 +106780,11 @@ export namespace Prisma {
     name?: true
     company?: true
     phone?: true
+    sharedByName?: true
+    sharedByEmail?: true
+    twoFactorSecret?: true
+    twoFactorPendingSecret?: true
+    twoFactorEnabled?: true
     isActive?: true
     lastLogin?: true
     companyId?: true
@@ -106844,6 +106874,11 @@ export namespace Prisma {
     name: string
     company: string | null
     phone: string | null
+    sharedByName: string | null
+    sharedByEmail: string | null
+    twoFactorSecret: string | null
+    twoFactorPendingSecret: string | null
+    twoFactorEnabled: boolean
     isActive: boolean
     lastLogin: Date | null
     companyId: string | null
@@ -106877,6 +106912,11 @@ export namespace Prisma {
     name?: boolean
     company?: boolean
     phone?: boolean
+    sharedByName?: boolean
+    sharedByEmail?: boolean
+    twoFactorSecret?: boolean
+    twoFactorPendingSecret?: boolean
+    twoFactorEnabled?: boolean
     isActive?: boolean
     lastLogin?: boolean
     companyId?: boolean
@@ -106893,6 +106933,11 @@ export namespace Prisma {
     name?: boolean
     company?: boolean
     phone?: boolean
+    sharedByName?: boolean
+    sharedByEmail?: boolean
+    twoFactorSecret?: boolean
+    twoFactorPendingSecret?: boolean
+    twoFactorEnabled?: boolean
     isActive?: boolean
     lastLogin?: boolean
     companyId?: boolean
@@ -106909,6 +106954,11 @@ export namespace Prisma {
     name?: boolean
     company?: boolean
     phone?: boolean
+    sharedByName?: boolean
+    sharedByEmail?: boolean
+    twoFactorSecret?: boolean
+    twoFactorPendingSecret?: boolean
+    twoFactorEnabled?: boolean
     isActive?: boolean
     lastLogin?: boolean
     companyId?: boolean
@@ -106929,6 +106979,11 @@ export namespace Prisma {
       name: string
       company: string | null
       phone: string | null
+      sharedByName: string | null
+      sharedByEmail: string | null
+      twoFactorSecret: string | null
+      twoFactorPendingSecret: string | null
+      twoFactorEnabled: boolean
       isActive: boolean
       lastLogin: Date | null
       companyId: string | null
@@ -107335,6 +107390,11 @@ export namespace Prisma {
     readonly name: FieldRef<"PortalUser", 'String'>
     readonly company: FieldRef<"PortalUser", 'String'>
     readonly phone: FieldRef<"PortalUser", 'String'>
+    readonly sharedByName: FieldRef<"PortalUser", 'String'>
+    readonly sharedByEmail: FieldRef<"PortalUser", 'String'>
+    readonly twoFactorSecret: FieldRef<"PortalUser", 'String'>
+    readonly twoFactorPendingSecret: FieldRef<"PortalUser", 'String'>
+    readonly twoFactorEnabled: FieldRef<"PortalUser", 'Boolean'>
     readonly isActive: FieldRef<"PortalUser", 'Boolean'>
     readonly lastLogin: FieldRef<"PortalUser", 'DateTime'>
     readonly companyId: FieldRef<"PortalUser", 'String'>
@@ -150205,6 +150265,11 @@ export namespace Prisma {
     name: 'name',
     company: 'company',
     phone: 'phone',
+    sharedByName: 'sharedByName',
+    sharedByEmail: 'sharedByEmail',
+    twoFactorSecret: 'twoFactorSecret',
+    twoFactorPendingSecret: 'twoFactorPendingSecret',
+    twoFactorEnabled: 'twoFactorEnabled',
     isActive: 'isActive',
     lastLogin: 'lastLogin',
     companyId: 'companyId',
@@ -161250,6 +161315,11 @@ export namespace Prisma {
     name?: StringFilter<"PortalUser"> | string
     company?: StringNullableFilter<"PortalUser"> | string | null
     phone?: StringNullableFilter<"PortalUser"> | string | null
+    sharedByName?: StringNullableFilter<"PortalUser"> | string | null
+    sharedByEmail?: StringNullableFilter<"PortalUser"> | string | null
+    twoFactorSecret?: StringNullableFilter<"PortalUser"> | string | null
+    twoFactorPendingSecret?: StringNullableFilter<"PortalUser"> | string | null
+    twoFactorEnabled?: BoolFilter<"PortalUser"> | boolean
     isActive?: BoolFilter<"PortalUser"> | boolean
     lastLogin?: DateTimeNullableFilter<"PortalUser"> | Date | string | null
     companyId?: StringNullableFilter<"PortalUser"> | string | null
@@ -161266,6 +161336,11 @@ export namespace Prisma {
     name?: SortOrder
     company?: SortOrderInput | SortOrder
     phone?: SortOrderInput | SortOrder
+    sharedByName?: SortOrderInput | SortOrder
+    sharedByEmail?: SortOrderInput | SortOrder
+    twoFactorSecret?: SortOrderInput | SortOrder
+    twoFactorPendingSecret?: SortOrderInput | SortOrder
+    twoFactorEnabled?: SortOrder
     isActive?: SortOrder
     lastLogin?: SortOrderInput | SortOrder
     companyId?: SortOrderInput | SortOrder
@@ -161285,6 +161360,11 @@ export namespace Prisma {
     name?: StringFilter<"PortalUser"> | string
     company?: StringNullableFilter<"PortalUser"> | string | null
     phone?: StringNullableFilter<"PortalUser"> | string | null
+    sharedByName?: StringNullableFilter<"PortalUser"> | string | null
+    sharedByEmail?: StringNullableFilter<"PortalUser"> | string | null
+    twoFactorSecret?: StringNullableFilter<"PortalUser"> | string | null
+    twoFactorPendingSecret?: StringNullableFilter<"PortalUser"> | string | null
+    twoFactorEnabled?: BoolFilter<"PortalUser"> | boolean
     isActive?: BoolFilter<"PortalUser"> | boolean
     lastLogin?: DateTimeNullableFilter<"PortalUser"> | Date | string | null
     companyId?: StringNullableFilter<"PortalUser"> | string | null
@@ -161301,6 +161381,11 @@ export namespace Prisma {
     name?: SortOrder
     company?: SortOrderInput | SortOrder
     phone?: SortOrderInput | SortOrder
+    sharedByName?: SortOrderInput | SortOrder
+    sharedByEmail?: SortOrderInput | SortOrder
+    twoFactorSecret?: SortOrderInput | SortOrder
+    twoFactorPendingSecret?: SortOrderInput | SortOrder
+    twoFactorEnabled?: SortOrder
     isActive?: SortOrder
     lastLogin?: SortOrderInput | SortOrder
     companyId?: SortOrderInput | SortOrder
@@ -161323,6 +161408,11 @@ export namespace Prisma {
     name?: StringWithAggregatesFilter<"PortalUser"> | string
     company?: StringNullableWithAggregatesFilter<"PortalUser"> | string | null
     phone?: StringNullableWithAggregatesFilter<"PortalUser"> | string | null
+    sharedByName?: StringNullableWithAggregatesFilter<"PortalUser"> | string | null
+    sharedByEmail?: StringNullableWithAggregatesFilter<"PortalUser"> | string | null
+    twoFactorSecret?: StringNullableWithAggregatesFilter<"PortalUser"> | string | null
+    twoFactorPendingSecret?: StringNullableWithAggregatesFilter<"PortalUser"> | string | null
+    twoFactorEnabled?: BoolWithAggregatesFilter<"PortalUser"> | boolean
     isActive?: BoolWithAggregatesFilter<"PortalUser"> | boolean
     lastLogin?: DateTimeNullableWithAggregatesFilter<"PortalUser"> | Date | string | null
     companyId?: StringNullableWithAggregatesFilter<"PortalUser"> | string | null
@@ -177344,6 +177434,11 @@ export namespace Prisma {
     name?: string
     company?: string | null
     phone?: string | null
+    sharedByName?: string | null
+    sharedByEmail?: string | null
+    twoFactorSecret?: string | null
+    twoFactorPendingSecret?: string | null
+    twoFactorEnabled?: boolean
     isActive?: boolean
     lastLogin?: Date | string | null
     companyId?: string | null
@@ -177360,6 +177455,11 @@ export namespace Prisma {
     name?: string
     company?: string | null
     phone?: string | null
+    sharedByName?: string | null
+    sharedByEmail?: string | null
+    twoFactorSecret?: string | null
+    twoFactorPendingSecret?: string | null
+    twoFactorEnabled?: boolean
     isActive?: boolean
     lastLogin?: Date | string | null
     companyId?: string | null
@@ -177376,6 +177476,11 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     company?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
+    sharedByName?: NullableStringFieldUpdateOperationsInput | string | null
+    sharedByEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorSecret?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorPendingSecret?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorEnabled?: BoolFieldUpdateOperationsInput | boolean
     isActive?: BoolFieldUpdateOperationsInput | boolean
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     companyId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -177392,6 +177497,11 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     company?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
+    sharedByName?: NullableStringFieldUpdateOperationsInput | string | null
+    sharedByEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorSecret?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorPendingSecret?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorEnabled?: BoolFieldUpdateOperationsInput | boolean
     isActive?: BoolFieldUpdateOperationsInput | boolean
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     companyId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -177408,6 +177518,11 @@ export namespace Prisma {
     name?: string
     company?: string | null
     phone?: string | null
+    sharedByName?: string | null
+    sharedByEmail?: string | null
+    twoFactorSecret?: string | null
+    twoFactorPendingSecret?: string | null
+    twoFactorEnabled?: boolean
     isActive?: boolean
     lastLogin?: Date | string | null
     companyId?: string | null
@@ -177424,6 +177539,11 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     company?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
+    sharedByName?: NullableStringFieldUpdateOperationsInput | string | null
+    sharedByEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorSecret?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorPendingSecret?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorEnabled?: BoolFieldUpdateOperationsInput | boolean
     isActive?: BoolFieldUpdateOperationsInput | boolean
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     companyId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -177440,6 +177560,11 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     company?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
+    sharedByName?: NullableStringFieldUpdateOperationsInput | string | null
+    sharedByEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorSecret?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorPendingSecret?: NullableStringFieldUpdateOperationsInput | string | null
+    twoFactorEnabled?: BoolFieldUpdateOperationsInput | boolean
     isActive?: BoolFieldUpdateOperationsInput | boolean
     lastLogin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     companyId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -188763,6 +188888,11 @@ export namespace Prisma {
     name?: SortOrder
     company?: SortOrder
     phone?: SortOrder
+    sharedByName?: SortOrder
+    sharedByEmail?: SortOrder
+    twoFactorSecret?: SortOrder
+    twoFactorPendingSecret?: SortOrder
+    twoFactorEnabled?: SortOrder
     isActive?: SortOrder
     lastLogin?: SortOrder
     companyId?: SortOrder
@@ -188779,6 +188909,11 @@ export namespace Prisma {
     name?: SortOrder
     company?: SortOrder
     phone?: SortOrder
+    sharedByName?: SortOrder
+    sharedByEmail?: SortOrder
+    twoFactorSecret?: SortOrder
+    twoFactorPendingSecret?: SortOrder
+    twoFactorEnabled?: SortOrder
     isActive?: SortOrder
     lastLogin?: SortOrder
     companyId?: SortOrder
@@ -188795,6 +188930,11 @@ export namespace Prisma {
     name?: SortOrder
     company?: SortOrder
     phone?: SortOrder
+    sharedByName?: SortOrder
+    sharedByEmail?: SortOrder
+    twoFactorSecret?: SortOrder
+    twoFactorPendingSecret?: SortOrder
+    twoFactorEnabled?: SortOrder
     isActive?: SortOrder
     lastLogin?: SortOrder
     companyId?: SortOrder
