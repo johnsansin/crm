@@ -10,6 +10,7 @@ import { sendMail, getSmtpConfig } from '../lib/mailer'
 import { writeAudit } from '../lib/audit'
 import { syncMailbox, generateRecurringInvoice, fetchRssFeed, applyEmailToTicketRule } from '../lib/automation'
 import { renderReport, escapeHtml, resolveReportLogo } from './report'
+import { ticketFields, invoiceFields } from './portal.routes'
 import { renderReportHtml, renderReportCsv, resolveReportReferences } from '../lib/report-runner'
 import { dialViaPbx } from './pbx.routes'
 import { evaluateConditions } from '../lib/settings'
@@ -865,7 +866,19 @@ extrasRouter.use('/portal', async (req, res, next) => {
 
 extrasRouter.get('/portal/me', async (req: any, res, next) => {
   try {
-    res.json({ data: req.portal.contact })
+    const c = req.portal.contact
+    res.json({
+      data: {
+        id: c.id,
+        firstName: c.firstName,
+        lastName: c.lastName,
+        salutation: c.salutation,
+        title: c.title,
+        email: c.email,
+        phone: c.phone,
+        mobile: c.mobile,
+      },
+    })
   } catch (err) { next(err) }
 })
 
@@ -875,7 +888,7 @@ extrasRouter.get('/portal/tickets', async (req: any, res, next) => {
       where: { contactId: req.portal.contact.id, companyId: req.portal.companyId || undefined },
       orderBy: { createdAt: 'desc' },
     })
-    res.json({ data })
+    res.json({ data: data.map(ticketFields) })
   } catch (err) { next(err) }
 })
 
@@ -907,7 +920,7 @@ extrasRouter.get('/portal/invoices', async (req: any, res, next) => {
     const paid = await prisma.receipt.findMany({ where: { invoiceId: { in: data.map(i => i.id) } } })
     const paidMap: Record<string, number> = {}
     paid.forEach(p => { paidMap[p.invoiceId] = (paidMap[p.invoiceId] || 0) + Number(p.amount || 0) })
-    res.json({ data: data.map(i => ({ ...i, paidAmount: paidMap[i.id] || 0, balance: Number(i.grandTotal || 0) - (paidMap[i.id] || 0) })) })
+    res.json({ data: data.map(i => ({ ...invoiceFields(i), paidAmount: paidMap[i.id] || 0, balance: Number(i.grandTotal || 0) - (paidMap[i.id] || 0) })) })
   } catch (err) { next(err) }
 })
 

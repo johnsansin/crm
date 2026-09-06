@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DataTable } from '@/components/ui/data-table'
 import { cn } from '@/lib/utils'
 import {
-  Lock, User, Mail, Phone, Building2, FileText, Ticket, Loader2, LogOut, Plus, Send, Eye,
+  Lock, User, Mail, Phone, FileText, Ticket, Loader2, LogOut, Plus, Send, Eye,
   ArrowLeft, Download, CreditCard, CheckCircle2, MessageSquare, ShieldCheck, LayoutGrid, List,
 } from 'lucide-react'
 
@@ -60,10 +60,11 @@ interface PortalUser {
   id: string
   name: string
   email: string
-  company?: string
 }
 
 const KANBAN_ORDER = ['Open', 'In Progress', 'Wait for Response', 'Closed']
+const INVOICE_KANBAN_ORDER = ['Open', 'Partial', 'Paid', 'Overdue', 'Cancelled']
+const DOC_KANBAN_ORDER = ['PDF', 'Image', 'Spreadsheet', 'Document']
 
 function kanbanDot(status: string): string {
   const s = status.toLowerCase()
@@ -74,43 +75,47 @@ function kanbanDot(status: string): string {
   return 'bg-sky-500'
 }
 
-function PortalKanban({ tickets, onSelect }: { tickets: any[]; onSelect: (id: string) => void }) {
-  const statuses = [...new Set(tickets.map((t: any) => (t.status || 'Open').trim()))].sort((a, b) => {
-    const ai = KANBAN_ORDER.indexOf(a)
-    const bi = KANBAN_ORDER.indexOf(b)
+function invoiceKanbanDot(status: string): string {
+  const s = status.toLowerCase()
+  if (/paid|approved|completed/.test(s)) return 'bg-emerald-500'
+  if (/overdue|cancelled|refunded/.test(s)) return 'bg-rose-500'
+  if (/partial|pending|awaiting/.test(s)) return 'bg-amber-500'
+  if (/open|draft|new/.test(s)) return 'bg-sky-500'
+  return 'bg-slate-400'
+}
+
+function PortalKanban({ records, groupKey, dotClass, order, cardRender }: {
+  records: any[]
+  groupKey: string
+  dotClass: (status: string) => string
+  order?: string[]
+  cardRender: (record: any) => ReactNode
+}) {
+  const groupOf = (r: any) => String(r[groupKey] || 'Other').trim() || 'Other'
+  const groups = [...new Set(records.map(groupOf))].sort((a, b) => {
+    const ai = order ? order.indexOf(a) : -1
+    const bi = order ? order.indexOf(b) : -1
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi) || a.localeCompare(b)
   })
 
   return (
     <div className="overflow-x-auto pb-2">
       <div className="flex gap-4 min-w-max">
-        {statuses.map((s) => {
-          const items = tickets.filter((t: any) => (t.status || 'Open').trim() === s)
+        {groups.map((s) => {
+          const items = records.filter((r: any) => groupOf(r) === s)
           return (
-            <div key={s} className="flex-1 min-w-[270px] max-w-[300px]">
+            <div key={s} className="flex-1 min-w-[280px] max-w-[300px]">
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 p-3">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className={cn('h-2 w-2 rounded-full', kanbanDot(s))} />
+                  <span className={cn('h-2 w-2 rounded-full', dotClass(s))} />
                   <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{s}</h3>
                   <span className="ml-auto text-xs font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
                     {items.length}
                   </span>
                 </div>
                 <div className="space-y-2 min-h-[120px]">
-                  {items.map((t: any) => (
-                    <button
-                      key={t.id}
-                      onClick={() => onSelect(t.id)}
-                      className="w-full text-left rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={cn('text-[11px] font-medium', priorityText(t.priority))}>{t.priority || 'Normal'}</span>
-                        {t.category && <span className="text-[11px] text-slate-400">{t.category}</span>}
-                        <span className="ml-auto text-[11px] text-slate-400">{formatDate(t.createdAt)}</span>
-                      </div>
-                      <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">{t.title}</p>
-                      {t.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{t.description}</p>}
-                    </button>
+                  {items.map((r: any) => (
+                    <div key={r.id}>{cardRender(r)}</div>
                   ))}
                 </div>
               </div>
@@ -132,12 +137,14 @@ export function PortalPage() {
   const [loggingIn, setLoggingIn] = useState(false)
   const [activeTab, setActiveTab] = useState('tickets')
   const [ticketView, setTicketView] = useState<'table' | 'kanban'>('table')
+  const [invoiceView, setInvoiceView] = useState<'table' | 'kanban'>('table')
+  const [documentView, setDocumentView] = useState<'table' | 'kanban'>('table')
   const [showTicketForm, setShowTicketForm] = useState(false)
   const [ticketForm, setTicketForm] = useState({ title: '', description: '', priority: 'Normal', category: '' })
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null)
   const [commentText, setCommentText] = useState('')
-  const [profileForm, setProfileForm] = useState({ name: '', phone: '', company: '' })
+  const [profileForm, setProfileForm] = useState({ name: '', phone: '' })
 
   const portalHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : {}
 
@@ -157,7 +164,7 @@ export function PortalPage() {
       localStorage.setItem('portal_token', data.data.token)
       setToken(data.data.token)
       setPortalUser(data.data.user)
-      setProfileForm({ name: data.data.user.name, phone: '', company: data.data.user.company || '' })
+      setProfileForm({ name: data.data.user.name, phone: '' })
       addToast({ title: 'Welcome to your portal', variant: 'success' })
     },
     onError: (e: Error) => addToast({ title: 'Login failed', description: e.message, variant: 'destructive' }),
@@ -167,7 +174,7 @@ export function PortalPage() {
     if (token && !portalUser) {
       fetch(`${PORTAL_API}/profile`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : Promise.reject())
-        .then(d => { setPortalUser(d.data); setProfileForm({ name: d.data.name, phone: d.data.phone || '', company: d.data.company || '' }) })
+        .then(d => { setPortalUser(d.data); setProfileForm({ name: d.data.name, phone: d.data.phone || '' }) })
         .catch(() => { localStorage.removeItem('portal_token'); setToken(null) })
     }
   }, [token])
@@ -487,16 +494,43 @@ export function PortalPage() {
                     )}
                   />
                 ) : (
-                  <PortalKanban tickets={tickets} onSelect={(id) => setSelectedTicketId(id)} />
+                  <PortalKanban
+                    records={tickets}
+                    groupKey="status"
+                    dotClass={kanbanDot}
+                    order={KANBAN_ORDER}
+                    cardRender={(t: any) => (
+                      <button
+                        onClick={() => setSelectedTicketId(t.id)}
+                        className="w-full text-left rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={cn('text-[11px] font-medium', priorityText(t.priority))}>{t.priority || 'Normal'}</span>
+                          {t.category && <span className="text-[11px] text-slate-400">{t.category}</span>}
+                          <span className="ml-auto text-[11px] text-slate-400">{formatDate(t.createdAt)}</span>
+                        </div>
+                        <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">{t.title}</p>
+                        {t.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{t.description}</p>}
+                      </button>
+                    )}
+                  />
                 )}
               </div>
             </TabsContent>
 
             <TabsContent value="invoices" className="p-4 sm:p-6">
               <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Invoices</h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Your billing history and line-item details.</p>
+                <div className="flex sm:flex-row flex-col sm:items-center justify-between gap-2">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Invoices</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Your billing history and line-item details.</p>
+                  </div>
+                  {invoices.length > 0 && (
+                    <Button variant="outline" size="sm" className="self-start sm:self-auto" onClick={() => setInvoiceView(v => v === 'table' ? 'kanban' : 'table')}>
+                      {invoiceView === 'table' ? <LayoutGrid size={14} className="mr-1" /> : <List size={14} className="mr-1" />}
+                      {invoiceView === 'table' ? 'Kanban' : 'Table'}
+                    </Button>
+                  )}
                 </div>
 
                 {selectedInvoiceId && invoice ? (
@@ -556,22 +590,44 @@ export function PortalPage() {
                     <p className="mt-3 text-sm font-medium text-slate-700 dark:text-slate-300">No invoices yet</p>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Invoices issued to your organization will appear here.</p>
                   </div>
+                ) : invoiceView === 'table' ? (
+                  <DataTable
+                    columns={[
+                      { key: 'subject', label: 'Invoice', render: (v: any) => <p className="font-medium text-slate-900 dark:text-white truncate">{v || 'Untitled'}</p> },
+                      { key: 'invoiceStatus', label: 'Status', render: (v: any) => <Chip className={statusTone(v)}>{v || 'Open'}</Chip> },
+                      { key: 'grandTotal', label: 'Amount', render: (v: any) => <span className="font-semibold text-slate-900 dark:text-white">{fmtMoney(v)}</span> },
+                      { key: 'createdAt', label: 'Issued', render: (v: any) => <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(v)}</span> },
+                    ]}
+                    data={invoices}
+                    onRowClick={(inv: any) => setSelectedInvoiceId(inv.id)}
+                    emptyMessage="No invoices yet."
+                    pageSize={10}
+                    actions={(inv: any) => (
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedInvoiceId(inv.id)}>
+                        <Eye size={13} className="mr-1" /> View
+                      </Button>
+                    )}
+                  />
                 ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {invoices.map((inv: any) => (
-                      <button key={inv.id} onClick={() => setSelectedInvoiceId(inv.id)} className="text-left rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all">
+                  <PortalKanban
+                    records={invoices}
+                    groupKey="invoiceStatus"
+                    dotClass={invoiceKanbanDot}
+                    order={INVOICE_KANBAN_ORDER}
+                    cardRender={(inv: any) => (
+                      <button
+                        onClick={() => setSelectedInvoiceId(inv.id)}
+                        className="w-full text-left rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all"
+                      >
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Chip className={statusTone(inv.invoiceStatus)}>{inv.invoiceStatus || 'Open'}</Chip>
+                          <span className={cn('text-[11px] font-medium', statusToneClassText(inv.invoiceStatus))}>{inv.invoiceStatus || 'Open'}</span>
                           <span className="ml-auto text-[11px] text-slate-400">{formatDate(inv.createdAt)}</span>
                         </div>
-                        <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">{inv.subject}</p>
-                        <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{fmtMoney(inv.grandTotal)}</p>
-                        <span className="mt-2 inline-flex items-center text-xs font-medium text-sky-600 dark:text-sky-400">
-                          View line items <Eye size={12} className="ml-1" />
-                        </span>
+                        <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">{inv.subject}</p>
+                        <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{fmtMoney(inv.grandTotal)}</p>
                       </button>
-                    ))}
-                  </div>
+                    )}
+                  />
                 )}
               </div>
             </TabsContent>
@@ -643,13 +699,6 @@ export function PortalPage() {
                         <div className="relative mt-1">
                           <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                           <Input value={profileForm.phone} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))} className="pl-9" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Company</label>
-                        <div className="relative mt-1">
-                          <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <Input value={profileForm.company} onChange={e => setProfileForm(p => ({ ...p, company: e.target.value }))} className="pl-9" />
                         </div>
                       </div>
                       <Button type="submit" size="sm" className="bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700" disabled={updateProfileMutation.isPending}>
