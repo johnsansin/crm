@@ -1513,6 +1513,7 @@ function AssignedToMeWidget() {
   const isManager = !!user?.isAdmin || !!user?.isSuperAdmin
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<{ type: 'all' | 'user' | 'group'; id?: string } | null>(isManager && user?.id ? { type: 'user', id: user.id } : null)
+  const [statusFilter, setStatusFilter] = useState<string>('Planned,In Progress')
 
   const completeMutation = useMutation({
     mutationFn: (id: string) => api.updateCalendarActivity(id, { status: 'Completed' }),
@@ -1563,47 +1564,54 @@ function AssignedToMeWidget() {
     ...(items.projects || []).map((i: any) => ({ ...i, _module: 'projects', _icon: FolderOpen, _color: 'text-sky-600 dark:text-sky-400', _label: 'Project' })),
   ].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
 
+  const taskList = allItems.filter(i => i._module === 'activities')
+  const otherItems = allItems.filter(i => i._module !== 'activities')
+
+  const statusOptions = ['Planned', 'In Progress', 'Deferred', 'Not Started', 'All']
+  const selected = statusFilter.split(',').filter(Boolean)
+  const isAllStatus = selected.length === 0 || selected.includes('All')
+  const visibleTasks = isAllStatus ? taskList : taskList.filter(t => t.status && selected.includes(t.status))
+
+  const toggleStatus = (s: string) => {
+    if (s === 'All') { setStatusFilter('All'); return }
+    let next = selected.filter(x => x !== 'All')
+    if (next.includes(s)) next = next.filter(x => x !== s)
+    else next = [...next, s]
+    if (next.length === 0) next = ['Planned', 'In Progress']
+    setStatusFilter(next.join(','))
+  }
+
+  const headerAction = isManager ? (
+    <select
+      value={filter ? `${filter.type}:${filter.id || ''}` : ''}
+      onChange={e => {
+        const v = e.target.value
+        if (!v) return setFilter(null)
+        const [type, id] = v.split(':')
+        setFilter(type === 'all' ? { type: 'all' } : { type: type as 'user' | 'group', id })
+      }}
+      title="View records for"
+      className="w-28 shrink-0 rounded-md border border-slate-200 bg-background px-1.5 py-1 text-[10px] font-medium text-muted-foreground outline-none focus:ring-2 focus:ring-indigo-500 sm:w-36 dark:border-slate-700"
+    >
+      <option value="">Team / member…</option>
+      <option value="all:">Everyone</option>
+      <optgroup label="Users">
+        {(assignees?.data || []).map((u: any) => (
+          <option key={u.id} value={`user:${u.id}`}>
+            {`${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email}
+          </option>
+        ))}
+      </optgroup>
+      <optgroup label="Groups">
+        {(assignees?.groups || []).map((g: any) => (
+          <option key={g.id} value={`group:${g.id}`}>{g.name} ({g._count?.members ?? 0})</option>
+        ))}
+      </optgroup>
+    </select>
+  ) : undefined
+
   return (
-    <WidgetCard title={isManager ? 'Team assignments' : 'Assigned to me'} icon={UserCheck} tint="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
-      {isManager && (
-        <div className="border-b border-slate-100 dark:border-slate-800 p-3">
-          <div className="mb-1.5 flex items-center justify-between">
-            <label className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <Users size={11} /> View records for
-            </label>
-            {filter && (
-              <button type="button" onClick={() => setFilter(null)} className="inline-flex items-center gap-0.5 text-[10px] font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                <X size={11} /> Clear
-              </button>
-            )}
-          </div>
-          <select
-            value={filter ? `${filter.type}:${filter.id || ''}` : ''}
-            onChange={e => {
-              const v = e.target.value
-              if (!v) return setFilter(null)
-              const [type, id] = v.split(':')
-              setFilter(type === 'all' ? { type: 'all' } : { type: type as 'user' | 'group', id })
-            }}
-            className="w-full rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="">Select a user or group…</option>
-            <option value="all:">Everyone in organization</option>
-            <optgroup label="Users">
-              {(assignees?.data || []).map((u: any) => (
-                <option key={u.id} value={`user:${u.id}`}>
-                  {`${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email} · {u.email}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Groups">
-              {(assignees?.groups || []).map((g: any) => (
-                <option key={g.id} value={`group:${g.id}`}>{g.name} ({g._count?.members ?? 0} members)</option>
-              ))}
-            </optgroup>
-          </select>
-        </div>
-      )}
+    <WidgetCard title={isManager ? 'Team assignments' : 'Assigned to me'} icon={UserCheck} tint="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400" action={headerAction}>
       {!scopeQuery ? (
         <div className="p-6 text-center">
           <UserCheck size={24} className="mx-auto mb-2 text-muted-foreground/30" />
@@ -1621,47 +1629,102 @@ function AssignedToMeWidget() {
           </p>
         </div>
       ) : (
-        <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
-          {allItems.slice(0, 10).map((item: any) => {
-            const Icon = item._icon
-            return (
-              <Link
-                key={`${item._module}-${item.id}`}
-                to={item.link || `/${item._module}/${item.id}`}
-                className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800/50"
-              >
-                <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted/50', item._color)}>
-                  <Icon size={13} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium truncate">{item.name}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {item._label}
-                    {item.status && ` · ${item.status}`}
-                    {item.stage && ` · ${item.stage}`}
-                    {item.priority && ` · ${item.priority}`}
-                  </p>
+        <div className="max-h-96 overflow-y-auto">
+          {taskList.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <span>To-Dos</span>
+                <span className="rounded-full bg-background px-2 py-0.5 text-[10px]">{visibleTasks.length}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 border-b px-3 py-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</span>
+                {statusOptions.map(s => {
+                  const active = isAllStatus ? s === 'All' : selected.includes(s)
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => toggleStatus(s)}
+                      className={cn(
+                        'rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors',
+                        active ? 'bg-indigo-600 text-white' : 'bg-muted text-muted-foreground hover:bg-indigo-100 dark:hover:bg-indigo-500/20'
+                      )}
+                    >
+                      {s}
+                    </button>
+                  )
+                })}
+              </div>
+              {visibleTasks.length === 0 ? (
+                <p className="px-4 py-3 text-center text-xs text-muted-foreground">No tasks with the selected status</p>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {visibleTasks.map(t => (
+                    <div key={`task-${t.id}`} className="flex items-center gap-2.5 px-3 py-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <button
+                        type="button"
+                        onClick={() => completeMutation.mutate(t.id)}
+                        disabled={completeMutation.isPending}
+                        title="Mark task as complete"
+                        className={cn('grid h-5 w-5 shrink-0 cursor-pointer place-items-center rounded-full border transition-colors', 'border-slate-300 text-transparent hover:border-green-500 hover:bg-green-50 hover:text-green-500 dark:border-slate-600')}
+                      >
+                        <CheckCircle2 size={13} strokeWidth={2.5} />
+                      </button>
+                      <Link to={t.link || '/activities'} className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium text-slate-800 dark:text-slate-100">{t.name}</p>
+                        <p className="truncate text-[10px] text-muted-foreground">
+                          {t.dueAt ? `Due ${formatDateTime(t.dueAt)}` : 'No due date'}
+                          {t.parentModule ? ` · ${t.parentModule}` : ''}
+                        </p>
+                      </Link>
+                      <span className={cn('shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium', t.status === 'In Progress' ? 'bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300' : t.status === 'Deferred' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' : t.status === 'Not Started' ? 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-300' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300')}>
+                        {t.status}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                {item._module === 'activities' ? (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); completeMutation.mutate(item.id) }}
-                    disabled={completeMutation.isPending}
-                    className="shrink-0 inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-medium text-green-700 transition-colors hover:bg-green-100 dark:border-green-800 dark:bg-green-950 dark:text-green-300 disabled:opacity-50"
-                    title="Mark task as complete"
-                  >
-                    <CheckCircle2 size={11} /> Complete
-                  </button>
-                ) : (
-                  <span className="text-[10px] text-muted-foreground shrink-0">
-                    {item.amount ? fmtMoney(item.amount) : formatDateTime(item.updatedAt)}
-                  </span>
-                )}
-              </Link>
-            )
-          })}
+              )}
+            </div>
+          )}
+          {otherItems.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <span>Records</span>
+                <span className="rounded-full bg-background px-2 py-0.5 text-[10px]">{otherItems.length}</span>
+              </div>
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {otherItems.slice(0, 8).map((item: any) => {
+                  const Icon = item._icon
+                  return (
+                    <Link
+                      key={`${item._module}-${item.id}`}
+                      to={item.link || `/${item._module}/${item.id}`}
+                      className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                    >
+                      <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted/50', item._color)}>
+                        <Icon size={13} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium">{item.name}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {item._label}
+                          {item.status && ` · ${item.status}`}
+                          {item.stage && ` · ${item.stage}`}
+                          {item.priority && ` · ${item.priority}`}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        {item.amount ? fmtMoney(item.amount) : formatDateTime(item.updatedAt)}
+                      </span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </WidgetCard>
   )
 }
+
