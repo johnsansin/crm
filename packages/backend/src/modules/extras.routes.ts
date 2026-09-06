@@ -774,15 +774,18 @@ extrasRouter.post('/portal/register', authMiddleware, requireTenant, requireAdmi
     if (!contact) return res.status(404).json({ error: 'Contact not found' })
     const email = contact.email || `${contact.firstName.toLowerCase()}@portal.local`
     const existing = await prisma.portalUser.findUnique({ where: { email } })
+    const admin = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { email: true, firstName: true, lastName: true } })
+    const sharedByName = admin ? [admin.firstName, admin.lastName].filter(Boolean).join(' ') : ''
+    const sharedByEmail = admin?.email ?? ''
     const customCode = String(req.body.accessCode || '').trim()
     const code = !existing || customCode ? customCode || generateAccessCode() : null
     const hash = code ? await bcrypt.hash(code, 10) : null
     const portal = await prisma.portalUser.upsert({
       where: { email },
       update: customCode
-        ? { isActive: true, contactId, userId: contactId, password: hash! }
-        : { isActive: true, contactId, userId: contactId },
-      create: { email, password: hash ?? existing?.password ?? '', name: [contact.firstName, contact.lastName].filter(Boolean).join(' '), contactId, userId: contactId, companyId: req.user!.companyId },
+        ? { isActive: true, contactId, userId: contactId, password: hash!, sharedByName, sharedByEmail }
+        : { isActive: true, contactId, userId: contactId, sharedByName, sharedByEmail },
+      create: { email, password: hash ?? existing?.password ?? '', name: [contact.firstName, contact.lastName].filter(Boolean).join(' '), contactId, userId: contactId, companyId: req.user!.companyId, sharedByName, sharedByEmail },
     })
     res.status(existing ? 200 : 201).json({ data: { ...portal, accessCode: code } })
   } catch (err) { next(err) }

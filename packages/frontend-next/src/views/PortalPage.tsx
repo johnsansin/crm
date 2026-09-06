@@ -39,6 +39,15 @@ function priorityText(priority?: string | null): string {
   return 'text-sky-600 dark:text-sky-400'
 }
 
+function statusTextTone(status?: string | null): string {
+  const s = (status || '').toLowerCase()
+  if (/paid|resolved|closed|completed|approved|delivered/.test(s)) return 'text-emerald-600 dark:text-emerald-400'
+  if (/overdue|urgent|cancelled|failed|declined|refunded|void/.test(s)) return 'text-rose-600 dark:text-rose-400'
+  if (/in progress|waiting|pending|awaiting|partial/.test(s)) return 'text-amber-600 dark:text-amber-400'
+  if (/draft|open|new|active/.test(s)) return 'text-sky-600 dark:text-sky-400'
+  return 'text-slate-500 dark:text-slate-400'
+}
+
 function Chip({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${className}`}>
@@ -60,6 +69,7 @@ interface PortalUser {
   id: string
   name: string
   email: string
+  sharedBy?: string
 }
 
 const KANBAN_ORDER = ['Open', 'In Progress', 'Wait for Response', 'Closed']
@@ -81,6 +91,15 @@ function invoiceKanbanDot(status: string): string {
   if (/overdue|cancelled|refunded/.test(s)) return 'bg-rose-500'
   if (/partial|pending|awaiting/.test(s)) return 'bg-amber-500'
   if (/open|draft|new/.test(s)) return 'bg-sky-500'
+  return 'bg-slate-400'
+}
+
+function docKanbanDot(fileType: string): string {
+  const t = fileType.toLowerCase()
+  if (/pdf/.test(t)) return 'bg-rose-500'
+  if (/image|png|jpg|jpeg|gif/.test(t)) return 'bg-violet-500'
+  if (/sheet|excel|xls|csv/.test(t)) return 'bg-emerald-500'
+  if (/doc|word|txt|text/.test(t)) return 'bg-sky-500'
   return 'bg-slate-400'
 }
 
@@ -365,7 +384,14 @@ export function PortalPage() {
           <div className="absolute -bottom-20 -left-10 w-64 h-64 rounded-full bg-sky-300/20 blur-2xl pointer-events-none" />
           <div className="relative">
             <h2 className="text-2xl font-bold">Welcome back, {firstName}</h2>
-            <p className="mt-1 text-sm text-blue-100">Here is a quick snapshot of your organization account.</p>
+            <p className="mt-1 text-sm text-blue-100">
+              Here is a quick snapshot of your organization account.
+              {portalUser?.sharedBy ? (
+                <>
+                  {' '}Portal access was shared with you by <span className="font-semibold text-white">{portalUser.sharedBy}</span>.
+                </>
+              ) : null}
+            </p>
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {stats.map((s) => (
                 <div key={s.label} className="rounded-xl bg-white/10 backdrop-blur border border-white/15 p-3">
@@ -448,7 +474,7 @@ export function PortalPage() {
                         )}
                       </div>
                       <div className="flex gap-2">
-                        <Input value={commentText} onChange={e => setCommentText(e.target.value)} placeholder="Write a reply…" className="h-10" />
+                        <Input value={commentText} onChange={e => setCommentText(e.target.value)} placeholder="Write a reply…" className="h-10" onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (commentText.trim()) addCommentMutation.mutate(commentText) } }} />
                         <Button size="sm" onClick={() => addCommentMutation.mutate(commentText)} disabled={!commentText.trim() || addCommentMutation.isPending}>
                           {addCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                         </Button>
@@ -620,7 +646,7 @@ export function PortalPage() {
                         className="w-full text-left rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all"
                       >
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={cn('text-[11px] font-medium', statusToneClassText(inv.invoiceStatus))}>{inv.invoiceStatus || 'Open'}</span>
+                          <span className={cn('text-[11px] font-medium', statusTextTone(inv.invoiceStatus))}>{inv.invoiceStatus || 'Open'}</span>
                           <span className="ml-auto text-[11px] text-slate-400">{formatDate(inv.createdAt)}</span>
                         </div>
                         <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">{inv.subject}</p>
@@ -634,9 +660,17 @@ export function PortalPage() {
 
             <TabsContent value="documents" className="p-4 sm:p-6">
               <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Shared Documents</h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Files your organization has shared with you.</p>
+                <div className="flex sm:flex-row flex-col sm:items-center justify-between gap-2">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Shared Documents</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Files your organization has shared with you.</p>
+                  </div>
+                  {documents.length > 0 && (
+                    <Button variant="outline" size="sm" className="self-start sm:self-auto" onClick={() => setDocumentView(v => v === 'table' ? 'kanban' : 'table')}>
+                      {documentView === 'table' ? <LayoutGrid size={14} className="mr-1" /> : <List size={14} className="mr-1" />}
+                      {documentView === 'table' ? 'Kanban' : 'Table'}
+                    </Button>
+                  )}
                 </div>
                 {documents.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
@@ -646,27 +680,49 @@ export function PortalPage() {
                     <p className="mt-3 text-sm font-medium text-slate-700 dark:text-slate-300">No documents shared</p>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Shared files will show up here when available.</p>
                   </div>
+                ) : documentView === 'table' ? (
+                  <DataTable
+                    columns={[
+                      { key: 'title', label: 'File', render: (v: any) => <p className="font-medium text-slate-900 dark:text-white truncate">{v || 'Untitled'}</p> },
+                      { key: 'fileType', label: 'Type', render: (v: any) => <Chip className={statusTone(v)}>{v || 'Document'}</Chip> },
+                      { key: 'fileVersion', label: 'Version', render: (v: any) => <span className="text-xs text-slate-500 dark:text-slate-400">{v || 'v1'}</span> },
+                      { key: 'createdAt', label: 'Shared', render: (v: any) => <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(v)}</span> },
+                    ]}
+                    data={documents}
+                    onRowClick={(doc: any) => { if (doc.filePath) window.open(doc.filePath, '_blank') }}
+                    emptyMessage="No documents shared yet."
+                    pageSize={10}
+                    actions={(doc: any) => doc.filePath ? (
+                      <a href={doc.filePath} target="_blank" rel="noreferrer" className="inline-flex items-center text-sm font-medium text-sky-600 hover:text-sky-700">
+                        <Download size={13} className="mr-1" /> Download
+                      </a>
+                    ) : null}
+                  />
                 ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {documents.map((doc: any) => (
-                      <div key={doc.id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-500/15 flex items-center justify-center shrink-0">
-                          <FileText size={18} className="text-sky-600 dark:text-sky-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{doc.title}</p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            {doc.fileType || 'Document'} · {doc.fileVersion || 'v1'} · {formatDate(doc.createdAt)}
-                          </p>
+                  <PortalKanban
+                    records={documents}
+                    groupKey="fileType"
+                    dotClass={docKanbanDot}
+                    order={DOC_KANBAN_ORDER}
+                    cardRender={(doc: any) => (
+                      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md transition-all">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-500/15 flex items-center justify-center shrink-0">
+                            <FileText size={15} className="text-sky-600 dark:text-sky-400" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">{doc.title}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400">{doc.fileVersion || 'v1'} · {formatDate(doc.createdAt)}</p>
+                          </div>
                         </div>
                         {doc.filePath && (
-                          <a href={doc.filePath} target="_blank" rel="noreferrer" className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-sky-600 transition-colors" title="Download">
-                            <Download size={16} />
+                          <a href={doc.filePath} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center text-[11px] font-medium text-sky-600 hover:text-sky-700">
+                            <Download size={12} className="mr-1" /> Download
                           </a>
                         )}
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  />
                 )}
               </div>
             </TabsContent>
@@ -685,6 +741,9 @@ export function PortalPage() {
                         <div>
                           <p className="text-sm font-semibold text-slate-900 dark:text-white">{profileForm.name || '—'}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">{portalUser?.email}</p>
+                          {portalUser?.sharedBy ? (
+                            <p className="text-[11px] text-sky-600 dark:text-sky-400 mt-0.5">Portal access shared by {portalUser.sharedBy}</p>
+                          ) : null}
                         </div>
                       </div>
                       <div>

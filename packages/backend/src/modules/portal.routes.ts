@@ -118,7 +118,12 @@ portalRouter.post('/auth/login', async (req, res) => {
     res.json({
       data: {
         token,
-        user: { id: user.id, name: user.name, email: user.email },
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          sharedBy: user.sharedByName || user.sharedByEmail || '',
+        },
       },
     })
   } catch (err: any) {
@@ -130,7 +135,7 @@ portalRouter.get('/profile', portalAuth, async (req: any, res) => {
   try {
     const user = await prisma.portalUser.findUnique({
       where: { id: req.portalUser.portalUserId },
-      select: { id: true, name: true, email: true, phone: true, lastLogin: true, createdAt: true },
+      select: { id: true, name: true, email: true, phone: true, lastLogin: true, createdAt: true, sharedByName: true, sharedByEmail: true },
     })
     if (!user) { res.status(404).json({ error: 'Not found' }); return }
     res.json({ data: user })
