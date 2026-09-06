@@ -13,7 +13,10 @@
     "db:seed": "tsx src/seed.ts",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "prebuild": "npm run db:generate",
+    "prelint": "npm run db:generate",
+    "pretypecheck": "npm run db:generate"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

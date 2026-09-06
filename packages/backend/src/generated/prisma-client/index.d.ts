@@ -304,6 +304,26 @@ export type SupportAuditEvent = $Result.DefaultSelection<Prisma.$SupportAuditEve
  */
 export type Company = $Result.DefaultSelection<Prisma.$CompanyPayload>
 /**
+ * Model SocialForcePost
+ * 
+ */
+export type SocialForcePost = $Result.DefaultSelection<Prisma.$SocialForcePostPayload>
+/**
+ * Model SocialForceBrand
+ * 
+ */
+export type SocialForceBrand = $Result.DefaultSelection<Prisma.$SocialForceBrandPayload>
+/**
+ * Model SocialForceEvent
+ * 
+ */
+export type SocialForceEvent = $Result.DefaultSelection<Prisma.$SocialForceEventPayload>
+/**
+ * Model SsoConfig
+ * 
+ */
+export type SsoConfig = $Result.DefaultSelection<Prisma.$SsoConfigPayload>
+/**
  * Model SubscriptionModel
  * 
  */
@@ -608,6 +628,16 @@ export type WebhookEndpoint = $Result.DefaultSelection<Prisma.$WebhookEndpointPa
  * 
  */
 export type WebhookLog = $Result.DefaultSelection<Prisma.$WebhookLogPayload>
+/**
+ * Model WebsiteEnquiry
+ * 
+ */
+export type WebsiteEnquiry = $Result.DefaultSelection<Prisma.$WebsiteEnquiryPayload>
+/**
+ * Model NewsletterSubscriber
+ * 
+ */
+export type NewsletterSubscriber = $Result.DefaultSelection<Prisma.$NewsletterSubscriberPayload>
 
 /**
  * Enums
@@ -1376,6 +1406,46 @@ export class PrismaClient<
   get company(): Prisma.CompanyDelegate<ExtArgs>;
 
   /**
+   * `prisma.socialForcePost`: Exposes CRUD operations for the **SocialForcePost** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SocialForcePosts
+    * const socialForcePosts = await prisma.socialForcePost.findMany()
+    * ```
+    */
+  get socialForcePost(): Prisma.SocialForcePostDelegate<ExtArgs>;
+
+  /**
+   * `prisma.socialForceBrand`: Exposes CRUD operations for the **SocialForceBrand** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SocialForceBrands
+    * const socialForceBrands = await prisma.socialForceBrand.findMany()
+    * ```
+    */
+  get socialForceBrand(): Prisma.SocialForceBrandDelegate<ExtArgs>;
+
+  /**
+   * `prisma.socialForceEvent`: Exposes CRUD operations for the **SocialForceEvent** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SocialForceEvents
+    * const socialForceEvents = await prisma.socialForceEvent.findMany()
+    * ```
+    */
+  get socialForceEvent(): Prisma.SocialForceEventDelegate<ExtArgs>;
+
+  /**
+   * `prisma.ssoConfig`: Exposes CRUD operations for the **SsoConfig** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SsoConfigs
+    * const ssoConfigs = await prisma.ssoConfig.findMany()
+    * ```
+    */
+  get ssoConfig(): Prisma.SsoConfigDelegate<ExtArgs>;
+
+  /**
    * `prisma.subscriptionModel`: Exposes CRUD operations for the **SubscriptionModel** model.
     * Example usage:
     * ```ts
@@ -1984,6 +2054,26 @@ export class PrismaClient<
     * ```
     */
   get webhookLog(): Prisma.WebhookLogDelegate<ExtArgs>;
+
+  /**
+   * `prisma.websiteEnquiry`: Exposes CRUD operations for the **WebsiteEnquiry** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more WebsiteEnquiries
+    * const websiteEnquiries = await prisma.websiteEnquiry.findMany()
+    * ```
+    */
+  get websiteEnquiry(): Prisma.WebsiteEnquiryDelegate<ExtArgs>;
+
+  /**
+   * `prisma.newsletterSubscriber`: Exposes CRUD operations for the **NewsletterSubscriber** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more NewsletterSubscribers
+    * const newsletterSubscribers = await prisma.newsletterSubscriber.findMany()
+    * ```
+    */
+  get newsletterSubscriber(): Prisma.NewsletterSubscriberDelegate<ExtArgs>;
 }
 
 export namespace Prisma {
@@ -2483,6 +2573,10 @@ export namespace Prisma {
     SupportMessage: 'SupportMessage',
     SupportAuditEvent: 'SupportAuditEvent',
     Company: 'Company',
+    SocialForcePost: 'SocialForcePost',
+    SocialForceBrand: 'SocialForceBrand',
+    SocialForceEvent: 'SocialForceEvent',
+    SsoConfig: 'SsoConfig',
     SubscriptionModel: 'SubscriptionModel',
     LoginLog: 'LoginLog',
     PendingRegistration: 'PendingRegistration',
@@ -2543,7 +2637,9 @@ export namespace Prisma {
     SocialMediaProfile: 'SocialMediaProfile',
     SocialMediaPost: 'SocialMediaPost',
     WebhookEndpoint: 'WebhookEndpoint',
-    WebhookLog: 'WebhookLog'
+    WebhookLog: 'WebhookLog',
+    WebsiteEnquiry: 'WebsiteEnquiry',
+    NewsletterSubscriber: 'NewsletterSubscriber'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -2559,7 +2655,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "user" | "role" | "rolePermission" | "userGroup" | "userGroupMember" | "userProfile" | "module" | "currency" | "customView" | "account" | "contact" | "lead" | "potential" | "potentialProduct" | "potentialStageHistory" | "campaign" | "product" | "productImage" | "leadProduct" | "leadService" | "service" | "vendor" | "priceBook" | "priceBookProduct" | "quote" | "quoteLineItem" | "quoteStageHistory" | "salesOrder" | "salesOrderLineItem" | "purchaseOrder" | "purchaseOrderLineItem" | "invoice" | "invoiceLineItem" | "ticket" | "faq" | "document" | "email" | "emailTemplate" | "project" | "projectTask" | "projectMilestone" | "asset" | "serviceContract" | "smsNotifier" | "comment" | "tag" | "attachment" | "auditLog" | "relatedList" | "currencyInfo" | "taxInfo" | "chatConversation" | "chatParticipant" | "chatMessage" | "supportConversation" | "supportMessage" | "supportAuditEvent" | "company" | "subscriptionModel" | "loginLog" | "pendingRegistration" | "sequenceNumber" | "orgSetting" | "globalSetting" | "customField" | "customFieldValue" | "picklistOption" | "sharingRule" | "permissionProfile" | "workflow" | "scheduledTask" | "webform" | "notification" | "announcement" | "holiday" | "activity" | "follow" | "receipt" | "payment" | "recurringInvoice" | "portalUser" | "aiPrompt" | "aiLog" | "leadCandidate" | "translation" | "mailbox" | "emailToTicketRule" | "callLog" | "googleAccount" | "report" | "rssFeed" | "rssEntry" | "moduleLayout" | "picklistDependency" | "apiKey" | "competitor" | "potentialCompetitor" | "timeEntry" | "stageProbability" | "quantityDiscount" | "ticketComment" | "escalationHistory" | "projectResource" | "workflowLog" | "dashboardWidget" | "reportSchedule" | "scorecard" | "emailCampaign" | "emailCampaignRecipient" | "smsTemplate" | "chatWidget" | "chatSession" | "chatSessionMessage" | "landingPage" | "landingPageSubmission" | "socialMediaProfile" | "socialMediaPost" | "webhookEndpoint" | "webhookLog"
+      modelProps: "user" | "role" | "rolePermission" | "userGroup" | "userGroupMember" | "userProfile" | "module" | "currency" | "customView" | "account" | "contact" | "lead" | "potential" | "potentialProduct" | "potentialStageHistory" | "campaign" | "product" | "productImage" | "leadProduct" | "leadService" | "service" | "vendor" | "priceBook" | "priceBookProduct" | "quote" | "quoteLineItem" | "quoteStageHistory" | "salesOrder" | "salesOrderLineItem" | "purchaseOrder" | "purchaseOrderLineItem" | "invoice" | "invoiceLineItem" | "ticket" | "faq" | "document" | "email" | "emailTemplate" | "project" | "projectTask" | "projectMilestone" | "asset" | "serviceContract" | "smsNotifier" | "comment" | "tag" | "attachment" | "auditLog" | "relatedList" | "currencyInfo" | "taxInfo" | "chatConversation" | "chatParticipant" | "chatMessage" | "supportConversation" | "supportMessage" | "supportAuditEvent" | "company" | "socialForcePost" | "socialForceBrand" | "socialForceEvent" | "ssoConfig" | "subscriptionModel" | "loginLog" | "pendingRegistration" | "sequenceNumber" | "orgSetting" | "globalSetting" | "customField" | "customFieldValue" | "picklistOption" | "sharingRule" | "permissionProfile" | "workflow" | "scheduledTask" | "webform" | "notification" | "announcement" | "holiday" | "activity" | "follow" | "receipt" | "payment" | "recurringInvoice" | "portalUser" | "aiPrompt" | "aiLog" | "leadCandidate" | "translation" | "mailbox" | "emailToTicketRule" | "callLog" | "googleAccount" | "report" | "rssFeed" | "rssEntry" | "moduleLayout" | "picklistDependency" | "apiKey" | "competitor" | "potentialCompetitor" | "timeEntry" | "stageProbability" | "quantityDiscount" | "ticketComment" | "escalationHistory" | "projectResource" | "workflowLog" | "dashboardWidget" | "reportSchedule" | "scorecard" | "emailCampaign" | "emailCampaignRecipient" | "smsTemplate" | "chatWidget" | "chatSession" | "chatSessionMessage" | "landingPage" | "landingPageSubmission" | "socialMediaProfile" | "socialMediaPost" | "webhookEndpoint" | "webhookLog" | "websiteEnquiry" | "newsletterSubscriber"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -6620,6 +6716,286 @@ export namespace Prisma {
           count: {
             args: Prisma.CompanyCountArgs<ExtArgs>
             result: $Utils.Optional<CompanyCountAggregateOutputType> | number
+          }
+        }
+      }
+      SocialForcePost: {
+        payload: Prisma.$SocialForcePostPayload<ExtArgs>
+        fields: Prisma.SocialForcePostFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SocialForcePostFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForcePostPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SocialForcePostFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForcePostPayload>
+          }
+          findFirst: {
+            args: Prisma.SocialForcePostFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForcePostPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SocialForcePostFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForcePostPayload>
+          }
+          findMany: {
+            args: Prisma.SocialForcePostFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForcePostPayload>[]
+          }
+          create: {
+            args: Prisma.SocialForcePostCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForcePostPayload>
+          }
+          createMany: {
+            args: Prisma.SocialForcePostCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SocialForcePostCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForcePostPayload>[]
+          }
+          delete: {
+            args: Prisma.SocialForcePostDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForcePostPayload>
+          }
+          update: {
+            args: Prisma.SocialForcePostUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForcePostPayload>
+          }
+          deleteMany: {
+            args: Prisma.SocialForcePostDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SocialForcePostUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.SocialForcePostUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForcePostPayload>
+          }
+          aggregate: {
+            args: Prisma.SocialForcePostAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSocialForcePost>
+          }
+          groupBy: {
+            args: Prisma.SocialForcePostGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SocialForcePostGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SocialForcePostCountArgs<ExtArgs>
+            result: $Utils.Optional<SocialForcePostCountAggregateOutputType> | number
+          }
+        }
+      }
+      SocialForceBrand: {
+        payload: Prisma.$SocialForceBrandPayload<ExtArgs>
+        fields: Prisma.SocialForceBrandFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SocialForceBrandFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceBrandPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SocialForceBrandFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceBrandPayload>
+          }
+          findFirst: {
+            args: Prisma.SocialForceBrandFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceBrandPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SocialForceBrandFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceBrandPayload>
+          }
+          findMany: {
+            args: Prisma.SocialForceBrandFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceBrandPayload>[]
+          }
+          create: {
+            args: Prisma.SocialForceBrandCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceBrandPayload>
+          }
+          createMany: {
+            args: Prisma.SocialForceBrandCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SocialForceBrandCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceBrandPayload>[]
+          }
+          delete: {
+            args: Prisma.SocialForceBrandDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceBrandPayload>
+          }
+          update: {
+            args: Prisma.SocialForceBrandUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceBrandPayload>
+          }
+          deleteMany: {
+            args: Prisma.SocialForceBrandDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SocialForceBrandUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.SocialForceBrandUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceBrandPayload>
+          }
+          aggregate: {
+            args: Prisma.SocialForceBrandAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSocialForceBrand>
+          }
+          groupBy: {
+            args: Prisma.SocialForceBrandGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SocialForceBrandGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SocialForceBrandCountArgs<ExtArgs>
+            result: $Utils.Optional<SocialForceBrandCountAggregateOutputType> | number
+          }
+        }
+      }
+      SocialForceEvent: {
+        payload: Prisma.$SocialForceEventPayload<ExtArgs>
+        fields: Prisma.SocialForceEventFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SocialForceEventFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceEventPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SocialForceEventFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceEventPayload>
+          }
+          findFirst: {
+            args: Prisma.SocialForceEventFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceEventPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SocialForceEventFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceEventPayload>
+          }
+          findMany: {
+            args: Prisma.SocialForceEventFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceEventPayload>[]
+          }
+          create: {
+            args: Prisma.SocialForceEventCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceEventPayload>
+          }
+          createMany: {
+            args: Prisma.SocialForceEventCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SocialForceEventCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceEventPayload>[]
+          }
+          delete: {
+            args: Prisma.SocialForceEventDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceEventPayload>
+          }
+          update: {
+            args: Prisma.SocialForceEventUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceEventPayload>
+          }
+          deleteMany: {
+            args: Prisma.SocialForceEventDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SocialForceEventUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.SocialForceEventUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SocialForceEventPayload>
+          }
+          aggregate: {
+            args: Prisma.SocialForceEventAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSocialForceEvent>
+          }
+          groupBy: {
+            args: Prisma.SocialForceEventGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SocialForceEventGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SocialForceEventCountArgs<ExtArgs>
+            result: $Utils.Optional<SocialForceEventCountAggregateOutputType> | number
+          }
+        }
+      }
+      SsoConfig: {
+        payload: Prisma.$SsoConfigPayload<ExtArgs>
+        fields: Prisma.SsoConfigFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SsoConfigFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SsoConfigPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SsoConfigFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SsoConfigPayload>
+          }
+          findFirst: {
+            args: Prisma.SsoConfigFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SsoConfigPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SsoConfigFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SsoConfigPayload>
+          }
+          findMany: {
+            args: Prisma.SsoConfigFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SsoConfigPayload>[]
+          }
+          create: {
+            args: Prisma.SsoConfigCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SsoConfigPayload>
+          }
+          createMany: {
+            args: Prisma.SsoConfigCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SsoConfigCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SsoConfigPayload>[]
+          }
+          delete: {
+            args: Prisma.SsoConfigDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SsoConfigPayload>
+          }
+          update: {
+            args: Prisma.SsoConfigUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SsoConfigPayload>
+          }
+          deleteMany: {
+            args: Prisma.SsoConfigDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SsoConfigUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.SsoConfigUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SsoConfigPayload>
+          }
+          aggregate: {
+            args: Prisma.SsoConfigAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSsoConfig>
+          }
+          groupBy: {
+            args: Prisma.SsoConfigGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SsoConfigGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SsoConfigCountArgs<ExtArgs>
+            result: $Utils.Optional<SsoConfigCountAggregateOutputType> | number
           }
         }
       }
@@ -10893,6 +11269,146 @@ export namespace Prisma {
           }
         }
       }
+      WebsiteEnquiry: {
+        payload: Prisma.$WebsiteEnquiryPayload<ExtArgs>
+        fields: Prisma.WebsiteEnquiryFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.WebsiteEnquiryFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebsiteEnquiryPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.WebsiteEnquiryFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebsiteEnquiryPayload>
+          }
+          findFirst: {
+            args: Prisma.WebsiteEnquiryFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebsiteEnquiryPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.WebsiteEnquiryFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebsiteEnquiryPayload>
+          }
+          findMany: {
+            args: Prisma.WebsiteEnquiryFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebsiteEnquiryPayload>[]
+          }
+          create: {
+            args: Prisma.WebsiteEnquiryCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebsiteEnquiryPayload>
+          }
+          createMany: {
+            args: Prisma.WebsiteEnquiryCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.WebsiteEnquiryCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebsiteEnquiryPayload>[]
+          }
+          delete: {
+            args: Prisma.WebsiteEnquiryDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebsiteEnquiryPayload>
+          }
+          update: {
+            args: Prisma.WebsiteEnquiryUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebsiteEnquiryPayload>
+          }
+          deleteMany: {
+            args: Prisma.WebsiteEnquiryDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.WebsiteEnquiryUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.WebsiteEnquiryUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebsiteEnquiryPayload>
+          }
+          aggregate: {
+            args: Prisma.WebsiteEnquiryAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateWebsiteEnquiry>
+          }
+          groupBy: {
+            args: Prisma.WebsiteEnquiryGroupByArgs<ExtArgs>
+            result: $Utils.Optional<WebsiteEnquiryGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.WebsiteEnquiryCountArgs<ExtArgs>
+            result: $Utils.Optional<WebsiteEnquiryCountAggregateOutputType> | number
+          }
+        }
+      }
+      NewsletterSubscriber: {
+        payload: Prisma.$NewsletterSubscriberPayload<ExtArgs>
+        fields: Prisma.NewsletterSubscriberFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.NewsletterSubscriberFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NewsletterSubscriberPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.NewsletterSubscriberFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NewsletterSubscriberPayload>
+          }
+          findFirst: {
+            args: Prisma.NewsletterSubscriberFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NewsletterSubscriberPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.NewsletterSubscriberFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NewsletterSubscriberPayload>
+          }
+          findMany: {
+            args: Prisma.NewsletterSubscriberFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NewsletterSubscriberPayload>[]
+          }
+          create: {
+            args: Prisma.NewsletterSubscriberCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NewsletterSubscriberPayload>
+          }
+          createMany: {
+            args: Prisma.NewsletterSubscriberCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.NewsletterSubscriberCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NewsletterSubscriberPayload>[]
+          }
+          delete: {
+            args: Prisma.NewsletterSubscriberDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NewsletterSubscriberPayload>
+          }
+          update: {
+            args: Prisma.NewsletterSubscriberUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NewsletterSubscriberPayload>
+          }
+          deleteMany: {
+            args: Prisma.NewsletterSubscriberDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.NewsletterSubscriberUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.NewsletterSubscriberUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NewsletterSubscriberPayload>
+          }
+          aggregate: {
+            args: Prisma.NewsletterSubscriberAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateNewsletterSubscriber>
+          }
+          groupBy: {
+            args: Prisma.NewsletterSubscriberGroupByArgs<ExtArgs>
+            result: $Utils.Optional<NewsletterSubscriberGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.NewsletterSubscriberCountArgs<ExtArgs>
+            result: $Utils.Optional<NewsletterSubscriberCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -11753,10 +12269,14 @@ export namespace Prisma {
 
   export type CompanyCountOutputType = {
     users: number
+    socialForcePosts: number
+    socialForceEvents: number
   }
 
   export type CompanyCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     users?: boolean | CompanyCountOutputTypeCountUsersArgs
+    socialForcePosts?: boolean | CompanyCountOutputTypeCountSocialForcePostsArgs
+    socialForceEvents?: boolean | CompanyCountOutputTypeCountSocialForceEventsArgs
   }
 
   // Custom InputTypes
@@ -11775,6 +12295,20 @@ export namespace Prisma {
    */
   export type CompanyCountOutputTypeCountUsersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: UserWhereInput
+  }
+
+  /**
+   * CompanyCountOutputType without action
+   */
+  export type CompanyCountOutputTypeCountSocialForcePostsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SocialForcePostWhereInput
+  }
+
+  /**
+   * CompanyCountOutputType without action
+   */
+  export type CompanyCountOutputTypeCountSocialForceEventsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SocialForceEventWhereInput
   }
 
 
@@ -77567,6 +78101,10 @@ export namespace Prisma {
     updatedAt?: boolean
     users?: boolean | Company$usersArgs<ExtArgs>
     subscriptionModel?: boolean | Company$subscriptionModelArgs<ExtArgs>
+    ssoConfig?: boolean | Company$ssoConfigArgs<ExtArgs>
+    socialForcePosts?: boolean | Company$socialForcePostsArgs<ExtArgs>
+    socialForceBrand?: boolean | Company$socialForceBrandArgs<ExtArgs>
+    socialForceEvents?: boolean | Company$socialForceEventsArgs<ExtArgs>
     _count?: boolean | CompanyCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["company"]>
 
@@ -77644,6 +78182,10 @@ export namespace Prisma {
   export type CompanyInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     users?: boolean | Company$usersArgs<ExtArgs>
     subscriptionModel?: boolean | Company$subscriptionModelArgs<ExtArgs>
+    ssoConfig?: boolean | Company$ssoConfigArgs<ExtArgs>
+    socialForcePosts?: boolean | Company$socialForcePostsArgs<ExtArgs>
+    socialForceBrand?: boolean | Company$socialForceBrandArgs<ExtArgs>
+    socialForceEvents?: boolean | Company$socialForceEventsArgs<ExtArgs>
     _count?: boolean | CompanyCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type CompanyIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -77655,6 +78197,10 @@ export namespace Prisma {
     objects: {
       users: Prisma.$UserPayload<ExtArgs>[]
       subscriptionModel: Prisma.$SubscriptionModelPayload<ExtArgs> | null
+      ssoConfig: Prisma.$SsoConfigPayload<ExtArgs> | null
+      socialForcePosts: Prisma.$SocialForcePostPayload<ExtArgs>[]
+      socialForceBrand: Prisma.$SocialForceBrandPayload<ExtArgs> | null
+      socialForceEvents: Prisma.$SocialForceEventPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -78055,6 +78601,10 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     users<T extends Company$usersArgs<ExtArgs> = {}>(args?: Subset<T, Company$usersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany"> | Null>
     subscriptionModel<T extends Company$subscriptionModelArgs<ExtArgs> = {}>(args?: Subset<T, Company$subscriptionModelArgs<ExtArgs>>): Prisma__SubscriptionModelClient<$Result.GetResult<Prisma.$SubscriptionModelPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
+    ssoConfig<T extends Company$ssoConfigArgs<ExtArgs> = {}>(args?: Subset<T, Company$ssoConfigArgs<ExtArgs>>): Prisma__SsoConfigClient<$Result.GetResult<Prisma.$SsoConfigPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
+    socialForcePosts<T extends Company$socialForcePostsArgs<ExtArgs> = {}>(args?: Subset<T, Company$socialForcePostsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SocialForcePostPayload<ExtArgs>, T, "findMany"> | Null>
+    socialForceBrand<T extends Company$socialForceBrandArgs<ExtArgs> = {}>(args?: Subset<T, Company$socialForceBrandArgs<ExtArgs>>): Prisma__SocialForceBrandClient<$Result.GetResult<Prisma.$SocialForceBrandPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
+    socialForceEvents<T extends Company$socialForceEventsArgs<ExtArgs> = {}>(args?: Subset<T, Company$socialForceEventsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SocialForceEventPayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -78469,6 +79019,76 @@ export namespace Prisma {
   }
 
   /**
+   * Company.ssoConfig
+   */
+  export type Company$ssoConfigArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigInclude<ExtArgs> | null
+    where?: SsoConfigWhereInput
+  }
+
+  /**
+   * Company.socialForcePosts
+   */
+  export type Company$socialForcePostsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostInclude<ExtArgs> | null
+    where?: SocialForcePostWhereInput
+    orderBy?: SocialForcePostOrderByWithRelationInput | SocialForcePostOrderByWithRelationInput[]
+    cursor?: SocialForcePostWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: SocialForcePostScalarFieldEnum | SocialForcePostScalarFieldEnum[]
+  }
+
+  /**
+   * Company.socialForceBrand
+   */
+  export type Company$socialForceBrandArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandInclude<ExtArgs> | null
+    where?: SocialForceBrandWhereInput
+  }
+
+  /**
+   * Company.socialForceEvents
+   */
+  export type Company$socialForceEventsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventInclude<ExtArgs> | null
+    where?: SocialForceEventWhereInput
+    orderBy?: SocialForceEventOrderByWithRelationInput | SocialForceEventOrderByWithRelationInput[]
+    cursor?: SocialForceEventWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: SocialForceEventScalarFieldEnum | SocialForceEventScalarFieldEnum[]
+  }
+
+  /**
    * Company without action
    */
   export type CompanyDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -78480,6 +79100,4059 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: CompanyInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model SocialForcePost
+   */
+
+  export type AggregateSocialForcePost = {
+    _count: SocialForcePostCountAggregateOutputType | null
+    _avg: SocialForcePostAvgAggregateOutputType | null
+    _sum: SocialForcePostSumAggregateOutputType | null
+    _min: SocialForcePostMinAggregateOutputType | null
+    _max: SocialForcePostMaxAggregateOutputType | null
+  }
+
+  export type SocialForcePostAvgAggregateOutputType = {
+    version: number | null
+  }
+
+  export type SocialForcePostSumAggregateOutputType = {
+    version: number | null
+  }
+
+  export type SocialForcePostMinAggregateOutputType = {
+    id: string | null
+    companyId: string | null
+    title: string | null
+    content: string | null
+    status: string | null
+    plannedAt: Date | null
+    timezone: string | null
+    createdBy: string | null
+    reviewedBy: string | null
+    reviewNote: string | null
+    version: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type SocialForcePostMaxAggregateOutputType = {
+    id: string | null
+    companyId: string | null
+    title: string | null
+    content: string | null
+    status: string | null
+    plannedAt: Date | null
+    timezone: string | null
+    createdBy: string | null
+    reviewedBy: string | null
+    reviewNote: string | null
+    version: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type SocialForcePostCountAggregateOutputType = {
+    id: number
+    companyId: number
+    title: number
+    content: number
+    variants: number
+    status: number
+    plannedAt: number
+    timezone: number
+    createdBy: number
+    reviewedBy: number
+    reviewNote: number
+    version: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type SocialForcePostAvgAggregateInputType = {
+    version?: true
+  }
+
+  export type SocialForcePostSumAggregateInputType = {
+    version?: true
+  }
+
+  export type SocialForcePostMinAggregateInputType = {
+    id?: true
+    companyId?: true
+    title?: true
+    content?: true
+    status?: true
+    plannedAt?: true
+    timezone?: true
+    createdBy?: true
+    reviewedBy?: true
+    reviewNote?: true
+    version?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type SocialForcePostMaxAggregateInputType = {
+    id?: true
+    companyId?: true
+    title?: true
+    content?: true
+    status?: true
+    plannedAt?: true
+    timezone?: true
+    createdBy?: true
+    reviewedBy?: true
+    reviewNote?: true
+    version?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type SocialForcePostCountAggregateInputType = {
+    id?: true
+    companyId?: true
+    title?: true
+    content?: true
+    variants?: true
+    status?: true
+    plannedAt?: true
+    timezone?: true
+    createdBy?: true
+    reviewedBy?: true
+    reviewNote?: true
+    version?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type SocialForcePostAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SocialForcePost to aggregate.
+     */
+    where?: SocialForcePostWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForcePosts to fetch.
+     */
+    orderBy?: SocialForcePostOrderByWithRelationInput | SocialForcePostOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SocialForcePostWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForcePosts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForcePosts.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SocialForcePosts
+    **/
+    _count?: true | SocialForcePostCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: SocialForcePostAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: SocialForcePostSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SocialForcePostMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SocialForcePostMaxAggregateInputType
+  }
+
+  export type GetSocialForcePostAggregateType<T extends SocialForcePostAggregateArgs> = {
+        [P in keyof T & keyof AggregateSocialForcePost]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSocialForcePost[P]>
+      : GetScalarType<T[P], AggregateSocialForcePost[P]>
+  }
+
+
+
+
+  export type SocialForcePostGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SocialForcePostWhereInput
+    orderBy?: SocialForcePostOrderByWithAggregationInput | SocialForcePostOrderByWithAggregationInput[]
+    by: SocialForcePostScalarFieldEnum[] | SocialForcePostScalarFieldEnum
+    having?: SocialForcePostScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SocialForcePostCountAggregateInputType | true
+    _avg?: SocialForcePostAvgAggregateInputType
+    _sum?: SocialForcePostSumAggregateInputType
+    _min?: SocialForcePostMinAggregateInputType
+    _max?: SocialForcePostMaxAggregateInputType
+  }
+
+  export type SocialForcePostGroupByOutputType = {
+    id: string
+    companyId: string
+    title: string
+    content: string
+    variants: JsonValue
+    status: string
+    plannedAt: Date | null
+    timezone: string
+    createdBy: string
+    reviewedBy: string | null
+    reviewNote: string | null
+    version: number
+    createdAt: Date
+    updatedAt: Date
+    _count: SocialForcePostCountAggregateOutputType | null
+    _avg: SocialForcePostAvgAggregateOutputType | null
+    _sum: SocialForcePostSumAggregateOutputType | null
+    _min: SocialForcePostMinAggregateOutputType | null
+    _max: SocialForcePostMaxAggregateOutputType | null
+  }
+
+  type GetSocialForcePostGroupByPayload<T extends SocialForcePostGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SocialForcePostGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SocialForcePostGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SocialForcePostGroupByOutputType[P]>
+            : GetScalarType<T[P], SocialForcePostGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SocialForcePostSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    companyId?: boolean
+    title?: boolean
+    content?: boolean
+    variants?: boolean
+    status?: boolean
+    plannedAt?: boolean
+    timezone?: boolean
+    createdBy?: boolean
+    reviewedBy?: boolean
+    reviewNote?: boolean
+    version?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["socialForcePost"]>
+
+  export type SocialForcePostSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    companyId?: boolean
+    title?: boolean
+    content?: boolean
+    variants?: boolean
+    status?: boolean
+    plannedAt?: boolean
+    timezone?: boolean
+    createdBy?: boolean
+    reviewedBy?: boolean
+    reviewNote?: boolean
+    version?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["socialForcePost"]>
+
+  export type SocialForcePostSelectScalar = {
+    id?: boolean
+    companyId?: boolean
+    title?: boolean
+    content?: boolean
+    variants?: boolean
+    status?: boolean
+    plannedAt?: boolean
+    timezone?: boolean
+    createdBy?: boolean
+    reviewedBy?: boolean
+    reviewNote?: boolean
+    version?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type SocialForcePostInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }
+  export type SocialForcePostIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }
+
+  export type $SocialForcePostPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SocialForcePost"
+    objects: {
+      company: Prisma.$CompanyPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      companyId: string
+      title: string
+      content: string
+      variants: Prisma.JsonValue
+      status: string
+      plannedAt: Date | null
+      timezone: string
+      createdBy: string
+      reviewedBy: string | null
+      reviewNote: string | null
+      version: number
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["socialForcePost"]>
+    composites: {}
+  }
+
+  type SocialForcePostGetPayload<S extends boolean | null | undefined | SocialForcePostDefaultArgs> = $Result.GetResult<Prisma.$SocialForcePostPayload, S>
+
+  type SocialForcePostCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<SocialForcePostFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: SocialForcePostCountAggregateInputType | true
+    }
+
+  export interface SocialForcePostDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SocialForcePost'], meta: { name: 'SocialForcePost' } }
+    /**
+     * Find zero or one SocialForcePost that matches the filter.
+     * @param {SocialForcePostFindUniqueArgs} args - Arguments to find a SocialForcePost
+     * @example
+     * // Get one SocialForcePost
+     * const socialForcePost = await prisma.socialForcePost.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SocialForcePostFindUniqueArgs>(args: SelectSubset<T, SocialForcePostFindUniqueArgs<ExtArgs>>): Prisma__SocialForcePostClient<$Result.GetResult<Prisma.$SocialForcePostPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one SocialForcePost that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {SocialForcePostFindUniqueOrThrowArgs} args - Arguments to find a SocialForcePost
+     * @example
+     * // Get one SocialForcePost
+     * const socialForcePost = await prisma.socialForcePost.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SocialForcePostFindUniqueOrThrowArgs>(args: SelectSubset<T, SocialForcePostFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SocialForcePostClient<$Result.GetResult<Prisma.$SocialForcePostPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first SocialForcePost that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForcePostFindFirstArgs} args - Arguments to find a SocialForcePost
+     * @example
+     * // Get one SocialForcePost
+     * const socialForcePost = await prisma.socialForcePost.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SocialForcePostFindFirstArgs>(args?: SelectSubset<T, SocialForcePostFindFirstArgs<ExtArgs>>): Prisma__SocialForcePostClient<$Result.GetResult<Prisma.$SocialForcePostPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first SocialForcePost that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForcePostFindFirstOrThrowArgs} args - Arguments to find a SocialForcePost
+     * @example
+     * // Get one SocialForcePost
+     * const socialForcePost = await prisma.socialForcePost.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SocialForcePostFindFirstOrThrowArgs>(args?: SelectSubset<T, SocialForcePostFindFirstOrThrowArgs<ExtArgs>>): Prisma__SocialForcePostClient<$Result.GetResult<Prisma.$SocialForcePostPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more SocialForcePosts that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForcePostFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SocialForcePosts
+     * const socialForcePosts = await prisma.socialForcePost.findMany()
+     * 
+     * // Get first 10 SocialForcePosts
+     * const socialForcePosts = await prisma.socialForcePost.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const socialForcePostWithIdOnly = await prisma.socialForcePost.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SocialForcePostFindManyArgs>(args?: SelectSubset<T, SocialForcePostFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SocialForcePostPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a SocialForcePost.
+     * @param {SocialForcePostCreateArgs} args - Arguments to create a SocialForcePost.
+     * @example
+     * // Create one SocialForcePost
+     * const SocialForcePost = await prisma.socialForcePost.create({
+     *   data: {
+     *     // ... data to create a SocialForcePost
+     *   }
+     * })
+     * 
+     */
+    create<T extends SocialForcePostCreateArgs>(args: SelectSubset<T, SocialForcePostCreateArgs<ExtArgs>>): Prisma__SocialForcePostClient<$Result.GetResult<Prisma.$SocialForcePostPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many SocialForcePosts.
+     * @param {SocialForcePostCreateManyArgs} args - Arguments to create many SocialForcePosts.
+     * @example
+     * // Create many SocialForcePosts
+     * const socialForcePost = await prisma.socialForcePost.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SocialForcePostCreateManyArgs>(args?: SelectSubset<T, SocialForcePostCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SocialForcePosts and returns the data saved in the database.
+     * @param {SocialForcePostCreateManyAndReturnArgs} args - Arguments to create many SocialForcePosts.
+     * @example
+     * // Create many SocialForcePosts
+     * const socialForcePost = await prisma.socialForcePost.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SocialForcePosts and only return the `id`
+     * const socialForcePostWithIdOnly = await prisma.socialForcePost.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SocialForcePostCreateManyAndReturnArgs>(args?: SelectSubset<T, SocialForcePostCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SocialForcePostPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a SocialForcePost.
+     * @param {SocialForcePostDeleteArgs} args - Arguments to delete one SocialForcePost.
+     * @example
+     * // Delete one SocialForcePost
+     * const SocialForcePost = await prisma.socialForcePost.delete({
+     *   where: {
+     *     // ... filter to delete one SocialForcePost
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SocialForcePostDeleteArgs>(args: SelectSubset<T, SocialForcePostDeleteArgs<ExtArgs>>): Prisma__SocialForcePostClient<$Result.GetResult<Prisma.$SocialForcePostPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one SocialForcePost.
+     * @param {SocialForcePostUpdateArgs} args - Arguments to update one SocialForcePost.
+     * @example
+     * // Update one SocialForcePost
+     * const socialForcePost = await prisma.socialForcePost.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SocialForcePostUpdateArgs>(args: SelectSubset<T, SocialForcePostUpdateArgs<ExtArgs>>): Prisma__SocialForcePostClient<$Result.GetResult<Prisma.$SocialForcePostPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more SocialForcePosts.
+     * @param {SocialForcePostDeleteManyArgs} args - Arguments to filter SocialForcePosts to delete.
+     * @example
+     * // Delete a few SocialForcePosts
+     * const { count } = await prisma.socialForcePost.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SocialForcePostDeleteManyArgs>(args?: SelectSubset<T, SocialForcePostDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SocialForcePosts.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForcePostUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SocialForcePosts
+     * const socialForcePost = await prisma.socialForcePost.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SocialForcePostUpdateManyArgs>(args: SelectSubset<T, SocialForcePostUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one SocialForcePost.
+     * @param {SocialForcePostUpsertArgs} args - Arguments to update or create a SocialForcePost.
+     * @example
+     * // Update or create a SocialForcePost
+     * const socialForcePost = await prisma.socialForcePost.upsert({
+     *   create: {
+     *     // ... data to create a SocialForcePost
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SocialForcePost we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SocialForcePostUpsertArgs>(args: SelectSubset<T, SocialForcePostUpsertArgs<ExtArgs>>): Prisma__SocialForcePostClient<$Result.GetResult<Prisma.$SocialForcePostPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of SocialForcePosts.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForcePostCountArgs} args - Arguments to filter SocialForcePosts to count.
+     * @example
+     * // Count the number of SocialForcePosts
+     * const count = await prisma.socialForcePost.count({
+     *   where: {
+     *     // ... the filter for the SocialForcePosts we want to count
+     *   }
+     * })
+    **/
+    count<T extends SocialForcePostCountArgs>(
+      args?: Subset<T, SocialForcePostCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SocialForcePostCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SocialForcePost.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForcePostAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SocialForcePostAggregateArgs>(args: Subset<T, SocialForcePostAggregateArgs>): Prisma.PrismaPromise<GetSocialForcePostAggregateType<T>>
+
+    /**
+     * Group by SocialForcePost.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForcePostGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SocialForcePostGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SocialForcePostGroupByArgs['orderBy'] }
+        : { orderBy?: SocialForcePostGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SocialForcePostGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSocialForcePostGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SocialForcePost model
+   */
+  readonly fields: SocialForcePostFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SocialForcePost.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SocialForcePostClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    company<T extends CompanyDefaultArgs<ExtArgs> = {}>(args?: Subset<T, CompanyDefaultArgs<ExtArgs>>): Prisma__CompanyClient<$Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SocialForcePost model
+   */ 
+  interface SocialForcePostFieldRefs {
+    readonly id: FieldRef<"SocialForcePost", 'String'>
+    readonly companyId: FieldRef<"SocialForcePost", 'String'>
+    readonly title: FieldRef<"SocialForcePost", 'String'>
+    readonly content: FieldRef<"SocialForcePost", 'String'>
+    readonly variants: FieldRef<"SocialForcePost", 'Json'>
+    readonly status: FieldRef<"SocialForcePost", 'String'>
+    readonly plannedAt: FieldRef<"SocialForcePost", 'DateTime'>
+    readonly timezone: FieldRef<"SocialForcePost", 'String'>
+    readonly createdBy: FieldRef<"SocialForcePost", 'String'>
+    readonly reviewedBy: FieldRef<"SocialForcePost", 'String'>
+    readonly reviewNote: FieldRef<"SocialForcePost", 'String'>
+    readonly version: FieldRef<"SocialForcePost", 'Int'>
+    readonly createdAt: FieldRef<"SocialForcePost", 'DateTime'>
+    readonly updatedAt: FieldRef<"SocialForcePost", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SocialForcePost findUnique
+   */
+  export type SocialForcePostFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForcePost to fetch.
+     */
+    where: SocialForcePostWhereUniqueInput
+  }
+
+  /**
+   * SocialForcePost findUniqueOrThrow
+   */
+  export type SocialForcePostFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForcePost to fetch.
+     */
+    where: SocialForcePostWhereUniqueInput
+  }
+
+  /**
+   * SocialForcePost findFirst
+   */
+  export type SocialForcePostFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForcePost to fetch.
+     */
+    where?: SocialForcePostWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForcePosts to fetch.
+     */
+    orderBy?: SocialForcePostOrderByWithRelationInput | SocialForcePostOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SocialForcePosts.
+     */
+    cursor?: SocialForcePostWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForcePosts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForcePosts.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SocialForcePosts.
+     */
+    distinct?: SocialForcePostScalarFieldEnum | SocialForcePostScalarFieldEnum[]
+  }
+
+  /**
+   * SocialForcePost findFirstOrThrow
+   */
+  export type SocialForcePostFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForcePost to fetch.
+     */
+    where?: SocialForcePostWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForcePosts to fetch.
+     */
+    orderBy?: SocialForcePostOrderByWithRelationInput | SocialForcePostOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SocialForcePosts.
+     */
+    cursor?: SocialForcePostWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForcePosts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForcePosts.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SocialForcePosts.
+     */
+    distinct?: SocialForcePostScalarFieldEnum | SocialForcePostScalarFieldEnum[]
+  }
+
+  /**
+   * SocialForcePost findMany
+   */
+  export type SocialForcePostFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForcePosts to fetch.
+     */
+    where?: SocialForcePostWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForcePosts to fetch.
+     */
+    orderBy?: SocialForcePostOrderByWithRelationInput | SocialForcePostOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SocialForcePosts.
+     */
+    cursor?: SocialForcePostWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForcePosts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForcePosts.
+     */
+    skip?: number
+    distinct?: SocialForcePostScalarFieldEnum | SocialForcePostScalarFieldEnum[]
+  }
+
+  /**
+   * SocialForcePost create
+   */
+  export type SocialForcePostCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostInclude<ExtArgs> | null
+    /**
+     * The data needed to create a SocialForcePost.
+     */
+    data: XOR<SocialForcePostCreateInput, SocialForcePostUncheckedCreateInput>
+  }
+
+  /**
+   * SocialForcePost createMany
+   */
+  export type SocialForcePostCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SocialForcePosts.
+     */
+    data: SocialForcePostCreateManyInput | SocialForcePostCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SocialForcePost createManyAndReturn
+   */
+  export type SocialForcePostCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many SocialForcePosts.
+     */
+    data: SocialForcePostCreateManyInput | SocialForcePostCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SocialForcePost update
+   */
+  export type SocialForcePostUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostInclude<ExtArgs> | null
+    /**
+     * The data needed to update a SocialForcePost.
+     */
+    data: XOR<SocialForcePostUpdateInput, SocialForcePostUncheckedUpdateInput>
+    /**
+     * Choose, which SocialForcePost to update.
+     */
+    where: SocialForcePostWhereUniqueInput
+  }
+
+  /**
+   * SocialForcePost updateMany
+   */
+  export type SocialForcePostUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SocialForcePosts.
+     */
+    data: XOR<SocialForcePostUpdateManyMutationInput, SocialForcePostUncheckedUpdateManyInput>
+    /**
+     * Filter which SocialForcePosts to update
+     */
+    where?: SocialForcePostWhereInput
+  }
+
+  /**
+   * SocialForcePost upsert
+   */
+  export type SocialForcePostUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostInclude<ExtArgs> | null
+    /**
+     * The filter to search for the SocialForcePost to update in case it exists.
+     */
+    where: SocialForcePostWhereUniqueInput
+    /**
+     * In case the SocialForcePost found by the `where` argument doesn't exist, create a new SocialForcePost with this data.
+     */
+    create: XOR<SocialForcePostCreateInput, SocialForcePostUncheckedCreateInput>
+    /**
+     * In case the SocialForcePost was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SocialForcePostUpdateInput, SocialForcePostUncheckedUpdateInput>
+  }
+
+  /**
+   * SocialForcePost delete
+   */
+  export type SocialForcePostDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostInclude<ExtArgs> | null
+    /**
+     * Filter which SocialForcePost to delete.
+     */
+    where: SocialForcePostWhereUniqueInput
+  }
+
+  /**
+   * SocialForcePost deleteMany
+   */
+  export type SocialForcePostDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SocialForcePosts to delete
+     */
+    where?: SocialForcePostWhereInput
+  }
+
+  /**
+   * SocialForcePost without action
+   */
+  export type SocialForcePostDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForcePost
+     */
+    select?: SocialForcePostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForcePostInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model SocialForceBrand
+   */
+
+  export type AggregateSocialForceBrand = {
+    _count: SocialForceBrandCountAggregateOutputType | null
+    _min: SocialForceBrandMinAggregateOutputType | null
+    _max: SocialForceBrandMaxAggregateOutputType | null
+  }
+
+  export type SocialForceBrandMinAggregateOutputType = {
+    companyId: string | null
+    name: string | null
+    description: string | null
+    audience: string | null
+    tone: string | null
+    language: string | null
+    timezone: string | null
+    website: string | null
+    hashtags: string | null
+    forbiddenWords: string | null
+    requireApproval: boolean | null
+    updatedAt: Date | null
+  }
+
+  export type SocialForceBrandMaxAggregateOutputType = {
+    companyId: string | null
+    name: string | null
+    description: string | null
+    audience: string | null
+    tone: string | null
+    language: string | null
+    timezone: string | null
+    website: string | null
+    hashtags: string | null
+    forbiddenWords: string | null
+    requireApproval: boolean | null
+    updatedAt: Date | null
+  }
+
+  export type SocialForceBrandCountAggregateOutputType = {
+    companyId: number
+    name: number
+    description: number
+    audience: number
+    tone: number
+    language: number
+    timezone: number
+    website: number
+    hashtags: number
+    forbiddenWords: number
+    requireApproval: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type SocialForceBrandMinAggregateInputType = {
+    companyId?: true
+    name?: true
+    description?: true
+    audience?: true
+    tone?: true
+    language?: true
+    timezone?: true
+    website?: true
+    hashtags?: true
+    forbiddenWords?: true
+    requireApproval?: true
+    updatedAt?: true
+  }
+
+  export type SocialForceBrandMaxAggregateInputType = {
+    companyId?: true
+    name?: true
+    description?: true
+    audience?: true
+    tone?: true
+    language?: true
+    timezone?: true
+    website?: true
+    hashtags?: true
+    forbiddenWords?: true
+    requireApproval?: true
+    updatedAt?: true
+  }
+
+  export type SocialForceBrandCountAggregateInputType = {
+    companyId?: true
+    name?: true
+    description?: true
+    audience?: true
+    tone?: true
+    language?: true
+    timezone?: true
+    website?: true
+    hashtags?: true
+    forbiddenWords?: true
+    requireApproval?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type SocialForceBrandAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SocialForceBrand to aggregate.
+     */
+    where?: SocialForceBrandWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForceBrands to fetch.
+     */
+    orderBy?: SocialForceBrandOrderByWithRelationInput | SocialForceBrandOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SocialForceBrandWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForceBrands from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForceBrands.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SocialForceBrands
+    **/
+    _count?: true | SocialForceBrandCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SocialForceBrandMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SocialForceBrandMaxAggregateInputType
+  }
+
+  export type GetSocialForceBrandAggregateType<T extends SocialForceBrandAggregateArgs> = {
+        [P in keyof T & keyof AggregateSocialForceBrand]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSocialForceBrand[P]>
+      : GetScalarType<T[P], AggregateSocialForceBrand[P]>
+  }
+
+
+
+
+  export type SocialForceBrandGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SocialForceBrandWhereInput
+    orderBy?: SocialForceBrandOrderByWithAggregationInput | SocialForceBrandOrderByWithAggregationInput[]
+    by: SocialForceBrandScalarFieldEnum[] | SocialForceBrandScalarFieldEnum
+    having?: SocialForceBrandScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SocialForceBrandCountAggregateInputType | true
+    _min?: SocialForceBrandMinAggregateInputType
+    _max?: SocialForceBrandMaxAggregateInputType
+  }
+
+  export type SocialForceBrandGroupByOutputType = {
+    companyId: string
+    name: string
+    description: string
+    audience: string
+    tone: string
+    language: string
+    timezone: string
+    website: string
+    hashtags: string
+    forbiddenWords: string
+    requireApproval: boolean
+    updatedAt: Date
+    _count: SocialForceBrandCountAggregateOutputType | null
+    _min: SocialForceBrandMinAggregateOutputType | null
+    _max: SocialForceBrandMaxAggregateOutputType | null
+  }
+
+  type GetSocialForceBrandGroupByPayload<T extends SocialForceBrandGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SocialForceBrandGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SocialForceBrandGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SocialForceBrandGroupByOutputType[P]>
+            : GetScalarType<T[P], SocialForceBrandGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SocialForceBrandSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    companyId?: boolean
+    name?: boolean
+    description?: boolean
+    audience?: boolean
+    tone?: boolean
+    language?: boolean
+    timezone?: boolean
+    website?: boolean
+    hashtags?: boolean
+    forbiddenWords?: boolean
+    requireApproval?: boolean
+    updatedAt?: boolean
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["socialForceBrand"]>
+
+  export type SocialForceBrandSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    companyId?: boolean
+    name?: boolean
+    description?: boolean
+    audience?: boolean
+    tone?: boolean
+    language?: boolean
+    timezone?: boolean
+    website?: boolean
+    hashtags?: boolean
+    forbiddenWords?: boolean
+    requireApproval?: boolean
+    updatedAt?: boolean
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["socialForceBrand"]>
+
+  export type SocialForceBrandSelectScalar = {
+    companyId?: boolean
+    name?: boolean
+    description?: boolean
+    audience?: boolean
+    tone?: boolean
+    language?: boolean
+    timezone?: boolean
+    website?: boolean
+    hashtags?: boolean
+    forbiddenWords?: boolean
+    requireApproval?: boolean
+    updatedAt?: boolean
+  }
+
+  export type SocialForceBrandInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }
+  export type SocialForceBrandIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }
+
+  export type $SocialForceBrandPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SocialForceBrand"
+    objects: {
+      company: Prisma.$CompanyPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      companyId: string
+      name: string
+      description: string
+      audience: string
+      tone: string
+      language: string
+      timezone: string
+      website: string
+      hashtags: string
+      forbiddenWords: string
+      requireApproval: boolean
+      updatedAt: Date
+    }, ExtArgs["result"]["socialForceBrand"]>
+    composites: {}
+  }
+
+  type SocialForceBrandGetPayload<S extends boolean | null | undefined | SocialForceBrandDefaultArgs> = $Result.GetResult<Prisma.$SocialForceBrandPayload, S>
+
+  type SocialForceBrandCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<SocialForceBrandFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: SocialForceBrandCountAggregateInputType | true
+    }
+
+  export interface SocialForceBrandDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SocialForceBrand'], meta: { name: 'SocialForceBrand' } }
+    /**
+     * Find zero or one SocialForceBrand that matches the filter.
+     * @param {SocialForceBrandFindUniqueArgs} args - Arguments to find a SocialForceBrand
+     * @example
+     * // Get one SocialForceBrand
+     * const socialForceBrand = await prisma.socialForceBrand.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SocialForceBrandFindUniqueArgs>(args: SelectSubset<T, SocialForceBrandFindUniqueArgs<ExtArgs>>): Prisma__SocialForceBrandClient<$Result.GetResult<Prisma.$SocialForceBrandPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one SocialForceBrand that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {SocialForceBrandFindUniqueOrThrowArgs} args - Arguments to find a SocialForceBrand
+     * @example
+     * // Get one SocialForceBrand
+     * const socialForceBrand = await prisma.socialForceBrand.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SocialForceBrandFindUniqueOrThrowArgs>(args: SelectSubset<T, SocialForceBrandFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SocialForceBrandClient<$Result.GetResult<Prisma.$SocialForceBrandPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first SocialForceBrand that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceBrandFindFirstArgs} args - Arguments to find a SocialForceBrand
+     * @example
+     * // Get one SocialForceBrand
+     * const socialForceBrand = await prisma.socialForceBrand.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SocialForceBrandFindFirstArgs>(args?: SelectSubset<T, SocialForceBrandFindFirstArgs<ExtArgs>>): Prisma__SocialForceBrandClient<$Result.GetResult<Prisma.$SocialForceBrandPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first SocialForceBrand that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceBrandFindFirstOrThrowArgs} args - Arguments to find a SocialForceBrand
+     * @example
+     * // Get one SocialForceBrand
+     * const socialForceBrand = await prisma.socialForceBrand.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SocialForceBrandFindFirstOrThrowArgs>(args?: SelectSubset<T, SocialForceBrandFindFirstOrThrowArgs<ExtArgs>>): Prisma__SocialForceBrandClient<$Result.GetResult<Prisma.$SocialForceBrandPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more SocialForceBrands that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceBrandFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SocialForceBrands
+     * const socialForceBrands = await prisma.socialForceBrand.findMany()
+     * 
+     * // Get first 10 SocialForceBrands
+     * const socialForceBrands = await prisma.socialForceBrand.findMany({ take: 10 })
+     * 
+     * // Only select the `companyId`
+     * const socialForceBrandWithCompanyIdOnly = await prisma.socialForceBrand.findMany({ select: { companyId: true } })
+     * 
+     */
+    findMany<T extends SocialForceBrandFindManyArgs>(args?: SelectSubset<T, SocialForceBrandFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SocialForceBrandPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a SocialForceBrand.
+     * @param {SocialForceBrandCreateArgs} args - Arguments to create a SocialForceBrand.
+     * @example
+     * // Create one SocialForceBrand
+     * const SocialForceBrand = await prisma.socialForceBrand.create({
+     *   data: {
+     *     // ... data to create a SocialForceBrand
+     *   }
+     * })
+     * 
+     */
+    create<T extends SocialForceBrandCreateArgs>(args: SelectSubset<T, SocialForceBrandCreateArgs<ExtArgs>>): Prisma__SocialForceBrandClient<$Result.GetResult<Prisma.$SocialForceBrandPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many SocialForceBrands.
+     * @param {SocialForceBrandCreateManyArgs} args - Arguments to create many SocialForceBrands.
+     * @example
+     * // Create many SocialForceBrands
+     * const socialForceBrand = await prisma.socialForceBrand.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SocialForceBrandCreateManyArgs>(args?: SelectSubset<T, SocialForceBrandCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SocialForceBrands and returns the data saved in the database.
+     * @param {SocialForceBrandCreateManyAndReturnArgs} args - Arguments to create many SocialForceBrands.
+     * @example
+     * // Create many SocialForceBrands
+     * const socialForceBrand = await prisma.socialForceBrand.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SocialForceBrands and only return the `companyId`
+     * const socialForceBrandWithCompanyIdOnly = await prisma.socialForceBrand.createManyAndReturn({ 
+     *   select: { companyId: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SocialForceBrandCreateManyAndReturnArgs>(args?: SelectSubset<T, SocialForceBrandCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SocialForceBrandPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a SocialForceBrand.
+     * @param {SocialForceBrandDeleteArgs} args - Arguments to delete one SocialForceBrand.
+     * @example
+     * // Delete one SocialForceBrand
+     * const SocialForceBrand = await prisma.socialForceBrand.delete({
+     *   where: {
+     *     // ... filter to delete one SocialForceBrand
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SocialForceBrandDeleteArgs>(args: SelectSubset<T, SocialForceBrandDeleteArgs<ExtArgs>>): Prisma__SocialForceBrandClient<$Result.GetResult<Prisma.$SocialForceBrandPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one SocialForceBrand.
+     * @param {SocialForceBrandUpdateArgs} args - Arguments to update one SocialForceBrand.
+     * @example
+     * // Update one SocialForceBrand
+     * const socialForceBrand = await prisma.socialForceBrand.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SocialForceBrandUpdateArgs>(args: SelectSubset<T, SocialForceBrandUpdateArgs<ExtArgs>>): Prisma__SocialForceBrandClient<$Result.GetResult<Prisma.$SocialForceBrandPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more SocialForceBrands.
+     * @param {SocialForceBrandDeleteManyArgs} args - Arguments to filter SocialForceBrands to delete.
+     * @example
+     * // Delete a few SocialForceBrands
+     * const { count } = await prisma.socialForceBrand.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SocialForceBrandDeleteManyArgs>(args?: SelectSubset<T, SocialForceBrandDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SocialForceBrands.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceBrandUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SocialForceBrands
+     * const socialForceBrand = await prisma.socialForceBrand.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SocialForceBrandUpdateManyArgs>(args: SelectSubset<T, SocialForceBrandUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one SocialForceBrand.
+     * @param {SocialForceBrandUpsertArgs} args - Arguments to update or create a SocialForceBrand.
+     * @example
+     * // Update or create a SocialForceBrand
+     * const socialForceBrand = await prisma.socialForceBrand.upsert({
+     *   create: {
+     *     // ... data to create a SocialForceBrand
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SocialForceBrand we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SocialForceBrandUpsertArgs>(args: SelectSubset<T, SocialForceBrandUpsertArgs<ExtArgs>>): Prisma__SocialForceBrandClient<$Result.GetResult<Prisma.$SocialForceBrandPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of SocialForceBrands.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceBrandCountArgs} args - Arguments to filter SocialForceBrands to count.
+     * @example
+     * // Count the number of SocialForceBrands
+     * const count = await prisma.socialForceBrand.count({
+     *   where: {
+     *     // ... the filter for the SocialForceBrands we want to count
+     *   }
+     * })
+    **/
+    count<T extends SocialForceBrandCountArgs>(
+      args?: Subset<T, SocialForceBrandCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SocialForceBrandCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SocialForceBrand.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceBrandAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SocialForceBrandAggregateArgs>(args: Subset<T, SocialForceBrandAggregateArgs>): Prisma.PrismaPromise<GetSocialForceBrandAggregateType<T>>
+
+    /**
+     * Group by SocialForceBrand.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceBrandGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SocialForceBrandGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SocialForceBrandGroupByArgs['orderBy'] }
+        : { orderBy?: SocialForceBrandGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SocialForceBrandGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSocialForceBrandGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SocialForceBrand model
+   */
+  readonly fields: SocialForceBrandFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SocialForceBrand.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SocialForceBrandClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    company<T extends CompanyDefaultArgs<ExtArgs> = {}>(args?: Subset<T, CompanyDefaultArgs<ExtArgs>>): Prisma__CompanyClient<$Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SocialForceBrand model
+   */ 
+  interface SocialForceBrandFieldRefs {
+    readonly companyId: FieldRef<"SocialForceBrand", 'String'>
+    readonly name: FieldRef<"SocialForceBrand", 'String'>
+    readonly description: FieldRef<"SocialForceBrand", 'String'>
+    readonly audience: FieldRef<"SocialForceBrand", 'String'>
+    readonly tone: FieldRef<"SocialForceBrand", 'String'>
+    readonly language: FieldRef<"SocialForceBrand", 'String'>
+    readonly timezone: FieldRef<"SocialForceBrand", 'String'>
+    readonly website: FieldRef<"SocialForceBrand", 'String'>
+    readonly hashtags: FieldRef<"SocialForceBrand", 'String'>
+    readonly forbiddenWords: FieldRef<"SocialForceBrand", 'String'>
+    readonly requireApproval: FieldRef<"SocialForceBrand", 'Boolean'>
+    readonly updatedAt: FieldRef<"SocialForceBrand", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SocialForceBrand findUnique
+   */
+  export type SocialForceBrandFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForceBrand to fetch.
+     */
+    where: SocialForceBrandWhereUniqueInput
+  }
+
+  /**
+   * SocialForceBrand findUniqueOrThrow
+   */
+  export type SocialForceBrandFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForceBrand to fetch.
+     */
+    where: SocialForceBrandWhereUniqueInput
+  }
+
+  /**
+   * SocialForceBrand findFirst
+   */
+  export type SocialForceBrandFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForceBrand to fetch.
+     */
+    where?: SocialForceBrandWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForceBrands to fetch.
+     */
+    orderBy?: SocialForceBrandOrderByWithRelationInput | SocialForceBrandOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SocialForceBrands.
+     */
+    cursor?: SocialForceBrandWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForceBrands from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForceBrands.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SocialForceBrands.
+     */
+    distinct?: SocialForceBrandScalarFieldEnum | SocialForceBrandScalarFieldEnum[]
+  }
+
+  /**
+   * SocialForceBrand findFirstOrThrow
+   */
+  export type SocialForceBrandFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForceBrand to fetch.
+     */
+    where?: SocialForceBrandWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForceBrands to fetch.
+     */
+    orderBy?: SocialForceBrandOrderByWithRelationInput | SocialForceBrandOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SocialForceBrands.
+     */
+    cursor?: SocialForceBrandWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForceBrands from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForceBrands.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SocialForceBrands.
+     */
+    distinct?: SocialForceBrandScalarFieldEnum | SocialForceBrandScalarFieldEnum[]
+  }
+
+  /**
+   * SocialForceBrand findMany
+   */
+  export type SocialForceBrandFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForceBrands to fetch.
+     */
+    where?: SocialForceBrandWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForceBrands to fetch.
+     */
+    orderBy?: SocialForceBrandOrderByWithRelationInput | SocialForceBrandOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SocialForceBrands.
+     */
+    cursor?: SocialForceBrandWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForceBrands from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForceBrands.
+     */
+    skip?: number
+    distinct?: SocialForceBrandScalarFieldEnum | SocialForceBrandScalarFieldEnum[]
+  }
+
+  /**
+   * SocialForceBrand create
+   */
+  export type SocialForceBrandCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandInclude<ExtArgs> | null
+    /**
+     * The data needed to create a SocialForceBrand.
+     */
+    data: XOR<SocialForceBrandCreateInput, SocialForceBrandUncheckedCreateInput>
+  }
+
+  /**
+   * SocialForceBrand createMany
+   */
+  export type SocialForceBrandCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SocialForceBrands.
+     */
+    data: SocialForceBrandCreateManyInput | SocialForceBrandCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SocialForceBrand createManyAndReturn
+   */
+  export type SocialForceBrandCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many SocialForceBrands.
+     */
+    data: SocialForceBrandCreateManyInput | SocialForceBrandCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SocialForceBrand update
+   */
+  export type SocialForceBrandUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandInclude<ExtArgs> | null
+    /**
+     * The data needed to update a SocialForceBrand.
+     */
+    data: XOR<SocialForceBrandUpdateInput, SocialForceBrandUncheckedUpdateInput>
+    /**
+     * Choose, which SocialForceBrand to update.
+     */
+    where: SocialForceBrandWhereUniqueInput
+  }
+
+  /**
+   * SocialForceBrand updateMany
+   */
+  export type SocialForceBrandUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SocialForceBrands.
+     */
+    data: XOR<SocialForceBrandUpdateManyMutationInput, SocialForceBrandUncheckedUpdateManyInput>
+    /**
+     * Filter which SocialForceBrands to update
+     */
+    where?: SocialForceBrandWhereInput
+  }
+
+  /**
+   * SocialForceBrand upsert
+   */
+  export type SocialForceBrandUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandInclude<ExtArgs> | null
+    /**
+     * The filter to search for the SocialForceBrand to update in case it exists.
+     */
+    where: SocialForceBrandWhereUniqueInput
+    /**
+     * In case the SocialForceBrand found by the `where` argument doesn't exist, create a new SocialForceBrand with this data.
+     */
+    create: XOR<SocialForceBrandCreateInput, SocialForceBrandUncheckedCreateInput>
+    /**
+     * In case the SocialForceBrand was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SocialForceBrandUpdateInput, SocialForceBrandUncheckedUpdateInput>
+  }
+
+  /**
+   * SocialForceBrand delete
+   */
+  export type SocialForceBrandDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandInclude<ExtArgs> | null
+    /**
+     * Filter which SocialForceBrand to delete.
+     */
+    where: SocialForceBrandWhereUniqueInput
+  }
+
+  /**
+   * SocialForceBrand deleteMany
+   */
+  export type SocialForceBrandDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SocialForceBrands to delete
+     */
+    where?: SocialForceBrandWhereInput
+  }
+
+  /**
+   * SocialForceBrand without action
+   */
+  export type SocialForceBrandDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceBrand
+     */
+    select?: SocialForceBrandSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceBrandInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model SocialForceEvent
+   */
+
+  export type AggregateSocialForceEvent = {
+    _count: SocialForceEventCountAggregateOutputType | null
+    _min: SocialForceEventMinAggregateOutputType | null
+    _max: SocialForceEventMaxAggregateOutputType | null
+  }
+
+  export type SocialForceEventMinAggregateOutputType = {
+    id: string | null
+    companyId: string | null
+    actorId: string | null
+    action: string | null
+    resourceId: string | null
+    createdAt: Date | null
+  }
+
+  export type SocialForceEventMaxAggregateOutputType = {
+    id: string | null
+    companyId: string | null
+    actorId: string | null
+    action: string | null
+    resourceId: string | null
+    createdAt: Date | null
+  }
+
+  export type SocialForceEventCountAggregateOutputType = {
+    id: number
+    companyId: number
+    actorId: number
+    action: number
+    resourceId: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type SocialForceEventMinAggregateInputType = {
+    id?: true
+    companyId?: true
+    actorId?: true
+    action?: true
+    resourceId?: true
+    createdAt?: true
+  }
+
+  export type SocialForceEventMaxAggregateInputType = {
+    id?: true
+    companyId?: true
+    actorId?: true
+    action?: true
+    resourceId?: true
+    createdAt?: true
+  }
+
+  export type SocialForceEventCountAggregateInputType = {
+    id?: true
+    companyId?: true
+    actorId?: true
+    action?: true
+    resourceId?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type SocialForceEventAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SocialForceEvent to aggregate.
+     */
+    where?: SocialForceEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForceEvents to fetch.
+     */
+    orderBy?: SocialForceEventOrderByWithRelationInput | SocialForceEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SocialForceEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForceEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForceEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SocialForceEvents
+    **/
+    _count?: true | SocialForceEventCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SocialForceEventMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SocialForceEventMaxAggregateInputType
+  }
+
+  export type GetSocialForceEventAggregateType<T extends SocialForceEventAggregateArgs> = {
+        [P in keyof T & keyof AggregateSocialForceEvent]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSocialForceEvent[P]>
+      : GetScalarType<T[P], AggregateSocialForceEvent[P]>
+  }
+
+
+
+
+  export type SocialForceEventGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SocialForceEventWhereInput
+    orderBy?: SocialForceEventOrderByWithAggregationInput | SocialForceEventOrderByWithAggregationInput[]
+    by: SocialForceEventScalarFieldEnum[] | SocialForceEventScalarFieldEnum
+    having?: SocialForceEventScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SocialForceEventCountAggregateInputType | true
+    _min?: SocialForceEventMinAggregateInputType
+    _max?: SocialForceEventMaxAggregateInputType
+  }
+
+  export type SocialForceEventGroupByOutputType = {
+    id: string
+    companyId: string
+    actorId: string
+    action: string
+    resourceId: string | null
+    createdAt: Date
+    _count: SocialForceEventCountAggregateOutputType | null
+    _min: SocialForceEventMinAggregateOutputType | null
+    _max: SocialForceEventMaxAggregateOutputType | null
+  }
+
+  type GetSocialForceEventGroupByPayload<T extends SocialForceEventGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SocialForceEventGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SocialForceEventGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SocialForceEventGroupByOutputType[P]>
+            : GetScalarType<T[P], SocialForceEventGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SocialForceEventSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    companyId?: boolean
+    actorId?: boolean
+    action?: boolean
+    resourceId?: boolean
+    createdAt?: boolean
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["socialForceEvent"]>
+
+  export type SocialForceEventSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    companyId?: boolean
+    actorId?: boolean
+    action?: boolean
+    resourceId?: boolean
+    createdAt?: boolean
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["socialForceEvent"]>
+
+  export type SocialForceEventSelectScalar = {
+    id?: boolean
+    companyId?: boolean
+    actorId?: boolean
+    action?: boolean
+    resourceId?: boolean
+    createdAt?: boolean
+  }
+
+  export type SocialForceEventInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }
+  export type SocialForceEventIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+  }
+
+  export type $SocialForceEventPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SocialForceEvent"
+    objects: {
+      company: Prisma.$CompanyPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      companyId: string
+      actorId: string
+      action: string
+      resourceId: string | null
+      createdAt: Date
+    }, ExtArgs["result"]["socialForceEvent"]>
+    composites: {}
+  }
+
+  type SocialForceEventGetPayload<S extends boolean | null | undefined | SocialForceEventDefaultArgs> = $Result.GetResult<Prisma.$SocialForceEventPayload, S>
+
+  type SocialForceEventCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<SocialForceEventFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: SocialForceEventCountAggregateInputType | true
+    }
+
+  export interface SocialForceEventDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SocialForceEvent'], meta: { name: 'SocialForceEvent' } }
+    /**
+     * Find zero or one SocialForceEvent that matches the filter.
+     * @param {SocialForceEventFindUniqueArgs} args - Arguments to find a SocialForceEvent
+     * @example
+     * // Get one SocialForceEvent
+     * const socialForceEvent = await prisma.socialForceEvent.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SocialForceEventFindUniqueArgs>(args: SelectSubset<T, SocialForceEventFindUniqueArgs<ExtArgs>>): Prisma__SocialForceEventClient<$Result.GetResult<Prisma.$SocialForceEventPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one SocialForceEvent that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {SocialForceEventFindUniqueOrThrowArgs} args - Arguments to find a SocialForceEvent
+     * @example
+     * // Get one SocialForceEvent
+     * const socialForceEvent = await prisma.socialForceEvent.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SocialForceEventFindUniqueOrThrowArgs>(args: SelectSubset<T, SocialForceEventFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SocialForceEventClient<$Result.GetResult<Prisma.$SocialForceEventPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first SocialForceEvent that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceEventFindFirstArgs} args - Arguments to find a SocialForceEvent
+     * @example
+     * // Get one SocialForceEvent
+     * const socialForceEvent = await prisma.socialForceEvent.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SocialForceEventFindFirstArgs>(args?: SelectSubset<T, SocialForceEventFindFirstArgs<ExtArgs>>): Prisma__SocialForceEventClient<$Result.GetResult<Prisma.$SocialForceEventPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first SocialForceEvent that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceEventFindFirstOrThrowArgs} args - Arguments to find a SocialForceEvent
+     * @example
+     * // Get one SocialForceEvent
+     * const socialForceEvent = await prisma.socialForceEvent.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SocialForceEventFindFirstOrThrowArgs>(args?: SelectSubset<T, SocialForceEventFindFirstOrThrowArgs<ExtArgs>>): Prisma__SocialForceEventClient<$Result.GetResult<Prisma.$SocialForceEventPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more SocialForceEvents that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceEventFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SocialForceEvents
+     * const socialForceEvents = await prisma.socialForceEvent.findMany()
+     * 
+     * // Get first 10 SocialForceEvents
+     * const socialForceEvents = await prisma.socialForceEvent.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const socialForceEventWithIdOnly = await prisma.socialForceEvent.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SocialForceEventFindManyArgs>(args?: SelectSubset<T, SocialForceEventFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SocialForceEventPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a SocialForceEvent.
+     * @param {SocialForceEventCreateArgs} args - Arguments to create a SocialForceEvent.
+     * @example
+     * // Create one SocialForceEvent
+     * const SocialForceEvent = await prisma.socialForceEvent.create({
+     *   data: {
+     *     // ... data to create a SocialForceEvent
+     *   }
+     * })
+     * 
+     */
+    create<T extends SocialForceEventCreateArgs>(args: SelectSubset<T, SocialForceEventCreateArgs<ExtArgs>>): Prisma__SocialForceEventClient<$Result.GetResult<Prisma.$SocialForceEventPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many SocialForceEvents.
+     * @param {SocialForceEventCreateManyArgs} args - Arguments to create many SocialForceEvents.
+     * @example
+     * // Create many SocialForceEvents
+     * const socialForceEvent = await prisma.socialForceEvent.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SocialForceEventCreateManyArgs>(args?: SelectSubset<T, SocialForceEventCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SocialForceEvents and returns the data saved in the database.
+     * @param {SocialForceEventCreateManyAndReturnArgs} args - Arguments to create many SocialForceEvents.
+     * @example
+     * // Create many SocialForceEvents
+     * const socialForceEvent = await prisma.socialForceEvent.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SocialForceEvents and only return the `id`
+     * const socialForceEventWithIdOnly = await prisma.socialForceEvent.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SocialForceEventCreateManyAndReturnArgs>(args?: SelectSubset<T, SocialForceEventCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SocialForceEventPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a SocialForceEvent.
+     * @param {SocialForceEventDeleteArgs} args - Arguments to delete one SocialForceEvent.
+     * @example
+     * // Delete one SocialForceEvent
+     * const SocialForceEvent = await prisma.socialForceEvent.delete({
+     *   where: {
+     *     // ... filter to delete one SocialForceEvent
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SocialForceEventDeleteArgs>(args: SelectSubset<T, SocialForceEventDeleteArgs<ExtArgs>>): Prisma__SocialForceEventClient<$Result.GetResult<Prisma.$SocialForceEventPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one SocialForceEvent.
+     * @param {SocialForceEventUpdateArgs} args - Arguments to update one SocialForceEvent.
+     * @example
+     * // Update one SocialForceEvent
+     * const socialForceEvent = await prisma.socialForceEvent.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SocialForceEventUpdateArgs>(args: SelectSubset<T, SocialForceEventUpdateArgs<ExtArgs>>): Prisma__SocialForceEventClient<$Result.GetResult<Prisma.$SocialForceEventPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more SocialForceEvents.
+     * @param {SocialForceEventDeleteManyArgs} args - Arguments to filter SocialForceEvents to delete.
+     * @example
+     * // Delete a few SocialForceEvents
+     * const { count } = await prisma.socialForceEvent.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SocialForceEventDeleteManyArgs>(args?: SelectSubset<T, SocialForceEventDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SocialForceEvents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceEventUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SocialForceEvents
+     * const socialForceEvent = await prisma.socialForceEvent.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SocialForceEventUpdateManyArgs>(args: SelectSubset<T, SocialForceEventUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one SocialForceEvent.
+     * @param {SocialForceEventUpsertArgs} args - Arguments to update or create a SocialForceEvent.
+     * @example
+     * // Update or create a SocialForceEvent
+     * const socialForceEvent = await prisma.socialForceEvent.upsert({
+     *   create: {
+     *     // ... data to create a SocialForceEvent
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SocialForceEvent we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SocialForceEventUpsertArgs>(args: SelectSubset<T, SocialForceEventUpsertArgs<ExtArgs>>): Prisma__SocialForceEventClient<$Result.GetResult<Prisma.$SocialForceEventPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of SocialForceEvents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceEventCountArgs} args - Arguments to filter SocialForceEvents to count.
+     * @example
+     * // Count the number of SocialForceEvents
+     * const count = await prisma.socialForceEvent.count({
+     *   where: {
+     *     // ... the filter for the SocialForceEvents we want to count
+     *   }
+     * })
+    **/
+    count<T extends SocialForceEventCountArgs>(
+      args?: Subset<T, SocialForceEventCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SocialForceEventCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SocialForceEvent.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceEventAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SocialForceEventAggregateArgs>(args: Subset<T, SocialForceEventAggregateArgs>): Prisma.PrismaPromise<GetSocialForceEventAggregateType<T>>
+
+    /**
+     * Group by SocialForceEvent.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SocialForceEventGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SocialForceEventGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SocialForceEventGroupByArgs['orderBy'] }
+        : { orderBy?: SocialForceEventGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SocialForceEventGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSocialForceEventGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SocialForceEvent model
+   */
+  readonly fields: SocialForceEventFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SocialForceEvent.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SocialForceEventClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    company<T extends CompanyDefaultArgs<ExtArgs> = {}>(args?: Subset<T, CompanyDefaultArgs<ExtArgs>>): Prisma__CompanyClient<$Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SocialForceEvent model
+   */ 
+  interface SocialForceEventFieldRefs {
+    readonly id: FieldRef<"SocialForceEvent", 'String'>
+    readonly companyId: FieldRef<"SocialForceEvent", 'String'>
+    readonly actorId: FieldRef<"SocialForceEvent", 'String'>
+    readonly action: FieldRef<"SocialForceEvent", 'String'>
+    readonly resourceId: FieldRef<"SocialForceEvent", 'String'>
+    readonly createdAt: FieldRef<"SocialForceEvent", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SocialForceEvent findUnique
+   */
+  export type SocialForceEventFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForceEvent to fetch.
+     */
+    where: SocialForceEventWhereUniqueInput
+  }
+
+  /**
+   * SocialForceEvent findUniqueOrThrow
+   */
+  export type SocialForceEventFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForceEvent to fetch.
+     */
+    where: SocialForceEventWhereUniqueInput
+  }
+
+  /**
+   * SocialForceEvent findFirst
+   */
+  export type SocialForceEventFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForceEvent to fetch.
+     */
+    where?: SocialForceEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForceEvents to fetch.
+     */
+    orderBy?: SocialForceEventOrderByWithRelationInput | SocialForceEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SocialForceEvents.
+     */
+    cursor?: SocialForceEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForceEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForceEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SocialForceEvents.
+     */
+    distinct?: SocialForceEventScalarFieldEnum | SocialForceEventScalarFieldEnum[]
+  }
+
+  /**
+   * SocialForceEvent findFirstOrThrow
+   */
+  export type SocialForceEventFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForceEvent to fetch.
+     */
+    where?: SocialForceEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForceEvents to fetch.
+     */
+    orderBy?: SocialForceEventOrderByWithRelationInput | SocialForceEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SocialForceEvents.
+     */
+    cursor?: SocialForceEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForceEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForceEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SocialForceEvents.
+     */
+    distinct?: SocialForceEventScalarFieldEnum | SocialForceEventScalarFieldEnum[]
+  }
+
+  /**
+   * SocialForceEvent findMany
+   */
+  export type SocialForceEventFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventInclude<ExtArgs> | null
+    /**
+     * Filter, which SocialForceEvents to fetch.
+     */
+    where?: SocialForceEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SocialForceEvents to fetch.
+     */
+    orderBy?: SocialForceEventOrderByWithRelationInput | SocialForceEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SocialForceEvents.
+     */
+    cursor?: SocialForceEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SocialForceEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SocialForceEvents.
+     */
+    skip?: number
+    distinct?: SocialForceEventScalarFieldEnum | SocialForceEventScalarFieldEnum[]
+  }
+
+  /**
+   * SocialForceEvent create
+   */
+  export type SocialForceEventCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventInclude<ExtArgs> | null
+    /**
+     * The data needed to create a SocialForceEvent.
+     */
+    data: XOR<SocialForceEventCreateInput, SocialForceEventUncheckedCreateInput>
+  }
+
+  /**
+   * SocialForceEvent createMany
+   */
+  export type SocialForceEventCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SocialForceEvents.
+     */
+    data: SocialForceEventCreateManyInput | SocialForceEventCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SocialForceEvent createManyAndReturn
+   */
+  export type SocialForceEventCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many SocialForceEvents.
+     */
+    data: SocialForceEventCreateManyInput | SocialForceEventCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SocialForceEvent update
+   */
+  export type SocialForceEventUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventInclude<ExtArgs> | null
+    /**
+     * The data needed to update a SocialForceEvent.
+     */
+    data: XOR<SocialForceEventUpdateInput, SocialForceEventUncheckedUpdateInput>
+    /**
+     * Choose, which SocialForceEvent to update.
+     */
+    where: SocialForceEventWhereUniqueInput
+  }
+
+  /**
+   * SocialForceEvent updateMany
+   */
+  export type SocialForceEventUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SocialForceEvents.
+     */
+    data: XOR<SocialForceEventUpdateManyMutationInput, SocialForceEventUncheckedUpdateManyInput>
+    /**
+     * Filter which SocialForceEvents to update
+     */
+    where?: SocialForceEventWhereInput
+  }
+
+  /**
+   * SocialForceEvent upsert
+   */
+  export type SocialForceEventUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventInclude<ExtArgs> | null
+    /**
+     * The filter to search for the SocialForceEvent to update in case it exists.
+     */
+    where: SocialForceEventWhereUniqueInput
+    /**
+     * In case the SocialForceEvent found by the `where` argument doesn't exist, create a new SocialForceEvent with this data.
+     */
+    create: XOR<SocialForceEventCreateInput, SocialForceEventUncheckedCreateInput>
+    /**
+     * In case the SocialForceEvent was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SocialForceEventUpdateInput, SocialForceEventUncheckedUpdateInput>
+  }
+
+  /**
+   * SocialForceEvent delete
+   */
+  export type SocialForceEventDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventInclude<ExtArgs> | null
+    /**
+     * Filter which SocialForceEvent to delete.
+     */
+    where: SocialForceEventWhereUniqueInput
+  }
+
+  /**
+   * SocialForceEvent deleteMany
+   */
+  export type SocialForceEventDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SocialForceEvents to delete
+     */
+    where?: SocialForceEventWhereInput
+  }
+
+  /**
+   * SocialForceEvent without action
+   */
+  export type SocialForceEventDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SocialForceEvent
+     */
+    select?: SocialForceEventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SocialForceEventInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model SsoConfig
+   */
+
+  export type AggregateSsoConfig = {
+    _count: SsoConfigCountAggregateOutputType | null
+    _min: SsoConfigMinAggregateOutputType | null
+    _max: SsoConfigMaxAggregateOutputType | null
+  }
+
+  export type SsoConfigMinAggregateOutputType = {
+    id: string | null
+    companyId: string | null
+    idpEntryPoint: string | null
+    issuer: string | null
+    cert: string | null
+    signatureAlgorithm: string | null
+    disableRequestedAuthnContext: boolean | null
+    wantAuthnResponseSigned: boolean | null
+    isEnabled: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type SsoConfigMaxAggregateOutputType = {
+    id: string | null
+    companyId: string | null
+    idpEntryPoint: string | null
+    issuer: string | null
+    cert: string | null
+    signatureAlgorithm: string | null
+    disableRequestedAuthnContext: boolean | null
+    wantAuthnResponseSigned: boolean | null
+    isEnabled: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type SsoConfigCountAggregateOutputType = {
+    id: number
+    companyId: number
+    idpEntryPoint: number
+    issuer: number
+    cert: number
+    signatureAlgorithm: number
+    disableRequestedAuthnContext: number
+    wantAuthnResponseSigned: number
+    isEnabled: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type SsoConfigMinAggregateInputType = {
+    id?: true
+    companyId?: true
+    idpEntryPoint?: true
+    issuer?: true
+    cert?: true
+    signatureAlgorithm?: true
+    disableRequestedAuthnContext?: true
+    wantAuthnResponseSigned?: true
+    isEnabled?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type SsoConfigMaxAggregateInputType = {
+    id?: true
+    companyId?: true
+    idpEntryPoint?: true
+    issuer?: true
+    cert?: true
+    signatureAlgorithm?: true
+    disableRequestedAuthnContext?: true
+    wantAuthnResponseSigned?: true
+    isEnabled?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type SsoConfigCountAggregateInputType = {
+    id?: true
+    companyId?: true
+    idpEntryPoint?: true
+    issuer?: true
+    cert?: true
+    signatureAlgorithm?: true
+    disableRequestedAuthnContext?: true
+    wantAuthnResponseSigned?: true
+    isEnabled?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type SsoConfigAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SsoConfig to aggregate.
+     */
+    where?: SsoConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SsoConfigs to fetch.
+     */
+    orderBy?: SsoConfigOrderByWithRelationInput | SsoConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SsoConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SsoConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SsoConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SsoConfigs
+    **/
+    _count?: true | SsoConfigCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SsoConfigMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SsoConfigMaxAggregateInputType
+  }
+
+  export type GetSsoConfigAggregateType<T extends SsoConfigAggregateArgs> = {
+        [P in keyof T & keyof AggregateSsoConfig]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSsoConfig[P]>
+      : GetScalarType<T[P], AggregateSsoConfig[P]>
+  }
+
+
+
+
+  export type SsoConfigGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SsoConfigWhereInput
+    orderBy?: SsoConfigOrderByWithAggregationInput | SsoConfigOrderByWithAggregationInput[]
+    by: SsoConfigScalarFieldEnum[] | SsoConfigScalarFieldEnum
+    having?: SsoConfigScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SsoConfigCountAggregateInputType | true
+    _min?: SsoConfigMinAggregateInputType
+    _max?: SsoConfigMaxAggregateInputType
+  }
+
+  export type SsoConfigGroupByOutputType = {
+    id: string
+    companyId: string | null
+    idpEntryPoint: string
+    issuer: string
+    cert: string
+    signatureAlgorithm: string
+    disableRequestedAuthnContext: boolean
+    wantAuthnResponseSigned: boolean
+    isEnabled: boolean
+    createdAt: Date
+    updatedAt: Date
+    _count: SsoConfigCountAggregateOutputType | null
+    _min: SsoConfigMinAggregateOutputType | null
+    _max: SsoConfigMaxAggregateOutputType | null
+  }
+
+  type GetSsoConfigGroupByPayload<T extends SsoConfigGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SsoConfigGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SsoConfigGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SsoConfigGroupByOutputType[P]>
+            : GetScalarType<T[P], SsoConfigGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SsoConfigSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    companyId?: boolean
+    idpEntryPoint?: boolean
+    issuer?: boolean
+    cert?: boolean
+    signatureAlgorithm?: boolean
+    disableRequestedAuthnContext?: boolean
+    wantAuthnResponseSigned?: boolean
+    isEnabled?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    company?: boolean | SsoConfig$companyArgs<ExtArgs>
+  }, ExtArgs["result"]["ssoConfig"]>
+
+  export type SsoConfigSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    companyId?: boolean
+    idpEntryPoint?: boolean
+    issuer?: boolean
+    cert?: boolean
+    signatureAlgorithm?: boolean
+    disableRequestedAuthnContext?: boolean
+    wantAuthnResponseSigned?: boolean
+    isEnabled?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    company?: boolean | SsoConfig$companyArgs<ExtArgs>
+  }, ExtArgs["result"]["ssoConfig"]>
+
+  export type SsoConfigSelectScalar = {
+    id?: boolean
+    companyId?: boolean
+    idpEntryPoint?: boolean
+    issuer?: boolean
+    cert?: boolean
+    signatureAlgorithm?: boolean
+    disableRequestedAuthnContext?: boolean
+    wantAuthnResponseSigned?: boolean
+    isEnabled?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type SsoConfigInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    company?: boolean | SsoConfig$companyArgs<ExtArgs>
+  }
+  export type SsoConfigIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    company?: boolean | SsoConfig$companyArgs<ExtArgs>
+  }
+
+  export type $SsoConfigPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SsoConfig"
+    objects: {
+      company: Prisma.$CompanyPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      companyId: string | null
+      idpEntryPoint: string
+      issuer: string
+      cert: string
+      signatureAlgorithm: string
+      disableRequestedAuthnContext: boolean
+      wantAuthnResponseSigned: boolean
+      isEnabled: boolean
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["ssoConfig"]>
+    composites: {}
+  }
+
+  type SsoConfigGetPayload<S extends boolean | null | undefined | SsoConfigDefaultArgs> = $Result.GetResult<Prisma.$SsoConfigPayload, S>
+
+  type SsoConfigCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<SsoConfigFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: SsoConfigCountAggregateInputType | true
+    }
+
+  export interface SsoConfigDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SsoConfig'], meta: { name: 'SsoConfig' } }
+    /**
+     * Find zero or one SsoConfig that matches the filter.
+     * @param {SsoConfigFindUniqueArgs} args - Arguments to find a SsoConfig
+     * @example
+     * // Get one SsoConfig
+     * const ssoConfig = await prisma.ssoConfig.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SsoConfigFindUniqueArgs>(args: SelectSubset<T, SsoConfigFindUniqueArgs<ExtArgs>>): Prisma__SsoConfigClient<$Result.GetResult<Prisma.$SsoConfigPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one SsoConfig that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {SsoConfigFindUniqueOrThrowArgs} args - Arguments to find a SsoConfig
+     * @example
+     * // Get one SsoConfig
+     * const ssoConfig = await prisma.ssoConfig.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SsoConfigFindUniqueOrThrowArgs>(args: SelectSubset<T, SsoConfigFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SsoConfigClient<$Result.GetResult<Prisma.$SsoConfigPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first SsoConfig that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SsoConfigFindFirstArgs} args - Arguments to find a SsoConfig
+     * @example
+     * // Get one SsoConfig
+     * const ssoConfig = await prisma.ssoConfig.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SsoConfigFindFirstArgs>(args?: SelectSubset<T, SsoConfigFindFirstArgs<ExtArgs>>): Prisma__SsoConfigClient<$Result.GetResult<Prisma.$SsoConfigPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first SsoConfig that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SsoConfigFindFirstOrThrowArgs} args - Arguments to find a SsoConfig
+     * @example
+     * // Get one SsoConfig
+     * const ssoConfig = await prisma.ssoConfig.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SsoConfigFindFirstOrThrowArgs>(args?: SelectSubset<T, SsoConfigFindFirstOrThrowArgs<ExtArgs>>): Prisma__SsoConfigClient<$Result.GetResult<Prisma.$SsoConfigPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more SsoConfigs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SsoConfigFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SsoConfigs
+     * const ssoConfigs = await prisma.ssoConfig.findMany()
+     * 
+     * // Get first 10 SsoConfigs
+     * const ssoConfigs = await prisma.ssoConfig.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const ssoConfigWithIdOnly = await prisma.ssoConfig.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SsoConfigFindManyArgs>(args?: SelectSubset<T, SsoConfigFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SsoConfigPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a SsoConfig.
+     * @param {SsoConfigCreateArgs} args - Arguments to create a SsoConfig.
+     * @example
+     * // Create one SsoConfig
+     * const SsoConfig = await prisma.ssoConfig.create({
+     *   data: {
+     *     // ... data to create a SsoConfig
+     *   }
+     * })
+     * 
+     */
+    create<T extends SsoConfigCreateArgs>(args: SelectSubset<T, SsoConfigCreateArgs<ExtArgs>>): Prisma__SsoConfigClient<$Result.GetResult<Prisma.$SsoConfigPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many SsoConfigs.
+     * @param {SsoConfigCreateManyArgs} args - Arguments to create many SsoConfigs.
+     * @example
+     * // Create many SsoConfigs
+     * const ssoConfig = await prisma.ssoConfig.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SsoConfigCreateManyArgs>(args?: SelectSubset<T, SsoConfigCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SsoConfigs and returns the data saved in the database.
+     * @param {SsoConfigCreateManyAndReturnArgs} args - Arguments to create many SsoConfigs.
+     * @example
+     * // Create many SsoConfigs
+     * const ssoConfig = await prisma.ssoConfig.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SsoConfigs and only return the `id`
+     * const ssoConfigWithIdOnly = await prisma.ssoConfig.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SsoConfigCreateManyAndReturnArgs>(args?: SelectSubset<T, SsoConfigCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SsoConfigPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a SsoConfig.
+     * @param {SsoConfigDeleteArgs} args - Arguments to delete one SsoConfig.
+     * @example
+     * // Delete one SsoConfig
+     * const SsoConfig = await prisma.ssoConfig.delete({
+     *   where: {
+     *     // ... filter to delete one SsoConfig
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SsoConfigDeleteArgs>(args: SelectSubset<T, SsoConfigDeleteArgs<ExtArgs>>): Prisma__SsoConfigClient<$Result.GetResult<Prisma.$SsoConfigPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one SsoConfig.
+     * @param {SsoConfigUpdateArgs} args - Arguments to update one SsoConfig.
+     * @example
+     * // Update one SsoConfig
+     * const ssoConfig = await prisma.ssoConfig.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SsoConfigUpdateArgs>(args: SelectSubset<T, SsoConfigUpdateArgs<ExtArgs>>): Prisma__SsoConfigClient<$Result.GetResult<Prisma.$SsoConfigPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more SsoConfigs.
+     * @param {SsoConfigDeleteManyArgs} args - Arguments to filter SsoConfigs to delete.
+     * @example
+     * // Delete a few SsoConfigs
+     * const { count } = await prisma.ssoConfig.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SsoConfigDeleteManyArgs>(args?: SelectSubset<T, SsoConfigDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SsoConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SsoConfigUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SsoConfigs
+     * const ssoConfig = await prisma.ssoConfig.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SsoConfigUpdateManyArgs>(args: SelectSubset<T, SsoConfigUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one SsoConfig.
+     * @param {SsoConfigUpsertArgs} args - Arguments to update or create a SsoConfig.
+     * @example
+     * // Update or create a SsoConfig
+     * const ssoConfig = await prisma.ssoConfig.upsert({
+     *   create: {
+     *     // ... data to create a SsoConfig
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SsoConfig we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SsoConfigUpsertArgs>(args: SelectSubset<T, SsoConfigUpsertArgs<ExtArgs>>): Prisma__SsoConfigClient<$Result.GetResult<Prisma.$SsoConfigPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of SsoConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SsoConfigCountArgs} args - Arguments to filter SsoConfigs to count.
+     * @example
+     * // Count the number of SsoConfigs
+     * const count = await prisma.ssoConfig.count({
+     *   where: {
+     *     // ... the filter for the SsoConfigs we want to count
+     *   }
+     * })
+    **/
+    count<T extends SsoConfigCountArgs>(
+      args?: Subset<T, SsoConfigCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SsoConfigCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SsoConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SsoConfigAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SsoConfigAggregateArgs>(args: Subset<T, SsoConfigAggregateArgs>): Prisma.PrismaPromise<GetSsoConfigAggregateType<T>>
+
+    /**
+     * Group by SsoConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SsoConfigGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SsoConfigGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SsoConfigGroupByArgs['orderBy'] }
+        : { orderBy?: SsoConfigGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SsoConfigGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSsoConfigGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SsoConfig model
+   */
+  readonly fields: SsoConfigFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SsoConfig.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SsoConfigClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    company<T extends SsoConfig$companyArgs<ExtArgs> = {}>(args?: Subset<T, SsoConfig$companyArgs<ExtArgs>>): Prisma__CompanyClient<$Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SsoConfig model
+   */ 
+  interface SsoConfigFieldRefs {
+    readonly id: FieldRef<"SsoConfig", 'String'>
+    readonly companyId: FieldRef<"SsoConfig", 'String'>
+    readonly idpEntryPoint: FieldRef<"SsoConfig", 'String'>
+    readonly issuer: FieldRef<"SsoConfig", 'String'>
+    readonly cert: FieldRef<"SsoConfig", 'String'>
+    readonly signatureAlgorithm: FieldRef<"SsoConfig", 'String'>
+    readonly disableRequestedAuthnContext: FieldRef<"SsoConfig", 'Boolean'>
+    readonly wantAuthnResponseSigned: FieldRef<"SsoConfig", 'Boolean'>
+    readonly isEnabled: FieldRef<"SsoConfig", 'Boolean'>
+    readonly createdAt: FieldRef<"SsoConfig", 'DateTime'>
+    readonly updatedAt: FieldRef<"SsoConfig", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SsoConfig findUnique
+   */
+  export type SsoConfigFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which SsoConfig to fetch.
+     */
+    where: SsoConfigWhereUniqueInput
+  }
+
+  /**
+   * SsoConfig findUniqueOrThrow
+   */
+  export type SsoConfigFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which SsoConfig to fetch.
+     */
+    where: SsoConfigWhereUniqueInput
+  }
+
+  /**
+   * SsoConfig findFirst
+   */
+  export type SsoConfigFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which SsoConfig to fetch.
+     */
+    where?: SsoConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SsoConfigs to fetch.
+     */
+    orderBy?: SsoConfigOrderByWithRelationInput | SsoConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SsoConfigs.
+     */
+    cursor?: SsoConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SsoConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SsoConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SsoConfigs.
+     */
+    distinct?: SsoConfigScalarFieldEnum | SsoConfigScalarFieldEnum[]
+  }
+
+  /**
+   * SsoConfig findFirstOrThrow
+   */
+  export type SsoConfigFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which SsoConfig to fetch.
+     */
+    where?: SsoConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SsoConfigs to fetch.
+     */
+    orderBy?: SsoConfigOrderByWithRelationInput | SsoConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SsoConfigs.
+     */
+    cursor?: SsoConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SsoConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SsoConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SsoConfigs.
+     */
+    distinct?: SsoConfigScalarFieldEnum | SsoConfigScalarFieldEnum[]
+  }
+
+  /**
+   * SsoConfig findMany
+   */
+  export type SsoConfigFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which SsoConfigs to fetch.
+     */
+    where?: SsoConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SsoConfigs to fetch.
+     */
+    orderBy?: SsoConfigOrderByWithRelationInput | SsoConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SsoConfigs.
+     */
+    cursor?: SsoConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SsoConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SsoConfigs.
+     */
+    skip?: number
+    distinct?: SsoConfigScalarFieldEnum | SsoConfigScalarFieldEnum[]
+  }
+
+  /**
+   * SsoConfig create
+   */
+  export type SsoConfigCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigInclude<ExtArgs> | null
+    /**
+     * The data needed to create a SsoConfig.
+     */
+    data: XOR<SsoConfigCreateInput, SsoConfigUncheckedCreateInput>
+  }
+
+  /**
+   * SsoConfig createMany
+   */
+  export type SsoConfigCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SsoConfigs.
+     */
+    data: SsoConfigCreateManyInput | SsoConfigCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SsoConfig createManyAndReturn
+   */
+  export type SsoConfigCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many SsoConfigs.
+     */
+    data: SsoConfigCreateManyInput | SsoConfigCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SsoConfig update
+   */
+  export type SsoConfigUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigInclude<ExtArgs> | null
+    /**
+     * The data needed to update a SsoConfig.
+     */
+    data: XOR<SsoConfigUpdateInput, SsoConfigUncheckedUpdateInput>
+    /**
+     * Choose, which SsoConfig to update.
+     */
+    where: SsoConfigWhereUniqueInput
+  }
+
+  /**
+   * SsoConfig updateMany
+   */
+  export type SsoConfigUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SsoConfigs.
+     */
+    data: XOR<SsoConfigUpdateManyMutationInput, SsoConfigUncheckedUpdateManyInput>
+    /**
+     * Filter which SsoConfigs to update
+     */
+    where?: SsoConfigWhereInput
+  }
+
+  /**
+   * SsoConfig upsert
+   */
+  export type SsoConfigUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigInclude<ExtArgs> | null
+    /**
+     * The filter to search for the SsoConfig to update in case it exists.
+     */
+    where: SsoConfigWhereUniqueInput
+    /**
+     * In case the SsoConfig found by the `where` argument doesn't exist, create a new SsoConfig with this data.
+     */
+    create: XOR<SsoConfigCreateInput, SsoConfigUncheckedCreateInput>
+    /**
+     * In case the SsoConfig was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SsoConfigUpdateInput, SsoConfigUncheckedUpdateInput>
+  }
+
+  /**
+   * SsoConfig delete
+   */
+  export type SsoConfigDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigInclude<ExtArgs> | null
+    /**
+     * Filter which SsoConfig to delete.
+     */
+    where: SsoConfigWhereUniqueInput
+  }
+
+  /**
+   * SsoConfig deleteMany
+   */
+  export type SsoConfigDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SsoConfigs to delete
+     */
+    where?: SsoConfigWhereInput
+  }
+
+  /**
+   * SsoConfig.company
+   */
+  export type SsoConfig$companyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Company
+     */
+    select?: CompanySelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyInclude<ExtArgs> | null
+    where?: CompanyWhereInput
+  }
+
+  /**
+   * SsoConfig without action
+   */
+  export type SsoConfigDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SsoConfig
+     */
+    select?: SsoConfigSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SsoConfigInclude<ExtArgs> | null
   }
 
 
@@ -139382,6 +144055,1834 @@ export namespace Prisma {
 
 
   /**
+   * Model WebsiteEnquiry
+   */
+
+  export type AggregateWebsiteEnquiry = {
+    _count: WebsiteEnquiryCountAggregateOutputType | null
+    _min: WebsiteEnquiryMinAggregateOutputType | null
+    _max: WebsiteEnquiryMaxAggregateOutputType | null
+  }
+
+  export type WebsiteEnquiryMinAggregateOutputType = {
+    id: string | null
+    name: string | null
+    email: string | null
+    subject: string | null
+    message: string | null
+    source: string | null
+    ip: string | null
+    companyId: string | null
+    status: string | null
+    createdAt: Date | null
+  }
+
+  export type WebsiteEnquiryMaxAggregateOutputType = {
+    id: string | null
+    name: string | null
+    email: string | null
+    subject: string | null
+    message: string | null
+    source: string | null
+    ip: string | null
+    companyId: string | null
+    status: string | null
+    createdAt: Date | null
+  }
+
+  export type WebsiteEnquiryCountAggregateOutputType = {
+    id: number
+    name: number
+    email: number
+    subject: number
+    message: number
+    source: number
+    ip: number
+    companyId: number
+    status: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type WebsiteEnquiryMinAggregateInputType = {
+    id?: true
+    name?: true
+    email?: true
+    subject?: true
+    message?: true
+    source?: true
+    ip?: true
+    companyId?: true
+    status?: true
+    createdAt?: true
+  }
+
+  export type WebsiteEnquiryMaxAggregateInputType = {
+    id?: true
+    name?: true
+    email?: true
+    subject?: true
+    message?: true
+    source?: true
+    ip?: true
+    companyId?: true
+    status?: true
+    createdAt?: true
+  }
+
+  export type WebsiteEnquiryCountAggregateInputType = {
+    id?: true
+    name?: true
+    email?: true
+    subject?: true
+    message?: true
+    source?: true
+    ip?: true
+    companyId?: true
+    status?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type WebsiteEnquiryAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WebsiteEnquiry to aggregate.
+     */
+    where?: WebsiteEnquiryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WebsiteEnquiries to fetch.
+     */
+    orderBy?: WebsiteEnquiryOrderByWithRelationInput | WebsiteEnquiryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: WebsiteEnquiryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WebsiteEnquiries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WebsiteEnquiries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned WebsiteEnquiries
+    **/
+    _count?: true | WebsiteEnquiryCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: WebsiteEnquiryMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: WebsiteEnquiryMaxAggregateInputType
+  }
+
+  export type GetWebsiteEnquiryAggregateType<T extends WebsiteEnquiryAggregateArgs> = {
+        [P in keyof T & keyof AggregateWebsiteEnquiry]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateWebsiteEnquiry[P]>
+      : GetScalarType<T[P], AggregateWebsiteEnquiry[P]>
+  }
+
+
+
+
+  export type WebsiteEnquiryGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WebsiteEnquiryWhereInput
+    orderBy?: WebsiteEnquiryOrderByWithAggregationInput | WebsiteEnquiryOrderByWithAggregationInput[]
+    by: WebsiteEnquiryScalarFieldEnum[] | WebsiteEnquiryScalarFieldEnum
+    having?: WebsiteEnquiryScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: WebsiteEnquiryCountAggregateInputType | true
+    _min?: WebsiteEnquiryMinAggregateInputType
+    _max?: WebsiteEnquiryMaxAggregateInputType
+  }
+
+  export type WebsiteEnquiryGroupByOutputType = {
+    id: string
+    name: string
+    email: string
+    subject: string | null
+    message: string
+    source: string
+    ip: string | null
+    companyId: string | null
+    status: string
+    createdAt: Date
+    _count: WebsiteEnquiryCountAggregateOutputType | null
+    _min: WebsiteEnquiryMinAggregateOutputType | null
+    _max: WebsiteEnquiryMaxAggregateOutputType | null
+  }
+
+  type GetWebsiteEnquiryGroupByPayload<T extends WebsiteEnquiryGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<WebsiteEnquiryGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof WebsiteEnquiryGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], WebsiteEnquiryGroupByOutputType[P]>
+            : GetScalarType<T[P], WebsiteEnquiryGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type WebsiteEnquirySelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    email?: boolean
+    subject?: boolean
+    message?: boolean
+    source?: boolean
+    ip?: boolean
+    companyId?: boolean
+    status?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["websiteEnquiry"]>
+
+  export type WebsiteEnquirySelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    email?: boolean
+    subject?: boolean
+    message?: boolean
+    source?: boolean
+    ip?: boolean
+    companyId?: boolean
+    status?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["websiteEnquiry"]>
+
+  export type WebsiteEnquirySelectScalar = {
+    id?: boolean
+    name?: boolean
+    email?: boolean
+    subject?: boolean
+    message?: boolean
+    source?: boolean
+    ip?: boolean
+    companyId?: boolean
+    status?: boolean
+    createdAt?: boolean
+  }
+
+
+  export type $WebsiteEnquiryPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "WebsiteEnquiry"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      name: string
+      email: string
+      subject: string | null
+      message: string
+      source: string
+      ip: string | null
+      companyId: string | null
+      status: string
+      createdAt: Date
+    }, ExtArgs["result"]["websiteEnquiry"]>
+    composites: {}
+  }
+
+  type WebsiteEnquiryGetPayload<S extends boolean | null | undefined | WebsiteEnquiryDefaultArgs> = $Result.GetResult<Prisma.$WebsiteEnquiryPayload, S>
+
+  type WebsiteEnquiryCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<WebsiteEnquiryFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: WebsiteEnquiryCountAggregateInputType | true
+    }
+
+  export interface WebsiteEnquiryDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['WebsiteEnquiry'], meta: { name: 'WebsiteEnquiry' } }
+    /**
+     * Find zero or one WebsiteEnquiry that matches the filter.
+     * @param {WebsiteEnquiryFindUniqueArgs} args - Arguments to find a WebsiteEnquiry
+     * @example
+     * // Get one WebsiteEnquiry
+     * const websiteEnquiry = await prisma.websiteEnquiry.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends WebsiteEnquiryFindUniqueArgs>(args: SelectSubset<T, WebsiteEnquiryFindUniqueArgs<ExtArgs>>): Prisma__WebsiteEnquiryClient<$Result.GetResult<Prisma.$WebsiteEnquiryPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one WebsiteEnquiry that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {WebsiteEnquiryFindUniqueOrThrowArgs} args - Arguments to find a WebsiteEnquiry
+     * @example
+     * // Get one WebsiteEnquiry
+     * const websiteEnquiry = await prisma.websiteEnquiry.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends WebsiteEnquiryFindUniqueOrThrowArgs>(args: SelectSubset<T, WebsiteEnquiryFindUniqueOrThrowArgs<ExtArgs>>): Prisma__WebsiteEnquiryClient<$Result.GetResult<Prisma.$WebsiteEnquiryPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first WebsiteEnquiry that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebsiteEnquiryFindFirstArgs} args - Arguments to find a WebsiteEnquiry
+     * @example
+     * // Get one WebsiteEnquiry
+     * const websiteEnquiry = await prisma.websiteEnquiry.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends WebsiteEnquiryFindFirstArgs>(args?: SelectSubset<T, WebsiteEnquiryFindFirstArgs<ExtArgs>>): Prisma__WebsiteEnquiryClient<$Result.GetResult<Prisma.$WebsiteEnquiryPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first WebsiteEnquiry that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebsiteEnquiryFindFirstOrThrowArgs} args - Arguments to find a WebsiteEnquiry
+     * @example
+     * // Get one WebsiteEnquiry
+     * const websiteEnquiry = await prisma.websiteEnquiry.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends WebsiteEnquiryFindFirstOrThrowArgs>(args?: SelectSubset<T, WebsiteEnquiryFindFirstOrThrowArgs<ExtArgs>>): Prisma__WebsiteEnquiryClient<$Result.GetResult<Prisma.$WebsiteEnquiryPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more WebsiteEnquiries that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebsiteEnquiryFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all WebsiteEnquiries
+     * const websiteEnquiries = await prisma.websiteEnquiry.findMany()
+     * 
+     * // Get first 10 WebsiteEnquiries
+     * const websiteEnquiries = await prisma.websiteEnquiry.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const websiteEnquiryWithIdOnly = await prisma.websiteEnquiry.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends WebsiteEnquiryFindManyArgs>(args?: SelectSubset<T, WebsiteEnquiryFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WebsiteEnquiryPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a WebsiteEnquiry.
+     * @param {WebsiteEnquiryCreateArgs} args - Arguments to create a WebsiteEnquiry.
+     * @example
+     * // Create one WebsiteEnquiry
+     * const WebsiteEnquiry = await prisma.websiteEnquiry.create({
+     *   data: {
+     *     // ... data to create a WebsiteEnquiry
+     *   }
+     * })
+     * 
+     */
+    create<T extends WebsiteEnquiryCreateArgs>(args: SelectSubset<T, WebsiteEnquiryCreateArgs<ExtArgs>>): Prisma__WebsiteEnquiryClient<$Result.GetResult<Prisma.$WebsiteEnquiryPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many WebsiteEnquiries.
+     * @param {WebsiteEnquiryCreateManyArgs} args - Arguments to create many WebsiteEnquiries.
+     * @example
+     * // Create many WebsiteEnquiries
+     * const websiteEnquiry = await prisma.websiteEnquiry.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends WebsiteEnquiryCreateManyArgs>(args?: SelectSubset<T, WebsiteEnquiryCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many WebsiteEnquiries and returns the data saved in the database.
+     * @param {WebsiteEnquiryCreateManyAndReturnArgs} args - Arguments to create many WebsiteEnquiries.
+     * @example
+     * // Create many WebsiteEnquiries
+     * const websiteEnquiry = await prisma.websiteEnquiry.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many WebsiteEnquiries and only return the `id`
+     * const websiteEnquiryWithIdOnly = await prisma.websiteEnquiry.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends WebsiteEnquiryCreateManyAndReturnArgs>(args?: SelectSubset<T, WebsiteEnquiryCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WebsiteEnquiryPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a WebsiteEnquiry.
+     * @param {WebsiteEnquiryDeleteArgs} args - Arguments to delete one WebsiteEnquiry.
+     * @example
+     * // Delete one WebsiteEnquiry
+     * const WebsiteEnquiry = await prisma.websiteEnquiry.delete({
+     *   where: {
+     *     // ... filter to delete one WebsiteEnquiry
+     *   }
+     * })
+     * 
+     */
+    delete<T extends WebsiteEnquiryDeleteArgs>(args: SelectSubset<T, WebsiteEnquiryDeleteArgs<ExtArgs>>): Prisma__WebsiteEnquiryClient<$Result.GetResult<Prisma.$WebsiteEnquiryPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one WebsiteEnquiry.
+     * @param {WebsiteEnquiryUpdateArgs} args - Arguments to update one WebsiteEnquiry.
+     * @example
+     * // Update one WebsiteEnquiry
+     * const websiteEnquiry = await prisma.websiteEnquiry.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends WebsiteEnquiryUpdateArgs>(args: SelectSubset<T, WebsiteEnquiryUpdateArgs<ExtArgs>>): Prisma__WebsiteEnquiryClient<$Result.GetResult<Prisma.$WebsiteEnquiryPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more WebsiteEnquiries.
+     * @param {WebsiteEnquiryDeleteManyArgs} args - Arguments to filter WebsiteEnquiries to delete.
+     * @example
+     * // Delete a few WebsiteEnquiries
+     * const { count } = await prisma.websiteEnquiry.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends WebsiteEnquiryDeleteManyArgs>(args?: SelectSubset<T, WebsiteEnquiryDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WebsiteEnquiries.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebsiteEnquiryUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many WebsiteEnquiries
+     * const websiteEnquiry = await prisma.websiteEnquiry.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends WebsiteEnquiryUpdateManyArgs>(args: SelectSubset<T, WebsiteEnquiryUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one WebsiteEnquiry.
+     * @param {WebsiteEnquiryUpsertArgs} args - Arguments to update or create a WebsiteEnquiry.
+     * @example
+     * // Update or create a WebsiteEnquiry
+     * const websiteEnquiry = await prisma.websiteEnquiry.upsert({
+     *   create: {
+     *     // ... data to create a WebsiteEnquiry
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the WebsiteEnquiry we want to update
+     *   }
+     * })
+     */
+    upsert<T extends WebsiteEnquiryUpsertArgs>(args: SelectSubset<T, WebsiteEnquiryUpsertArgs<ExtArgs>>): Prisma__WebsiteEnquiryClient<$Result.GetResult<Prisma.$WebsiteEnquiryPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of WebsiteEnquiries.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebsiteEnquiryCountArgs} args - Arguments to filter WebsiteEnquiries to count.
+     * @example
+     * // Count the number of WebsiteEnquiries
+     * const count = await prisma.websiteEnquiry.count({
+     *   where: {
+     *     // ... the filter for the WebsiteEnquiries we want to count
+     *   }
+     * })
+    **/
+    count<T extends WebsiteEnquiryCountArgs>(
+      args?: Subset<T, WebsiteEnquiryCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], WebsiteEnquiryCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a WebsiteEnquiry.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebsiteEnquiryAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends WebsiteEnquiryAggregateArgs>(args: Subset<T, WebsiteEnquiryAggregateArgs>): Prisma.PrismaPromise<GetWebsiteEnquiryAggregateType<T>>
+
+    /**
+     * Group by WebsiteEnquiry.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebsiteEnquiryGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends WebsiteEnquiryGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: WebsiteEnquiryGroupByArgs['orderBy'] }
+        : { orderBy?: WebsiteEnquiryGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, WebsiteEnquiryGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetWebsiteEnquiryGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the WebsiteEnquiry model
+   */
+  readonly fields: WebsiteEnquiryFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for WebsiteEnquiry.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__WebsiteEnquiryClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the WebsiteEnquiry model
+   */ 
+  interface WebsiteEnquiryFieldRefs {
+    readonly id: FieldRef<"WebsiteEnquiry", 'String'>
+    readonly name: FieldRef<"WebsiteEnquiry", 'String'>
+    readonly email: FieldRef<"WebsiteEnquiry", 'String'>
+    readonly subject: FieldRef<"WebsiteEnquiry", 'String'>
+    readonly message: FieldRef<"WebsiteEnquiry", 'String'>
+    readonly source: FieldRef<"WebsiteEnquiry", 'String'>
+    readonly ip: FieldRef<"WebsiteEnquiry", 'String'>
+    readonly companyId: FieldRef<"WebsiteEnquiry", 'String'>
+    readonly status: FieldRef<"WebsiteEnquiry", 'String'>
+    readonly createdAt: FieldRef<"WebsiteEnquiry", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * WebsiteEnquiry findUnique
+   */
+  export type WebsiteEnquiryFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebsiteEnquiry
+     */
+    select?: WebsiteEnquirySelect<ExtArgs> | null
+    /**
+     * Filter, which WebsiteEnquiry to fetch.
+     */
+    where: WebsiteEnquiryWhereUniqueInput
+  }
+
+  /**
+   * WebsiteEnquiry findUniqueOrThrow
+   */
+  export type WebsiteEnquiryFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebsiteEnquiry
+     */
+    select?: WebsiteEnquirySelect<ExtArgs> | null
+    /**
+     * Filter, which WebsiteEnquiry to fetch.
+     */
+    where: WebsiteEnquiryWhereUniqueInput
+  }
+
+  /**
+   * WebsiteEnquiry findFirst
+   */
+  export type WebsiteEnquiryFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebsiteEnquiry
+     */
+    select?: WebsiteEnquirySelect<ExtArgs> | null
+    /**
+     * Filter, which WebsiteEnquiry to fetch.
+     */
+    where?: WebsiteEnquiryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WebsiteEnquiries to fetch.
+     */
+    orderBy?: WebsiteEnquiryOrderByWithRelationInput | WebsiteEnquiryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WebsiteEnquiries.
+     */
+    cursor?: WebsiteEnquiryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WebsiteEnquiries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WebsiteEnquiries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WebsiteEnquiries.
+     */
+    distinct?: WebsiteEnquiryScalarFieldEnum | WebsiteEnquiryScalarFieldEnum[]
+  }
+
+  /**
+   * WebsiteEnquiry findFirstOrThrow
+   */
+  export type WebsiteEnquiryFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebsiteEnquiry
+     */
+    select?: WebsiteEnquirySelect<ExtArgs> | null
+    /**
+     * Filter, which WebsiteEnquiry to fetch.
+     */
+    where?: WebsiteEnquiryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WebsiteEnquiries to fetch.
+     */
+    orderBy?: WebsiteEnquiryOrderByWithRelationInput | WebsiteEnquiryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WebsiteEnquiries.
+     */
+    cursor?: WebsiteEnquiryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WebsiteEnquiries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WebsiteEnquiries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WebsiteEnquiries.
+     */
+    distinct?: WebsiteEnquiryScalarFieldEnum | WebsiteEnquiryScalarFieldEnum[]
+  }
+
+  /**
+   * WebsiteEnquiry findMany
+   */
+  export type WebsiteEnquiryFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebsiteEnquiry
+     */
+    select?: WebsiteEnquirySelect<ExtArgs> | null
+    /**
+     * Filter, which WebsiteEnquiries to fetch.
+     */
+    where?: WebsiteEnquiryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WebsiteEnquiries to fetch.
+     */
+    orderBy?: WebsiteEnquiryOrderByWithRelationInput | WebsiteEnquiryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing WebsiteEnquiries.
+     */
+    cursor?: WebsiteEnquiryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WebsiteEnquiries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WebsiteEnquiries.
+     */
+    skip?: number
+    distinct?: WebsiteEnquiryScalarFieldEnum | WebsiteEnquiryScalarFieldEnum[]
+  }
+
+  /**
+   * WebsiteEnquiry create
+   */
+  export type WebsiteEnquiryCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebsiteEnquiry
+     */
+    select?: WebsiteEnquirySelect<ExtArgs> | null
+    /**
+     * The data needed to create a WebsiteEnquiry.
+     */
+    data: XOR<WebsiteEnquiryCreateInput, WebsiteEnquiryUncheckedCreateInput>
+  }
+
+  /**
+   * WebsiteEnquiry createMany
+   */
+  export type WebsiteEnquiryCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many WebsiteEnquiries.
+     */
+    data: WebsiteEnquiryCreateManyInput | WebsiteEnquiryCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * WebsiteEnquiry createManyAndReturn
+   */
+  export type WebsiteEnquiryCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebsiteEnquiry
+     */
+    select?: WebsiteEnquirySelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many WebsiteEnquiries.
+     */
+    data: WebsiteEnquiryCreateManyInput | WebsiteEnquiryCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * WebsiteEnquiry update
+   */
+  export type WebsiteEnquiryUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebsiteEnquiry
+     */
+    select?: WebsiteEnquirySelect<ExtArgs> | null
+    /**
+     * The data needed to update a WebsiteEnquiry.
+     */
+    data: XOR<WebsiteEnquiryUpdateInput, WebsiteEnquiryUncheckedUpdateInput>
+    /**
+     * Choose, which WebsiteEnquiry to update.
+     */
+    where: WebsiteEnquiryWhereUniqueInput
+  }
+
+  /**
+   * WebsiteEnquiry updateMany
+   */
+  export type WebsiteEnquiryUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update WebsiteEnquiries.
+     */
+    data: XOR<WebsiteEnquiryUpdateManyMutationInput, WebsiteEnquiryUncheckedUpdateManyInput>
+    /**
+     * Filter which WebsiteEnquiries to update
+     */
+    where?: WebsiteEnquiryWhereInput
+  }
+
+  /**
+   * WebsiteEnquiry upsert
+   */
+  export type WebsiteEnquiryUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebsiteEnquiry
+     */
+    select?: WebsiteEnquirySelect<ExtArgs> | null
+    /**
+     * The filter to search for the WebsiteEnquiry to update in case it exists.
+     */
+    where: WebsiteEnquiryWhereUniqueInput
+    /**
+     * In case the WebsiteEnquiry found by the `where` argument doesn't exist, create a new WebsiteEnquiry with this data.
+     */
+    create: XOR<WebsiteEnquiryCreateInput, WebsiteEnquiryUncheckedCreateInput>
+    /**
+     * In case the WebsiteEnquiry was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<WebsiteEnquiryUpdateInput, WebsiteEnquiryUncheckedUpdateInput>
+  }
+
+  /**
+   * WebsiteEnquiry delete
+   */
+  export type WebsiteEnquiryDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebsiteEnquiry
+     */
+    select?: WebsiteEnquirySelect<ExtArgs> | null
+    /**
+     * Filter which WebsiteEnquiry to delete.
+     */
+    where: WebsiteEnquiryWhereUniqueInput
+  }
+
+  /**
+   * WebsiteEnquiry deleteMany
+   */
+  export type WebsiteEnquiryDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WebsiteEnquiries to delete
+     */
+    where?: WebsiteEnquiryWhereInput
+  }
+
+  /**
+   * WebsiteEnquiry without action
+   */
+  export type WebsiteEnquiryDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebsiteEnquiry
+     */
+    select?: WebsiteEnquirySelect<ExtArgs> | null
+  }
+
+
+  /**
+   * Model NewsletterSubscriber
+   */
+
+  export type AggregateNewsletterSubscriber = {
+    _count: NewsletterSubscriberCountAggregateOutputType | null
+    _min: NewsletterSubscriberMinAggregateOutputType | null
+    _max: NewsletterSubscriberMaxAggregateOutputType | null
+  }
+
+  export type NewsletterSubscriberMinAggregateOutputType = {
+    id: string | null
+    email: string | null
+    name: string | null
+    source: string | null
+    status: string | null
+    createdAt: Date | null
+  }
+
+  export type NewsletterSubscriberMaxAggregateOutputType = {
+    id: string | null
+    email: string | null
+    name: string | null
+    source: string | null
+    status: string | null
+    createdAt: Date | null
+  }
+
+  export type NewsletterSubscriberCountAggregateOutputType = {
+    id: number
+    email: number
+    name: number
+    source: number
+    status: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type NewsletterSubscriberMinAggregateInputType = {
+    id?: true
+    email?: true
+    name?: true
+    source?: true
+    status?: true
+    createdAt?: true
+  }
+
+  export type NewsletterSubscriberMaxAggregateInputType = {
+    id?: true
+    email?: true
+    name?: true
+    source?: true
+    status?: true
+    createdAt?: true
+  }
+
+  export type NewsletterSubscriberCountAggregateInputType = {
+    id?: true
+    email?: true
+    name?: true
+    source?: true
+    status?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type NewsletterSubscriberAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which NewsletterSubscriber to aggregate.
+     */
+    where?: NewsletterSubscriberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of NewsletterSubscribers to fetch.
+     */
+    orderBy?: NewsletterSubscriberOrderByWithRelationInput | NewsletterSubscriberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: NewsletterSubscriberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` NewsletterSubscribers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` NewsletterSubscribers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned NewsletterSubscribers
+    **/
+    _count?: true | NewsletterSubscriberCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: NewsletterSubscriberMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: NewsletterSubscriberMaxAggregateInputType
+  }
+
+  export type GetNewsletterSubscriberAggregateType<T extends NewsletterSubscriberAggregateArgs> = {
+        [P in keyof T & keyof AggregateNewsletterSubscriber]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateNewsletterSubscriber[P]>
+      : GetScalarType<T[P], AggregateNewsletterSubscriber[P]>
+  }
+
+
+
+
+  export type NewsletterSubscriberGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: NewsletterSubscriberWhereInput
+    orderBy?: NewsletterSubscriberOrderByWithAggregationInput | NewsletterSubscriberOrderByWithAggregationInput[]
+    by: NewsletterSubscriberScalarFieldEnum[] | NewsletterSubscriberScalarFieldEnum
+    having?: NewsletterSubscriberScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: NewsletterSubscriberCountAggregateInputType | true
+    _min?: NewsletterSubscriberMinAggregateInputType
+    _max?: NewsletterSubscriberMaxAggregateInputType
+  }
+
+  export type NewsletterSubscriberGroupByOutputType = {
+    id: string
+    email: string
+    name: string | null
+    source: string
+    status: string
+    createdAt: Date
+    _count: NewsletterSubscriberCountAggregateOutputType | null
+    _min: NewsletterSubscriberMinAggregateOutputType | null
+    _max: NewsletterSubscriberMaxAggregateOutputType | null
+  }
+
+  type GetNewsletterSubscriberGroupByPayload<T extends NewsletterSubscriberGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<NewsletterSubscriberGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof NewsletterSubscriberGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], NewsletterSubscriberGroupByOutputType[P]>
+            : GetScalarType<T[P], NewsletterSubscriberGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type NewsletterSubscriberSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    email?: boolean
+    name?: boolean
+    source?: boolean
+    status?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["newsletterSubscriber"]>
+
+  export type NewsletterSubscriberSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    email?: boolean
+    name?: boolean
+    source?: boolean
+    status?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["newsletterSubscriber"]>
+
+  export type NewsletterSubscriberSelectScalar = {
+    id?: boolean
+    email?: boolean
+    name?: boolean
+    source?: boolean
+    status?: boolean
+    createdAt?: boolean
+  }
+
+
+  export type $NewsletterSubscriberPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "NewsletterSubscriber"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      email: string
+      name: string | null
+      source: string
+      status: string
+      createdAt: Date
+    }, ExtArgs["result"]["newsletterSubscriber"]>
+    composites: {}
+  }
+
+  type NewsletterSubscriberGetPayload<S extends boolean | null | undefined | NewsletterSubscriberDefaultArgs> = $Result.GetResult<Prisma.$NewsletterSubscriberPayload, S>
+
+  type NewsletterSubscriberCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<NewsletterSubscriberFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: NewsletterSubscriberCountAggregateInputType | true
+    }
+
+  export interface NewsletterSubscriberDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['NewsletterSubscriber'], meta: { name: 'NewsletterSubscriber' } }
+    /**
+     * Find zero or one NewsletterSubscriber that matches the filter.
+     * @param {NewsletterSubscriberFindUniqueArgs} args - Arguments to find a NewsletterSubscriber
+     * @example
+     * // Get one NewsletterSubscriber
+     * const newsletterSubscriber = await prisma.newsletterSubscriber.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends NewsletterSubscriberFindUniqueArgs>(args: SelectSubset<T, NewsletterSubscriberFindUniqueArgs<ExtArgs>>): Prisma__NewsletterSubscriberClient<$Result.GetResult<Prisma.$NewsletterSubscriberPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one NewsletterSubscriber that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {NewsletterSubscriberFindUniqueOrThrowArgs} args - Arguments to find a NewsletterSubscriber
+     * @example
+     * // Get one NewsletterSubscriber
+     * const newsletterSubscriber = await prisma.newsletterSubscriber.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends NewsletterSubscriberFindUniqueOrThrowArgs>(args: SelectSubset<T, NewsletterSubscriberFindUniqueOrThrowArgs<ExtArgs>>): Prisma__NewsletterSubscriberClient<$Result.GetResult<Prisma.$NewsletterSubscriberPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first NewsletterSubscriber that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NewsletterSubscriberFindFirstArgs} args - Arguments to find a NewsletterSubscriber
+     * @example
+     * // Get one NewsletterSubscriber
+     * const newsletterSubscriber = await prisma.newsletterSubscriber.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends NewsletterSubscriberFindFirstArgs>(args?: SelectSubset<T, NewsletterSubscriberFindFirstArgs<ExtArgs>>): Prisma__NewsletterSubscriberClient<$Result.GetResult<Prisma.$NewsletterSubscriberPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first NewsletterSubscriber that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NewsletterSubscriberFindFirstOrThrowArgs} args - Arguments to find a NewsletterSubscriber
+     * @example
+     * // Get one NewsletterSubscriber
+     * const newsletterSubscriber = await prisma.newsletterSubscriber.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends NewsletterSubscriberFindFirstOrThrowArgs>(args?: SelectSubset<T, NewsletterSubscriberFindFirstOrThrowArgs<ExtArgs>>): Prisma__NewsletterSubscriberClient<$Result.GetResult<Prisma.$NewsletterSubscriberPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more NewsletterSubscribers that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NewsletterSubscriberFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all NewsletterSubscribers
+     * const newsletterSubscribers = await prisma.newsletterSubscriber.findMany()
+     * 
+     * // Get first 10 NewsletterSubscribers
+     * const newsletterSubscribers = await prisma.newsletterSubscriber.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const newsletterSubscriberWithIdOnly = await prisma.newsletterSubscriber.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends NewsletterSubscriberFindManyArgs>(args?: SelectSubset<T, NewsletterSubscriberFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NewsletterSubscriberPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a NewsletterSubscriber.
+     * @param {NewsletterSubscriberCreateArgs} args - Arguments to create a NewsletterSubscriber.
+     * @example
+     * // Create one NewsletterSubscriber
+     * const NewsletterSubscriber = await prisma.newsletterSubscriber.create({
+     *   data: {
+     *     // ... data to create a NewsletterSubscriber
+     *   }
+     * })
+     * 
+     */
+    create<T extends NewsletterSubscriberCreateArgs>(args: SelectSubset<T, NewsletterSubscriberCreateArgs<ExtArgs>>): Prisma__NewsletterSubscriberClient<$Result.GetResult<Prisma.$NewsletterSubscriberPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many NewsletterSubscribers.
+     * @param {NewsletterSubscriberCreateManyArgs} args - Arguments to create many NewsletterSubscribers.
+     * @example
+     * // Create many NewsletterSubscribers
+     * const newsletterSubscriber = await prisma.newsletterSubscriber.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends NewsletterSubscriberCreateManyArgs>(args?: SelectSubset<T, NewsletterSubscriberCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many NewsletterSubscribers and returns the data saved in the database.
+     * @param {NewsletterSubscriberCreateManyAndReturnArgs} args - Arguments to create many NewsletterSubscribers.
+     * @example
+     * // Create many NewsletterSubscribers
+     * const newsletterSubscriber = await prisma.newsletterSubscriber.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many NewsletterSubscribers and only return the `id`
+     * const newsletterSubscriberWithIdOnly = await prisma.newsletterSubscriber.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends NewsletterSubscriberCreateManyAndReturnArgs>(args?: SelectSubset<T, NewsletterSubscriberCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NewsletterSubscriberPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a NewsletterSubscriber.
+     * @param {NewsletterSubscriberDeleteArgs} args - Arguments to delete one NewsletterSubscriber.
+     * @example
+     * // Delete one NewsletterSubscriber
+     * const NewsletterSubscriber = await prisma.newsletterSubscriber.delete({
+     *   where: {
+     *     // ... filter to delete one NewsletterSubscriber
+     *   }
+     * })
+     * 
+     */
+    delete<T extends NewsletterSubscriberDeleteArgs>(args: SelectSubset<T, NewsletterSubscriberDeleteArgs<ExtArgs>>): Prisma__NewsletterSubscriberClient<$Result.GetResult<Prisma.$NewsletterSubscriberPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one NewsletterSubscriber.
+     * @param {NewsletterSubscriberUpdateArgs} args - Arguments to update one NewsletterSubscriber.
+     * @example
+     * // Update one NewsletterSubscriber
+     * const newsletterSubscriber = await prisma.newsletterSubscriber.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends NewsletterSubscriberUpdateArgs>(args: SelectSubset<T, NewsletterSubscriberUpdateArgs<ExtArgs>>): Prisma__NewsletterSubscriberClient<$Result.GetResult<Prisma.$NewsletterSubscriberPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more NewsletterSubscribers.
+     * @param {NewsletterSubscriberDeleteManyArgs} args - Arguments to filter NewsletterSubscribers to delete.
+     * @example
+     * // Delete a few NewsletterSubscribers
+     * const { count } = await prisma.newsletterSubscriber.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends NewsletterSubscriberDeleteManyArgs>(args?: SelectSubset<T, NewsletterSubscriberDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more NewsletterSubscribers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NewsletterSubscriberUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many NewsletterSubscribers
+     * const newsletterSubscriber = await prisma.newsletterSubscriber.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends NewsletterSubscriberUpdateManyArgs>(args: SelectSubset<T, NewsletterSubscriberUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one NewsletterSubscriber.
+     * @param {NewsletterSubscriberUpsertArgs} args - Arguments to update or create a NewsletterSubscriber.
+     * @example
+     * // Update or create a NewsletterSubscriber
+     * const newsletterSubscriber = await prisma.newsletterSubscriber.upsert({
+     *   create: {
+     *     // ... data to create a NewsletterSubscriber
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the NewsletterSubscriber we want to update
+     *   }
+     * })
+     */
+    upsert<T extends NewsletterSubscriberUpsertArgs>(args: SelectSubset<T, NewsletterSubscriberUpsertArgs<ExtArgs>>): Prisma__NewsletterSubscriberClient<$Result.GetResult<Prisma.$NewsletterSubscriberPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of NewsletterSubscribers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NewsletterSubscriberCountArgs} args - Arguments to filter NewsletterSubscribers to count.
+     * @example
+     * // Count the number of NewsletterSubscribers
+     * const count = await prisma.newsletterSubscriber.count({
+     *   where: {
+     *     // ... the filter for the NewsletterSubscribers we want to count
+     *   }
+     * })
+    **/
+    count<T extends NewsletterSubscriberCountArgs>(
+      args?: Subset<T, NewsletterSubscriberCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], NewsletterSubscriberCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a NewsletterSubscriber.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NewsletterSubscriberAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends NewsletterSubscriberAggregateArgs>(args: Subset<T, NewsletterSubscriberAggregateArgs>): Prisma.PrismaPromise<GetNewsletterSubscriberAggregateType<T>>
+
+    /**
+     * Group by NewsletterSubscriber.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NewsletterSubscriberGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends NewsletterSubscriberGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: NewsletterSubscriberGroupByArgs['orderBy'] }
+        : { orderBy?: NewsletterSubscriberGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, NewsletterSubscriberGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetNewsletterSubscriberGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the NewsletterSubscriber model
+   */
+  readonly fields: NewsletterSubscriberFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for NewsletterSubscriber.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__NewsletterSubscriberClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the NewsletterSubscriber model
+   */ 
+  interface NewsletterSubscriberFieldRefs {
+    readonly id: FieldRef<"NewsletterSubscriber", 'String'>
+    readonly email: FieldRef<"NewsletterSubscriber", 'String'>
+    readonly name: FieldRef<"NewsletterSubscriber", 'String'>
+    readonly source: FieldRef<"NewsletterSubscriber", 'String'>
+    readonly status: FieldRef<"NewsletterSubscriber", 'String'>
+    readonly createdAt: FieldRef<"NewsletterSubscriber", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * NewsletterSubscriber findUnique
+   */
+  export type NewsletterSubscriberFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NewsletterSubscriber
+     */
+    select?: NewsletterSubscriberSelect<ExtArgs> | null
+    /**
+     * Filter, which NewsletterSubscriber to fetch.
+     */
+    where: NewsletterSubscriberWhereUniqueInput
+  }
+
+  /**
+   * NewsletterSubscriber findUniqueOrThrow
+   */
+  export type NewsletterSubscriberFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NewsletterSubscriber
+     */
+    select?: NewsletterSubscriberSelect<ExtArgs> | null
+    /**
+     * Filter, which NewsletterSubscriber to fetch.
+     */
+    where: NewsletterSubscriberWhereUniqueInput
+  }
+
+  /**
+   * NewsletterSubscriber findFirst
+   */
+  export type NewsletterSubscriberFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NewsletterSubscriber
+     */
+    select?: NewsletterSubscriberSelect<ExtArgs> | null
+    /**
+     * Filter, which NewsletterSubscriber to fetch.
+     */
+    where?: NewsletterSubscriberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of NewsletterSubscribers to fetch.
+     */
+    orderBy?: NewsletterSubscriberOrderByWithRelationInput | NewsletterSubscriberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for NewsletterSubscribers.
+     */
+    cursor?: NewsletterSubscriberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` NewsletterSubscribers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` NewsletterSubscribers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of NewsletterSubscribers.
+     */
+    distinct?: NewsletterSubscriberScalarFieldEnum | NewsletterSubscriberScalarFieldEnum[]
+  }
+
+  /**
+   * NewsletterSubscriber findFirstOrThrow
+   */
+  export type NewsletterSubscriberFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NewsletterSubscriber
+     */
+    select?: NewsletterSubscriberSelect<ExtArgs> | null
+    /**
+     * Filter, which NewsletterSubscriber to fetch.
+     */
+    where?: NewsletterSubscriberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of NewsletterSubscribers to fetch.
+     */
+    orderBy?: NewsletterSubscriberOrderByWithRelationInput | NewsletterSubscriberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for NewsletterSubscribers.
+     */
+    cursor?: NewsletterSubscriberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` NewsletterSubscribers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` NewsletterSubscribers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of NewsletterSubscribers.
+     */
+    distinct?: NewsletterSubscriberScalarFieldEnum | NewsletterSubscriberScalarFieldEnum[]
+  }
+
+  /**
+   * NewsletterSubscriber findMany
+   */
+  export type NewsletterSubscriberFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NewsletterSubscriber
+     */
+    select?: NewsletterSubscriberSelect<ExtArgs> | null
+    /**
+     * Filter, which NewsletterSubscribers to fetch.
+     */
+    where?: NewsletterSubscriberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of NewsletterSubscribers to fetch.
+     */
+    orderBy?: NewsletterSubscriberOrderByWithRelationInput | NewsletterSubscriberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing NewsletterSubscribers.
+     */
+    cursor?: NewsletterSubscriberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` NewsletterSubscribers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` NewsletterSubscribers.
+     */
+    skip?: number
+    distinct?: NewsletterSubscriberScalarFieldEnum | NewsletterSubscriberScalarFieldEnum[]
+  }
+
+  /**
+   * NewsletterSubscriber create
+   */
+  export type NewsletterSubscriberCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NewsletterSubscriber
+     */
+    select?: NewsletterSubscriberSelect<ExtArgs> | null
+    /**
+     * The data needed to create a NewsletterSubscriber.
+     */
+    data: XOR<NewsletterSubscriberCreateInput, NewsletterSubscriberUncheckedCreateInput>
+  }
+
+  /**
+   * NewsletterSubscriber createMany
+   */
+  export type NewsletterSubscriberCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many NewsletterSubscribers.
+     */
+    data: NewsletterSubscriberCreateManyInput | NewsletterSubscriberCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * NewsletterSubscriber createManyAndReturn
+   */
+  export type NewsletterSubscriberCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NewsletterSubscriber
+     */
+    select?: NewsletterSubscriberSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many NewsletterSubscribers.
+     */
+    data: NewsletterSubscriberCreateManyInput | NewsletterSubscriberCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * NewsletterSubscriber update
+   */
+  export type NewsletterSubscriberUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NewsletterSubscriber
+     */
+    select?: NewsletterSubscriberSelect<ExtArgs> | null
+    /**
+     * The data needed to update a NewsletterSubscriber.
+     */
+    data: XOR<NewsletterSubscriberUpdateInput, NewsletterSubscriberUncheckedUpdateInput>
+    /**
+     * Choose, which NewsletterSubscriber to update.
+     */
+    where: NewsletterSubscriberWhereUniqueInput
+  }
+
+  /**
+   * NewsletterSubscriber updateMany
+   */
+  export type NewsletterSubscriberUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update NewsletterSubscribers.
+     */
+    data: XOR<NewsletterSubscriberUpdateManyMutationInput, NewsletterSubscriberUncheckedUpdateManyInput>
+    /**
+     * Filter which NewsletterSubscribers to update
+     */
+    where?: NewsletterSubscriberWhereInput
+  }
+
+  /**
+   * NewsletterSubscriber upsert
+   */
+  export type NewsletterSubscriberUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NewsletterSubscriber
+     */
+    select?: NewsletterSubscriberSelect<ExtArgs> | null
+    /**
+     * The filter to search for the NewsletterSubscriber to update in case it exists.
+     */
+    where: NewsletterSubscriberWhereUniqueInput
+    /**
+     * In case the NewsletterSubscriber found by the `where` argument doesn't exist, create a new NewsletterSubscriber with this data.
+     */
+    create: XOR<NewsletterSubscriberCreateInput, NewsletterSubscriberUncheckedCreateInput>
+    /**
+     * In case the NewsletterSubscriber was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<NewsletterSubscriberUpdateInput, NewsletterSubscriberUncheckedUpdateInput>
+  }
+
+  /**
+   * NewsletterSubscriber delete
+   */
+  export type NewsletterSubscriberDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NewsletterSubscriber
+     */
+    select?: NewsletterSubscriberSelect<ExtArgs> | null
+    /**
+     * Filter which NewsletterSubscriber to delete.
+     */
+    where: NewsletterSubscriberWhereUniqueInput
+  }
+
+  /**
+   * NewsletterSubscriber deleteMany
+   */
+  export type NewsletterSubscriberDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which NewsletterSubscribers to delete
+     */
+    where?: NewsletterSubscriberWhereInput
+  }
+
+  /**
+   * NewsletterSubscriber without action
+   */
+  export type NewsletterSubscriberDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NewsletterSubscriber
+     */
+    select?: NewsletterSubscriberSelect<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -140923,6 +147424,73 @@ export namespace Prisma {
   export type CompanyScalarFieldEnum = (typeof CompanyScalarFieldEnum)[keyof typeof CompanyScalarFieldEnum]
 
 
+  export const SocialForcePostScalarFieldEnum: {
+    id: 'id',
+    companyId: 'companyId',
+    title: 'title',
+    content: 'content',
+    variants: 'variants',
+    status: 'status',
+    plannedAt: 'plannedAt',
+    timezone: 'timezone',
+    createdBy: 'createdBy',
+    reviewedBy: 'reviewedBy',
+    reviewNote: 'reviewNote',
+    version: 'version',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type SocialForcePostScalarFieldEnum = (typeof SocialForcePostScalarFieldEnum)[keyof typeof SocialForcePostScalarFieldEnum]
+
+
+  export const SocialForceBrandScalarFieldEnum: {
+    companyId: 'companyId',
+    name: 'name',
+    description: 'description',
+    audience: 'audience',
+    tone: 'tone',
+    language: 'language',
+    timezone: 'timezone',
+    website: 'website',
+    hashtags: 'hashtags',
+    forbiddenWords: 'forbiddenWords',
+    requireApproval: 'requireApproval',
+    updatedAt: 'updatedAt'
+  };
+
+  export type SocialForceBrandScalarFieldEnum = (typeof SocialForceBrandScalarFieldEnum)[keyof typeof SocialForceBrandScalarFieldEnum]
+
+
+  export const SocialForceEventScalarFieldEnum: {
+    id: 'id',
+    companyId: 'companyId',
+    actorId: 'actorId',
+    action: 'action',
+    resourceId: 'resourceId',
+    createdAt: 'createdAt'
+  };
+
+  export type SocialForceEventScalarFieldEnum = (typeof SocialForceEventScalarFieldEnum)[keyof typeof SocialForceEventScalarFieldEnum]
+
+
+  export const SsoConfigScalarFieldEnum: {
+    id: 'id',
+    companyId: 'companyId',
+    idpEntryPoint: 'idpEntryPoint',
+    issuer: 'issuer',
+    cert: 'cert',
+    signatureAlgorithm: 'signatureAlgorithm',
+    disableRequestedAuthnContext: 'disableRequestedAuthnContext',
+    wantAuthnResponseSigned: 'wantAuthnResponseSigned',
+    isEnabled: 'isEnabled',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type SsoConfigScalarFieldEnum = (typeof SsoConfigScalarFieldEnum)[keyof typeof SsoConfigScalarFieldEnum]
+
+
   export const SubscriptionModelScalarFieldEnum: {
     id: 'id',
     code: 'code',
@@ -142022,6 +148590,34 @@ export namespace Prisma {
   };
 
   export type WebhookLogScalarFieldEnum = (typeof WebhookLogScalarFieldEnum)[keyof typeof WebhookLogScalarFieldEnum]
+
+
+  export const WebsiteEnquiryScalarFieldEnum: {
+    id: 'id',
+    name: 'name',
+    email: 'email',
+    subject: 'subject',
+    message: 'message',
+    source: 'source',
+    ip: 'ip',
+    companyId: 'companyId',
+    status: 'status',
+    createdAt: 'createdAt'
+  };
+
+  export type WebsiteEnquiryScalarFieldEnum = (typeof WebsiteEnquiryScalarFieldEnum)[keyof typeof WebsiteEnquiryScalarFieldEnum]
+
+
+  export const NewsletterSubscriberScalarFieldEnum: {
+    id: 'id',
+    email: 'email',
+    name: 'name',
+    source: 'source',
+    status: 'status',
+    createdAt: 'createdAt'
+  };
+
+  export type NewsletterSubscriberScalarFieldEnum = (typeof NewsletterSubscriberScalarFieldEnum)[keyof typeof NewsletterSubscriberScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -149833,6 +156429,10 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"Company"> | Date | string
     users?: UserListRelationFilter
     subscriptionModel?: XOR<SubscriptionModelNullableRelationFilter, SubscriptionModelWhereInput> | null
+    ssoConfig?: XOR<SsoConfigNullableRelationFilter, SsoConfigWhereInput> | null
+    socialForcePosts?: SocialForcePostListRelationFilter
+    socialForceBrand?: XOR<SocialForceBrandNullableRelationFilter, SocialForceBrandWhereInput> | null
+    socialForceEvents?: SocialForceEventListRelationFilter
   }
 
   export type CompanyOrderByWithRelationInput = {
@@ -149870,6 +156470,10 @@ export namespace Prisma {
     updatedAt?: SortOrder
     users?: UserOrderByRelationAggregateInput
     subscriptionModel?: SubscriptionModelOrderByWithRelationInput
+    ssoConfig?: SsoConfigOrderByWithRelationInput
+    socialForcePosts?: SocialForcePostOrderByRelationAggregateInput
+    socialForceBrand?: SocialForceBrandOrderByWithRelationInput
+    socialForceEvents?: SocialForceEventOrderByRelationAggregateInput
   }
 
   export type CompanyWhereUniqueInput = Prisma.AtLeast<{
@@ -149910,6 +156514,10 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"Company"> | Date | string
     users?: UserListRelationFilter
     subscriptionModel?: XOR<SubscriptionModelNullableRelationFilter, SubscriptionModelWhereInput> | null
+    ssoConfig?: XOR<SsoConfigNullableRelationFilter, SsoConfigWhereInput> | null
+    socialForcePosts?: SocialForcePostListRelationFilter
+    socialForceBrand?: XOR<SocialForceBrandNullableRelationFilter, SocialForceBrandWhereInput> | null
+    socialForceEvents?: SocialForceEventListRelationFilter
   }, "id">
 
   export type CompanyOrderByWithAggregationInput = {
@@ -149988,6 +156596,344 @@ export namespace Prisma {
     subscriptionEndsAt?: DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Company"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Company"> | Date | string
+  }
+
+  export type SocialForcePostWhereInput = {
+    AND?: SocialForcePostWhereInput | SocialForcePostWhereInput[]
+    OR?: SocialForcePostWhereInput[]
+    NOT?: SocialForcePostWhereInput | SocialForcePostWhereInput[]
+    id?: StringFilter<"SocialForcePost"> | string
+    companyId?: StringFilter<"SocialForcePost"> | string
+    title?: StringFilter<"SocialForcePost"> | string
+    content?: StringFilter<"SocialForcePost"> | string
+    variants?: JsonFilter<"SocialForcePost">
+    status?: StringFilter<"SocialForcePost"> | string
+    plannedAt?: DateTimeNullableFilter<"SocialForcePost"> | Date | string | null
+    timezone?: StringFilter<"SocialForcePost"> | string
+    createdBy?: StringFilter<"SocialForcePost"> | string
+    reviewedBy?: StringNullableFilter<"SocialForcePost"> | string | null
+    reviewNote?: StringNullableFilter<"SocialForcePost"> | string | null
+    version?: IntFilter<"SocialForcePost"> | number
+    createdAt?: DateTimeFilter<"SocialForcePost"> | Date | string
+    updatedAt?: DateTimeFilter<"SocialForcePost"> | Date | string
+    company?: XOR<CompanyRelationFilter, CompanyWhereInput>
+  }
+
+  export type SocialForcePostOrderByWithRelationInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    title?: SortOrder
+    content?: SortOrder
+    variants?: SortOrder
+    status?: SortOrder
+    plannedAt?: SortOrderInput | SortOrder
+    timezone?: SortOrder
+    createdBy?: SortOrder
+    reviewedBy?: SortOrderInput | SortOrder
+    reviewNote?: SortOrderInput | SortOrder
+    version?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    company?: CompanyOrderByWithRelationInput
+  }
+
+  export type SocialForcePostWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    companyId_id?: SocialForcePostCompanyIdIdCompoundUniqueInput
+    AND?: SocialForcePostWhereInput | SocialForcePostWhereInput[]
+    OR?: SocialForcePostWhereInput[]
+    NOT?: SocialForcePostWhereInput | SocialForcePostWhereInput[]
+    companyId?: StringFilter<"SocialForcePost"> | string
+    title?: StringFilter<"SocialForcePost"> | string
+    content?: StringFilter<"SocialForcePost"> | string
+    variants?: JsonFilter<"SocialForcePost">
+    status?: StringFilter<"SocialForcePost"> | string
+    plannedAt?: DateTimeNullableFilter<"SocialForcePost"> | Date | string | null
+    timezone?: StringFilter<"SocialForcePost"> | string
+    createdBy?: StringFilter<"SocialForcePost"> | string
+    reviewedBy?: StringNullableFilter<"SocialForcePost"> | string | null
+    reviewNote?: StringNullableFilter<"SocialForcePost"> | string | null
+    version?: IntFilter<"SocialForcePost"> | number
+    createdAt?: DateTimeFilter<"SocialForcePost"> | Date | string
+    updatedAt?: DateTimeFilter<"SocialForcePost"> | Date | string
+    company?: XOR<CompanyRelationFilter, CompanyWhereInput>
+  }, "id" | "companyId_id">
+
+  export type SocialForcePostOrderByWithAggregationInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    title?: SortOrder
+    content?: SortOrder
+    variants?: SortOrder
+    status?: SortOrder
+    plannedAt?: SortOrderInput | SortOrder
+    timezone?: SortOrder
+    createdBy?: SortOrder
+    reviewedBy?: SortOrderInput | SortOrder
+    reviewNote?: SortOrderInput | SortOrder
+    version?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: SocialForcePostCountOrderByAggregateInput
+    _avg?: SocialForcePostAvgOrderByAggregateInput
+    _max?: SocialForcePostMaxOrderByAggregateInput
+    _min?: SocialForcePostMinOrderByAggregateInput
+    _sum?: SocialForcePostSumOrderByAggregateInput
+  }
+
+  export type SocialForcePostScalarWhereWithAggregatesInput = {
+    AND?: SocialForcePostScalarWhereWithAggregatesInput | SocialForcePostScalarWhereWithAggregatesInput[]
+    OR?: SocialForcePostScalarWhereWithAggregatesInput[]
+    NOT?: SocialForcePostScalarWhereWithAggregatesInput | SocialForcePostScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"SocialForcePost"> | string
+    companyId?: StringWithAggregatesFilter<"SocialForcePost"> | string
+    title?: StringWithAggregatesFilter<"SocialForcePost"> | string
+    content?: StringWithAggregatesFilter<"SocialForcePost"> | string
+    variants?: JsonWithAggregatesFilter<"SocialForcePost">
+    status?: StringWithAggregatesFilter<"SocialForcePost"> | string
+    plannedAt?: DateTimeNullableWithAggregatesFilter<"SocialForcePost"> | Date | string | null
+    timezone?: StringWithAggregatesFilter<"SocialForcePost"> | string
+    createdBy?: StringWithAggregatesFilter<"SocialForcePost"> | string
+    reviewedBy?: StringNullableWithAggregatesFilter<"SocialForcePost"> | string | null
+    reviewNote?: StringNullableWithAggregatesFilter<"SocialForcePost"> | string | null
+    version?: IntWithAggregatesFilter<"SocialForcePost"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"SocialForcePost"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"SocialForcePost"> | Date | string
+  }
+
+  export type SocialForceBrandWhereInput = {
+    AND?: SocialForceBrandWhereInput | SocialForceBrandWhereInput[]
+    OR?: SocialForceBrandWhereInput[]
+    NOT?: SocialForceBrandWhereInput | SocialForceBrandWhereInput[]
+    companyId?: StringFilter<"SocialForceBrand"> | string
+    name?: StringFilter<"SocialForceBrand"> | string
+    description?: StringFilter<"SocialForceBrand"> | string
+    audience?: StringFilter<"SocialForceBrand"> | string
+    tone?: StringFilter<"SocialForceBrand"> | string
+    language?: StringFilter<"SocialForceBrand"> | string
+    timezone?: StringFilter<"SocialForceBrand"> | string
+    website?: StringFilter<"SocialForceBrand"> | string
+    hashtags?: StringFilter<"SocialForceBrand"> | string
+    forbiddenWords?: StringFilter<"SocialForceBrand"> | string
+    requireApproval?: BoolFilter<"SocialForceBrand"> | boolean
+    updatedAt?: DateTimeFilter<"SocialForceBrand"> | Date | string
+    company?: XOR<CompanyRelationFilter, CompanyWhereInput>
+  }
+
+  export type SocialForceBrandOrderByWithRelationInput = {
+    companyId?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    audience?: SortOrder
+    tone?: SortOrder
+    language?: SortOrder
+    timezone?: SortOrder
+    website?: SortOrder
+    hashtags?: SortOrder
+    forbiddenWords?: SortOrder
+    requireApproval?: SortOrder
+    updatedAt?: SortOrder
+    company?: CompanyOrderByWithRelationInput
+  }
+
+  export type SocialForceBrandWhereUniqueInput = Prisma.AtLeast<{
+    companyId?: string
+    AND?: SocialForceBrandWhereInput | SocialForceBrandWhereInput[]
+    OR?: SocialForceBrandWhereInput[]
+    NOT?: SocialForceBrandWhereInput | SocialForceBrandWhereInput[]
+    name?: StringFilter<"SocialForceBrand"> | string
+    description?: StringFilter<"SocialForceBrand"> | string
+    audience?: StringFilter<"SocialForceBrand"> | string
+    tone?: StringFilter<"SocialForceBrand"> | string
+    language?: StringFilter<"SocialForceBrand"> | string
+    timezone?: StringFilter<"SocialForceBrand"> | string
+    website?: StringFilter<"SocialForceBrand"> | string
+    hashtags?: StringFilter<"SocialForceBrand"> | string
+    forbiddenWords?: StringFilter<"SocialForceBrand"> | string
+    requireApproval?: BoolFilter<"SocialForceBrand"> | boolean
+    updatedAt?: DateTimeFilter<"SocialForceBrand"> | Date | string
+    company?: XOR<CompanyRelationFilter, CompanyWhereInput>
+  }, "companyId">
+
+  export type SocialForceBrandOrderByWithAggregationInput = {
+    companyId?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    audience?: SortOrder
+    tone?: SortOrder
+    language?: SortOrder
+    timezone?: SortOrder
+    website?: SortOrder
+    hashtags?: SortOrder
+    forbiddenWords?: SortOrder
+    requireApproval?: SortOrder
+    updatedAt?: SortOrder
+    _count?: SocialForceBrandCountOrderByAggregateInput
+    _max?: SocialForceBrandMaxOrderByAggregateInput
+    _min?: SocialForceBrandMinOrderByAggregateInput
+  }
+
+  export type SocialForceBrandScalarWhereWithAggregatesInput = {
+    AND?: SocialForceBrandScalarWhereWithAggregatesInput | SocialForceBrandScalarWhereWithAggregatesInput[]
+    OR?: SocialForceBrandScalarWhereWithAggregatesInput[]
+    NOT?: SocialForceBrandScalarWhereWithAggregatesInput | SocialForceBrandScalarWhereWithAggregatesInput[]
+    companyId?: StringWithAggregatesFilter<"SocialForceBrand"> | string
+    name?: StringWithAggregatesFilter<"SocialForceBrand"> | string
+    description?: StringWithAggregatesFilter<"SocialForceBrand"> | string
+    audience?: StringWithAggregatesFilter<"SocialForceBrand"> | string
+    tone?: StringWithAggregatesFilter<"SocialForceBrand"> | string
+    language?: StringWithAggregatesFilter<"SocialForceBrand"> | string
+    timezone?: StringWithAggregatesFilter<"SocialForceBrand"> | string
+    website?: StringWithAggregatesFilter<"SocialForceBrand"> | string
+    hashtags?: StringWithAggregatesFilter<"SocialForceBrand"> | string
+    forbiddenWords?: StringWithAggregatesFilter<"SocialForceBrand"> | string
+    requireApproval?: BoolWithAggregatesFilter<"SocialForceBrand"> | boolean
+    updatedAt?: DateTimeWithAggregatesFilter<"SocialForceBrand"> | Date | string
+  }
+
+  export type SocialForceEventWhereInput = {
+    AND?: SocialForceEventWhereInput | SocialForceEventWhereInput[]
+    OR?: SocialForceEventWhereInput[]
+    NOT?: SocialForceEventWhereInput | SocialForceEventWhereInput[]
+    id?: StringFilter<"SocialForceEvent"> | string
+    companyId?: StringFilter<"SocialForceEvent"> | string
+    actorId?: StringFilter<"SocialForceEvent"> | string
+    action?: StringFilter<"SocialForceEvent"> | string
+    resourceId?: StringNullableFilter<"SocialForceEvent"> | string | null
+    createdAt?: DateTimeFilter<"SocialForceEvent"> | Date | string
+    company?: XOR<CompanyRelationFilter, CompanyWhereInput>
+  }
+
+  export type SocialForceEventOrderByWithRelationInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    actorId?: SortOrder
+    action?: SortOrder
+    resourceId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    company?: CompanyOrderByWithRelationInput
+  }
+
+  export type SocialForceEventWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: SocialForceEventWhereInput | SocialForceEventWhereInput[]
+    OR?: SocialForceEventWhereInput[]
+    NOT?: SocialForceEventWhereInput | SocialForceEventWhereInput[]
+    companyId?: StringFilter<"SocialForceEvent"> | string
+    actorId?: StringFilter<"SocialForceEvent"> | string
+    action?: StringFilter<"SocialForceEvent"> | string
+    resourceId?: StringNullableFilter<"SocialForceEvent"> | string | null
+    createdAt?: DateTimeFilter<"SocialForceEvent"> | Date | string
+    company?: XOR<CompanyRelationFilter, CompanyWhereInput>
+  }, "id">
+
+  export type SocialForceEventOrderByWithAggregationInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    actorId?: SortOrder
+    action?: SortOrder
+    resourceId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: SocialForceEventCountOrderByAggregateInput
+    _max?: SocialForceEventMaxOrderByAggregateInput
+    _min?: SocialForceEventMinOrderByAggregateInput
+  }
+
+  export type SocialForceEventScalarWhereWithAggregatesInput = {
+    AND?: SocialForceEventScalarWhereWithAggregatesInput | SocialForceEventScalarWhereWithAggregatesInput[]
+    OR?: SocialForceEventScalarWhereWithAggregatesInput[]
+    NOT?: SocialForceEventScalarWhereWithAggregatesInput | SocialForceEventScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"SocialForceEvent"> | string
+    companyId?: StringWithAggregatesFilter<"SocialForceEvent"> | string
+    actorId?: StringWithAggregatesFilter<"SocialForceEvent"> | string
+    action?: StringWithAggregatesFilter<"SocialForceEvent"> | string
+    resourceId?: StringNullableWithAggregatesFilter<"SocialForceEvent"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"SocialForceEvent"> | Date | string
+  }
+
+  export type SsoConfigWhereInput = {
+    AND?: SsoConfigWhereInput | SsoConfigWhereInput[]
+    OR?: SsoConfigWhereInput[]
+    NOT?: SsoConfigWhereInput | SsoConfigWhereInput[]
+    id?: StringFilter<"SsoConfig"> | string
+    companyId?: StringNullableFilter<"SsoConfig"> | string | null
+    idpEntryPoint?: StringFilter<"SsoConfig"> | string
+    issuer?: StringFilter<"SsoConfig"> | string
+    cert?: StringFilter<"SsoConfig"> | string
+    signatureAlgorithm?: StringFilter<"SsoConfig"> | string
+    disableRequestedAuthnContext?: BoolFilter<"SsoConfig"> | boolean
+    wantAuthnResponseSigned?: BoolFilter<"SsoConfig"> | boolean
+    isEnabled?: BoolFilter<"SsoConfig"> | boolean
+    createdAt?: DateTimeFilter<"SsoConfig"> | Date | string
+    updatedAt?: DateTimeFilter<"SsoConfig"> | Date | string
+    company?: XOR<CompanyNullableRelationFilter, CompanyWhereInput> | null
+  }
+
+  export type SsoConfigOrderByWithRelationInput = {
+    id?: SortOrder
+    companyId?: SortOrderInput | SortOrder
+    idpEntryPoint?: SortOrder
+    issuer?: SortOrder
+    cert?: SortOrder
+    signatureAlgorithm?: SortOrder
+    disableRequestedAuthnContext?: SortOrder
+    wantAuthnResponseSigned?: SortOrder
+    isEnabled?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    company?: CompanyOrderByWithRelationInput
+  }
+
+  export type SsoConfigWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    companyId?: string
+    AND?: SsoConfigWhereInput | SsoConfigWhereInput[]
+    OR?: SsoConfigWhereInput[]
+    NOT?: SsoConfigWhereInput | SsoConfigWhereInput[]
+    idpEntryPoint?: StringFilter<"SsoConfig"> | string
+    issuer?: StringFilter<"SsoConfig"> | string
+    cert?: StringFilter<"SsoConfig"> | string
+    signatureAlgorithm?: StringFilter<"SsoConfig"> | string
+    disableRequestedAuthnContext?: BoolFilter<"SsoConfig"> | boolean
+    wantAuthnResponseSigned?: BoolFilter<"SsoConfig"> | boolean
+    isEnabled?: BoolFilter<"SsoConfig"> | boolean
+    createdAt?: DateTimeFilter<"SsoConfig"> | Date | string
+    updatedAt?: DateTimeFilter<"SsoConfig"> | Date | string
+    company?: XOR<CompanyNullableRelationFilter, CompanyWhereInput> | null
+  }, "id" | "companyId">
+
+  export type SsoConfigOrderByWithAggregationInput = {
+    id?: SortOrder
+    companyId?: SortOrderInput | SortOrder
+    idpEntryPoint?: SortOrder
+    issuer?: SortOrder
+    cert?: SortOrder
+    signatureAlgorithm?: SortOrder
+    disableRequestedAuthnContext?: SortOrder
+    wantAuthnResponseSigned?: SortOrder
+    isEnabled?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: SsoConfigCountOrderByAggregateInput
+    _max?: SsoConfigMaxOrderByAggregateInput
+    _min?: SsoConfigMinOrderByAggregateInput
+  }
+
+  export type SsoConfigScalarWhereWithAggregatesInput = {
+    AND?: SsoConfigScalarWhereWithAggregatesInput | SsoConfigScalarWhereWithAggregatesInput[]
+    OR?: SsoConfigScalarWhereWithAggregatesInput[]
+    NOT?: SsoConfigScalarWhereWithAggregatesInput | SsoConfigScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"SsoConfig"> | string
+    companyId?: StringNullableWithAggregatesFilter<"SsoConfig"> | string | null
+    idpEntryPoint?: StringWithAggregatesFilter<"SsoConfig"> | string
+    issuer?: StringWithAggregatesFilter<"SsoConfig"> | string
+    cert?: StringWithAggregatesFilter<"SsoConfig"> | string
+    signatureAlgorithm?: StringWithAggregatesFilter<"SsoConfig"> | string
+    disableRequestedAuthnContext?: BoolWithAggregatesFilter<"SsoConfig"> | boolean
+    wantAuthnResponseSigned?: BoolWithAggregatesFilter<"SsoConfig"> | boolean
+    isEnabled?: BoolWithAggregatesFilter<"SsoConfig"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"SsoConfig"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"SsoConfig"> | Date | string
   }
 
   export type SubscriptionModelWhereInput = {
@@ -155448,6 +162394,140 @@ export namespace Prisma {
     error?: StringNullableWithAggregatesFilter<"WebhookLog"> | string | null
     companyId?: StringNullableWithAggregatesFilter<"WebhookLog"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"WebhookLog"> | Date | string
+  }
+
+  export type WebsiteEnquiryWhereInput = {
+    AND?: WebsiteEnquiryWhereInput | WebsiteEnquiryWhereInput[]
+    OR?: WebsiteEnquiryWhereInput[]
+    NOT?: WebsiteEnquiryWhereInput | WebsiteEnquiryWhereInput[]
+    id?: StringFilter<"WebsiteEnquiry"> | string
+    name?: StringFilter<"WebsiteEnquiry"> | string
+    email?: StringFilter<"WebsiteEnquiry"> | string
+    subject?: StringNullableFilter<"WebsiteEnquiry"> | string | null
+    message?: StringFilter<"WebsiteEnquiry"> | string
+    source?: StringFilter<"WebsiteEnquiry"> | string
+    ip?: StringNullableFilter<"WebsiteEnquiry"> | string | null
+    companyId?: StringNullableFilter<"WebsiteEnquiry"> | string | null
+    status?: StringFilter<"WebsiteEnquiry"> | string
+    createdAt?: DateTimeFilter<"WebsiteEnquiry"> | Date | string
+  }
+
+  export type WebsiteEnquiryOrderByWithRelationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    email?: SortOrder
+    subject?: SortOrderInput | SortOrder
+    message?: SortOrder
+    source?: SortOrder
+    ip?: SortOrderInput | SortOrder
+    companyId?: SortOrderInput | SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WebsiteEnquiryWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: WebsiteEnquiryWhereInput | WebsiteEnquiryWhereInput[]
+    OR?: WebsiteEnquiryWhereInput[]
+    NOT?: WebsiteEnquiryWhereInput | WebsiteEnquiryWhereInput[]
+    name?: StringFilter<"WebsiteEnquiry"> | string
+    email?: StringFilter<"WebsiteEnquiry"> | string
+    subject?: StringNullableFilter<"WebsiteEnquiry"> | string | null
+    message?: StringFilter<"WebsiteEnquiry"> | string
+    source?: StringFilter<"WebsiteEnquiry"> | string
+    ip?: StringNullableFilter<"WebsiteEnquiry"> | string | null
+    companyId?: StringNullableFilter<"WebsiteEnquiry"> | string | null
+    status?: StringFilter<"WebsiteEnquiry"> | string
+    createdAt?: DateTimeFilter<"WebsiteEnquiry"> | Date | string
+  }, "id">
+
+  export type WebsiteEnquiryOrderByWithAggregationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    email?: SortOrder
+    subject?: SortOrderInput | SortOrder
+    message?: SortOrder
+    source?: SortOrder
+    ip?: SortOrderInput | SortOrder
+    companyId?: SortOrderInput | SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+    _count?: WebsiteEnquiryCountOrderByAggregateInput
+    _max?: WebsiteEnquiryMaxOrderByAggregateInput
+    _min?: WebsiteEnquiryMinOrderByAggregateInput
+  }
+
+  export type WebsiteEnquiryScalarWhereWithAggregatesInput = {
+    AND?: WebsiteEnquiryScalarWhereWithAggregatesInput | WebsiteEnquiryScalarWhereWithAggregatesInput[]
+    OR?: WebsiteEnquiryScalarWhereWithAggregatesInput[]
+    NOT?: WebsiteEnquiryScalarWhereWithAggregatesInput | WebsiteEnquiryScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"WebsiteEnquiry"> | string
+    name?: StringWithAggregatesFilter<"WebsiteEnquiry"> | string
+    email?: StringWithAggregatesFilter<"WebsiteEnquiry"> | string
+    subject?: StringNullableWithAggregatesFilter<"WebsiteEnquiry"> | string | null
+    message?: StringWithAggregatesFilter<"WebsiteEnquiry"> | string
+    source?: StringWithAggregatesFilter<"WebsiteEnquiry"> | string
+    ip?: StringNullableWithAggregatesFilter<"WebsiteEnquiry"> | string | null
+    companyId?: StringNullableWithAggregatesFilter<"WebsiteEnquiry"> | string | null
+    status?: StringWithAggregatesFilter<"WebsiteEnquiry"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"WebsiteEnquiry"> | Date | string
+  }
+
+  export type NewsletterSubscriberWhereInput = {
+    AND?: NewsletterSubscriberWhereInput | NewsletterSubscriberWhereInput[]
+    OR?: NewsletterSubscriberWhereInput[]
+    NOT?: NewsletterSubscriberWhereInput | NewsletterSubscriberWhereInput[]
+    id?: StringFilter<"NewsletterSubscriber"> | string
+    email?: StringFilter<"NewsletterSubscriber"> | string
+    name?: StringNullableFilter<"NewsletterSubscriber"> | string | null
+    source?: StringFilter<"NewsletterSubscriber"> | string
+    status?: StringFilter<"NewsletterSubscriber"> | string
+    createdAt?: DateTimeFilter<"NewsletterSubscriber"> | Date | string
+  }
+
+  export type NewsletterSubscriberOrderByWithRelationInput = {
+    id?: SortOrder
+    email?: SortOrder
+    name?: SortOrderInput | SortOrder
+    source?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type NewsletterSubscriberWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    email?: string
+    AND?: NewsletterSubscriberWhereInput | NewsletterSubscriberWhereInput[]
+    OR?: NewsletterSubscriberWhereInput[]
+    NOT?: NewsletterSubscriberWhereInput | NewsletterSubscriberWhereInput[]
+    name?: StringNullableFilter<"NewsletterSubscriber"> | string | null
+    source?: StringFilter<"NewsletterSubscriber"> | string
+    status?: StringFilter<"NewsletterSubscriber"> | string
+    createdAt?: DateTimeFilter<"NewsletterSubscriber"> | Date | string
+  }, "id" | "email">
+
+  export type NewsletterSubscriberOrderByWithAggregationInput = {
+    id?: SortOrder
+    email?: SortOrder
+    name?: SortOrderInput | SortOrder
+    source?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+    _count?: NewsletterSubscriberCountOrderByAggregateInput
+    _max?: NewsletterSubscriberMaxOrderByAggregateInput
+    _min?: NewsletterSubscriberMinOrderByAggregateInput
+  }
+
+  export type NewsletterSubscriberScalarWhereWithAggregatesInput = {
+    AND?: NewsletterSubscriberScalarWhereWithAggregatesInput | NewsletterSubscriberScalarWhereWithAggregatesInput[]
+    OR?: NewsletterSubscriberScalarWhereWithAggregatesInput[]
+    NOT?: NewsletterSubscriberScalarWhereWithAggregatesInput | NewsletterSubscriberScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"NewsletterSubscriber"> | string
+    email?: StringWithAggregatesFilter<"NewsletterSubscriber"> | string
+    name?: StringNullableWithAggregatesFilter<"NewsletterSubscriber"> | string | null
+    source?: StringWithAggregatesFilter<"NewsletterSubscriber"> | string
+    status?: StringWithAggregatesFilter<"NewsletterSubscriber"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"NewsletterSubscriber"> | Date | string
   }
 
   export type UserCreateInput = {
@@ -164833,6 +171913,10 @@ export namespace Prisma {
     updatedAt?: Date | string
     users?: UserCreateNestedManyWithoutCompanyInput
     subscriptionModel?: SubscriptionModelCreateNestedOneWithoutCompaniesInput
+    ssoConfig?: SsoConfigCreateNestedOneWithoutCompanyInput
+    socialForcePosts?: SocialForcePostCreateNestedManyWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandCreateNestedOneWithoutCompanyInput
+    socialForceEvents?: SocialForceEventCreateNestedManyWithoutCompanyInput
   }
 
   export type CompanyUncheckedCreateInput = {
@@ -164869,6 +171953,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     users?: UserUncheckedCreateNestedManyWithoutCompanyInput
+    ssoConfig?: SsoConfigUncheckedCreateNestedOneWithoutCompanyInput
+    socialForcePosts?: SocialForcePostUncheckedCreateNestedManyWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandUncheckedCreateNestedOneWithoutCompanyInput
+    socialForceEvents?: SocialForceEventUncheckedCreateNestedManyWithoutCompanyInput
   }
 
   export type CompanyUpdateInput = {
@@ -164905,6 +171993,10 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserUpdateManyWithoutCompanyNestedInput
     subscriptionModel?: SubscriptionModelUpdateOneWithoutCompaniesNestedInput
+    ssoConfig?: SsoConfigUpdateOneWithoutCompanyNestedInput
+    socialForcePosts?: SocialForcePostUpdateManyWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUpdateOneWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUpdateManyWithoutCompanyNestedInput
   }
 
   export type CompanyUncheckedUpdateInput = {
@@ -164941,6 +172033,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserUncheckedUpdateManyWithoutCompanyNestedInput
+    ssoConfig?: SsoConfigUncheckedUpdateOneWithoutCompanyNestedInput
+    socialForcePosts?: SocialForcePostUncheckedUpdateManyWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUncheckedUpdateOneWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUncheckedUpdateManyWithoutCompanyNestedInput
   }
 
   export type CompanyCreateManyInput = {
@@ -165043,6 +172139,387 @@ export namespace Prisma {
     trialEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     subscriptionStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     subscriptionEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForcePostCreateInput = {
+    id?: string
+    title: string
+    content: string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: string
+    plannedAt?: Date | string | null
+    timezone?: string
+    createdBy: string
+    reviewedBy?: string | null
+    reviewNote?: string | null
+    version?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    company: CompanyCreateNestedOneWithoutSocialForcePostsInput
+  }
+
+  export type SocialForcePostUncheckedCreateInput = {
+    id?: string
+    companyId: string
+    title: string
+    content: string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: string
+    plannedAt?: Date | string | null
+    timezone?: string
+    createdBy: string
+    reviewedBy?: string | null
+    reviewNote?: string | null
+    version?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SocialForcePostUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: StringFieldUpdateOperationsInput | string
+    plannedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    version?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    company?: CompanyUpdateOneRequiredWithoutSocialForcePostsNestedInput
+  }
+
+  export type SocialForcePostUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    companyId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: StringFieldUpdateOperationsInput | string
+    plannedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    version?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForcePostCreateManyInput = {
+    id?: string
+    companyId: string
+    title: string
+    content: string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: string
+    plannedAt?: Date | string | null
+    timezone?: string
+    createdBy: string
+    reviewedBy?: string | null
+    reviewNote?: string | null
+    version?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SocialForcePostUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: StringFieldUpdateOperationsInput | string
+    plannedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    version?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForcePostUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    companyId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: StringFieldUpdateOperationsInput | string
+    plannedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    version?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForceBrandCreateInput = {
+    name?: string
+    description?: string
+    audience?: string
+    tone?: string
+    language?: string
+    timezone?: string
+    website?: string
+    hashtags?: string
+    forbiddenWords?: string
+    requireApproval?: boolean
+    updatedAt?: Date | string
+    company: CompanyCreateNestedOneWithoutSocialForceBrandInput
+  }
+
+  export type SocialForceBrandUncheckedCreateInput = {
+    companyId: string
+    name?: string
+    description?: string
+    audience?: string
+    tone?: string
+    language?: string
+    timezone?: string
+    website?: string
+    hashtags?: string
+    forbiddenWords?: string
+    requireApproval?: boolean
+    updatedAt?: Date | string
+  }
+
+  export type SocialForceBrandUpdateInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    audience?: StringFieldUpdateOperationsInput | string
+    tone?: StringFieldUpdateOperationsInput | string
+    language?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    website?: StringFieldUpdateOperationsInput | string
+    hashtags?: StringFieldUpdateOperationsInput | string
+    forbiddenWords?: StringFieldUpdateOperationsInput | string
+    requireApproval?: BoolFieldUpdateOperationsInput | boolean
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    company?: CompanyUpdateOneRequiredWithoutSocialForceBrandNestedInput
+  }
+
+  export type SocialForceBrandUncheckedUpdateInput = {
+    companyId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    audience?: StringFieldUpdateOperationsInput | string
+    tone?: StringFieldUpdateOperationsInput | string
+    language?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    website?: StringFieldUpdateOperationsInput | string
+    hashtags?: StringFieldUpdateOperationsInput | string
+    forbiddenWords?: StringFieldUpdateOperationsInput | string
+    requireApproval?: BoolFieldUpdateOperationsInput | boolean
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForceBrandCreateManyInput = {
+    companyId: string
+    name?: string
+    description?: string
+    audience?: string
+    tone?: string
+    language?: string
+    timezone?: string
+    website?: string
+    hashtags?: string
+    forbiddenWords?: string
+    requireApproval?: boolean
+    updatedAt?: Date | string
+  }
+
+  export type SocialForceBrandUpdateManyMutationInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    audience?: StringFieldUpdateOperationsInput | string
+    tone?: StringFieldUpdateOperationsInput | string
+    language?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    website?: StringFieldUpdateOperationsInput | string
+    hashtags?: StringFieldUpdateOperationsInput | string
+    forbiddenWords?: StringFieldUpdateOperationsInput | string
+    requireApproval?: BoolFieldUpdateOperationsInput | boolean
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForceBrandUncheckedUpdateManyInput = {
+    companyId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    audience?: StringFieldUpdateOperationsInput | string
+    tone?: StringFieldUpdateOperationsInput | string
+    language?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    website?: StringFieldUpdateOperationsInput | string
+    hashtags?: StringFieldUpdateOperationsInput | string
+    forbiddenWords?: StringFieldUpdateOperationsInput | string
+    requireApproval?: BoolFieldUpdateOperationsInput | boolean
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForceEventCreateInput = {
+    id?: string
+    actorId: string
+    action: string
+    resourceId?: string | null
+    createdAt?: Date | string
+    company: CompanyCreateNestedOneWithoutSocialForceEventsInput
+  }
+
+  export type SocialForceEventUncheckedCreateInput = {
+    id?: string
+    companyId: string
+    actorId: string
+    action: string
+    resourceId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type SocialForceEventUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorId?: StringFieldUpdateOperationsInput | string
+    action?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    company?: CompanyUpdateOneRequiredWithoutSocialForceEventsNestedInput
+  }
+
+  export type SocialForceEventUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    companyId?: StringFieldUpdateOperationsInput | string
+    actorId?: StringFieldUpdateOperationsInput | string
+    action?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForceEventCreateManyInput = {
+    id?: string
+    companyId: string
+    actorId: string
+    action: string
+    resourceId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type SocialForceEventUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorId?: StringFieldUpdateOperationsInput | string
+    action?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForceEventUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    companyId?: StringFieldUpdateOperationsInput | string
+    actorId?: StringFieldUpdateOperationsInput | string
+    action?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SsoConfigCreateInput = {
+    id?: string
+    idpEntryPoint: string
+    issuer: string
+    cert: string
+    signatureAlgorithm?: string
+    disableRequestedAuthnContext?: boolean
+    wantAuthnResponseSigned?: boolean
+    isEnabled?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    company?: CompanyCreateNestedOneWithoutSsoConfigInput
+  }
+
+  export type SsoConfigUncheckedCreateInput = {
+    id?: string
+    companyId?: string | null
+    idpEntryPoint: string
+    issuer: string
+    cert: string
+    signatureAlgorithm?: string
+    disableRequestedAuthnContext?: boolean
+    wantAuthnResponseSigned?: boolean
+    isEnabled?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SsoConfigUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    idpEntryPoint?: StringFieldUpdateOperationsInput | string
+    issuer?: StringFieldUpdateOperationsInput | string
+    cert?: StringFieldUpdateOperationsInput | string
+    signatureAlgorithm?: StringFieldUpdateOperationsInput | string
+    disableRequestedAuthnContext?: BoolFieldUpdateOperationsInput | boolean
+    wantAuthnResponseSigned?: BoolFieldUpdateOperationsInput | boolean
+    isEnabled?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    company?: CompanyUpdateOneWithoutSsoConfigNestedInput
+  }
+
+  export type SsoConfigUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    companyId?: NullableStringFieldUpdateOperationsInput | string | null
+    idpEntryPoint?: StringFieldUpdateOperationsInput | string
+    issuer?: StringFieldUpdateOperationsInput | string
+    cert?: StringFieldUpdateOperationsInput | string
+    signatureAlgorithm?: StringFieldUpdateOperationsInput | string
+    disableRequestedAuthnContext?: BoolFieldUpdateOperationsInput | boolean
+    wantAuthnResponseSigned?: BoolFieldUpdateOperationsInput | boolean
+    isEnabled?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SsoConfigCreateManyInput = {
+    id?: string
+    companyId?: string | null
+    idpEntryPoint: string
+    issuer: string
+    cert: string
+    signatureAlgorithm?: string
+    disableRequestedAuthnContext?: boolean
+    wantAuthnResponseSigned?: boolean
+    isEnabled?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SsoConfigUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    idpEntryPoint?: StringFieldUpdateOperationsInput | string
+    issuer?: StringFieldUpdateOperationsInput | string
+    cert?: StringFieldUpdateOperationsInput | string
+    signatureAlgorithm?: StringFieldUpdateOperationsInput | string
+    disableRequestedAuthnContext?: BoolFieldUpdateOperationsInput | boolean
+    wantAuthnResponseSigned?: BoolFieldUpdateOperationsInput | boolean
+    isEnabled?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SsoConfigUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    companyId?: NullableStringFieldUpdateOperationsInput | string | null
+    idpEntryPoint?: StringFieldUpdateOperationsInput | string
+    issuer?: StringFieldUpdateOperationsInput | string
+    cert?: StringFieldUpdateOperationsInput | string
+    signatureAlgorithm?: StringFieldUpdateOperationsInput | string
+    disableRequestedAuthnContext?: BoolFieldUpdateOperationsInput | boolean
+    wantAuthnResponseSigned?: BoolFieldUpdateOperationsInput | boolean
+    isEnabled?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -171492,6 +178969,160 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type WebsiteEnquiryCreateInput = {
+    id?: string
+    name: string
+    email: string
+    subject?: string | null
+    message: string
+    source?: string
+    ip?: string | null
+    companyId?: string | null
+    status?: string
+    createdAt?: Date | string
+  }
+
+  export type WebsiteEnquiryUncheckedCreateInput = {
+    id?: string
+    name: string
+    email: string
+    subject?: string | null
+    message: string
+    source?: string
+    ip?: string | null
+    companyId?: string | null
+    status?: string
+    createdAt?: Date | string
+  }
+
+  export type WebsiteEnquiryUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    subject?: NullableStringFieldUpdateOperationsInput | string | null
+    message?: StringFieldUpdateOperationsInput | string
+    source?: StringFieldUpdateOperationsInput | string
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    companyId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WebsiteEnquiryUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    subject?: NullableStringFieldUpdateOperationsInput | string | null
+    message?: StringFieldUpdateOperationsInput | string
+    source?: StringFieldUpdateOperationsInput | string
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    companyId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WebsiteEnquiryCreateManyInput = {
+    id?: string
+    name: string
+    email: string
+    subject?: string | null
+    message: string
+    source?: string
+    ip?: string | null
+    companyId?: string | null
+    status?: string
+    createdAt?: Date | string
+  }
+
+  export type WebsiteEnquiryUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    subject?: NullableStringFieldUpdateOperationsInput | string | null
+    message?: StringFieldUpdateOperationsInput | string
+    source?: StringFieldUpdateOperationsInput | string
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    companyId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WebsiteEnquiryUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    subject?: NullableStringFieldUpdateOperationsInput | string | null
+    message?: StringFieldUpdateOperationsInput | string
+    source?: StringFieldUpdateOperationsInput | string
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    companyId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NewsletterSubscriberCreateInput = {
+    id?: string
+    email: string
+    name?: string | null
+    source?: string
+    status?: string
+    createdAt?: Date | string
+  }
+
+  export type NewsletterSubscriberUncheckedCreateInput = {
+    id?: string
+    email: string
+    name?: string | null
+    source?: string
+    status?: string
+    createdAt?: Date | string
+  }
+
+  export type NewsletterSubscriberUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    source?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NewsletterSubscriberUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    source?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NewsletterSubscriberCreateManyInput = {
+    id?: string
+    email: string
+    name?: string | null
+    source?: string
+    status?: string
+    createdAt?: Date | string
+  }
+
+  export type NewsletterSubscriberUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    source?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NewsletterSubscriberUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    source?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -176910,6 +184541,36 @@ export namespace Prisma {
     isNot?: SubscriptionModelWhereInput | null
   }
 
+  export type SsoConfigNullableRelationFilter = {
+    is?: SsoConfigWhereInput | null
+    isNot?: SsoConfigWhereInput | null
+  }
+
+  export type SocialForcePostListRelationFilter = {
+    every?: SocialForcePostWhereInput
+    some?: SocialForcePostWhereInput
+    none?: SocialForcePostWhereInput
+  }
+
+  export type SocialForceBrandNullableRelationFilter = {
+    is?: SocialForceBrandWhereInput | null
+    isNot?: SocialForceBrandWhereInput | null
+  }
+
+  export type SocialForceEventListRelationFilter = {
+    every?: SocialForceEventWhereInput
+    some?: SocialForceEventWhereInput
+    none?: SocialForceEventWhereInput
+  }
+
+  export type SocialForcePostOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type SocialForceEventOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type CompanyCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
@@ -177023,6 +184684,187 @@ export namespace Prisma {
   export type CompanySumOrderByAggregateInput = {
     userLimit?: SortOrder
     contactLimit?: SortOrder
+  }
+
+  export type CompanyRelationFilter = {
+    is?: CompanyWhereInput
+    isNot?: CompanyWhereInput
+  }
+
+  export type SocialForcePostCompanyIdIdCompoundUniqueInput = {
+    companyId: string
+    id: string
+  }
+
+  export type SocialForcePostCountOrderByAggregateInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    title?: SortOrder
+    content?: SortOrder
+    variants?: SortOrder
+    status?: SortOrder
+    plannedAt?: SortOrder
+    timezone?: SortOrder
+    createdBy?: SortOrder
+    reviewedBy?: SortOrder
+    reviewNote?: SortOrder
+    version?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SocialForcePostAvgOrderByAggregateInput = {
+    version?: SortOrder
+  }
+
+  export type SocialForcePostMaxOrderByAggregateInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    title?: SortOrder
+    content?: SortOrder
+    status?: SortOrder
+    plannedAt?: SortOrder
+    timezone?: SortOrder
+    createdBy?: SortOrder
+    reviewedBy?: SortOrder
+    reviewNote?: SortOrder
+    version?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SocialForcePostMinOrderByAggregateInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    title?: SortOrder
+    content?: SortOrder
+    status?: SortOrder
+    plannedAt?: SortOrder
+    timezone?: SortOrder
+    createdBy?: SortOrder
+    reviewedBy?: SortOrder
+    reviewNote?: SortOrder
+    version?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SocialForcePostSumOrderByAggregateInput = {
+    version?: SortOrder
+  }
+
+  export type SocialForceBrandCountOrderByAggregateInput = {
+    companyId?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    audience?: SortOrder
+    tone?: SortOrder
+    language?: SortOrder
+    timezone?: SortOrder
+    website?: SortOrder
+    hashtags?: SortOrder
+    forbiddenWords?: SortOrder
+    requireApproval?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SocialForceBrandMaxOrderByAggregateInput = {
+    companyId?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    audience?: SortOrder
+    tone?: SortOrder
+    language?: SortOrder
+    timezone?: SortOrder
+    website?: SortOrder
+    hashtags?: SortOrder
+    forbiddenWords?: SortOrder
+    requireApproval?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SocialForceBrandMinOrderByAggregateInput = {
+    companyId?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    audience?: SortOrder
+    tone?: SortOrder
+    language?: SortOrder
+    timezone?: SortOrder
+    website?: SortOrder
+    hashtags?: SortOrder
+    forbiddenWords?: SortOrder
+    requireApproval?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SocialForceEventCountOrderByAggregateInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    actorId?: SortOrder
+    action?: SortOrder
+    resourceId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type SocialForceEventMaxOrderByAggregateInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    actorId?: SortOrder
+    action?: SortOrder
+    resourceId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type SocialForceEventMinOrderByAggregateInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    actorId?: SortOrder
+    action?: SortOrder
+    resourceId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type SsoConfigCountOrderByAggregateInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    idpEntryPoint?: SortOrder
+    issuer?: SortOrder
+    cert?: SortOrder
+    signatureAlgorithm?: SortOrder
+    disableRequestedAuthnContext?: SortOrder
+    wantAuthnResponseSigned?: SortOrder
+    isEnabled?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SsoConfigMaxOrderByAggregateInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    idpEntryPoint?: SortOrder
+    issuer?: SortOrder
+    cert?: SortOrder
+    signatureAlgorithm?: SortOrder
+    disableRequestedAuthnContext?: SortOrder
+    wantAuthnResponseSigned?: SortOrder
+    isEnabled?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type SsoConfigMinOrderByAggregateInput = {
+    id?: SortOrder
+    companyId?: SortOrder
+    idpEntryPoint?: SortOrder
+    issuer?: SortOrder
+    cert?: SortOrder
+    signatureAlgorithm?: SortOrder
+    disableRequestedAuthnContext?: SortOrder
+    wantAuthnResponseSigned?: SortOrder
+    isEnabled?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type CompanyListRelationFilter = {
@@ -180198,6 +188040,72 @@ export namespace Prisma {
     duration?: SortOrder
   }
 
+  export type WebsiteEnquiryCountOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    email?: SortOrder
+    subject?: SortOrder
+    message?: SortOrder
+    source?: SortOrder
+    ip?: SortOrder
+    companyId?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WebsiteEnquiryMaxOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    email?: SortOrder
+    subject?: SortOrder
+    message?: SortOrder
+    source?: SortOrder
+    ip?: SortOrder
+    companyId?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WebsiteEnquiryMinOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    email?: SortOrder
+    subject?: SortOrder
+    message?: SortOrder
+    source?: SortOrder
+    ip?: SortOrder
+    companyId?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type NewsletterSubscriberCountOrderByAggregateInput = {
+    id?: SortOrder
+    email?: SortOrder
+    name?: SortOrder
+    source?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type NewsletterSubscriberMaxOrderByAggregateInput = {
+    id?: SortOrder
+    email?: SortOrder
+    name?: SortOrder
+    source?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type NewsletterSubscriberMinOrderByAggregateInput = {
+    id?: SortOrder
+    email?: SortOrder
+    name?: SortOrder
+    source?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
   export type RoleCreateNestedOneWithoutUsersInput = {
     create?: XOR<RoleCreateWithoutUsersInput, RoleUncheckedCreateWithoutUsersInput>
     connectOrCreate?: RoleCreateOrConnectWithoutUsersInput
@@ -182287,11 +190195,63 @@ export namespace Prisma {
     connect?: SubscriptionModelWhereUniqueInput
   }
 
+  export type SsoConfigCreateNestedOneWithoutCompanyInput = {
+    create?: XOR<SsoConfigCreateWithoutCompanyInput, SsoConfigUncheckedCreateWithoutCompanyInput>
+    connectOrCreate?: SsoConfigCreateOrConnectWithoutCompanyInput
+    connect?: SsoConfigWhereUniqueInput
+  }
+
+  export type SocialForcePostCreateNestedManyWithoutCompanyInput = {
+    create?: XOR<SocialForcePostCreateWithoutCompanyInput, SocialForcePostUncheckedCreateWithoutCompanyInput> | SocialForcePostCreateWithoutCompanyInput[] | SocialForcePostUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: SocialForcePostCreateOrConnectWithoutCompanyInput | SocialForcePostCreateOrConnectWithoutCompanyInput[]
+    createMany?: SocialForcePostCreateManyCompanyInputEnvelope
+    connect?: SocialForcePostWhereUniqueInput | SocialForcePostWhereUniqueInput[]
+  }
+
+  export type SocialForceBrandCreateNestedOneWithoutCompanyInput = {
+    create?: XOR<SocialForceBrandCreateWithoutCompanyInput, SocialForceBrandUncheckedCreateWithoutCompanyInput>
+    connectOrCreate?: SocialForceBrandCreateOrConnectWithoutCompanyInput
+    connect?: SocialForceBrandWhereUniqueInput
+  }
+
+  export type SocialForceEventCreateNestedManyWithoutCompanyInput = {
+    create?: XOR<SocialForceEventCreateWithoutCompanyInput, SocialForceEventUncheckedCreateWithoutCompanyInput> | SocialForceEventCreateWithoutCompanyInput[] | SocialForceEventUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: SocialForceEventCreateOrConnectWithoutCompanyInput | SocialForceEventCreateOrConnectWithoutCompanyInput[]
+    createMany?: SocialForceEventCreateManyCompanyInputEnvelope
+    connect?: SocialForceEventWhereUniqueInput | SocialForceEventWhereUniqueInput[]
+  }
+
   export type UserUncheckedCreateNestedManyWithoutCompanyInput = {
     create?: XOR<UserCreateWithoutCompanyInput, UserUncheckedCreateWithoutCompanyInput> | UserCreateWithoutCompanyInput[] | UserUncheckedCreateWithoutCompanyInput[]
     connectOrCreate?: UserCreateOrConnectWithoutCompanyInput | UserCreateOrConnectWithoutCompanyInput[]
     createMany?: UserCreateManyCompanyInputEnvelope
     connect?: UserWhereUniqueInput | UserWhereUniqueInput[]
+  }
+
+  export type SsoConfigUncheckedCreateNestedOneWithoutCompanyInput = {
+    create?: XOR<SsoConfigCreateWithoutCompanyInput, SsoConfigUncheckedCreateWithoutCompanyInput>
+    connectOrCreate?: SsoConfigCreateOrConnectWithoutCompanyInput
+    connect?: SsoConfigWhereUniqueInput
+  }
+
+  export type SocialForcePostUncheckedCreateNestedManyWithoutCompanyInput = {
+    create?: XOR<SocialForcePostCreateWithoutCompanyInput, SocialForcePostUncheckedCreateWithoutCompanyInput> | SocialForcePostCreateWithoutCompanyInput[] | SocialForcePostUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: SocialForcePostCreateOrConnectWithoutCompanyInput | SocialForcePostCreateOrConnectWithoutCompanyInput[]
+    createMany?: SocialForcePostCreateManyCompanyInputEnvelope
+    connect?: SocialForcePostWhereUniqueInput | SocialForcePostWhereUniqueInput[]
+  }
+
+  export type SocialForceBrandUncheckedCreateNestedOneWithoutCompanyInput = {
+    create?: XOR<SocialForceBrandCreateWithoutCompanyInput, SocialForceBrandUncheckedCreateWithoutCompanyInput>
+    connectOrCreate?: SocialForceBrandCreateOrConnectWithoutCompanyInput
+    connect?: SocialForceBrandWhereUniqueInput
+  }
+
+  export type SocialForceEventUncheckedCreateNestedManyWithoutCompanyInput = {
+    create?: XOR<SocialForceEventCreateWithoutCompanyInput, SocialForceEventUncheckedCreateWithoutCompanyInput> | SocialForceEventCreateWithoutCompanyInput[] | SocialForceEventUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: SocialForceEventCreateOrConnectWithoutCompanyInput | SocialForceEventCreateOrConnectWithoutCompanyInput[]
+    createMany?: SocialForceEventCreateManyCompanyInputEnvelope
+    connect?: SocialForceEventWhereUniqueInput | SocialForceEventWhereUniqueInput[]
   }
 
   export type UserUpdateManyWithoutCompanyNestedInput = {
@@ -182318,6 +190278,54 @@ export namespace Prisma {
     update?: XOR<XOR<SubscriptionModelUpdateToOneWithWhereWithoutCompaniesInput, SubscriptionModelUpdateWithoutCompaniesInput>, SubscriptionModelUncheckedUpdateWithoutCompaniesInput>
   }
 
+  export type SsoConfigUpdateOneWithoutCompanyNestedInput = {
+    create?: XOR<SsoConfigCreateWithoutCompanyInput, SsoConfigUncheckedCreateWithoutCompanyInput>
+    connectOrCreate?: SsoConfigCreateOrConnectWithoutCompanyInput
+    upsert?: SsoConfigUpsertWithoutCompanyInput
+    disconnect?: SsoConfigWhereInput | boolean
+    delete?: SsoConfigWhereInput | boolean
+    connect?: SsoConfigWhereUniqueInput
+    update?: XOR<XOR<SsoConfigUpdateToOneWithWhereWithoutCompanyInput, SsoConfigUpdateWithoutCompanyInput>, SsoConfigUncheckedUpdateWithoutCompanyInput>
+  }
+
+  export type SocialForcePostUpdateManyWithoutCompanyNestedInput = {
+    create?: XOR<SocialForcePostCreateWithoutCompanyInput, SocialForcePostUncheckedCreateWithoutCompanyInput> | SocialForcePostCreateWithoutCompanyInput[] | SocialForcePostUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: SocialForcePostCreateOrConnectWithoutCompanyInput | SocialForcePostCreateOrConnectWithoutCompanyInput[]
+    upsert?: SocialForcePostUpsertWithWhereUniqueWithoutCompanyInput | SocialForcePostUpsertWithWhereUniqueWithoutCompanyInput[]
+    createMany?: SocialForcePostCreateManyCompanyInputEnvelope
+    set?: SocialForcePostWhereUniqueInput | SocialForcePostWhereUniqueInput[]
+    disconnect?: SocialForcePostWhereUniqueInput | SocialForcePostWhereUniqueInput[]
+    delete?: SocialForcePostWhereUniqueInput | SocialForcePostWhereUniqueInput[]
+    connect?: SocialForcePostWhereUniqueInput | SocialForcePostWhereUniqueInput[]
+    update?: SocialForcePostUpdateWithWhereUniqueWithoutCompanyInput | SocialForcePostUpdateWithWhereUniqueWithoutCompanyInput[]
+    updateMany?: SocialForcePostUpdateManyWithWhereWithoutCompanyInput | SocialForcePostUpdateManyWithWhereWithoutCompanyInput[]
+    deleteMany?: SocialForcePostScalarWhereInput | SocialForcePostScalarWhereInput[]
+  }
+
+  export type SocialForceBrandUpdateOneWithoutCompanyNestedInput = {
+    create?: XOR<SocialForceBrandCreateWithoutCompanyInput, SocialForceBrandUncheckedCreateWithoutCompanyInput>
+    connectOrCreate?: SocialForceBrandCreateOrConnectWithoutCompanyInput
+    upsert?: SocialForceBrandUpsertWithoutCompanyInput
+    disconnect?: SocialForceBrandWhereInput | boolean
+    delete?: SocialForceBrandWhereInput | boolean
+    connect?: SocialForceBrandWhereUniqueInput
+    update?: XOR<XOR<SocialForceBrandUpdateToOneWithWhereWithoutCompanyInput, SocialForceBrandUpdateWithoutCompanyInput>, SocialForceBrandUncheckedUpdateWithoutCompanyInput>
+  }
+
+  export type SocialForceEventUpdateManyWithoutCompanyNestedInput = {
+    create?: XOR<SocialForceEventCreateWithoutCompanyInput, SocialForceEventUncheckedCreateWithoutCompanyInput> | SocialForceEventCreateWithoutCompanyInput[] | SocialForceEventUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: SocialForceEventCreateOrConnectWithoutCompanyInput | SocialForceEventCreateOrConnectWithoutCompanyInput[]
+    upsert?: SocialForceEventUpsertWithWhereUniqueWithoutCompanyInput | SocialForceEventUpsertWithWhereUniqueWithoutCompanyInput[]
+    createMany?: SocialForceEventCreateManyCompanyInputEnvelope
+    set?: SocialForceEventWhereUniqueInput | SocialForceEventWhereUniqueInput[]
+    disconnect?: SocialForceEventWhereUniqueInput | SocialForceEventWhereUniqueInput[]
+    delete?: SocialForceEventWhereUniqueInput | SocialForceEventWhereUniqueInput[]
+    connect?: SocialForceEventWhereUniqueInput | SocialForceEventWhereUniqueInput[]
+    update?: SocialForceEventUpdateWithWhereUniqueWithoutCompanyInput | SocialForceEventUpdateWithWhereUniqueWithoutCompanyInput[]
+    updateMany?: SocialForceEventUpdateManyWithWhereWithoutCompanyInput | SocialForceEventUpdateManyWithWhereWithoutCompanyInput[]
+    deleteMany?: SocialForceEventScalarWhereInput | SocialForceEventScalarWhereInput[]
+  }
+
   export type UserUncheckedUpdateManyWithoutCompanyNestedInput = {
     create?: XOR<UserCreateWithoutCompanyInput, UserUncheckedCreateWithoutCompanyInput> | UserCreateWithoutCompanyInput[] | UserUncheckedCreateWithoutCompanyInput[]
     connectOrCreate?: UserCreateOrConnectWithoutCompanyInput | UserCreateOrConnectWithoutCompanyInput[]
@@ -182330,6 +190338,112 @@ export namespace Prisma {
     update?: UserUpdateWithWhereUniqueWithoutCompanyInput | UserUpdateWithWhereUniqueWithoutCompanyInput[]
     updateMany?: UserUpdateManyWithWhereWithoutCompanyInput | UserUpdateManyWithWhereWithoutCompanyInput[]
     deleteMany?: UserScalarWhereInput | UserScalarWhereInput[]
+  }
+
+  export type SsoConfigUncheckedUpdateOneWithoutCompanyNestedInput = {
+    create?: XOR<SsoConfigCreateWithoutCompanyInput, SsoConfigUncheckedCreateWithoutCompanyInput>
+    connectOrCreate?: SsoConfigCreateOrConnectWithoutCompanyInput
+    upsert?: SsoConfigUpsertWithoutCompanyInput
+    disconnect?: SsoConfigWhereInput | boolean
+    delete?: SsoConfigWhereInput | boolean
+    connect?: SsoConfigWhereUniqueInput
+    update?: XOR<XOR<SsoConfigUpdateToOneWithWhereWithoutCompanyInput, SsoConfigUpdateWithoutCompanyInput>, SsoConfigUncheckedUpdateWithoutCompanyInput>
+  }
+
+  export type SocialForcePostUncheckedUpdateManyWithoutCompanyNestedInput = {
+    create?: XOR<SocialForcePostCreateWithoutCompanyInput, SocialForcePostUncheckedCreateWithoutCompanyInput> | SocialForcePostCreateWithoutCompanyInput[] | SocialForcePostUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: SocialForcePostCreateOrConnectWithoutCompanyInput | SocialForcePostCreateOrConnectWithoutCompanyInput[]
+    upsert?: SocialForcePostUpsertWithWhereUniqueWithoutCompanyInput | SocialForcePostUpsertWithWhereUniqueWithoutCompanyInput[]
+    createMany?: SocialForcePostCreateManyCompanyInputEnvelope
+    set?: SocialForcePostWhereUniqueInput | SocialForcePostWhereUniqueInput[]
+    disconnect?: SocialForcePostWhereUniqueInput | SocialForcePostWhereUniqueInput[]
+    delete?: SocialForcePostWhereUniqueInput | SocialForcePostWhereUniqueInput[]
+    connect?: SocialForcePostWhereUniqueInput | SocialForcePostWhereUniqueInput[]
+    update?: SocialForcePostUpdateWithWhereUniqueWithoutCompanyInput | SocialForcePostUpdateWithWhereUniqueWithoutCompanyInput[]
+    updateMany?: SocialForcePostUpdateManyWithWhereWithoutCompanyInput | SocialForcePostUpdateManyWithWhereWithoutCompanyInput[]
+    deleteMany?: SocialForcePostScalarWhereInput | SocialForcePostScalarWhereInput[]
+  }
+
+  export type SocialForceBrandUncheckedUpdateOneWithoutCompanyNestedInput = {
+    create?: XOR<SocialForceBrandCreateWithoutCompanyInput, SocialForceBrandUncheckedCreateWithoutCompanyInput>
+    connectOrCreate?: SocialForceBrandCreateOrConnectWithoutCompanyInput
+    upsert?: SocialForceBrandUpsertWithoutCompanyInput
+    disconnect?: SocialForceBrandWhereInput | boolean
+    delete?: SocialForceBrandWhereInput | boolean
+    connect?: SocialForceBrandWhereUniqueInput
+    update?: XOR<XOR<SocialForceBrandUpdateToOneWithWhereWithoutCompanyInput, SocialForceBrandUpdateWithoutCompanyInput>, SocialForceBrandUncheckedUpdateWithoutCompanyInput>
+  }
+
+  export type SocialForceEventUncheckedUpdateManyWithoutCompanyNestedInput = {
+    create?: XOR<SocialForceEventCreateWithoutCompanyInput, SocialForceEventUncheckedCreateWithoutCompanyInput> | SocialForceEventCreateWithoutCompanyInput[] | SocialForceEventUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: SocialForceEventCreateOrConnectWithoutCompanyInput | SocialForceEventCreateOrConnectWithoutCompanyInput[]
+    upsert?: SocialForceEventUpsertWithWhereUniqueWithoutCompanyInput | SocialForceEventUpsertWithWhereUniqueWithoutCompanyInput[]
+    createMany?: SocialForceEventCreateManyCompanyInputEnvelope
+    set?: SocialForceEventWhereUniqueInput | SocialForceEventWhereUniqueInput[]
+    disconnect?: SocialForceEventWhereUniqueInput | SocialForceEventWhereUniqueInput[]
+    delete?: SocialForceEventWhereUniqueInput | SocialForceEventWhereUniqueInput[]
+    connect?: SocialForceEventWhereUniqueInput | SocialForceEventWhereUniqueInput[]
+    update?: SocialForceEventUpdateWithWhereUniqueWithoutCompanyInput | SocialForceEventUpdateWithWhereUniqueWithoutCompanyInput[]
+    updateMany?: SocialForceEventUpdateManyWithWhereWithoutCompanyInput | SocialForceEventUpdateManyWithWhereWithoutCompanyInput[]
+    deleteMany?: SocialForceEventScalarWhereInput | SocialForceEventScalarWhereInput[]
+  }
+
+  export type CompanyCreateNestedOneWithoutSocialForcePostsInput = {
+    create?: XOR<CompanyCreateWithoutSocialForcePostsInput, CompanyUncheckedCreateWithoutSocialForcePostsInput>
+    connectOrCreate?: CompanyCreateOrConnectWithoutSocialForcePostsInput
+    connect?: CompanyWhereUniqueInput
+  }
+
+  export type CompanyUpdateOneRequiredWithoutSocialForcePostsNestedInput = {
+    create?: XOR<CompanyCreateWithoutSocialForcePostsInput, CompanyUncheckedCreateWithoutSocialForcePostsInput>
+    connectOrCreate?: CompanyCreateOrConnectWithoutSocialForcePostsInput
+    upsert?: CompanyUpsertWithoutSocialForcePostsInput
+    connect?: CompanyWhereUniqueInput
+    update?: XOR<XOR<CompanyUpdateToOneWithWhereWithoutSocialForcePostsInput, CompanyUpdateWithoutSocialForcePostsInput>, CompanyUncheckedUpdateWithoutSocialForcePostsInput>
+  }
+
+  export type CompanyCreateNestedOneWithoutSocialForceBrandInput = {
+    create?: XOR<CompanyCreateWithoutSocialForceBrandInput, CompanyUncheckedCreateWithoutSocialForceBrandInput>
+    connectOrCreate?: CompanyCreateOrConnectWithoutSocialForceBrandInput
+    connect?: CompanyWhereUniqueInput
+  }
+
+  export type CompanyUpdateOneRequiredWithoutSocialForceBrandNestedInput = {
+    create?: XOR<CompanyCreateWithoutSocialForceBrandInput, CompanyUncheckedCreateWithoutSocialForceBrandInput>
+    connectOrCreate?: CompanyCreateOrConnectWithoutSocialForceBrandInput
+    upsert?: CompanyUpsertWithoutSocialForceBrandInput
+    connect?: CompanyWhereUniqueInput
+    update?: XOR<XOR<CompanyUpdateToOneWithWhereWithoutSocialForceBrandInput, CompanyUpdateWithoutSocialForceBrandInput>, CompanyUncheckedUpdateWithoutSocialForceBrandInput>
+  }
+
+  export type CompanyCreateNestedOneWithoutSocialForceEventsInput = {
+    create?: XOR<CompanyCreateWithoutSocialForceEventsInput, CompanyUncheckedCreateWithoutSocialForceEventsInput>
+    connectOrCreate?: CompanyCreateOrConnectWithoutSocialForceEventsInput
+    connect?: CompanyWhereUniqueInput
+  }
+
+  export type CompanyUpdateOneRequiredWithoutSocialForceEventsNestedInput = {
+    create?: XOR<CompanyCreateWithoutSocialForceEventsInput, CompanyUncheckedCreateWithoutSocialForceEventsInput>
+    connectOrCreate?: CompanyCreateOrConnectWithoutSocialForceEventsInput
+    upsert?: CompanyUpsertWithoutSocialForceEventsInput
+    connect?: CompanyWhereUniqueInput
+    update?: XOR<XOR<CompanyUpdateToOneWithWhereWithoutSocialForceEventsInput, CompanyUpdateWithoutSocialForceEventsInput>, CompanyUncheckedUpdateWithoutSocialForceEventsInput>
+  }
+
+  export type CompanyCreateNestedOneWithoutSsoConfigInput = {
+    create?: XOR<CompanyCreateWithoutSsoConfigInput, CompanyUncheckedCreateWithoutSsoConfigInput>
+    connectOrCreate?: CompanyCreateOrConnectWithoutSsoConfigInput
+    connect?: CompanyWhereUniqueInput
+  }
+
+  export type CompanyUpdateOneWithoutSsoConfigNestedInput = {
+    create?: XOR<CompanyCreateWithoutSsoConfigInput, CompanyUncheckedCreateWithoutSsoConfigInput>
+    connectOrCreate?: CompanyCreateOrConnectWithoutSsoConfigInput
+    upsert?: CompanyUpsertWithoutSsoConfigInput
+    disconnect?: CompanyWhereInput | boolean
+    delete?: CompanyWhereInput | boolean
+    connect?: CompanyWhereUniqueInput
+    update?: XOR<XOR<CompanyUpdateToOneWithWhereWithoutSsoConfigInput, CompanyUpdateWithoutSsoConfigInput>, CompanyUncheckedUpdateWithoutSsoConfigInput>
   }
 
   export type CompanyCreateNestedManyWithoutSubscriptionModelInput = {
@@ -183291,6 +191405,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     subscriptionModel?: SubscriptionModelCreateNestedOneWithoutCompaniesInput
+    ssoConfig?: SsoConfigCreateNestedOneWithoutCompanyInput
+    socialForcePosts?: SocialForcePostCreateNestedManyWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandCreateNestedOneWithoutCompanyInput
+    socialForceEvents?: SocialForceEventCreateNestedManyWithoutCompanyInput
   }
 
   export type CompanyUncheckedCreateWithoutUsersInput = {
@@ -183326,6 +191444,10 @@ export namespace Prisma {
     subscriptionEndsAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    ssoConfig?: SsoConfigUncheckedCreateNestedOneWithoutCompanyInput
+    socialForcePosts?: SocialForcePostUncheckedCreateNestedManyWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandUncheckedCreateNestedOneWithoutCompanyInput
+    socialForceEvents?: SocialForceEventUncheckedCreateNestedManyWithoutCompanyInput
   }
 
   export type CompanyCreateOrConnectWithoutUsersInput = {
@@ -183635,6 +191757,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subscriptionModel?: SubscriptionModelUpdateOneWithoutCompaniesNestedInput
+    ssoConfig?: SsoConfigUpdateOneWithoutCompanyNestedInput
+    socialForcePosts?: SocialForcePostUpdateManyWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUpdateOneWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUpdateManyWithoutCompanyNestedInput
   }
 
   export type CompanyUncheckedUpdateWithoutUsersInput = {
@@ -183670,6 +191796,10 @@ export namespace Prisma {
     subscriptionEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    ssoConfig?: SsoConfigUncheckedUpdateOneWithoutCompanyNestedInput
+    socialForcePosts?: SocialForcePostUncheckedUpdateManyWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUncheckedUpdateOneWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUncheckedUpdateManyWithoutCompanyNestedInput
   }
 
   export type UserProfileUpsertWithoutUserInput = {
@@ -191625,6 +199755,138 @@ export namespace Prisma {
     create: XOR<SubscriptionModelCreateWithoutCompaniesInput, SubscriptionModelUncheckedCreateWithoutCompaniesInput>
   }
 
+  export type SsoConfigCreateWithoutCompanyInput = {
+    id?: string
+    idpEntryPoint: string
+    issuer: string
+    cert: string
+    signatureAlgorithm?: string
+    disableRequestedAuthnContext?: boolean
+    wantAuthnResponseSigned?: boolean
+    isEnabled?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SsoConfigUncheckedCreateWithoutCompanyInput = {
+    id?: string
+    idpEntryPoint: string
+    issuer: string
+    cert: string
+    signatureAlgorithm?: string
+    disableRequestedAuthnContext?: boolean
+    wantAuthnResponseSigned?: boolean
+    isEnabled?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SsoConfigCreateOrConnectWithoutCompanyInput = {
+    where: SsoConfigWhereUniqueInput
+    create: XOR<SsoConfigCreateWithoutCompanyInput, SsoConfigUncheckedCreateWithoutCompanyInput>
+  }
+
+  export type SocialForcePostCreateWithoutCompanyInput = {
+    id?: string
+    title: string
+    content: string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: string
+    plannedAt?: Date | string | null
+    timezone?: string
+    createdBy: string
+    reviewedBy?: string | null
+    reviewNote?: string | null
+    version?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SocialForcePostUncheckedCreateWithoutCompanyInput = {
+    id?: string
+    title: string
+    content: string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: string
+    plannedAt?: Date | string | null
+    timezone?: string
+    createdBy: string
+    reviewedBy?: string | null
+    reviewNote?: string | null
+    version?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SocialForcePostCreateOrConnectWithoutCompanyInput = {
+    where: SocialForcePostWhereUniqueInput
+    create: XOR<SocialForcePostCreateWithoutCompanyInput, SocialForcePostUncheckedCreateWithoutCompanyInput>
+  }
+
+  export type SocialForcePostCreateManyCompanyInputEnvelope = {
+    data: SocialForcePostCreateManyCompanyInput | SocialForcePostCreateManyCompanyInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type SocialForceBrandCreateWithoutCompanyInput = {
+    name?: string
+    description?: string
+    audience?: string
+    tone?: string
+    language?: string
+    timezone?: string
+    website?: string
+    hashtags?: string
+    forbiddenWords?: string
+    requireApproval?: boolean
+    updatedAt?: Date | string
+  }
+
+  export type SocialForceBrandUncheckedCreateWithoutCompanyInput = {
+    name?: string
+    description?: string
+    audience?: string
+    tone?: string
+    language?: string
+    timezone?: string
+    website?: string
+    hashtags?: string
+    forbiddenWords?: string
+    requireApproval?: boolean
+    updatedAt?: Date | string
+  }
+
+  export type SocialForceBrandCreateOrConnectWithoutCompanyInput = {
+    where: SocialForceBrandWhereUniqueInput
+    create: XOR<SocialForceBrandCreateWithoutCompanyInput, SocialForceBrandUncheckedCreateWithoutCompanyInput>
+  }
+
+  export type SocialForceEventCreateWithoutCompanyInput = {
+    id?: string
+    actorId: string
+    action: string
+    resourceId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type SocialForceEventUncheckedCreateWithoutCompanyInput = {
+    id?: string
+    actorId: string
+    action: string
+    resourceId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type SocialForceEventCreateOrConnectWithoutCompanyInput = {
+    where: SocialForceEventWhereUniqueInput
+    create: XOR<SocialForceEventCreateWithoutCompanyInput, SocialForceEventUncheckedCreateWithoutCompanyInput>
+  }
+
+  export type SocialForceEventCreateManyCompanyInputEnvelope = {
+    data: SocialForceEventCreateManyCompanyInput | SocialForceEventCreateManyCompanyInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UserUpsertWithWhereUniqueWithoutCompanyInput = {
     where: UserWhereUniqueInput
     update: XOR<UserUpdateWithoutCompanyInput, UserUncheckedUpdateWithoutCompanyInput>
@@ -191682,6 +199944,834 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type SsoConfigUpsertWithoutCompanyInput = {
+    update: XOR<SsoConfigUpdateWithoutCompanyInput, SsoConfigUncheckedUpdateWithoutCompanyInput>
+    create: XOR<SsoConfigCreateWithoutCompanyInput, SsoConfigUncheckedCreateWithoutCompanyInput>
+    where?: SsoConfigWhereInput
+  }
+
+  export type SsoConfigUpdateToOneWithWhereWithoutCompanyInput = {
+    where?: SsoConfigWhereInput
+    data: XOR<SsoConfigUpdateWithoutCompanyInput, SsoConfigUncheckedUpdateWithoutCompanyInput>
+  }
+
+  export type SsoConfigUpdateWithoutCompanyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    idpEntryPoint?: StringFieldUpdateOperationsInput | string
+    issuer?: StringFieldUpdateOperationsInput | string
+    cert?: StringFieldUpdateOperationsInput | string
+    signatureAlgorithm?: StringFieldUpdateOperationsInput | string
+    disableRequestedAuthnContext?: BoolFieldUpdateOperationsInput | boolean
+    wantAuthnResponseSigned?: BoolFieldUpdateOperationsInput | boolean
+    isEnabled?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SsoConfigUncheckedUpdateWithoutCompanyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    idpEntryPoint?: StringFieldUpdateOperationsInput | string
+    issuer?: StringFieldUpdateOperationsInput | string
+    cert?: StringFieldUpdateOperationsInput | string
+    signatureAlgorithm?: StringFieldUpdateOperationsInput | string
+    disableRequestedAuthnContext?: BoolFieldUpdateOperationsInput | boolean
+    wantAuthnResponseSigned?: BoolFieldUpdateOperationsInput | boolean
+    isEnabled?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForcePostUpsertWithWhereUniqueWithoutCompanyInput = {
+    where: SocialForcePostWhereUniqueInput
+    update: XOR<SocialForcePostUpdateWithoutCompanyInput, SocialForcePostUncheckedUpdateWithoutCompanyInput>
+    create: XOR<SocialForcePostCreateWithoutCompanyInput, SocialForcePostUncheckedCreateWithoutCompanyInput>
+  }
+
+  export type SocialForcePostUpdateWithWhereUniqueWithoutCompanyInput = {
+    where: SocialForcePostWhereUniqueInput
+    data: XOR<SocialForcePostUpdateWithoutCompanyInput, SocialForcePostUncheckedUpdateWithoutCompanyInput>
+  }
+
+  export type SocialForcePostUpdateManyWithWhereWithoutCompanyInput = {
+    where: SocialForcePostScalarWhereInput
+    data: XOR<SocialForcePostUpdateManyMutationInput, SocialForcePostUncheckedUpdateManyWithoutCompanyInput>
+  }
+
+  export type SocialForcePostScalarWhereInput = {
+    AND?: SocialForcePostScalarWhereInput | SocialForcePostScalarWhereInput[]
+    OR?: SocialForcePostScalarWhereInput[]
+    NOT?: SocialForcePostScalarWhereInput | SocialForcePostScalarWhereInput[]
+    id?: StringFilter<"SocialForcePost"> | string
+    companyId?: StringFilter<"SocialForcePost"> | string
+    title?: StringFilter<"SocialForcePost"> | string
+    content?: StringFilter<"SocialForcePost"> | string
+    variants?: JsonFilter<"SocialForcePost">
+    status?: StringFilter<"SocialForcePost"> | string
+    plannedAt?: DateTimeNullableFilter<"SocialForcePost"> | Date | string | null
+    timezone?: StringFilter<"SocialForcePost"> | string
+    createdBy?: StringFilter<"SocialForcePost"> | string
+    reviewedBy?: StringNullableFilter<"SocialForcePost"> | string | null
+    reviewNote?: StringNullableFilter<"SocialForcePost"> | string | null
+    version?: IntFilter<"SocialForcePost"> | number
+    createdAt?: DateTimeFilter<"SocialForcePost"> | Date | string
+    updatedAt?: DateTimeFilter<"SocialForcePost"> | Date | string
+  }
+
+  export type SocialForceBrandUpsertWithoutCompanyInput = {
+    update: XOR<SocialForceBrandUpdateWithoutCompanyInput, SocialForceBrandUncheckedUpdateWithoutCompanyInput>
+    create: XOR<SocialForceBrandCreateWithoutCompanyInput, SocialForceBrandUncheckedCreateWithoutCompanyInput>
+    where?: SocialForceBrandWhereInput
+  }
+
+  export type SocialForceBrandUpdateToOneWithWhereWithoutCompanyInput = {
+    where?: SocialForceBrandWhereInput
+    data: XOR<SocialForceBrandUpdateWithoutCompanyInput, SocialForceBrandUncheckedUpdateWithoutCompanyInput>
+  }
+
+  export type SocialForceBrandUpdateWithoutCompanyInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    audience?: StringFieldUpdateOperationsInput | string
+    tone?: StringFieldUpdateOperationsInput | string
+    language?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    website?: StringFieldUpdateOperationsInput | string
+    hashtags?: StringFieldUpdateOperationsInput | string
+    forbiddenWords?: StringFieldUpdateOperationsInput | string
+    requireApproval?: BoolFieldUpdateOperationsInput | boolean
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForceBrandUncheckedUpdateWithoutCompanyInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    audience?: StringFieldUpdateOperationsInput | string
+    tone?: StringFieldUpdateOperationsInput | string
+    language?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    website?: StringFieldUpdateOperationsInput | string
+    hashtags?: StringFieldUpdateOperationsInput | string
+    forbiddenWords?: StringFieldUpdateOperationsInput | string
+    requireApproval?: BoolFieldUpdateOperationsInput | boolean
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForceEventUpsertWithWhereUniqueWithoutCompanyInput = {
+    where: SocialForceEventWhereUniqueInput
+    update: XOR<SocialForceEventUpdateWithoutCompanyInput, SocialForceEventUncheckedUpdateWithoutCompanyInput>
+    create: XOR<SocialForceEventCreateWithoutCompanyInput, SocialForceEventUncheckedCreateWithoutCompanyInput>
+  }
+
+  export type SocialForceEventUpdateWithWhereUniqueWithoutCompanyInput = {
+    where: SocialForceEventWhereUniqueInput
+    data: XOR<SocialForceEventUpdateWithoutCompanyInput, SocialForceEventUncheckedUpdateWithoutCompanyInput>
+  }
+
+  export type SocialForceEventUpdateManyWithWhereWithoutCompanyInput = {
+    where: SocialForceEventScalarWhereInput
+    data: XOR<SocialForceEventUpdateManyMutationInput, SocialForceEventUncheckedUpdateManyWithoutCompanyInput>
+  }
+
+  export type SocialForceEventScalarWhereInput = {
+    AND?: SocialForceEventScalarWhereInput | SocialForceEventScalarWhereInput[]
+    OR?: SocialForceEventScalarWhereInput[]
+    NOT?: SocialForceEventScalarWhereInput | SocialForceEventScalarWhereInput[]
+    id?: StringFilter<"SocialForceEvent"> | string
+    companyId?: StringFilter<"SocialForceEvent"> | string
+    actorId?: StringFilter<"SocialForceEvent"> | string
+    action?: StringFilter<"SocialForceEvent"> | string
+    resourceId?: StringNullableFilter<"SocialForceEvent"> | string | null
+    createdAt?: DateTimeFilter<"SocialForceEvent"> | Date | string
+  }
+
+  export type CompanyCreateWithoutSocialForcePostsInput = {
+    id?: string
+    name?: string
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    addressStreet?: string | null
+    addressCity?: string | null
+    addressState?: string | null
+    addressCountry?: string | null
+    addressPostalCode?: string | null
+    taxId?: string | null
+    logo?: string | null
+    defaultCurrency?: string | null
+    timezone?: string
+    dateFormat?: string
+    facebook?: string | null
+    twitter?: string | null
+    linkedin?: string | null
+    instagram?: string | null
+    youtube?: string | null
+    isActive?: boolean
+    subscriptionPlan?: string
+    subscriptionStatus?: string
+    userLimit?: number
+    contactLimit?: number
+    trialStartsAt?: Date | string | null
+    trialEndsAt?: Date | string | null
+    subscriptionStartsAt?: Date | string | null
+    subscriptionEndsAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    users?: UserCreateNestedManyWithoutCompanyInput
+    subscriptionModel?: SubscriptionModelCreateNestedOneWithoutCompaniesInput
+    ssoConfig?: SsoConfigCreateNestedOneWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandCreateNestedOneWithoutCompanyInput
+    socialForceEvents?: SocialForceEventCreateNestedManyWithoutCompanyInput
+  }
+
+  export type CompanyUncheckedCreateWithoutSocialForcePostsInput = {
+    id?: string
+    name?: string
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    addressStreet?: string | null
+    addressCity?: string | null
+    addressState?: string | null
+    addressCountry?: string | null
+    addressPostalCode?: string | null
+    taxId?: string | null
+    logo?: string | null
+    defaultCurrency?: string | null
+    timezone?: string
+    dateFormat?: string
+    facebook?: string | null
+    twitter?: string | null
+    linkedin?: string | null
+    instagram?: string | null
+    youtube?: string | null
+    isActive?: boolean
+    subscriptionPlan?: string
+    subscriptionModelId?: string | null
+    subscriptionStatus?: string
+    userLimit?: number
+    contactLimit?: number
+    trialStartsAt?: Date | string | null
+    trialEndsAt?: Date | string | null
+    subscriptionStartsAt?: Date | string | null
+    subscriptionEndsAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    users?: UserUncheckedCreateNestedManyWithoutCompanyInput
+    ssoConfig?: SsoConfigUncheckedCreateNestedOneWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandUncheckedCreateNestedOneWithoutCompanyInput
+    socialForceEvents?: SocialForceEventUncheckedCreateNestedManyWithoutCompanyInput
+  }
+
+  export type CompanyCreateOrConnectWithoutSocialForcePostsInput = {
+    where: CompanyWhereUniqueInput
+    create: XOR<CompanyCreateWithoutSocialForcePostsInput, CompanyUncheckedCreateWithoutSocialForcePostsInput>
+  }
+
+  export type CompanyUpsertWithoutSocialForcePostsInput = {
+    update: XOR<CompanyUpdateWithoutSocialForcePostsInput, CompanyUncheckedUpdateWithoutSocialForcePostsInput>
+    create: XOR<CompanyCreateWithoutSocialForcePostsInput, CompanyUncheckedCreateWithoutSocialForcePostsInput>
+    where?: CompanyWhereInput
+  }
+
+  export type CompanyUpdateToOneWithWhereWithoutSocialForcePostsInput = {
+    where?: CompanyWhereInput
+    data: XOR<CompanyUpdateWithoutSocialForcePostsInput, CompanyUncheckedUpdateWithoutSocialForcePostsInput>
+  }
+
+  export type CompanyUpdateWithoutSocialForcePostsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressStreet?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCity?: NullableStringFieldUpdateOperationsInput | string | null
+    addressState?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCountry?: NullableStringFieldUpdateOperationsInput | string | null
+    addressPostalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    taxId?: NullableStringFieldUpdateOperationsInput | string | null
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: StringFieldUpdateOperationsInput | string
+    facebook?: NullableStringFieldUpdateOperationsInput | string | null
+    twitter?: NullableStringFieldUpdateOperationsInput | string | null
+    linkedin?: NullableStringFieldUpdateOperationsInput | string | null
+    instagram?: NullableStringFieldUpdateOperationsInput | string | null
+    youtube?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    subscriptionPlan?: StringFieldUpdateOperationsInput | string
+    subscriptionStatus?: StringFieldUpdateOperationsInput | string
+    userLimit?: IntFieldUpdateOperationsInput | number
+    contactLimit?: IntFieldUpdateOperationsInput | number
+    trialStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    trialEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    users?: UserUpdateManyWithoutCompanyNestedInput
+    subscriptionModel?: SubscriptionModelUpdateOneWithoutCompaniesNestedInput
+    ssoConfig?: SsoConfigUpdateOneWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUpdateOneWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUpdateManyWithoutCompanyNestedInput
+  }
+
+  export type CompanyUncheckedUpdateWithoutSocialForcePostsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressStreet?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCity?: NullableStringFieldUpdateOperationsInput | string | null
+    addressState?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCountry?: NullableStringFieldUpdateOperationsInput | string | null
+    addressPostalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    taxId?: NullableStringFieldUpdateOperationsInput | string | null
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: StringFieldUpdateOperationsInput | string
+    facebook?: NullableStringFieldUpdateOperationsInput | string | null
+    twitter?: NullableStringFieldUpdateOperationsInput | string | null
+    linkedin?: NullableStringFieldUpdateOperationsInput | string | null
+    instagram?: NullableStringFieldUpdateOperationsInput | string | null
+    youtube?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    subscriptionPlan?: StringFieldUpdateOperationsInput | string
+    subscriptionModelId?: NullableStringFieldUpdateOperationsInput | string | null
+    subscriptionStatus?: StringFieldUpdateOperationsInput | string
+    userLimit?: IntFieldUpdateOperationsInput | number
+    contactLimit?: IntFieldUpdateOperationsInput | number
+    trialStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    trialEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    users?: UserUncheckedUpdateManyWithoutCompanyNestedInput
+    ssoConfig?: SsoConfigUncheckedUpdateOneWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUncheckedUpdateOneWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUncheckedUpdateManyWithoutCompanyNestedInput
+  }
+
+  export type CompanyCreateWithoutSocialForceBrandInput = {
+    id?: string
+    name?: string
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    addressStreet?: string | null
+    addressCity?: string | null
+    addressState?: string | null
+    addressCountry?: string | null
+    addressPostalCode?: string | null
+    taxId?: string | null
+    logo?: string | null
+    defaultCurrency?: string | null
+    timezone?: string
+    dateFormat?: string
+    facebook?: string | null
+    twitter?: string | null
+    linkedin?: string | null
+    instagram?: string | null
+    youtube?: string | null
+    isActive?: boolean
+    subscriptionPlan?: string
+    subscriptionStatus?: string
+    userLimit?: number
+    contactLimit?: number
+    trialStartsAt?: Date | string | null
+    trialEndsAt?: Date | string | null
+    subscriptionStartsAt?: Date | string | null
+    subscriptionEndsAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    users?: UserCreateNestedManyWithoutCompanyInput
+    subscriptionModel?: SubscriptionModelCreateNestedOneWithoutCompaniesInput
+    ssoConfig?: SsoConfigCreateNestedOneWithoutCompanyInput
+    socialForcePosts?: SocialForcePostCreateNestedManyWithoutCompanyInput
+    socialForceEvents?: SocialForceEventCreateNestedManyWithoutCompanyInput
+  }
+
+  export type CompanyUncheckedCreateWithoutSocialForceBrandInput = {
+    id?: string
+    name?: string
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    addressStreet?: string | null
+    addressCity?: string | null
+    addressState?: string | null
+    addressCountry?: string | null
+    addressPostalCode?: string | null
+    taxId?: string | null
+    logo?: string | null
+    defaultCurrency?: string | null
+    timezone?: string
+    dateFormat?: string
+    facebook?: string | null
+    twitter?: string | null
+    linkedin?: string | null
+    instagram?: string | null
+    youtube?: string | null
+    isActive?: boolean
+    subscriptionPlan?: string
+    subscriptionModelId?: string | null
+    subscriptionStatus?: string
+    userLimit?: number
+    contactLimit?: number
+    trialStartsAt?: Date | string | null
+    trialEndsAt?: Date | string | null
+    subscriptionStartsAt?: Date | string | null
+    subscriptionEndsAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    users?: UserUncheckedCreateNestedManyWithoutCompanyInput
+    ssoConfig?: SsoConfigUncheckedCreateNestedOneWithoutCompanyInput
+    socialForcePosts?: SocialForcePostUncheckedCreateNestedManyWithoutCompanyInput
+    socialForceEvents?: SocialForceEventUncheckedCreateNestedManyWithoutCompanyInput
+  }
+
+  export type CompanyCreateOrConnectWithoutSocialForceBrandInput = {
+    where: CompanyWhereUniqueInput
+    create: XOR<CompanyCreateWithoutSocialForceBrandInput, CompanyUncheckedCreateWithoutSocialForceBrandInput>
+  }
+
+  export type CompanyUpsertWithoutSocialForceBrandInput = {
+    update: XOR<CompanyUpdateWithoutSocialForceBrandInput, CompanyUncheckedUpdateWithoutSocialForceBrandInput>
+    create: XOR<CompanyCreateWithoutSocialForceBrandInput, CompanyUncheckedCreateWithoutSocialForceBrandInput>
+    where?: CompanyWhereInput
+  }
+
+  export type CompanyUpdateToOneWithWhereWithoutSocialForceBrandInput = {
+    where?: CompanyWhereInput
+    data: XOR<CompanyUpdateWithoutSocialForceBrandInput, CompanyUncheckedUpdateWithoutSocialForceBrandInput>
+  }
+
+  export type CompanyUpdateWithoutSocialForceBrandInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressStreet?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCity?: NullableStringFieldUpdateOperationsInput | string | null
+    addressState?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCountry?: NullableStringFieldUpdateOperationsInput | string | null
+    addressPostalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    taxId?: NullableStringFieldUpdateOperationsInput | string | null
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: StringFieldUpdateOperationsInput | string
+    facebook?: NullableStringFieldUpdateOperationsInput | string | null
+    twitter?: NullableStringFieldUpdateOperationsInput | string | null
+    linkedin?: NullableStringFieldUpdateOperationsInput | string | null
+    instagram?: NullableStringFieldUpdateOperationsInput | string | null
+    youtube?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    subscriptionPlan?: StringFieldUpdateOperationsInput | string
+    subscriptionStatus?: StringFieldUpdateOperationsInput | string
+    userLimit?: IntFieldUpdateOperationsInput | number
+    contactLimit?: IntFieldUpdateOperationsInput | number
+    trialStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    trialEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    users?: UserUpdateManyWithoutCompanyNestedInput
+    subscriptionModel?: SubscriptionModelUpdateOneWithoutCompaniesNestedInput
+    ssoConfig?: SsoConfigUpdateOneWithoutCompanyNestedInput
+    socialForcePosts?: SocialForcePostUpdateManyWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUpdateManyWithoutCompanyNestedInput
+  }
+
+  export type CompanyUncheckedUpdateWithoutSocialForceBrandInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressStreet?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCity?: NullableStringFieldUpdateOperationsInput | string | null
+    addressState?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCountry?: NullableStringFieldUpdateOperationsInput | string | null
+    addressPostalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    taxId?: NullableStringFieldUpdateOperationsInput | string | null
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: StringFieldUpdateOperationsInput | string
+    facebook?: NullableStringFieldUpdateOperationsInput | string | null
+    twitter?: NullableStringFieldUpdateOperationsInput | string | null
+    linkedin?: NullableStringFieldUpdateOperationsInput | string | null
+    instagram?: NullableStringFieldUpdateOperationsInput | string | null
+    youtube?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    subscriptionPlan?: StringFieldUpdateOperationsInput | string
+    subscriptionModelId?: NullableStringFieldUpdateOperationsInput | string | null
+    subscriptionStatus?: StringFieldUpdateOperationsInput | string
+    userLimit?: IntFieldUpdateOperationsInput | number
+    contactLimit?: IntFieldUpdateOperationsInput | number
+    trialStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    trialEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    users?: UserUncheckedUpdateManyWithoutCompanyNestedInput
+    ssoConfig?: SsoConfigUncheckedUpdateOneWithoutCompanyNestedInput
+    socialForcePosts?: SocialForcePostUncheckedUpdateManyWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUncheckedUpdateManyWithoutCompanyNestedInput
+  }
+
+  export type CompanyCreateWithoutSocialForceEventsInput = {
+    id?: string
+    name?: string
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    addressStreet?: string | null
+    addressCity?: string | null
+    addressState?: string | null
+    addressCountry?: string | null
+    addressPostalCode?: string | null
+    taxId?: string | null
+    logo?: string | null
+    defaultCurrency?: string | null
+    timezone?: string
+    dateFormat?: string
+    facebook?: string | null
+    twitter?: string | null
+    linkedin?: string | null
+    instagram?: string | null
+    youtube?: string | null
+    isActive?: boolean
+    subscriptionPlan?: string
+    subscriptionStatus?: string
+    userLimit?: number
+    contactLimit?: number
+    trialStartsAt?: Date | string | null
+    trialEndsAt?: Date | string | null
+    subscriptionStartsAt?: Date | string | null
+    subscriptionEndsAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    users?: UserCreateNestedManyWithoutCompanyInput
+    subscriptionModel?: SubscriptionModelCreateNestedOneWithoutCompaniesInput
+    ssoConfig?: SsoConfigCreateNestedOneWithoutCompanyInput
+    socialForcePosts?: SocialForcePostCreateNestedManyWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandCreateNestedOneWithoutCompanyInput
+  }
+
+  export type CompanyUncheckedCreateWithoutSocialForceEventsInput = {
+    id?: string
+    name?: string
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    addressStreet?: string | null
+    addressCity?: string | null
+    addressState?: string | null
+    addressCountry?: string | null
+    addressPostalCode?: string | null
+    taxId?: string | null
+    logo?: string | null
+    defaultCurrency?: string | null
+    timezone?: string
+    dateFormat?: string
+    facebook?: string | null
+    twitter?: string | null
+    linkedin?: string | null
+    instagram?: string | null
+    youtube?: string | null
+    isActive?: boolean
+    subscriptionPlan?: string
+    subscriptionModelId?: string | null
+    subscriptionStatus?: string
+    userLimit?: number
+    contactLimit?: number
+    trialStartsAt?: Date | string | null
+    trialEndsAt?: Date | string | null
+    subscriptionStartsAt?: Date | string | null
+    subscriptionEndsAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    users?: UserUncheckedCreateNestedManyWithoutCompanyInput
+    ssoConfig?: SsoConfigUncheckedCreateNestedOneWithoutCompanyInput
+    socialForcePosts?: SocialForcePostUncheckedCreateNestedManyWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandUncheckedCreateNestedOneWithoutCompanyInput
+  }
+
+  export type CompanyCreateOrConnectWithoutSocialForceEventsInput = {
+    where: CompanyWhereUniqueInput
+    create: XOR<CompanyCreateWithoutSocialForceEventsInput, CompanyUncheckedCreateWithoutSocialForceEventsInput>
+  }
+
+  export type CompanyUpsertWithoutSocialForceEventsInput = {
+    update: XOR<CompanyUpdateWithoutSocialForceEventsInput, CompanyUncheckedUpdateWithoutSocialForceEventsInput>
+    create: XOR<CompanyCreateWithoutSocialForceEventsInput, CompanyUncheckedCreateWithoutSocialForceEventsInput>
+    where?: CompanyWhereInput
+  }
+
+  export type CompanyUpdateToOneWithWhereWithoutSocialForceEventsInput = {
+    where?: CompanyWhereInput
+    data: XOR<CompanyUpdateWithoutSocialForceEventsInput, CompanyUncheckedUpdateWithoutSocialForceEventsInput>
+  }
+
+  export type CompanyUpdateWithoutSocialForceEventsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressStreet?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCity?: NullableStringFieldUpdateOperationsInput | string | null
+    addressState?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCountry?: NullableStringFieldUpdateOperationsInput | string | null
+    addressPostalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    taxId?: NullableStringFieldUpdateOperationsInput | string | null
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: StringFieldUpdateOperationsInput | string
+    facebook?: NullableStringFieldUpdateOperationsInput | string | null
+    twitter?: NullableStringFieldUpdateOperationsInput | string | null
+    linkedin?: NullableStringFieldUpdateOperationsInput | string | null
+    instagram?: NullableStringFieldUpdateOperationsInput | string | null
+    youtube?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    subscriptionPlan?: StringFieldUpdateOperationsInput | string
+    subscriptionStatus?: StringFieldUpdateOperationsInput | string
+    userLimit?: IntFieldUpdateOperationsInput | number
+    contactLimit?: IntFieldUpdateOperationsInput | number
+    trialStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    trialEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    users?: UserUpdateManyWithoutCompanyNestedInput
+    subscriptionModel?: SubscriptionModelUpdateOneWithoutCompaniesNestedInput
+    ssoConfig?: SsoConfigUpdateOneWithoutCompanyNestedInput
+    socialForcePosts?: SocialForcePostUpdateManyWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUpdateOneWithoutCompanyNestedInput
+  }
+
+  export type CompanyUncheckedUpdateWithoutSocialForceEventsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressStreet?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCity?: NullableStringFieldUpdateOperationsInput | string | null
+    addressState?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCountry?: NullableStringFieldUpdateOperationsInput | string | null
+    addressPostalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    taxId?: NullableStringFieldUpdateOperationsInput | string | null
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: StringFieldUpdateOperationsInput | string
+    facebook?: NullableStringFieldUpdateOperationsInput | string | null
+    twitter?: NullableStringFieldUpdateOperationsInput | string | null
+    linkedin?: NullableStringFieldUpdateOperationsInput | string | null
+    instagram?: NullableStringFieldUpdateOperationsInput | string | null
+    youtube?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    subscriptionPlan?: StringFieldUpdateOperationsInput | string
+    subscriptionModelId?: NullableStringFieldUpdateOperationsInput | string | null
+    subscriptionStatus?: StringFieldUpdateOperationsInput | string
+    userLimit?: IntFieldUpdateOperationsInput | number
+    contactLimit?: IntFieldUpdateOperationsInput | number
+    trialStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    trialEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    users?: UserUncheckedUpdateManyWithoutCompanyNestedInput
+    ssoConfig?: SsoConfigUncheckedUpdateOneWithoutCompanyNestedInput
+    socialForcePosts?: SocialForcePostUncheckedUpdateManyWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUncheckedUpdateOneWithoutCompanyNestedInput
+  }
+
+  export type CompanyCreateWithoutSsoConfigInput = {
+    id?: string
+    name?: string
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    addressStreet?: string | null
+    addressCity?: string | null
+    addressState?: string | null
+    addressCountry?: string | null
+    addressPostalCode?: string | null
+    taxId?: string | null
+    logo?: string | null
+    defaultCurrency?: string | null
+    timezone?: string
+    dateFormat?: string
+    facebook?: string | null
+    twitter?: string | null
+    linkedin?: string | null
+    instagram?: string | null
+    youtube?: string | null
+    isActive?: boolean
+    subscriptionPlan?: string
+    subscriptionStatus?: string
+    userLimit?: number
+    contactLimit?: number
+    trialStartsAt?: Date | string | null
+    trialEndsAt?: Date | string | null
+    subscriptionStartsAt?: Date | string | null
+    subscriptionEndsAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    users?: UserCreateNestedManyWithoutCompanyInput
+    subscriptionModel?: SubscriptionModelCreateNestedOneWithoutCompaniesInput
+    socialForcePosts?: SocialForcePostCreateNestedManyWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandCreateNestedOneWithoutCompanyInput
+    socialForceEvents?: SocialForceEventCreateNestedManyWithoutCompanyInput
+  }
+
+  export type CompanyUncheckedCreateWithoutSsoConfigInput = {
+    id?: string
+    name?: string
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    addressStreet?: string | null
+    addressCity?: string | null
+    addressState?: string | null
+    addressCountry?: string | null
+    addressPostalCode?: string | null
+    taxId?: string | null
+    logo?: string | null
+    defaultCurrency?: string | null
+    timezone?: string
+    dateFormat?: string
+    facebook?: string | null
+    twitter?: string | null
+    linkedin?: string | null
+    instagram?: string | null
+    youtube?: string | null
+    isActive?: boolean
+    subscriptionPlan?: string
+    subscriptionModelId?: string | null
+    subscriptionStatus?: string
+    userLimit?: number
+    contactLimit?: number
+    trialStartsAt?: Date | string | null
+    trialEndsAt?: Date | string | null
+    subscriptionStartsAt?: Date | string | null
+    subscriptionEndsAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    users?: UserUncheckedCreateNestedManyWithoutCompanyInput
+    socialForcePosts?: SocialForcePostUncheckedCreateNestedManyWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandUncheckedCreateNestedOneWithoutCompanyInput
+    socialForceEvents?: SocialForceEventUncheckedCreateNestedManyWithoutCompanyInput
+  }
+
+  export type CompanyCreateOrConnectWithoutSsoConfigInput = {
+    where: CompanyWhereUniqueInput
+    create: XOR<CompanyCreateWithoutSsoConfigInput, CompanyUncheckedCreateWithoutSsoConfigInput>
+  }
+
+  export type CompanyUpsertWithoutSsoConfigInput = {
+    update: XOR<CompanyUpdateWithoutSsoConfigInput, CompanyUncheckedUpdateWithoutSsoConfigInput>
+    create: XOR<CompanyCreateWithoutSsoConfigInput, CompanyUncheckedCreateWithoutSsoConfigInput>
+    where?: CompanyWhereInput
+  }
+
+  export type CompanyUpdateToOneWithWhereWithoutSsoConfigInput = {
+    where?: CompanyWhereInput
+    data: XOR<CompanyUpdateWithoutSsoConfigInput, CompanyUncheckedUpdateWithoutSsoConfigInput>
+  }
+
+  export type CompanyUpdateWithoutSsoConfigInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressStreet?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCity?: NullableStringFieldUpdateOperationsInput | string | null
+    addressState?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCountry?: NullableStringFieldUpdateOperationsInput | string | null
+    addressPostalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    taxId?: NullableStringFieldUpdateOperationsInput | string | null
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: StringFieldUpdateOperationsInput | string
+    facebook?: NullableStringFieldUpdateOperationsInput | string | null
+    twitter?: NullableStringFieldUpdateOperationsInput | string | null
+    linkedin?: NullableStringFieldUpdateOperationsInput | string | null
+    instagram?: NullableStringFieldUpdateOperationsInput | string | null
+    youtube?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    subscriptionPlan?: StringFieldUpdateOperationsInput | string
+    subscriptionStatus?: StringFieldUpdateOperationsInput | string
+    userLimit?: IntFieldUpdateOperationsInput | number
+    contactLimit?: IntFieldUpdateOperationsInput | number
+    trialStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    trialEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    users?: UserUpdateManyWithoutCompanyNestedInput
+    subscriptionModel?: SubscriptionModelUpdateOneWithoutCompaniesNestedInput
+    socialForcePosts?: SocialForcePostUpdateManyWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUpdateOneWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUpdateManyWithoutCompanyNestedInput
+  }
+
+  export type CompanyUncheckedUpdateWithoutSsoConfigInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressStreet?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCity?: NullableStringFieldUpdateOperationsInput | string | null
+    addressState?: NullableStringFieldUpdateOperationsInput | string | null
+    addressCountry?: NullableStringFieldUpdateOperationsInput | string | null
+    addressPostalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    taxId?: NullableStringFieldUpdateOperationsInput | string | null
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    dateFormat?: StringFieldUpdateOperationsInput | string
+    facebook?: NullableStringFieldUpdateOperationsInput | string | null
+    twitter?: NullableStringFieldUpdateOperationsInput | string | null
+    linkedin?: NullableStringFieldUpdateOperationsInput | string | null
+    instagram?: NullableStringFieldUpdateOperationsInput | string | null
+    youtube?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    subscriptionPlan?: StringFieldUpdateOperationsInput | string
+    subscriptionModelId?: NullableStringFieldUpdateOperationsInput | string | null
+    subscriptionStatus?: StringFieldUpdateOperationsInput | string
+    userLimit?: IntFieldUpdateOperationsInput | number
+    contactLimit?: IntFieldUpdateOperationsInput | number
+    trialStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    trialEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionStartsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    subscriptionEndsAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    users?: UserUncheckedUpdateManyWithoutCompanyNestedInput
+    socialForcePosts?: SocialForcePostUncheckedUpdateManyWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUncheckedUpdateOneWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUncheckedUpdateManyWithoutCompanyNestedInput
+  }
+
   export type CompanyCreateWithoutSubscriptionModelInput = {
     id?: string
     name?: string
@@ -191715,6 +200805,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     users?: UserCreateNestedManyWithoutCompanyInput
+    ssoConfig?: SsoConfigCreateNestedOneWithoutCompanyInput
+    socialForcePosts?: SocialForcePostCreateNestedManyWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandCreateNestedOneWithoutCompanyInput
+    socialForceEvents?: SocialForceEventCreateNestedManyWithoutCompanyInput
   }
 
   export type CompanyUncheckedCreateWithoutSubscriptionModelInput = {
@@ -191750,6 +200844,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     users?: UserUncheckedCreateNestedManyWithoutCompanyInput
+    ssoConfig?: SsoConfigUncheckedCreateNestedOneWithoutCompanyInput
+    socialForcePosts?: SocialForcePostUncheckedCreateNestedManyWithoutCompanyInput
+    socialForceBrand?: SocialForceBrandUncheckedCreateNestedOneWithoutCompanyInput
+    socialForceEvents?: SocialForceEventUncheckedCreateNestedManyWithoutCompanyInput
   }
 
   export type CompanyCreateOrConnectWithoutSubscriptionModelInput = {
@@ -196460,6 +205558,30 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type SocialForcePostCreateManyCompanyInput = {
+    id?: string
+    title: string
+    content: string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: string
+    plannedAt?: Date | string | null
+    timezone?: string
+    createdBy: string
+    reviewedBy?: string | null
+    reviewNote?: string | null
+    version?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SocialForceEventCreateManyCompanyInput = {
+    id?: string
+    actorId: string
+    action: string
+    resourceId?: string | null
+    createdAt?: Date | string
+  }
+
   export type UserUpdateWithoutCompanyInput = {
     id?: StringFieldUpdateOperationsInput | string
     userName?: StringFieldUpdateOperationsInput | string
@@ -196620,6 +205742,78 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type SocialForcePostUpdateWithoutCompanyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: StringFieldUpdateOperationsInput | string
+    plannedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    version?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForcePostUncheckedUpdateWithoutCompanyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: StringFieldUpdateOperationsInput | string
+    plannedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    version?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForcePostUncheckedUpdateManyWithoutCompanyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    variants?: JsonNullValueInput | InputJsonValue
+    status?: StringFieldUpdateOperationsInput | string
+    plannedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    version?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForceEventUpdateWithoutCompanyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorId?: StringFieldUpdateOperationsInput | string
+    action?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForceEventUncheckedUpdateWithoutCompanyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorId?: StringFieldUpdateOperationsInput | string
+    action?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SocialForceEventUncheckedUpdateManyWithoutCompanyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorId?: StringFieldUpdateOperationsInput | string
+    action?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type CompanyCreateManySubscriptionModelInput = {
     id?: string
     name?: string
@@ -196687,6 +205881,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserUpdateManyWithoutCompanyNestedInput
+    ssoConfig?: SsoConfigUpdateOneWithoutCompanyNestedInput
+    socialForcePosts?: SocialForcePostUpdateManyWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUpdateOneWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUpdateManyWithoutCompanyNestedInput
   }
 
   export type CompanyUncheckedUpdateWithoutSubscriptionModelInput = {
@@ -196722,6 +205920,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserUncheckedUpdateManyWithoutCompanyNestedInput
+    ssoConfig?: SsoConfigUncheckedUpdateOneWithoutCompanyNestedInput
+    socialForcePosts?: SocialForcePostUncheckedUpdateManyWithoutCompanyNestedInput
+    socialForceBrand?: SocialForceBrandUncheckedUpdateOneWithoutCompanyNestedInput
+    socialForceEvents?: SocialForceEventUncheckedUpdateManyWithoutCompanyNestedInput
   }
 
   export type CompanyUncheckedUpdateManyWithoutSubscriptionModelInput = {
@@ -197490,6 +206692,22 @@ export namespace Prisma {
      */
     export type CompanyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = CompanyDefaultArgs<ExtArgs>
     /**
+     * @deprecated Use SocialForcePostDefaultArgs instead
+     */
+    export type SocialForcePostArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = SocialForcePostDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use SocialForceBrandDefaultArgs instead
+     */
+    export type SocialForceBrandArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = SocialForceBrandDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use SocialForceEventDefaultArgs instead
+     */
+    export type SocialForceEventArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = SocialForceEventDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use SsoConfigDefaultArgs instead
+     */
+    export type SsoConfigArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = SsoConfigDefaultArgs<ExtArgs>
+    /**
      * @deprecated Use SubscriptionModelDefaultArgs instead
      */
     export type SubscriptionModelArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = SubscriptionModelDefaultArgs<ExtArgs>
@@ -197733,6 +206951,14 @@ export namespace Prisma {
      * @deprecated Use WebhookLogDefaultArgs instead
      */
     export type WebhookLogArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = WebhookLogDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use WebsiteEnquiryDefaultArgs instead
+     */
+    export type WebsiteEnquiryArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = WebsiteEnquiryDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use NewsletterSubscriberDefaultArgs instead
+     */
+    export type NewsletterSubscriberArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = NewsletterSubscriberDefaultArgs<ExtArgs>
 
   /**
    * Batch Payload for updateMany & deleteMany & createMany

@@ -1586,8 +1586,77 @@ model Company {
 
   users             User[]
   subscriptionModel SubscriptionModel? @relation(fields: [subscriptionModelId], references: [id], onDelete: SetNull)
+  ssoConfig         SsoConfig?
+  socialForcePosts  SocialForcePost[]
+  socialForceBrand  SocialForceBrand?
+  socialForceEvents SocialForceEvent[]
 
   @@index([subscriptionModelId])
+}
+
+model SocialForcePost {
+  id         String    @id @default(uuid())
+  companyId  String
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  title      String    @db.VarChar(200)
+  content    String    @db.Text
+  variants   Json      @default("[]")
+  status     String    @default("DRAFT") @db.VarChar(30)
+  plannedAt  DateTime?
+  timezone   String    @default("UTC") @db.VarChar(100)
+  createdBy  String
+  reviewedBy String?
+  reviewNote String?   @db.VarChar(2000)
+  version    Int       @default(1)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([companyId, id])
+  @@index([companyId, status, createdAt])
+  @@index([companyId, plannedAt])
+}
+
+model SocialForceBrand {
+  companyId       String   @id
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  name            String   @default("") @db.VarChar(200)
+  description     String   @default("") @db.VarChar(4000)
+  audience        String   @default("") @db.VarChar(2000)
+  tone            String   @default("Professional, helpful, confident") @db.VarChar(500)
+  language        String   @default("English") @db.VarChar(100)
+  timezone        String   @default("UTC") @db.VarChar(100)
+  website         String   @default("") @db.VarChar(500)
+  hashtags        String   @default("") @db.VarChar(1000)
+  forbiddenWords  String   @default("") @db.VarChar(2000)
+  requireApproval Boolean  @default(true)
+  updatedAt       DateTime @updatedAt
+}
+
+model SocialForceEvent {
+  id         String   @id @default(uuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  actorId    String
+  action     String   @db.VarChar(100)
+  resourceId String?  @db.VarChar(100)
+  createdAt  DateTime @default(now())
+
+  @@index([companyId, createdAt])
+}
+
+model SsoConfig {
+  id                           String   @id @default(uuid())
+  companyId                    String?  @unique
+  company                      Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  idpEntryPoint                String   @db.VarChar(500)
+  issuer                       String   @db.VarChar(300)
+  cert                         String   @db.Text
+  signatureAlgorithm           String   @default("sha256") @db.VarChar(20)
+  disableRequestedAuthnContext Boolean  @default(false)
+  wantAuthnResponseSigned      Boolean  @default(true)
+  isEnabled                    Boolean  @default(false)
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
 }
 
 model SubscriptionModel {
@@ -2689,5 +2758,32 @@ model WebhookLog {
 
   @@index([endpointId])
   @@index([companyId])
+  @@index([createdAt])
+}
+
+model WebsiteEnquiry {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(200)
+  email     String   @db.VarChar(200)
+  subject   String?  @db.VarChar(300)
+  message   String   @db.Text
+  source    String   @default("contact") @db.VarChar(30)
+  ip        String?  @db.VarChar(64)
+  companyId String?
+  status    String   @default("NEW") @db.VarChar(30)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([email])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique @db.VarChar(200)
+  name      String?  @db.VarChar(200)
+  source    String   @default("blog") @db.VarChar(30)
+  status    String   @default("SUBSCRIBED") @db.VarChar(30)
+  createdAt DateTime @default(now())
+
   @@index([createdAt])
 }

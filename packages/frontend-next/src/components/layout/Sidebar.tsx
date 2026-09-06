@@ -48,7 +48,7 @@ const fallbackGroups = [
       { module: 'campaigns', label: 'Campaigns', icon: 'Megaphone' },
       { module: 'email-campaigns', label: 'Email Campaigns', icon: 'Send' },
       { module: 'landing-pages', label: 'Landing Pages', icon: 'Globe' },
-      { module: 'social-media', label: 'Social Media', icon: 'Share2' },
+      { module: 'social-media', label: 'SocialForce AI', icon: 'Share2' },
     ]
   },
   {
