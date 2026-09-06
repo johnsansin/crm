@@ -55,6 +55,9 @@ services:
     volumes:
       - backend_uploads:/app/packages/backend/uploads
       - backend_private:/app/packages/backend/private
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/host:ro
+      - /proc:/host/proc:ro
     networks:
       - backend
     depends_on:
@@ -70,6 +73,8 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    group_add:
+      - "988"
 
   frontend:
     build:

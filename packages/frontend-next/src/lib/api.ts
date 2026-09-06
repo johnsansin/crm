@@ -270,6 +270,7 @@ export const api = {
     const qs = sp.toString()
     return request<{ data: any[] }>(`/admin/logs${qs ? `?${qs}` : ''}`)
   },
+  adminSystemHealth: () => request<{ data: any }>('/admin/system-health'),
   adminClearLogs: () => request<{ success: boolean }>('/admin/logs', { method: 'DELETE' }),
   adminListCompanies: () => request<{ data: any[] }>('/admin/companies'),
   adminRecentCompanies: (limit = 10, since?: string) => {

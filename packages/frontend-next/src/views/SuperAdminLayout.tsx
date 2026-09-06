@@ -9,7 +9,7 @@ import { useTheme } from '@/lib/theme'
 import { api } from '@/lib/api'
 import { AppBreadcrumbs } from '@/components/layout/AppBreadcrumbs'
 import { useSupportSocket } from '@/hooks/useSupportSocket'
-import { Building2, LayoutDashboard, Users, History, Settings, LogOut, Sun, Moon, Menu, X, Shield, Bell, Search, Loader2, Mail, Phone, Globe, Headphones, User } from 'lucide-react'
+import { Building2, LayoutDashboard, Users, History, Settings, LogOut, Sun, Moon, Menu, X, Shield, Bell, Search, Loader2, Mail, Phone, Globe, Headphones, User, Activity } from 'lucide-react'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 
 const navItems = [
@@ -19,6 +19,7 @@ const navItems = [
   { path: '/superadmin/agents', label: 'Agents', icon: Headphones },
   { path: '/superadmin/support', label: 'Support Inbox', icon: Headphones },
   { path: '/superadmin/login-history', label: 'Login History', icon: History },
+  { path: '/superadmin/system-health', label: 'System Health', icon: Activity },
   { path: '/superadmin/settings', label: 'Settings', icon: Settings },
 ]
 

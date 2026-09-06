@@ -8,6 +8,7 @@ import fs from 'fs'
 import { createDatabaseBackup, emailDatabaseBackup, getDatabaseBackupConfig, listDatabaseBackups, resolveBackupFile, saveDatabaseBackupConfig } from '../lib/database-backup'
 import { checkOrganizationLimit, getOrganizationUsage } from '../lib/organization-limits'
 import { getLogs, clearLogs } from '../lib/log-buffer'
+import { collectSystemHealth } from '../lib/system-health'
 
 export const adminRouter = Router()
 
@@ -21,6 +22,13 @@ function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 adminRouter.use(requireSuperAdmin)
+
+// ---- System / application health (super admin only) ----
+adminRouter.get('/system-health', async (_req, res, next) => {
+  try {
+    res.json({ data: await collectSystemHealth() })
+  } catch (err) { next(err) }
+})
 
 adminRouter.get('/search', async (req, res, next) => {
   try {
