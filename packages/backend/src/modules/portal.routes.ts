@@ -1,10 +1,63 @@
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import { prisma } from '../lib/prisma'
 import { signingSecret } from '../lib/secrets'
 
 const PORTAL_JWT_SECRET = signingSecret('PORTAL_JWT_SECRET', 'bizforce-portal-jwt-secret-2026')
+
+const B32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+
+function base32Encode(buf: Buffer): string {
+  let bits = 0
+  let value = 0
+  let out = ''
+  for (const b of buf) {
+    value = (value << 8) | b
+    bits += 8
+    while (bits >= 5) {
+      out += B32_ALPHABET[(value >>> (bits - 5)) & 31]
+      bits -= 5
+    }
+  }
+  if (bits > 0) out += B32_ALPHABET[(value << (5 - bits)) & 31]
+  return out
+}
+
+function base32Decode(input: string): Buffer {
+  const clean = input.replace(/=+$/, '').replace(/\s+/g, '').toUpperCase()
+  let bits = 0
+  let value = 0
+  const bytes: number[] = []
+  for (const c of clean) {
+    const idx = B32_ALPHABET.indexOf(c)
+    if (idx === -1) throw new Error('Invalid base32 secret')
+    value = (value << 5) | idx
+    bits += 5
+    if (bits >= 8) {
+      bytes.push((value >>> (bits - 8)) & 255)
+      bits -= 8
+    }
+  }
+  return Buffer.from(bytes)
+}
+
+function totpForCounter(secret: Buffer, counter: number): string {
+  const buf = Buffer.alloc(8)
+  buf.writeBigUInt64BE(BigInt(counter))
+  const hmac = crypto.createHmac('sha1', secret).update(buf).digest()
+  const offset = hmac[hmac.length - 1] & 0x0f
+  return ((hmac.readUInt32BE(offset) & 0x7fffffff) % 1000000).toString().padStart(6, '0')
+}
+
+function verifyTotp(secret: Buffer, code: string, window = 1): boolean {
+  const counter = Math.floor(Date.now() / 30000)
+  for (let w = -window; w <= window; w++) {
+    if (totpForCounter(secret, counter + w) === code) return true
+  }
+  return false
+}
 
 export const portalRouter = Router()
 
@@ -138,6 +191,17 @@ portalRouter.post('/auth/login', async (req, res) => {
       res.status(401).json({ error: 'Invalid credentials' })
       return
     }
+    if (user.twoFactorEnabled) {
+      const otp = String(req.body.otp || '').trim()
+      if (!otp) {
+        res.status(401).json({ error: 'Two-factor code is required' })
+        return
+      }
+      if (!user.twoFactorSecret || !verifyTotp(base32Decode(user.twoFactorSecret), otp)) {
+        res.status(401).json({ error: 'Invalid two-factor code' })
+        return
+      }
+    }
     await prisma.portalUser.update({
       where: { id: user.id },
       data: { lastLogin: new Date() },
@@ -202,6 +266,87 @@ portalRouter.put('/profile', portalAuth, async (req: any, res) => {
       select: { id: true, name: true, email: true, phone: true },
     })
     res.json({ data: user })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+portalRouter.post('/change-password', portalAuth, async (req: any, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body
+    if (!currentPassword || !newPassword) { res.status(400).json({ error: 'Current and new password are required' }); return }
+    if (String(newPassword).length < 6) { res.status(400).json({ error: 'New password must be at least 6 characters' }); return }
+    const user = await prisma.portalUser.findUnique({ where: { id: req.portalUser.portalUserId } })
+    if (!user) { res.status(404).json({ error: 'Not found' }); return }
+    const valid = await bcrypt.compare(currentPassword, user.password)
+    if (!valid) { res.status(401).json({ error: 'Current password is incorrect' }); return }
+    const hash = await bcrypt.hash(newPassword, 10)
+    await prisma.portalUser.update({ where: { id: user.id }, data: { password: hash } })
+    res.json({ data: { ok: true } })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+portalRouter.get('/security/status', portalAuth, async (req: any, res) => {
+  try {
+    const user = await prisma.portalUser.findUnique({ where: { id: req.portalUser.portalUserId } })
+    res.json({ data: { enabled: user?.twoFactorEnabled || false } })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+portalRouter.post('/security/setup', portalAuth, async (req: any, res) => {
+  try {
+    const user = await prisma.portalUser.findUnique({ where: { id: req.portalUser.portalUserId } })
+    if (!user) { res.status(404).json({ error: 'Not found' }); return }
+    if (user.twoFactorEnabled) { res.json({ data: { alreadyEnabled: true } }); return }
+    const secret = base32Encode(crypto.randomBytes(20))
+    await prisma.portalUser.update({ where: { id: user.id }, data: { twoFactorPendingSecret: secret } })
+    const otpauthUrl = `otpauth://totp/${encodeURIComponent(user.email)}?secret=${secret}&issuer=BizForce%20Portal&period=30&digits=6`
+    res.json({ data: { secret, otpauthUrl } })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+portalRouter.post('/security/enable', portalAuth, async (req: any, res) => {
+  try {
+    const { code } = req.body
+    const user = await prisma.portalUser.findUnique({ where: { id: req.portalUser.portalUserId } })
+    if (!user) { res.status(404).json({ error: 'Not found' }); return }
+    if (user.twoFactorEnabled) { res.json({ data: { enabled: true } }); return }
+    if (!user.twoFactorPendingSecret) { res.status(400).json({ error: 'Run setup first' }); return }
+    if (!verifyTotp(base32Decode(user.twoFactorPendingSecret), String(code || '').trim())) {
+      res.status(400).json({ error: 'Invalid code. Check that your authenticator app shows the current code.' })
+      return
+    }
+    await prisma.portalUser.update({
+      where: { id: user.id },
+      data: { twoFactorSecret: user.twoFactorPendingSecret, twoFactorEnabled: true, twoFactorPendingSecret: null },
+    })
+    res.json({ data: { enabled: true } })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+portalRouter.post('/security/disable', portalAuth, async (req: any, res) => {
+  try {
+    const { code } = req.body
+    const user = await prisma.portalUser.findUnique({ where: { id: req.portalUser.portalUserId } })
+    if (!user) { res.status(404).json({ error: 'Not found' }); return }
+    if (!user.twoFactorEnabled || !user.twoFactorSecret) { res.json({ data: { enabled: false } }); return }
+    if (!verifyTotp(base32Decode(user.twoFactorSecret), String(code || '').trim())) {
+      res.status(400).json({ error: 'Invalid two-factor code' })
+      return
+    }
+    await prisma.portalUser.update({
+      where: { id: user.id },
+      data: { twoFactorSecret: null, twoFactorPendingSecret: null, twoFactorEnabled: false },
+    })
+    res.json({ data: { enabled: false } })
   } catch (err: any) {
     res.status(500).json({ error: err.message })
   }
