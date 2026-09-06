@@ -1511,7 +1511,16 @@ function AiInsightsWidget() {
 function AssignedToMeWidget() {
   const { user } = useAuthStore()
   const isManager = !!user?.isAdmin || !!user?.isSuperAdmin
+  const queryClient = useQueryClient()
   const [filter, setFilter] = useState<{ type: 'all' | 'user' | 'group'; id?: string } | null>(isManager && user?.id ? { type: 'user', id: user.id } : null)
+
+  const completeMutation = useMutation({
+    mutationFn: (id: string) => api.updateCalendarActivity(id, { status: 'Completed' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'assigned-to-me'] })
+      queryClient.invalidateQueries({ queryKey: ['calendar'] })
+    },
+  })
 
   const { data: assignees } = useQuery({
     queryKey: ['dashboard-assignees'],
@@ -1633,9 +1642,21 @@ function AssignedToMeWidget() {
                     {item.priority && ` · ${item.priority}`}
                   </p>
                 </div>
-                <span className="text-[10px] text-muted-foreground shrink-0">
-                  {item.amount ? fmtMoney(item.amount) : formatDateTime(item.updatedAt)}
-                </span>
+                {item._module === 'activities' ? (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); completeMutation.mutate(item.id) }}
+                    disabled={completeMutation.isPending}
+                    className="shrink-0 inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-medium text-green-700 transition-colors hover:bg-green-100 dark:border-green-800 dark:bg-green-950 dark:text-green-300 disabled:opacity-50"
+                    title="Mark task as complete"
+                  >
+                    <CheckCircle2 size={11} /> Complete
+                  </button>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground shrink-0">
+                    {item.amount ? fmtMoney(item.amount) : formatDateTime(item.updatedAt)}
+                  </span>
+                )}
               </Link>
             )
           })}
