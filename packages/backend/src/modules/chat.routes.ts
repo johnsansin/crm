@@ -1,7 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware } from '../middleware/auth'
-import { requireModulePermission } from '../lib/module-permissions'
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
@@ -23,7 +22,13 @@ const chatUpload = multer({
 export const chatRouter = Router()
 
 chatRouter.use(authMiddleware)
-chatRouter.use(requireModulePermission('chat'))
+// Chat is a system-wide collaboration feature available to every user of an organization.
+// It is intentionally NOT governed by module permissions or organization/global settings.
+chatRouter.use((req, res, next) => {
+  if (req.user?.isSuperAdmin || req.user?.isAdmin) return next()
+  if (!req.user?.companyId) return res.status(403).json({ error: 'Select an organization before using chat' })
+  next()
+})
 
 const ONLINE_WINDOW_MS = 2 * 60 * 1000
 
