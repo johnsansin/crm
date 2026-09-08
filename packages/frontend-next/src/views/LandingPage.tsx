@@ -19,7 +19,7 @@ const features = [
   { icon: Users, title: 'Team Collaboration', description: 'Share notes, assign tasks, and collaborate seamlessly across your organization.' },
   { icon: BarChart3, title: 'Reports & Analytics', description: 'Make data-driven decisions with customizable dashboards and real-time reports.' },
   { icon: Zap, title: 'Workflow Automation', description: 'Automate repetitive tasks, set triggers, and streamline your business processes.' },
-  { icon: Mail, title: 'Email Campaigns', description: 'Create, send, and track email marketing campaigns with built-in analytics.' },
+  { icon: Mail, title: 'Lead Email Sequences', description: 'Send recursive follow-ups, track delivery, opens, clicks, bounces, and stop automatically when leads reply.' },
   { icon: MessageSquare, title: 'Live Chat', description: 'Real-time team chat and customer-facing chat widget for instant support.' },
   { icon: Calendar, title: 'Calendar & Events', description: 'Schedule meetings, set reminders, and manage your team calendar in one place.' },
   { icon: Phone, title: 'SMS & Calls', description: 'Send SMS notifications and log call activities directly from the CRM.' },
@@ -86,8 +86,8 @@ const pricingPlans = [
 ]
 
 const integrations = [
-  'Gmail', 'Google Calendar', 'Google Workspace', 'Twilio',
-  'REST API', 'Webhooks', 'Customer Portal', 'PBX / Phone', 'Webforms', 'AI Assistant',
+  'Gmail', 'Google Calendar', 'Google Workspace', 'SMTP', 'IMAP Mailboxes', 'Resend',
+  'Twilio', 'REST API', 'Email Webhooks', 'Customer Portal', 'PBX / Phone', 'Webforms', 'AI Assistant',
 ]
 
 export function LandingPage() {
@@ -123,7 +123,7 @@ export function LandingPage() {
           </h1>
 
           <p className="mt-6 text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Manage contacts, track sales, automate workflows, and grow your business — all from one powerful platform.
+            Manage contacts, track sales, automate lead follow-ups, sync inboxes, and grow your business from one powerful platform.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -225,7 +225,7 @@ export function LandingPage() {
                 close deals faster, and deliver exceptional customer experiences.
               </p>
               <ul className="mt-8 space-y-3 stagger">
-                {['120+ data models with full CRUD', 'Real-time collaboration & chat', 'AI-powered assistant & insights', 'Multi-language support (17+ languages)'].map(item => (
+                {['120+ data models with full CRUD', 'Recursive lead email follow-ups with reply stop conditions', 'Real-time collaboration & chat', 'AI-powered assistant & insights', 'Multi-language support (17+ languages)'].map(item => (
                   <li key={item} className="reveal reveal-left flex items-center gap-3 text-slate-700 dark:text-slate-300">
                     <CheckCircle size={18} className="text-green-500 shrink-0" />
                     <span className="text-sm font-medium">{item}</span>

@@ -13,6 +13,7 @@ import { writeAudit, getClientIp } from '../lib/audit'
 import { getModuleConfig } from './moduleSetup'
 import { getOrganizationUsage } from '../lib/organization-limits'
 import { Prisma } from '../generated/prisma-client'
+import { withSocialForceModule, socialForceMenuOverrides, menuPermissionModule, socialForceModule, resolveSocialForcePermissions, socialForceSections, canUseSocialForce } from '../socialforce/module'
 
 export const settingsRouter = Router()
 settingsRouter.use(authMiddleware)
@@ -315,8 +316,8 @@ settingsRouter.delete('/custom-fields/:id', requireAdmin, async (req, res, next)
 // ---- Module manager ----
 settingsRouter.get('/modules/menu', userOnly(async (req, res, next) => {
   try {
-    const moduleRows = await prisma.module.findMany({ orderBy: { sequence: 'asc' } })
-    const overrides = (await getOrgSetting(req.user!.companyId, 'menuConfig', {})) as Record<string, any>
+    const moduleRows = withSocialForceModule(await prisma.module.findMany({ orderBy: { sequence: 'asc' } }))
+    const overrides = socialForceMenuOverrides((await getOrgSetting(req.user!.companyId, 'menuConfig', {})) as Record<string, any>)
     const configs = getModuleConfigCache()
     let data = moduleRows.map(row => {
       const cfg = configs[row.name]
@@ -330,26 +331,27 @@ settingsRouter.get('/modules/menu', userOnly(async (req, res, next) => {
         isActive: own.isActive ?? row.isActive,
       }
     }).filter(row => row.isActive)
+    let socialGrants = resolveSocialForcePermissions([], !!(req.user!.isAdmin || req.user!.isSuperAdmin))
     // Non-admin users only see modules their role has view permission on
     if (!req.user!.isAdmin && !req.user!.isSuperAdmin) {
       let allowed = new Set<string>()
       if (req.user!.roleId) {
         const perms = await prisma.rolePermission.findMany({
-          where: { roleId: req.user!.roleId, view: true },
-          select: { moduleName: true },
+          where: { roleId: req.user!.roleId, role: { companyId: req.user!.companyId, isActive: true } },
         })
-        allowed = new Set(perms.map(p => p.moduleName))
+        allowed = new Set(perms.filter(p => p.view).map(p => p.moduleName))
+        socialGrants = resolveSocialForcePermissions(perms)
       }
-      data = data.filter(m => allowed.has(m.name))
+      data = data.filter(m => m.name === 'socialforce' ? socialForceSections.some(section => canUseSocialForce(socialGrants, section)) : allowed.has(menuPermissionModule(m.name)))
     }
-    res.json({ data })
+    res.json({ data: data.map(m => m.name === 'socialforce' ? { ...m, sections: socialForceSections.filter(section => canUseSocialForce(socialGrants, section)) } : m) })
   } catch (err) { next(err) }
 }))
 
 settingsRouter.get('/modules', requireAdmin, async (req, res, next) => {
   try {
-    const moduleRows = await prisma.module.findMany({ orderBy: { sequence: 'asc' } })
-    const overrides = (await getOrgSetting(req.user!.companyId, 'menuConfig', {})) as Record<string, any>
+    const moduleRows = withSocialForceModule(await prisma.module.findMany({ orderBy: { sequence: 'asc' } }))
+    const overrides = socialForceMenuOverrides((await getOrgSetting(req.user!.companyId, 'menuConfig', {})) as Record<string, any>)
     const rowMap = new Map(moduleRows.map(m => [m.name, m]))
     const configs = getModuleConfigCache()
     const names = Object.keys(configs)
@@ -379,7 +381,7 @@ settingsRouter.get('/modules', requireAdmin, async (req, res, next) => {
 
 function getModuleConfigCache() {
   // @ts-ignore - imported lazily to avoid circular dep at module load time
-  const configs: Record<string, any> = {}
+  const configs: Record<string, any> = { socialforce: socialForceModule }
   for (const mod of ['pos', 'accounts', 'contacts', 'leads', 'potentials', 'campaigns', 'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders', 'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails', 'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets', 'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices', 'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'currencies', 'taxinfo', 'roles', 'usergroups', 'rolepermissions', 'scorecards']) {
     const c = getModuleConfig(mod)
     if (c) configs[mod] = c
@@ -397,7 +399,7 @@ settingsRouter.put('/modules/:name', requireAdmin, async (req, res, next) => {
     if (sequence != null) data.sequence = sequence
     if (icon != null) data.icon = icon
     if (parent != null) data.parent = parent
-    const current = (await getOrgSetting(req.user!.companyId, 'menuConfig', {})) as Record<string, any>
+    const current = socialForceMenuOverrides((await getOrgSetting(req.user!.companyId, 'menuConfig', {})) as Record<string, any>)
     const next = { ...current, [name]: { ...(current[name] || {}), ...data } }
     await setOrgSetting(req.user!.companyId, 'menuConfig', next)
     await writeAudit({ moduleName: 'settings', action: 'UPDATE', fieldName: `module:${name}`, newValue: JSON.stringify(data), userId: req.user!.userId, req })

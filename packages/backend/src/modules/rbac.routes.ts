@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, requireAdmin } from '../middleware/auth'
+import { resolveSocialForcePermissions } from '../socialforce/module'
 import { PERMISSION_MODULES } from '../lib/module-permissions'
 
 export const rbacRouter = Router()
@@ -40,16 +41,17 @@ rbacRouter.get('/roles/:id/permissions', requireAdmin, async (req, res, next) =>
     const moduleNames = PERMISSION_MODULES
 
     const permissions = await prisma.rolePermission.findMany({ where: { roleId: role.id } })
+    const socialForceGrants = resolveSocialForcePermissions(permissions)
     const permMap = new Map(permissions.map(p => [p.moduleName, p]))
 
     const result = moduleNames.map(m => ({
       moduleName: m,
-      view: permMap.get(m)?.view ?? false,
-      create: permMap.get(m)?.create ?? false,
-      edit: permMap.get(m)?.edit ?? false,
-      delete: permMap.get(m)?.delete ?? false,
-      import: permMap.get(m)?.import ?? false,
-      export: permMap.get(m)?.export ?? false,
+      view: socialForceGrants[m]?.view ?? permMap.get(m)?.view ?? false,
+      create: socialForceGrants[m]?.create ?? permMap.get(m)?.create ?? false,
+      edit: socialForceGrants[m]?.edit ?? permMap.get(m)?.edit ?? false,
+      delete: socialForceGrants[m]?.delete ?? permMap.get(m)?.delete ?? false,
+      import: socialForceGrants[m]?.import ?? permMap.get(m)?.import ?? false,
+      export: socialForceGrants[m]?.export ?? permMap.get(m)?.export ?? false,
     }))
 
     res.json({ data: result })
@@ -66,26 +68,20 @@ rbacRouter.put('/roles/:id/permissions', requireAdmin, async (req, res, next) =>
     const { permissions } = req.body
     if (!Array.isArray(permissions)) return res.status(400).json({ error: 'permissions must be an array' })
 
-    // Delete existing permissions
-    await prisma.rolePermission.deleteMany({ where: { roleId: role.id } })
-
-    // Create new permissions
-    for (const p of permissions) {
-      if (p.moduleName) {
-        await prisma.rolePermission.create({
-          data: {
-            roleId: role.id,
-            moduleName: p.moduleName,
-            view: p.view ?? false,
-            create: p.create ?? false,
-            edit: p.edit ?? false,
-            delete: p.delete ?? false,
-            import: p.import ?? false,
-            export: p.export ?? false,
-          }
-        })
+    // Save the complete matrix atomically so readers never see a partial role configuration.
+    await prisma.$transaction(async tx => {
+      await tx.rolePermission.deleteMany({ where: { roleId: role.id } })
+      for (const p of permissions) {
+        if (p.moduleName) {
+          await tx.rolePermission.create({ data: {
+            roleId: role.id, moduleName: p.moduleName,
+            view: p.view ?? false, create: p.create ?? false,
+            edit: p.edit ?? false, delete: p.delete ?? false,
+            import: p.import ?? false, export: p.export ?? false,
+          } })
+        }
       }
-    }
+    })
 
     res.json({ success: true })
   } catch (err) { next(err) }

@@ -190,7 +190,9 @@ extrasRouter.post('/trash/restore', authMiddleware, requireTenant, async (req, r
     if (req.user!.companyId) where.companyId = req.user!.companyId
     const record = await prismaModel.findFirst({ where })
     if (!record) return res.status(404).json({ error: 'Not found' })
-    await prismaModel.update({ where: { id }, data: trashByIsDeleted(cfg.modelName) ? { isDeleted: false } : { isActive: true } })
+    const restoreData = trashByIsDeleted(cfg.modelName) ? { isDeleted: false } : { isActive: true }
+    if (cfg.modelName === 'emailSequence') (restoreData as any).status = 'DRAFT'
+    await prismaModel.update({ where: { id }, data: restoreData })
     await writeAudit({ moduleName, recordId: id, action: 'RESTORE', userId: req.user!.userId, req })
     res.json({ success: true })
   } catch (err) { next(err) }
@@ -270,6 +272,10 @@ extrasRouter.post('/mailboxes/:id/sync', authMiddleware, requireTenant, async (r
   let mailbox: any = null
   try {
     mailbox = await prisma.mailbox.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId || undefined } })
+    if (!mailbox && req.user!.companyId) {
+      const unscoped = await prisma.mailbox.findFirst({ where: { id: req.params.id, companyId: null } })
+      if (unscoped) mailbox = await prisma.mailbox.update({ where: { id: unscoped.id }, data: { companyId: req.user!.companyId } })
+    }
     if (!mailbox) return res.status(404).json({ error: 'Not found' })
     const result = await syncMailbox(mailbox)
     await writeAudit({ moduleName: 'mailboxes', recordId: mailbox.id, action: 'ACTIVITY', newValue: `Synced ${result.fetched} emails, ${result.ticketsCreated} tickets`, userId: req.user!.userId, req })

@@ -73,21 +73,25 @@ export function SupportChatWidget() {
     refresh().catch((e: any) => setError(e.message || 'Unable to load support')).finally(() => setLoading(false))
   }, [open, refresh])
 
-  const onSocketEvent = useCallback((event: any) => {
+const onSocketEvent = useCallback((event: any) => {
     if (event.event === 'agent.typing') {
       setAgentTyping(!!event.payload?.typing)
       return
     }
+    // Refresh on any message or conversation event to ensure timely delivery
     if (event.event?.startsWith('message.') || event.event?.startsWith('conversation.')) {
-      window.dispatchEvent(new CustomEvent('notifications-updated'))
       refresh(conversation?.id).catch(() => {})
+      // Always reload the selected conversation if we have one
+      if (conversation?.id) {
+        refresh(conversation.id).catch(() => {})
+      }
     }
   }, [conversation?.id, refresh])
   const { connected, sendTyping } = useSupportSocket(conversation?.id || null, onSocketEvent, open && !isSuperAdmin)
 
   useEffect(() => {
     if (!open || connected) return
-    const timer = window.setInterval(() => refresh(conversation?.id).catch(() => {}), 5000)
+    const timer = window.setInterval(() => refresh(conversation?.id).catch(() => {}), 2000)
     return () => window.clearInterval(timer)
   }, [connected, conversation?.id, open, refresh])
 

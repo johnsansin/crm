@@ -1,14 +1,15 @@
 import { NextFunction, Request, Response } from 'express'
+import { socialForcePermissionModules } from '../socialforce/module'
 import { prisma } from './prisma'
 
 export const PERMISSION_MODULES = [
   'dashboard', 'calendar', 'forecast', 'activities', 'pos', 'accounts', 'contacts', 'leads', 'potentials', 'campaigns',
   'products', 'services', 'vendors', 'pricebooks', 'quotes', 'salesorders',
   'purchaseorders', 'invoices', 'tickets', 'faq', 'documents', 'emails',
-  'emailtemplates', 'projects', 'projecttasks', 'projectmilestones', 'assets',
+  'emailtemplates', 'email-sequences', 'projects', 'projecttasks', 'projectmilestones', 'assets',
   'servicecontracts', 'smsnotifier', 'receipts', 'payments', 'recurringinvoices',
   'calllogs', 'reports', 'mailboxes', 'rssfeeds', 'timeentries', 'projectresources', 'ai', 'landingpages',
-  'social', 'webhooks', 'support',
+  'social', ...socialForcePermissionModules, 'webhooks', 'support',
 ] as const
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'import' | 'export'

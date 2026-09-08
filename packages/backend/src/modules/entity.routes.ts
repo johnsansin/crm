@@ -165,7 +165,7 @@ export const scopedModels = new Set([
   'potentialProduct', 'potentialStageHistory', 'callLog', 'report',
   'competitor', 'potentialCompetitor', 'timeEntry', 'stageProbability',
   'quantityDiscount', 'ticketComment', 'escalationHistory', 'projectResource',
-  'receipt', 'payment',
+  'receipt', 'payment', 'mailbox',
 ])
 
 const permissionModules = new Set([

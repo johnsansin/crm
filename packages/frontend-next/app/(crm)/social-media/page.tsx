@@ -1,2 +1,3 @@
-import { SocialMediaPage } from '@/views/SocialMediaPage'
-export default function Page() { return <SocialMediaPage /> }
+import { redirect } from 'next/navigation'
+
+export default function Page() { redirect('/socialforce') }

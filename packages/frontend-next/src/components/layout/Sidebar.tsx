@@ -14,6 +14,7 @@ import {
   Globe, Share2, Webhook, Sparkles, UserCog, Tag, Star, Store, Target
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { socialForceSections } from '@/components/socialforce/sections'
 import { t } from '@/lib/i18n'
 import { useViewableModules } from '@/lib/permissions'
 
@@ -26,7 +27,7 @@ const iconMap: Record<string, React.ElementType> = {
   Send, MessageCircle, Globe, Share2, Webhook, Sparkles, UserCog, Tag, Store, Target
 }
 
-const GROUP_ORDER = ['Essentials', 'POS', 'Marketing', 'Sales', 'Inventory', 'Purchasing', 'Support', 'Projects', 'Tools']
+const GROUP_ORDER = ['Essentials', 'POS', 'Marketing', 'SocialForce', 'Sales', 'Inventory', 'Purchasing', 'Support', 'Projects', 'Tools']
 
 const fallbackGroups = [
   {
@@ -47,9 +48,13 @@ const fallbackGroups = [
     items: [
       { module: 'campaigns', label: 'Campaigns', icon: 'Megaphone' },
       { module: 'email-campaigns', label: 'Email Campaigns', icon: 'Send' },
+      { module: 'email-sequences', label: 'Lead Email Sequences', icon: 'Mail' },
       { module: 'landing-pages', label: 'Landing Pages', icon: 'Globe' },
-      { module: 'social-media', label: 'SocialForce AI', icon: 'Share2' },
     ]
+  },
+  {
+    label: 'SocialForce',
+    items: socialForceSections.map(section => ({ module: `socialforce/${section.slug}`, label: section.label, icon: section.icon })),
   },
   {
     label: 'Sales',
@@ -120,12 +125,16 @@ for (const group of fallbackGroups) {
   }
 }
 
-const WORKFLOW_ORDER = ['campaigns', 'email-campaigns', 'landing-pages', 'social-media', 'leads', 'potentials', 'accounts', 'contacts', 'quotes', 'salesorders', 'invoices']
+const WORKFLOW_ORDER = ['campaigns', 'email-campaigns', 'email-sequences', 'landing-pages', 'socialforce', 'leads', 'potentials', 'accounts', 'contacts', 'quotes', 'salesorders', 'invoices']
 
 function buildGroups(modules: any[] | null) {
-  if (!modules) return fallbackGroups
+  if (!modules) return fallbackGroups.filter(group => group.label !== 'SocialForce')
   const byGroup: Record<string, any[]> = {}
   for (const m of modules) {
+    if (m.name === 'socialforce') {
+      byGroup.SocialForce = socialForceSections.filter(section => Array.isArray(m.sections) && m.sections.includes(section.slug)).map(section => ({ module: `socialforce/${section.slug}`, label: section.label, icon: section.icon }))
+      continue
+    }
     if (!m.parent) continue
     if (!byGroup[m.parent]) byGroup[m.parent] = []
     byGroup[m.parent].push({ module: m.name, label: m.label || m.name, icon: m.icon || 'FileText' })
@@ -149,6 +158,7 @@ function buildGroups(modules: any[] | null) {
   for (const g of Object.keys(byGroup)) if (!groups.includes(g)) groups.push(g)
   return groups
     .map(label => ({ label, items: byGroup[label].sort((a, b) => {
+      if (label === 'SocialForce') return 0
       const ai = WORKFLOW_ORDER.indexOf(a.module); const bi = WORKFLOW_ORDER.indexOf(b.module)
       if (ai !== -1 || bi !== -1) return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
       return a.label.localeCompare(b.label)
@@ -231,7 +241,8 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, onHove
     })
   }
 
-  const activeGroup = currentModule ? moduleToGroup[currentModule] || '' : ''
+  const activeGroupFromMenu = menuGroups.find(group => group.items.some((item: any) => item.module === currentModule || location.pathname.startsWith(`/${item.module}/`)))?.label
+  const activeGroup = currentModule === 'socialforce' ? 'SocialForce' : currentModule ? activeGroupFromMenu || moduleToGroup[currentModule] || '' : ''
   const [expandedGroup, setExpandedGroup] = useState(activeGroup || 'Essentials')
 
   useEffect(() => {

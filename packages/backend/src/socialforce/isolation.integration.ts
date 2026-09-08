@@ -5,13 +5,16 @@ import express from 'express'
 import jwt from 'jsonwebtoken'
 import { prisma } from '../lib/prisma'
 import { signingSecret } from '../lib/secrets'
+import type { SocialForcePermissionRow } from './module'
 import { socialForceRouter } from './routes'
+import { settingsRouter } from '../modules/settings.routes'
+import { rbacRouter } from '../modules/rbac.routes'
 import { socialRouter } from '../modules/social.routes'
 
 async function main() {
   if (process.env.RUN_SOCIALFORCE_INTEGRATION !== '1') throw new Error('Set RUN_SOCIALFORCE_INTEGRATION=1 to authorize temporary database fixtures')
   const id = randomUUID(), companies: string[] = [], users: string[] = [], roles: string[] = []
-  const app = express(); app.use(express.json()); app.use('/api/socialforce', socialForceRouter); app.use('/api/social', socialRouter)
+  const app = express(); app.use(express.json()); app.use('/api/socialforce', socialForceRouter); app.use('/api/social', socialRouter); app.use('/api/settings', settingsRouter); app.use('/api/rbac', rbacRouter)
   const server = app.listen(0, '127.0.0.1')
   await new Promise<void>(resolve => server.once('listening', resolve))
   const address = server.address() as { port: number }
@@ -30,6 +33,11 @@ async function main() {
     const adminA = await user(companies[0], 'a', true), adminB = await user(companies[1], 'b', true), reviewerA = await user(companies[0], 'reviewer', true), noTenant = await user(null, 'none', true)
     const role = await prisma.role.create({ data: { name: `SF Viewer ${id}`, companyId: companies[0], permissions: { create: { moduleName: 'social', view: true } } } }); roles.push(role.id)
     const viewer = await user(companies[0], 'viewer', false, role.id)
+    assert.equal((await call(viewer, '/api/socialforce/workspace')).status, 200)
+    await prisma.rolePermission.updateMany({ where: { roleId: role.id, moduleName: 'social' }, data: { view: false, create: true } })
+    assert.equal((await call(viewer, '/api/socialforce/workspace')).status, 403)
+    assert.equal((await call(viewer, '/api/socialforce/posts', 'POST', {})).status, 403)
+    await prisma.rolePermission.updateMany({ where: { roleId: role.id, moduleName: 'social' }, data: { view: true, create: false } })
     assert.equal((await call(null, '/api/socialforce/workspace')).status, 401)
     assert.equal((await call(noTenant, '/api/socialforce/workspace')).status, 403)
     const draft = { title: 'Private A launch', content: 'Tenant A only', variants: [{ platform: 'linkedin', content: 'A business announcement' }], timezone: 'UTC', plannedAt: null }
@@ -66,7 +74,44 @@ async function main() {
     await prisma.socialMediaProfile.delete({ where: { id: profile.id } })
     assert.ok((await call(adminA, '/api/socialforce/workspace')).body.data.events.length >= 5)
     assert.equal((await call(adminB, '/api/socialforce/workspace')).body.data.events.length, 0)
-    console.log('PASS: 30+ authenticated HTTP assertions: tenant isolation, RBAC, payload forgery, version conflicts, approvals, audit isolation, token redaction and disabled publishing.')
+    const rolePath = `/api/rbac/roles/${role.id}/permissions`
+    const grants: SocialForcePermissionRow[] = [
+      { moduleName: 'social', view: true, create: true, edit: true, delete: true },
+      { moduleName: 'socialforce', view: true, create: true, edit: true, delete: true },
+      { moduleName: 'socialforce.calendar', view: true },
+    ]
+    assert.equal((await call(adminA, rolePath, 'PUT', { permissions: grants })).status, 200)
+    assert.equal((await call(viewer, '/api/socialforce/workspace?section=calendar')).status, 200)
+    assert.equal((await call(viewer, '/api/socialforce/workspace?section=content')).status, 403)
+    assert.equal((await call(viewer, '/api/socialforce/workspace')).status, 403)
+    assert.equal((await call(viewer, '/api/socialforce/posts', 'POST', draft)).status, 403)
+    assert.equal((await call(viewer, `/api/socialforce/posts/${post.id}/schedule`, 'POST', {})).status, 403)
+    const menu = await call(viewer, '/api/settings/modules/menu')
+    assert.equal(menu.status, 200)
+    assert.deepEqual(menu.body.data.find((m: any) => m.name === 'socialforce').sections, ['calendar'])
+    const matrix = await call(adminA, rolePath)
+    assert.equal(matrix.body.data.find((p: any) => p.moduleName === 'socialforce.calendar').view, true)
+    assert.equal(matrix.body.data.find((p: any) => p.moduleName === 'socialforce.content').view, false)
+    grants.push(
+      { moduleName: 'socialforce.content', view: true, edit: true, delete: true },
+      { moduleName: 'socialforce.create-post', view: true, create: true },
+      { moduleName: 'socialforce.approvals', view: true, edit: true },
+      { moduleName: 'socialforce.brand-settings', view: true, edit: true },
+    )
+    assert.equal((await call(adminA, rolePath, 'PUT', { permissions: grants })).status, 200)
+    const own = await call(viewer, '/api/socialforce/posts', 'POST', draft)
+    assert.equal(own.status, 201)
+    assert.equal((await call(viewer, `/api/socialforce/posts/${own.body.data.id}`, 'PUT', { ...draft, version: 1 })).status, 200)
+    assert.equal((await call(viewer, '/api/socialforce/brand', 'PUT', brand)).status, 200)
+    assert.equal((await call(adminA, `/api/socialforce/posts/${post.id}/submit`, 'POST', {})).status, 200)
+    assert.equal((await call(viewer, `/api/socialforce/posts/${post.id}/review`, 'POST', { decision: 'APPROVED', note: 'Delegated review', version: 6 })).status, 200)
+    assert.equal((await call(viewer, `/api/socialforce/posts/${own.body.data.id}/submit`, 'POST', {})).status, 200)
+    assert.equal((await call(viewer, `/api/socialforce/posts/${own.body.data.id}/review`, 'POST', { decision: 'APPROVED', note: '', version: 3 })).status, 403)
+    grants[1].view = false
+    assert.equal((await call(adminA, rolePath, 'PUT', { permissions: grants })).status, 200)
+    assert.equal((await call(viewer, '/api/socialforce/workspace?section=calendar')).status, 403)
+    assert.equal((await call(viewer, '/api/settings/modules/menu')).body.data.some((m: any) => m.name === 'socialforce'), false)
+    console.log('PASS: 50+ authenticated HTTP assertions: submenu grants, menu filtering, role matrix saves, delegated reviews, legacy override, tenant isolation, RBAC, payload forgery, version conflicts, approvals, audit isolation, token redaction and disabled publishing.')
   } finally {
     await new Promise<void>((resolve, reject) => server.close(err => err ? reject(err) : resolve()))
     await prisma.socialMediaProfile.deleteMany({ where: { companyId: { in: companies } } })

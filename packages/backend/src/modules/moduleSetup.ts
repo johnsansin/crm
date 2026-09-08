@@ -202,6 +202,16 @@ const modules: Record<string, ModuleConfig> = {
     listFields: ['templateName', 'subject', 'module'],
     relatedModules: []
   },
+  'email-sequences': {
+    modelName: 'emailSequence',
+    label: 'Lead Email Sequences',
+    parent: 'Marketing',
+    icon: 'Mail',
+    sequence: 136,
+    searchFields: ['name'],
+    listFields: ['name', 'status', 'updatedAt'],
+    relatedModules: ['leads']
+  },
   projects: {
     modelName: 'project',
     label: 'Projects',
