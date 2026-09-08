@@ -25,8 +25,8 @@ const featureGroups = [
   {
     icon: Mail,
     title: 'Marketing',
-    description: 'Build email campaigns, track engagement, and automate your outreach with real-time analytics.',
-    features: ['Campaigns', 'Email Templates', 'SMS Notifier', 'Mailboxes', 'RSS Feeds'],
+    description: 'Build campaigns and lead email sequences with delivery tracking, reply detection, inbox sync, and automatic follow-up stop rules.',
+    features: ['Campaigns', 'Lead Email Sequences', 'Email Templates', 'Delivery Tracking', 'Mailboxes', 'RSS Feeds'],
   },
   {
     icon: FileText,
@@ -75,7 +75,7 @@ const featureGroups = [
 const highlights = [
   { icon: Sparkles, title: 'AI Assistant', description: 'Draft emails, summarize records, and get smart suggestions powered by AI — right where you work.' },
   { icon: LayoutDashboard, title: 'Custom Dashboards', description: 'Build drag-and-drop dashboards with the KPIs that matter most to your team.' },
-  { icon: Zap, title: 'Workflow Automation', description: 'Set triggers and actions to route leads, assign tasks, and update records automatically.' },
+  { icon: Zap, title: 'Workflow Automation', description: 'Set triggers and actions to route leads, assign tasks, update records, and automate follow-up emails.' },
   { icon: Globe, title: 'Multi-Organization', description: 'Manage subsidiaries and business units from one platform with isolated data and role-based access.' },
   { icon: BellRing, title: 'Real-Time Notifications', description: 'Stay on top of every deal, ticket, and update with instant alerts across channels.' },
   { icon: Shield, title: 'Enterprise-Grade Security', description: 'Role-based permissions, audit logs, and granular access control keep your data safe.' },
@@ -102,7 +102,7 @@ export function FeaturesPage() {
             </span>
           </h1>
           <p className="mt-6 text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            BizForce CRM brings sales, marketing, support, operations, and finance together in one platform. No juggling separate subscriptions, no manual data entry.
+            BizForce CRM brings sales, marketing, email automation, support, operations, and finance together in one platform. No juggling separate subscriptions, no manual data entry.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
@@ -200,6 +200,8 @@ export function FeaturesPage() {
               <ul className="mt-8 space-y-4">
                 {[
                   'Full CRUD on 120+ data models with advanced filters and saved views',
+                  'Configurable lead email sequences with unlimited follow-up steps',
+                  'Delivery, bounce, open, click, and reply tracking inside lead records',
                   'Custom fields, layouts, and module configuration to match your process',
                   'Role-based permissions and granular access control for every team',
                   'Audit trails, activity logs, and real-time notificationalerting',

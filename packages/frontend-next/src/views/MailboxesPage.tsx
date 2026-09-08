@@ -41,6 +41,8 @@ function suggestImapHost(user: string): string {
 
 export function MailboxesPage() {
   const [tab, setTab] = useState('mailboxes')
+  const [refreshSeconds, setRefreshSeconds] = useState(60)
+  const refreshMs = refreshSeconds > 0 ? refreshSeconds * 1000 : false
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -48,20 +50,30 @@ export function MailboxesPage() {
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Inbox className="text-primary" /> Mailboxes & Inbox</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Connect IMAP mailboxes, sync emails and convert inbound mail into tickets (email module + email-to-ticket).</p>
         </div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          Auto refresh
+          <select className="h-9 rounded-md border bg-background px-2 text-sm" value={refreshSeconds} onChange={(e) => setRefreshSeconds(Number(e.target.value))}>
+            <option value={0}>Off</option>
+            <option value={30}>30 sec</option>
+            <option value={60}>1 min</option>
+            <option value={120}>2 min</option>
+            <option value={300}>5 min</option>
+          </select>
+        </label>
       </div>
       <TabsRoot value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="mailboxes" className="gap-2 data-[state=active]:border-pink-500 data-[state=active]:text-pink-600"><Inbox size={15} /> Mailboxes</TabsTrigger>
           <TabsTrigger value="inbox" className="gap-2 data-[state=active]:border-pink-500 data-[state=active]:text-pink-600"><MailOpen size={15} /> Synced Emails</TabsTrigger>
         </TabsList>
-        <TabsContent value="mailboxes"><MailboxesTab onSelect={() => setTab('inbox')} /></TabsContent>
-        <TabsContent value="inbox"><InboxTab /></TabsContent>
+        <TabsContent value="mailboxes"><MailboxesTab onSelect={() => setTab('inbox')} refreshMs={refreshMs} /></TabsContent>
+        <TabsContent value="inbox"><InboxTab refreshMs={refreshMs} /></TabsContent>
       </TabsRoot>
     </div>
   )
 }
 
-function MailboxesTab({ onSelect }: { onSelect: () => void }) {
+function MailboxesTab({ onSelect, refreshMs }: { onSelect: () => void; refreshMs: number | false }) {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
@@ -70,7 +82,7 @@ function MailboxesTab({ onSelect }: { onSelect: () => void }) {
   const [ruleBox, setRuleBox] = useState<any | null>(null)
   const [form, setForm] = useState<any>({ name: '', host: '', port: 993, secure: true, user: '', pass: '', folder: 'INBOX' })
 
-  const { data, isLoading } = useQuery({ queryKey: ['mailboxes'], queryFn: () => api.list('mailboxes', { limit: '100' }) })
+  const { data, isLoading } = useQuery({ queryKey: ['mailboxes'], queryFn: () => api.list('mailboxes', { limit: '100' }), refetchInterval: refreshMs })
 
   const saveMutation = useMutation({
     mutationFn: (d: any) => editing ? api.update('mailboxes', editing.id, d) : api.create('mailboxes', d),
@@ -218,8 +230,8 @@ function RuleForm({ mailboxId, onClose }: { mailboxId: string; onClose: () => vo
   )
 }
 
-function InboxTab() {
-  const { data, isLoading } = useQuery({ queryKey: ['emails', 'inbox'], queryFn: () => api.list('emails', { limit: '100', filter: JSON.stringify({ mailboxId: { not: null } }) }) })
+function InboxTab({ refreshMs }: { refreshMs: number | false }) {
+  const { data, isLoading } = useQuery({ queryKey: ['emails', 'inbox'], queryFn: () => api.list('emails', { limit: '100', filter: JSON.stringify({ mailboxId: { not: null } }) }), refetchInterval: refreshMs })
   const emails = (data?.data || []).filter((e: any) => e.mailboxId)
   return (
     <DataTable

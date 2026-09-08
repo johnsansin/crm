@@ -320,6 +320,15 @@ model Lead {
   interest             String?   @db.VarChar(200)
   leadScore            Int?
   nextFollowUp         DateTime?
+  emailStatus          String    @default("NOT_CONTACTED") @db.VarChar(50)
+  lastEmailAt          DateTime?
+  lastEmailStatus      String?   @db.VarChar(50)
+  lastOpenedAt         DateTime?
+  lastClickedAt        DateTime?
+  lastReplyAt          DateTime?
+  emailSequenceName    String?   @db.VarChar(200)
+  emailSequenceStatus  String?   @db.VarChar(50)
+  emailFollowUpCount   Int       @default(0)
   isConverted          Boolean   @default(false)
   convertedAccountId   String?
   convertedContactId   String?
@@ -2594,6 +2603,237 @@ model EmailCampaignRecipient {
   @@index([campaignId])
   @@index([email])
   @@index([companyId])
+}
+
+model EmailSequence {
+  id           String   @id @default(uuid())
+  name         String   @db.VarChar(200)
+  description  String?  @db.Text
+  fromEmail    String?  @db.VarChar(200)
+  replyTo      String?  @db.VarChar(200)
+  timezone     String   @default("UTC") @db.VarChar(100)
+  status       String   @default("DRAFT") @db.VarChar(50)
+  sendWindow   Json?    @default("{}")
+  rateLimits   Json?    @default("{}")
+  stopOnReply  Boolean  @default(true)
+  stopOnBounce Boolean  @default(true)
+  companyId    String
+  isActive     Boolean  @default(true)
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  steps       EmailSequenceStep[]
+  enrollments LeadSequenceEnrollment[]
+  messages    EmailMessage[]
+
+  @@index([companyId])
+  @@index([companyId, status])
+}
+
+model EmailSequenceStep {
+  id         String   @id @default(uuid())
+  sequenceId String
+  stepNumber Int
+  subject    String   @db.VarChar(500)
+  body       String   @db.Text
+  delayValue Int      @default(0)
+  delayUnit  String   @default("DAYS") @db.VarChar(20)
+  condition  String   @default("NO_REPLY") @db.VarChar(50)
+  isActive   Boolean  @default(true)
+  companyId  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sequence EmailSequence  @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  messages EmailMessage[]
+
+  @@unique([companyId, sequenceId, stepNumber])
+  @@index([companyId, sequenceId])
+}
+
+model LeadSequenceEnrollment {
+  id            String    @id @default(uuid())
+  leadId        String
+  sequenceId    String
+  currentStep   Int       @default(0)
+  status        String    @default("ACTIVE") @db.VarChar(50)
+  startedAt     DateTime  @default(now())
+  lastEmailAt   DateTime?
+  lastReplyAt   DateTime?
+  nextActionAt  DateTime?
+  completedAt   DateTime?
+  stoppedAt     DateTime?
+  stopReason    String?   @db.VarChar(100)
+  failureReason String?   @db.Text
+  attemptCount  Int       @default(0)
+  companyId     String
+  createdBy     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sequence EmailSequence  @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  messages EmailMessage[]
+
+  @@index([companyId, status, nextActionAt])
+  @@index([companyId, leadId])
+  @@index([companyId, sequenceId])
+}
+
+model EmailConversation {
+  id                    String    @id @default(uuid())
+  leadId                String
+  emailAccountId        String?
+  subject               String?   @db.VarChar(500)
+  threadId              String?   @db.VarChar(500)
+  status                String    @default("OPEN") @db.VarChar(50)
+  lastMessageAt         DateTime?
+  lastIncomingMessageAt DateTime?
+  lastOutgoingMessageAt DateTime?
+  companyId             String
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  messages EmailMessage[]
+  replies  EmailReply[]
+  events   EmailEvent[]
+
+  @@index([companyId, leadId])
+  @@index([companyId, threadId])
+  @@index([companyId, status])
+}
+
+model EmailMessage {
+  id                String    @id @default(uuid())
+  leadId            String
+  sequenceId        String?
+  sequenceStepId    String?
+  enrollmentId      String?
+  conversationId    String?
+  threadId          String?   @db.VarChar(500)
+  provider          String    @default("INTERNAL") @db.VarChar(50)
+  providerMessageId String?   @db.VarChar(500)
+  messageId         String?   @db.VarChar(500)
+  idempotencyKey    String?   @db.VarChar(500)
+  fromEmail         String    @db.VarChar(200)
+  toEmail           String    @db.VarChar(200)
+  cc                String?   @db.Text
+  bcc               String?   @db.Text
+  subject           String    @db.VarChar(500)
+  body              String?   @db.Text
+  htmlBody          String?   @db.Text
+  textBody          String?   @db.Text
+  status            String    @default("QUEUED") @db.VarChar(50)
+  error             String?   @db.Text
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  openedAt          DateTime?
+  clickedAt         DateTime?
+  failedAt          DateTime?
+  openCount         Int       @default(0)
+  clickCount        Int       @default(0)
+  companyId         String
+  createdBy         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  sequence     EmailSequence?          @relation(fields: [sequenceId], references: [id])
+  step         EmailSequenceStep?      @relation(fields: [sequenceStepId], references: [id])
+  enrollment   LeadSequenceEnrollment? @relation(fields: [enrollmentId], references: [id])
+  conversation EmailConversation?      @relation(fields: [conversationId], references: [id])
+  events       EmailEvent[]
+  replies      EmailReply[]
+
+  @@unique([companyId, idempotencyKey])
+  @@index([companyId, leadId])
+  @@index([companyId, conversationId])
+  @@index([companyId, providerMessageId])
+  @@index([companyId, messageId])
+  @@index([companyId, status])
+  @@index([companyId, createdAt])
+}
+
+model EmailEvent {
+  id              String   @id @default(uuid())
+  leadId          String?
+  emailMessageId  String?
+  conversationId  String?
+  eventType       String   @db.VarChar(50)
+  provider        String   @default("INTERNAL") @db.VarChar(50)
+  providerEventId String?  @db.VarChar(500)
+  eventTimestamp  DateTime @default(now())
+  metadata        Json?    @default("{}")
+  companyId       String
+  createdAt       DateTime @default(now())
+
+  message      EmailMessage?      @relation(fields: [emailMessageId], references: [id])
+  conversation EmailConversation? @relation(fields: [conversationId], references: [id])
+
+  @@unique([companyId, provider, providerEventId])
+  @@index([companyId, leadId])
+  @@index([companyId, emailMessageId])
+  @@index([companyId, conversationId])
+  @@index([companyId, eventType])
+  @@index([companyId, eventTimestamp])
+}
+
+model EmailReply {
+  id                String   @id @default(uuid())
+  leadId            String
+  emailMessageId    String?
+  conversationId    String?
+  providerMessageId String?  @db.VarChar(500)
+  messageId         String?  @db.VarChar(500)
+  inReplyTo         String?  @db.VarChar(500)
+  references        String?  @db.Text
+  fromEmail         String   @db.VarChar(200)
+  toEmail           String   @db.VarChar(200)
+  subject           String?  @db.VarChar(500)
+  body              String?  @db.Text
+  htmlBody          String?  @db.Text
+  receivedAt        DateTime @default(now())
+  companyId         String
+  createdAt         DateTime @default(now())
+
+  message      EmailMessage?      @relation(fields: [emailMessageId], references: [id])
+  conversation EmailConversation? @relation(fields: [conversationId], references: [id])
+
+  @@index([companyId, leadId])
+  @@index([companyId, emailMessageId])
+  @@index([companyId, conversationId])
+  @@index([companyId, providerMessageId])
+  @@index([companyId, messageId])
+}
+
+model LeadEmailActivity {
+  id           String   @id @default(uuid())
+  leadId       String
+  activityType String   @db.VarChar(80)
+  referenceId  String?
+  description  String   @db.Text
+  metadata     Json?    @default("{}")
+  companyId    String
+  createdBy    String?
+  createdAt    DateTime @default(now())
+
+  @@index([companyId, leadId])
+  @@index([companyId, activityType])
+  @@index([companyId, createdAt])
+}
+
+model EmailSuppression {
+  id        String   @id @default(uuid())
+  email     String   @db.VarChar(200)
+  reason    String   @db.VarChar(100)
+  source    String?  @db.VarChar(100)
+  metadata  Json?    @default("{}")
+  companyId String
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, email])
+  @@index([companyId, reason])
 }
 
 model SmsTemplate {

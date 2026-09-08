@@ -34,7 +34,7 @@ export function SocialLoginSettings() {
       setFacebook(f => ({ ...f, clientSecret: '' }))
       addToast({ title: 'Social login saved', variant: 'success' })
     },
-    onError: (err: any) => addToast({ title: err.message || 'Failed to save', variant: 'error' }),
+    onError: (err: any) => addToast({ title: err.message || 'Failed to save', variant: 'destructive' }),
   })
 
   const googleActive = data?.google?.google

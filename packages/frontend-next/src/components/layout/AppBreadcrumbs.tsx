@@ -5,7 +5,7 @@ import { Link, useLocation } from '@/lib/navigation'
 import { ChevronRight, Home } from 'lucide-react'
 
 const LABELS: Record<string, string> = {
-  dashboard: 'Dashboard', settings: 'Settings', profile: 'My Profile', reports: 'Reports', forecast: 'Forecasting',
+  socialforce: 'SocialForce AI', 'social-media': 'SocialForce AI', dashboard: 'Dashboard', settings: 'Settings', profile: 'My Profile', reports: 'Reports', forecast: 'Forecasting',
   'email-campaigns': 'Email Campaigns', campaigns: 'Campaigns', leads: 'Leads', potentials: 'Opportunities',
   contacts: 'Contacts', accounts: 'Accounts', quotes: 'Quotations', salesorders: 'Sales Orders', invoices: 'Invoices',
   purchaseorders: 'Purchase Orders', tickets: 'Support Tickets', projects: 'Projects', calendar: 'Calendar',

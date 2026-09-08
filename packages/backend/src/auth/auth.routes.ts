@@ -213,6 +213,7 @@ async function createCompanyForRegistration(payload: any) {
     data: { name: payload.companyName || `${payload.firstName}'s Organization` }
   })
 
+
   const modules = PERMISSION_MODULES
 
   const ceo = await prisma.role.create({ data: { name: 'CEO', description: 'Full access to all modules', companyId: company.id } })

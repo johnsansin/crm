@@ -298,10 +298,21 @@ const MODULES = [
   { key: 'forecast', label: 'Forecasting', parent: 'Application' },
   { key: 'reports', label: 'Reports', parent: 'Application' },
   { key: 'ai', label: 'AI Assistant', parent: 'Application' },
+  { key: 'pos', label: 'Point of Sale (POS)', parent: 'Application' },
   { key: 'accounts', label: 'Accounts', parent: 'Marketing' },
   { key: 'contacts', label: 'Contacts', parent: 'Marketing' },
   { key: 'leads', label: 'Leads', parent: 'Marketing' },
   { key: 'campaigns', label: 'Campaigns', parent: 'Marketing' },
+  { key: 'socialforce', label: 'Module access (required)', parent: 'SocialForce' },
+  { key: 'socialforce.dashboard', label: 'Dashboard', parent: 'SocialForce' },
+  { key: 'socialforce.create-post', label: 'Create Post', parent: 'SocialForce' },
+  { key: 'socialforce.content', label: 'Content', parent: 'SocialForce' },
+  { key: 'socialforce.calendar', label: 'Calendar', parent: 'SocialForce' },
+  { key: 'socialforce.approvals', label: 'Approvals', parent: 'SocialForce' },
+  { key: 'socialforce.social-accounts', label: 'Social Accounts', parent: 'SocialForce' },
+  { key: 'socialforce.analytics', label: 'Analytics', parent: 'SocialForce' },
+  { key: 'socialforce.ai-assistant', label: 'AI Assistant', parent: 'SocialForce' },
+  { key: 'socialforce.brand-settings', label: 'Brand & Settings', parent: 'SocialForce' },
   { key: 'potentials', label: 'Potentials', parent: 'Sales' },
   { key: 'quotes', label: 'Quotes', parent: 'Sales' },
   { key: 'salesorders', label: 'Sales Orders', parent: 'Sales' },
@@ -326,7 +337,7 @@ const MODULES = [
   { key: 'emailtemplates', label: 'Email Templates', parent: 'Tools' },
 ]
 
-const PERMISSION_GROUPS = ['Application', 'Marketing', 'Sales', 'Inventory', 'Support', 'Projects', 'Tools']
+const PERMISSION_GROUPS = ['Application', 'Marketing', 'SocialForce', 'Sales', 'Inventory', 'Support', 'Projects', 'Tools']
 
 const PERMISSION_ACTIONS = [
   { key: 'view', label: 'View', icon: Eye },
@@ -339,6 +350,7 @@ const PERMISSION_ACTIONS = [
 
 const GROUP_META: Record<string, { icon: LucideIcon; badge: string }> = {
   Application: { icon: LayoutDashboard, badge: 'bg-indigo-500/10 text-indigo-600' },
+  SocialForce: { icon: Megaphone, badge: 'bg-primary/10 text-primary' },
   Marketing: { icon: Megaphone, badge: 'bg-pink-500/10 text-pink-600' },
   Sales: { icon: TrendingUp, badge: 'bg-emerald-500/10 text-emerald-600' },
   Inventory: { icon: Package, badge: 'bg-amber-500/10 text-amber-600' },
@@ -367,7 +379,7 @@ function PermissionsMatrix({ roleId }: { roleId: string }) {
 
   const saveMutation = useMutation({
     mutationFn: (permissions: any[]) => api.updateRolePermissions(roleId, permissions),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['role-permissions'] }); addToast({ title: 'Permissions saved', variant: 'success' }) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['role-permissions'] }); queryClient.invalidateQueries({ queryKey: ['viewable-modules'] }); window.dispatchEvent(new Event('crm-menu-updated')); addToast({ title: 'Permissions saved', variant: 'success' }) },
     onError: (e: Error) => addToast({ title: 'Error', description: e.message, variant: 'destructive' }),
   })
 

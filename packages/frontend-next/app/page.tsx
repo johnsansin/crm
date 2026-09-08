@@ -4,14 +4,14 @@ import { OrganizationJsonLd, WebsiteJsonLd, LocalBusinessJsonLd } from '@/compon
 
 export const metadata: Metadata = {
   title: 'BizForce CRM — All-in-One CRM for Growing Businesses',
-  description: 'Manage contacts, track sales, automate workflows, and grow your business with BizForce CRM. 24+ modules, AI assistant, workflow automation, and real-time analytics. Start free — no credit card required.',
-  keywords: ['CRM', 'customer relationship management', 'sales pipeline', 'contact management', 'workflow automation', 'AI CRM', 'business CRM', 'free CRM', 'CRM software', 'sales automation', 'lead management', 'customer management'],
+  description: 'Manage contacts, track sales, automate lead email sequences, sync inboxes, and grow your business with BizForce CRM. 24+ modules, AI assistant, workflow automation, and real-time analytics. Start free — no credit card required.',
+  keywords: ['CRM', 'customer relationship management', 'sales pipeline', 'contact management', 'workflow automation', 'AI CRM', 'business CRM', 'free CRM', 'CRM software', 'sales automation', 'lead management', 'customer management', 'email automation', 'lead email sequences', 'email tracking'],
   alternates: {
     canonical: 'https://bizforce-crm.online',
   },
   openGraph: {
     title: 'BizForce CRM — All-in-One CRM for Growing Businesses',
-    description: 'Manage contacts, track sales, automate workflows, and grow your business with BizForce CRM. 24+ modules, AI assistant, workflow automation.',
+    description: 'Manage contacts, track sales, automate lead follow-ups, sync inboxes, and grow your business with BizForce CRM. 24+ modules, AI assistant, workflow automation.',
     url: 'https://bizforce-crm.online',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'BizForce CRM — All-in-One CRM for Growing Businesses' }],
   },

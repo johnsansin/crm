@@ -395,6 +395,15 @@ exports.Prisma.LeadScalarFieldEnum = {
   interest: 'interest',
   leadScore: 'leadScore',
   nextFollowUp: 'nextFollowUp',
+  emailStatus: 'emailStatus',
+  lastEmailAt: 'lastEmailAt',
+  lastEmailStatus: 'lastEmailStatus',
+  lastOpenedAt: 'lastOpenedAt',
+  lastClickedAt: 'lastClickedAt',
+  lastReplyAt: 'lastReplyAt',
+  emailSequenceName: 'emailSequenceName',
+  emailSequenceStatus: 'emailSequenceStatus',
+  emailFollowUpCount: 'emailFollowUpCount',
   isConverted: 'isConverted',
   convertedAccountId: 'convertedAccountId',
   convertedContactId: 'convertedContactId',
@@ -2319,6 +2328,168 @@ exports.Prisma.EmailCampaignRecipientScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.EmailSequenceScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  fromEmail: 'fromEmail',
+  replyTo: 'replyTo',
+  timezone: 'timezone',
+  status: 'status',
+  sendWindow: 'sendWindow',
+  rateLimits: 'rateLimits',
+  stopOnReply: 'stopOnReply',
+  stopOnBounce: 'stopOnBounce',
+  companyId: 'companyId',
+  isActive: 'isActive',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.EmailSequenceStepScalarFieldEnum = {
+  id: 'id',
+  sequenceId: 'sequenceId',
+  stepNumber: 'stepNumber',
+  subject: 'subject',
+  body: 'body',
+  delayValue: 'delayValue',
+  delayUnit: 'delayUnit',
+  condition: 'condition',
+  isActive: 'isActive',
+  companyId: 'companyId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.LeadSequenceEnrollmentScalarFieldEnum = {
+  id: 'id',
+  leadId: 'leadId',
+  sequenceId: 'sequenceId',
+  currentStep: 'currentStep',
+  status: 'status',
+  startedAt: 'startedAt',
+  lastEmailAt: 'lastEmailAt',
+  lastReplyAt: 'lastReplyAt',
+  nextActionAt: 'nextActionAt',
+  completedAt: 'completedAt',
+  stoppedAt: 'stoppedAt',
+  stopReason: 'stopReason',
+  failureReason: 'failureReason',
+  attemptCount: 'attemptCount',
+  companyId: 'companyId',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.EmailConversationScalarFieldEnum = {
+  id: 'id',
+  leadId: 'leadId',
+  emailAccountId: 'emailAccountId',
+  subject: 'subject',
+  threadId: 'threadId',
+  status: 'status',
+  lastMessageAt: 'lastMessageAt',
+  lastIncomingMessageAt: 'lastIncomingMessageAt',
+  lastOutgoingMessageAt: 'lastOutgoingMessageAt',
+  companyId: 'companyId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.EmailMessageScalarFieldEnum = {
+  id: 'id',
+  leadId: 'leadId',
+  sequenceId: 'sequenceId',
+  sequenceStepId: 'sequenceStepId',
+  enrollmentId: 'enrollmentId',
+  conversationId: 'conversationId',
+  threadId: 'threadId',
+  provider: 'provider',
+  providerMessageId: 'providerMessageId',
+  messageId: 'messageId',
+  idempotencyKey: 'idempotencyKey',
+  fromEmail: 'fromEmail',
+  toEmail: 'toEmail',
+  cc: 'cc',
+  bcc: 'bcc',
+  subject: 'subject',
+  body: 'body',
+  htmlBody: 'htmlBody',
+  textBody: 'textBody',
+  status: 'status',
+  error: 'error',
+  sentAt: 'sentAt',
+  deliveredAt: 'deliveredAt',
+  openedAt: 'openedAt',
+  clickedAt: 'clickedAt',
+  failedAt: 'failedAt',
+  openCount: 'openCount',
+  clickCount: 'clickCount',
+  companyId: 'companyId',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.EmailEventScalarFieldEnum = {
+  id: 'id',
+  leadId: 'leadId',
+  emailMessageId: 'emailMessageId',
+  conversationId: 'conversationId',
+  eventType: 'eventType',
+  provider: 'provider',
+  providerEventId: 'providerEventId',
+  eventTimestamp: 'eventTimestamp',
+  metadata: 'metadata',
+  companyId: 'companyId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.EmailReplyScalarFieldEnum = {
+  id: 'id',
+  leadId: 'leadId',
+  emailMessageId: 'emailMessageId',
+  conversationId: 'conversationId',
+  providerMessageId: 'providerMessageId',
+  messageId: 'messageId',
+  inReplyTo: 'inReplyTo',
+  references: 'references',
+  fromEmail: 'fromEmail',
+  toEmail: 'toEmail',
+  subject: 'subject',
+  body: 'body',
+  htmlBody: 'htmlBody',
+  receivedAt: 'receivedAt',
+  companyId: 'companyId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.LeadEmailActivityScalarFieldEnum = {
+  id: 'id',
+  leadId: 'leadId',
+  activityType: 'activityType',
+  referenceId: 'referenceId',
+  description: 'description',
+  metadata: 'metadata',
+  companyId: 'companyId',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.EmailSuppressionScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  reason: 'reason',
+  source: 'source',
+  metadata: 'metadata',
+  companyId: 'companyId',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SmsTemplateScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -2682,6 +2853,15 @@ exports.Prisma.ModelName = {
   Scorecard: 'Scorecard',
   EmailCampaign: 'EmailCampaign',
   EmailCampaignRecipient: 'EmailCampaignRecipient',
+  EmailSequence: 'EmailSequence',
+  EmailSequenceStep: 'EmailSequenceStep',
+  LeadSequenceEnrollment: 'LeadSequenceEnrollment',
+  EmailConversation: 'EmailConversation',
+  EmailMessage: 'EmailMessage',
+  EmailEvent: 'EmailEvent',
+  EmailReply: 'EmailReply',
+  LeadEmailActivity: 'LeadEmailActivity',
+  EmailSuppression: 'EmailSuppression',
   SmsTemplate: 'SmsTemplate',
   ChatWidget: 'ChatWidget',
   ChatSession: 'ChatSession',

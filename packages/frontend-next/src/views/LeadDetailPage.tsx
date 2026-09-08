@@ -450,6 +450,13 @@ export function LeadDetailPage() {
     enabled: !!id && activeTab === 'Emails',
   })
 
+  const { data: emailAutomationData } = useQuery({
+    queryKey: ['lead-email-automation', id],
+    queryFn: () => api.request<any>(`/email-automation/leads/${id}`),
+    enabled: !!id && (activeTab === 'Summary' || activeTab === 'Emails'),
+    refetchInterval: activeTab === 'Summary' || activeTab === 'Emails' ? 30000 : false,
+  })
+
   const { data: docsData } = useQuery({
     queryKey: ['record-documents', id],
     queryFn: () => api.record('leads', id!).documents(),
@@ -599,17 +606,11 @@ export function LeadDetailPage() {
   })
 
   const emailMutation = useMutation({
-    mutationFn: () => api.record('leads', id!).createEmail({
-      subject: emailForm.subject,
-      toEmails: emailForm.to,
-      ccEmails: emailForm.cc || null,
-      bccEmails: emailForm.bcc || null,
-      body: emailForm.body,
-    }),
+    mutationFn: () => api.request('/email-automation/emails/send', { method: 'POST', body: JSON.stringify({ leadId: id, to: emailForm.to, cc: emailForm.cc || null, bcc: emailForm.bcc || null, subject: emailForm.subject, body: emailForm.body }) }),
     onSuccess: () => {
       setEmailOpen(false)
       setEmailForm({ to: '', cc: '', bcc: '', subject: '', body: '' })
-      invalidate('record-emails', 'record-updates')
+      invalidate('record-emails', 'record-updates', 'lead-email-automation', 'leads')
       addToast({ title: 'Email sent', variant: 'success' })
     },
     onError: toastErr,
@@ -850,6 +851,20 @@ export function LeadDetailPage() {
   const recentComments = (commentsData?.data || []).slice(0, 5)
   const daysInPipeline = lead.createdAt ? Math.max(0, Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / 86400000)) : 0
   const leadScore = Math.max(0, Math.min(100, Number(lead.leadScore ?? lead.score) || 0))
+  const automation = emailAutomationData?.data
+  const enrollment = automation?.enrollment
+  const automationMessages = automation?.messages || []
+  const automationReplies = automation?.replies || []
+  const automationActivities = automation?.activities || []
+  const emailStatusMeta = (() => {
+    const status = lead.emailStatus || 'NOT_CONTACTED'
+    if (status === 'REPLIED') return { label: 'Replied', cls: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' }
+    if (status === 'BOUNCED' || status === 'DELIVERY_FAILED') return { label: status === 'BOUNCED' ? 'Bounced' : 'Delivery Failed', cls: 'bg-red-50 text-red-700', dot: 'bg-red-500' }
+    if (status === 'AWAITING_REPLY') return { label: 'Awaiting Reply', cls: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' }
+    if (status === 'EMAIL_OPENED' || status === 'EMAIL_CLICKED' || status === 'EMAIL_DELIVERED') return { label: status.replace('EMAIL_', '').replace('_', ' '), cls: 'bg-teal-50 text-teal-700', dot: 'bg-teal-500' }
+    if (status === 'SEQUENCE_ACTIVE' || status === 'EMAIL_SENT' || status === 'EMAIL_QUEUED') return { label: status.replace('EMAIL_', '').replace('SEQUENCE_', 'Sequence ').replace('_', ' '), cls: 'bg-blue-50 text-blue-700', dot: 'bg-blue-500' }
+    return { label: status === 'SEQUENCE_COMPLETED' ? 'Sequence Completed' : status === 'UNSUBSCRIBED' ? 'Unsubscribed' : 'Not Contacted', cls: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400' }
+  })()
 
   const openActivityDialog = (a: any | null) => {
     if (a) {
@@ -1168,6 +1183,48 @@ export function LeadDetailPage() {
                 <div className="rounded-xl bg-muted/60 p-4"><p className="text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground">Lead score</p><p className="mt-2 text-xl font-bold">{leadScore ? leadScore.toFixed(1) : '—'}</p><p className="mt-1 text-[11px] text-muted-foreground">qualification strength</p></div>
               </div>
 
+              <div className="mb-6 rounded-xl border bg-card p-5 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="flex items-center gap-2 text-sm font-semibold"><Mail size={15} className="text-blue-500"/>Email Activity</h3>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${emailStatusMeta.cls}`}><i className={`h-2 w-2 rounded-full ${emailStatusMeta.dot}`}/>{emailStatusMeta.label}</span>
+                      {enrollment?.status && <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold">{enrollment.status}{enrollment.stopReason ? ` · ${enrollment.stopReason}` : ''}</span>}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                    <div className="rounded-md bg-muted/60 p-2"><p className="text-muted-foreground">Emails</p><p className="font-semibold">{automationMessages.length}</p></div>
+                    <div className="rounded-md bg-muted/60 p-2"><p className="text-muted-foreground">Replies</p><p className="font-semibold">{automationReplies.length}</p></div>
+                    <div className="rounded-md bg-muted/60 p-2"><p className="text-muted-foreground">Last Email</p><p className="font-semibold">{lead.lastEmailAt ? formatDate(lead.lastEmailAt) : '-'}</p></div>
+                    <div className="rounded-md bg-muted/60 p-2"><p className="text-muted-foreground">Next Follow-up</p><p className="font-semibold">{lead.nextFollowUp && lead.emailSequenceStatus !== 'STOPPED' ? formatDate(lead.nextFollowUp) : 'None'}</p></div>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,.8fr)]">
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground">Conversation</p>
+                    {[...automationMessages.map((m: any) => ({ ...m, direction: 'out' })), ...automationReplies.map((r: any) => ({ ...r, direction: 'in', createdAt: r.receivedAt }))].sort((a: any, b: any) => new Date(a.createdAt || a.sentAt || 0).getTime() - new Date(b.createdAt || b.sentAt || 0).getTime()).slice(-5).map((item: any) => (
+                      <div key={`${item.direction}-${item.id}`} className="rounded-lg border p-3">
+                        <div className="flex items-center justify-between gap-2"><p className="text-xs font-bold uppercase text-muted-foreground">{item.direction === 'out' ? 'You' : fullName}</p><span className="text-xs text-muted-foreground">{formatDateTime(item.sentAt || item.receivedAt || item.createdAt)}</span></div>
+                        <p className="mt-1 text-sm font-semibold">{item.subject || '(no subject)'}</p>
+                        <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-sm text-muted-foreground">{(item.textBody || item.body || '').replace(/<[^>]*>/g, ' ')}</p>
+                        {item.direction === 'out' && <p className="mt-2 text-xs text-muted-foreground">Status: {item.status}</p>}
+                      </div>
+                    ))}
+                    {!automationMessages.length && !automationReplies.length && <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No tracked email conversation yet.</p>}
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground">Timeline</p>
+                    {automationActivities.slice(0, 8).map((activity: any) => (
+                      <div key={activity.id} className="flex gap-3">
+                        <span className="mt-1.5 h-2 w-2 rounded-full bg-blue-500"/>
+                        <div><p className="text-sm font-medium">{activity.description}</p><p className="text-xs text-muted-foreground">{formatDateTime(activity.createdAt)}</p></div>
+                      </div>
+                    ))}
+                    {!automationActivities.length && <p className="text-sm text-muted-foreground">No automation events yet.</p>}
+                  </div>
+                </div>
+              </div>
+
               {/* Information (inline editable) */}
               <h3 className="mb-3 flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
                 <Users size={15} className="text-muted-foreground" /> Information
@@ -1340,6 +1397,61 @@ export function LeadDetailPage() {
                 <Button size="sm" onClick={() => { setEmailForm((f: any) => ({ ...f, to: lead.email || '' })); setEmailOpen(true) }}>
                   <Mail size={14} /> Compose
                 </Button>
+              </div>
+              <div className="mb-5 rounded-xl border bg-muted/20 p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold">Tracked Email Conversation</p>
+                    <p className="text-xs text-muted-foreground">{enrollment?.sequence?.name || lead.emailSequenceName || 'No active sequence'}</p>
+                  </div>
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${emailStatusMeta.cls}`}><i className={`h-2 w-2 rounded-full ${emailStatusMeta.dot}`}/>{emailStatusMeta.label}</span>
+                </div>
+                <div className="space-y-3">
+                  {[...automationMessages.map((m: any) => ({ ...m, direction: 'out' })), ...automationReplies.map((r: any) => ({ ...r, direction: 'in', createdAt: r.receivedAt }))].sort((a: any, b: any) => new Date(a.createdAt || a.sentAt || 0).getTime() - new Date(b.createdAt || b.sentAt || 0).getTime()).map((item: any) => (
+                    <div key={`email-tab-${item.direction}-${item.id}`} className="rounded-lg border bg-card p-3">
+                      <div className="flex items-center justify-between gap-2"><p className="text-xs font-bold uppercase text-muted-foreground">{item.direction === 'out' ? 'You' : fullName}</p><span className="text-xs text-muted-foreground">{formatDateTime(item.sentAt || item.receivedAt || item.createdAt)}</span></div>
+                      <p className="mt-1 font-semibold">{item.subject || '(no subject)'}</p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{(item.textBody || item.body || '').replace(/<[^>]*>/g, ' ')}</p>
+                      {item.direction === 'out' && <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground"><span>{item.status}</span>{item.deliveredAt && <span>Delivered {formatDateTime(item.deliveredAt)}</span>}{item.openCount > 0 && <span>Opened {item.openCount} time{item.openCount === 1 ? '' : 's'}</span>}{item.clickCount > 0 && <span>Clicked {item.clickCount} time{item.clickCount === 1 ? '' : 's'}</span>}</div>}
+                    </div>
+                  ))}
+                  {!automationMessages.length && !automationReplies.length && <p className="text-sm text-muted-foreground">No tracked automation emails or replies yet.</p>}
+                </div>
+              </div>
+              <div className="mb-5 overflow-hidden rounded-xl border bg-card">
+                <div className="border-b px-4 py-3">
+                  <p className="text-sm font-semibold">Email Records</p>
+                  <p className="text-xs text-muted-foreground">Automation and tracked manual emails for this lead.</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[780px] text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50 text-left text-[10px] font-bold uppercase tracking-[.08em] text-muted-foreground">
+                        <th className="px-4 py-2">Subject</th>
+                        <th className="px-3 py-2">To</th>
+                        <th className="px-3 py-2">Status</th>
+                        <th className="px-3 py-2">Sent</th>
+                        <th className="px-3 py-2">Delivered</th>
+                        <th className="px-3 py-2">Opened</th>
+                        <th className="px-3 py-2">Clicked</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {automationMessages.map((message: any) => (
+                        <tr key={`email-record-${message.id}`} className="border-b last:border-0">
+                          <td className="px-4 py-3"><p className="font-medium">{message.subject || '(no subject)'}</p><p className="text-xs text-muted-foreground">{message.provider || 'internal'}{message.sequenceStepId ? ` - Step email` : ''}</p></td>
+                          <td className="px-3 py-3 text-muted-foreground">{message.toEmail || lead.email || '-'}</td>
+                          <td className="px-3 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${message.status === 'FAILED' || message.status === 'BOUNCED' ? 'bg-red-50 text-red-700' : message.status === 'DELIVERED' || message.status === 'OPENED' || message.status === 'CLICKED' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>{message.status || 'QUEUED'}</span></td>
+                          <td className="px-3 py-3 text-xs text-muted-foreground">{message.sentAt ? formatDateTime(message.sentAt) : '-'}</td>
+                          <td className="px-3 py-3 text-xs text-muted-foreground">{message.deliveredAt ? formatDateTime(message.deliveredAt) : '-'}</td>
+                          <td className="px-3 py-3 text-xs text-muted-foreground">{message.openCount > 0 ? `${message.openCount} time${message.openCount === 1 ? '' : 's'}` : '-'}</td>
+                          <td className="px-3 py-3 text-xs text-muted-foreground">{message.clickCount > 0 ? `${message.clickCount} time${message.clickCount === 1 ? '' : 's'}` : '-'}</td>
+                        </tr>
+                      ))}
+                      {!automationMessages.length && <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">No tracked email records yet.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
               </div>
               <DataTable
                 columns={emailColumns}

@@ -3,6 +3,7 @@ import { runScheduledTaskActions } from './settings'
 import { runRecurringInvoices, fetchAllRssFeeds, syncAllMailboxes, sendPaymentReminders, checkSLADeadlines, checkFollowUpReminders, checkOverdueInvoices, checkAssetMaintenance, checkProjectHealth } from './automation'
 import { runScheduledReports } from './report-runner'
 import { runScheduledDatabaseBackup } from './database-backup'
+import { processDueEmailSequences } from './email-automation'
 
 function nextRunFor(frequency: string): Date {
   const d = new Date(Date.now() + 60 * 1000)
@@ -24,6 +25,7 @@ let lastOverdueInvoiceCheck = 0
 let lastAssetMaintenanceCheck = 0
 let lastProjectHealthCheck = 0
 let lastSubscriptionNoticeCheck = 0
+let lastEmailSequenceCheck = 0
 
 async function sendSubscriptionLifecycleNotifications(now: Date) {
   const warningCutoff = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
@@ -136,6 +138,10 @@ export async function runDueTasks(): Promise<void> {
   if (now - lastProjectHealthCheck >= 24 * 60 * 60 * 1000) {
     lastProjectHealthCheck = now
     checkProjectHealth().catch(() => {})
+  }
+  if (now - lastEmailSequenceCheck >= 60 * 1000) {
+    lastEmailSequenceCheck = now
+    processDueEmailSequences(100).catch(err => console.error('[CRON] email sequence scheduler failed:', err?.message || err))
   }
   if (now - lastSubscriptionNoticeCheck >= 6 * 60 * 60 * 1000) {
     lastSubscriptionNoticeCheck = now

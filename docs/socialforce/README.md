@@ -4,10 +4,12 @@
 
 This is an incremental **foundation release and interactive demo**, not the complete production SaaS described in the product specification.
 
-- CRM module: `/social-media` (existing CRM login and organization required).
+- CRM module: `/socialforce` (existing CRM login and organization required). Legacy `/social-media` links redirect here.
+- Open **SocialForce** immediately below Marketing in the BizForce main menu. Its submenus are Dashboard, Create Post, Content, Calendar, Approvals, Social Accounts, Analytics, AI Assistant, and Brand & Settings. Each has a direct `/socialforce/<section>` route. The embedded module inherits the BizForce theme and uses the main CRM menu. SocialForce is registered independently in Settings → Menu even on databases without a legacy social menu row. Existing `social` role permissions control access; organization menu overrides can rename, move, or hide it.
 - Public demonstration: `/socialforce-demo` (fictional data, in-memory state, no backend writes, social calls or AI requests).
 - API namespace: `/api/socialforce`.
 - Existing CRM authentication, organization lifecycle, and `social` module permissions are reused.
+- SocialForce is a module of BizForce, like POS: it uses the current BizForce session and has no separate sign-in. Configure **Settings → Roles → Permissions → Marketing → SocialForce**. View is required for all module API access; Create, Edit, and Delete additionally control the corresponding operations. Brand management and independent reviews retain their administrator requirement.
 - No existing CRM customer data is seeded, renamed or migrated into SocialForce.
 
 ### Working now

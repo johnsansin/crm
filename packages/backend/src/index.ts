@@ -42,6 +42,7 @@ import { dashboardRouter } from './modules/dashboard.routes'
 import { scorecardsRouter, reportSchedulesRouter, relatedListsRouter, adminDataRouter } from './modules/tools.routes'
 import { reportEnhancedRouter } from './modules/report-enhanced.routes'
 import { emailCampaignsRouter } from './modules/email-campaigns.routes'
+import { emailAutomationRouter, emailWebhookRouter } from './modules/email-automation.routes'
 import { smsRouter } from './modules/sms.routes'
 import { chatWidgetRouter, chatWidgetAdminRouter } from './modules/chat-widget.routes'
 import { landingPagesRouter } from './modules/landing-pages.routes'
@@ -57,6 +58,7 @@ import { setupModules, getModuleConfig } from './modules/moduleSetup'
 import { startCron } from './lib/cron'
 import { prisma } from './lib/prisma'
 import { sendMail, getSmtpConfig } from './lib/mailer'
+import { resolveSocialForcePermissions } from './socialforce/module'
 import { PERMISSION_MODULES } from './lib/module-permissions'
 import { setupSupportWebSocket } from './lib/support-websocket'
 import { authMiddleware } from './middleware/auth'
@@ -259,6 +261,7 @@ app.use('/api/related-lists', relatedListsRouter)
 app.use('/api/admin-data', adminDataRouter)
 app.use('/api/reports', reportEnhancedRouter)
 app.use('/api/email-campaigns', emailCampaignsRouter)
+app.use('/api/email-automation', emailAutomationRouter)
 app.use('/api/sms', smsRouter)
 app.use('/api/chat-widget', chatWidgetRouter)
 app.use('/api/chat-widget', chatWidgetAdminRouter)
@@ -267,6 +270,7 @@ app.use('/api/social', socialRouter)
 app.use('/api/socialforce', socialForceRouter)
 app.use('/api/webhooks', webhooksRouter)
 app.use('/api/webhooks', incomingWebhookRouter)
+app.use('/api/webhooks', emailWebhookRouter)
 app.use('/api/i18n', i18nRouter)
 app.use('/api/ai', aiRouter)
 app.use('/api/support', supportRouter)
@@ -293,7 +297,8 @@ async function seedModules() {
     }
     const roles = await prisma.role.findMany({ select: { id: true, name: true } })
     for (const role of roles) {
-      const existing = await prisma.rolePermission.findMany({ where: { roleId: role.id }, select: { moduleName: true } })
+      const existing = await prisma.rolePermission.findMany({ where: { roleId: role.id } })
+      const socialForceGrants = resolveSocialForcePermissions(existing)
       const configured = new Set(existing.map(permission => permission.moduleName))
       const fullAccess = role.name.toLowerCase() === 'ceo'
       const missing = PERMISSION_MODULES.filter(moduleName => !configured.has(moduleName))
@@ -302,12 +307,12 @@ async function seedModules() {
           data: missing.map(moduleName => ({
             roleId: role.id,
             moduleName,
-            view: true,
-            create: fullAccess,
-            edit: fullAccess,
-            delete: fullAccess,
-            import: fullAccess,
-            export: fullAccess,
+            view: socialForceGrants[moduleName]?.view ?? true,
+            create: socialForceGrants[moduleName]?.create ?? fullAccess,
+            edit: socialForceGrants[moduleName]?.edit ?? fullAccess,
+            delete: socialForceGrants[moduleName]?.delete ?? fullAccess,
+            import: socialForceGrants[moduleName]?.import ?? fullAccess,
+            export: socialForceGrants[moduleName]?.export ?? fullAccess,
           })),
           skipDuplicates: true,
         })
