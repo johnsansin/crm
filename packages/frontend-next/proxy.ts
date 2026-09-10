@@ -4,6 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 export function proxy(request: NextRequest) {
   const nonce = randomBytes(32).toString('base64')
   const development = process.env.NODE_ENV === 'development'
+  // Nginx terminates TLS and overwrites X-Forwarded-Proto. HTTP LAN
+  // deployments must not upgrade asset requests to an unavailable TLS listener.
+  const forwardedProtocol = request.headers.get('x-forwarded-proto')?.split(',')[0].trim()
+  const secureRequest = forwardedProtocol ? forwardedProtocol === 'https' : request.nextUrl.protocol === 'https:'
   const policy = [
     "default-src 'none'",
     `script-src 'nonce-${nonce}' 'strict-dynamic'${development ? " 'self' 'unsafe-eval'" : ''}`,
@@ -21,7 +25,7 @@ export function proxy(request: NextRequest) {
     "base-uri 'none'",
     "form-action 'self'",
     "frame-ancestors 'self'",
-    ...(!development ? ['upgrade-insecure-requests'] : []),
+    ...(!development && secureRequest ? ['upgrade-insecure-requests'] : []),
   ].join('; ')
   const requestHeaders = new Headers(request.headers)
   // Overwrite incoming values: clients must never choose a trusted nonce.
