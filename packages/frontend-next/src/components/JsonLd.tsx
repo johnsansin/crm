@@ -1,12 +1,15 @@
+import { headers } from 'next/headers'
+
 interface JsonLdProps {
   data: Record<string, any>
 }
 
-export function JsonLd({ data }: JsonLdProps) {
+export async function JsonLd({ data }: JsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      nonce={(await headers()).get("x-nonce") || undefined}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
     />
   )
 }
@@ -23,7 +26,7 @@ export function OrganizationJsonLd() {
       '@type': 'ContactPoint',
       telephone: '+92-345-4452741',
       contactType: 'customer service',
-      email: 'sajjad@bizforce-crm.online',
+      url: 'https://bizforce-crm.online/contact',
       availableLanguage: 'English',
     },
     sameAs: [],
@@ -162,7 +165,6 @@ export function LocalBusinessJsonLd() {
     image: 'https://bizforce-crm.online/bizforce-logo.svg',
     url: 'https://bizforce-crm.online',
     telephone: '+92-345-4452741',
-    email: 'sajjad@bizforce-crm.online',
     address: {
       '@type': 'PostalAddress',
       streetAddress: '125-F1, Johar Town',
@@ -213,7 +215,7 @@ export function ContactPageJsonLd() {
     mainEntity: {
       '@type': 'Organization',
       name: 'BizForce CRM',
-      email: 'sajjad@bizforce-crm.online',
+      url: 'https://bizforce-crm.online/contact',
       telephone: '+92-345-4452741',
       address: {
         '@type': 'PostalAddress',

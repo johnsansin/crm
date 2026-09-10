@@ -5,7 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/dashboard', '/leads', '/contacts', '/potentials', '/tickets',
+      // Crawl preferences only; API authorization protects private CRM data.
+      disallow: ['/api/', '/uploads/', '/dashboard', '/leads', '/contacts', '/potentials', '/tickets',
         '/accounts', '/campaigns', '/reports', '/settings', '/admin',
         '/calendar', '/chat', '/products', '/invoices', '/quotes',
         '/mailboxes', '/sms', '/tags', '/forecast', '/social',

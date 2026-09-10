@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 
-export function ConsentScripts({ measurementId }: { measurementId: string }) {
+export function ConsentScripts({ measurementId, nonce }: { measurementId: string; nonce?: string }) {
   const loadedRef = useRef(false)
 
   useEffect(() => {
@@ -14,10 +14,13 @@ export function ConsentScripts({ measurementId }: { measurementId: string }) {
         const s = document.createElement('script')
         s.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`
         s.async = true
+        if (nonce) s.nonce = nonce
         document.head.appendChild(s)
-        const inline = document.createElement('script')
-        inline.textContent = `window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${measurementId}');`
-        document.head.appendChild(inline)
+        const analytics = window as typeof window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void }
+        analytics.dataLayer ||= []
+        analytics.gtag = function () { analytics.dataLayer!.push(arguments) }
+        analytics.gtag('js', new Date())
+        analytics.gtag('config', measurementId)
         loadedRef.current = true
       } catch { /* noop */ }
     }
@@ -25,7 +28,7 @@ export function ConsentScripts({ measurementId }: { measurementId: string }) {
     loadAnalytics()
     window.addEventListener('bizforce:cookie-consent', loadAnalytics)
     return () => window.removeEventListener('bizforce:cookie-consent', loadAnalytics)
-  }, [measurementId])
+  }, [measurementId, nonce])
 
   return null
 }

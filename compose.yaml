@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - backend
+      - database
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -55,11 +55,9 @@ services:
     volumes:
       - backend_uploads:/app/packages/backend/uploads
       - backend_private:/app/packages/backend/private
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /:/host:ro
-      - /proc:/host/proc:ro
     networks:
-      - backend
+      - database
+      - api
     depends_on:
       database:
         condition: service_healthy
@@ -73,8 +71,6 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    group_add:
-      - "988"
 
   frontend:
     build:
@@ -88,11 +84,9 @@ services:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       PORT: 3001
-    depends_on:
-      backend:
-        condition: service_healthy
     networks:
-      - backend
+      - web
+      - api
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 10s
@@ -115,7 +109,8 @@ services:
       - /tmp/opencode/crm/certs:/etc/letsencrypt:ro
       - /tmp/opencode/crm/certbot-www:/var/www/certbot:ro
     networks:
-      - backend
+      - web
+      - api
     depends_on:
       backend:
         condition: service_healthy
@@ -131,16 +126,20 @@ services:
       - /tmp/opencode/crm/certbot-www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done;'"
     networks:
-      - backend
+      - web
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
 
 networks:
-  backend:
+  web:
     driver: bridge
-    internal: false
+  api:
+    driver: bridge
+  database:
+    driver: bridge
+    internal: true
 
 volumes:
   postgres_data:

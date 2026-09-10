@@ -1,0 +1,10 @@
+# Optional host-wide system-health visibility. This grants the backend access
+# outside its container and weakens service isolation; omit for isolated deployments.
+services:
+  backend:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/host:ro
+      - /proc:/host/proc:ro
+    group_add:
+      - "${DOCKER_SOCKET_GID:-988}"

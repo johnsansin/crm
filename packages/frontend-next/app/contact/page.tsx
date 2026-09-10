@@ -4,7 +4,7 @@ import { ContactPageJsonLd, BreadcrumbJsonLd, LocalBusinessJsonLd } from '@/comp
 
 export const metadata: Metadata = {
   title: 'Contact Us',
-  description: 'Get in touch with BizForce CRM. Email sajjad@bizforce-crm.online, call +92-345-4452741, or visit us in Lahore, Pakistan. We respond within 24 hours.',
+  description: 'Get in touch with BizForce CRM. Use our contact form, call +92-345-4452741, or visit us in Lahore, Pakistan. We respond within 24 hours.',
   keywords: ['contact BizForce', 'CRM support', 'CRM help', 'BizForce email', 'BizForce phone', 'CRM contact'],
   alternates: {
     canonical: 'https://bizforce-crm.online/contact',

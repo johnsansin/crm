@@ -14,7 +14,13 @@
     "test": "npm run test --workspace @bizforce/backend",
     "db:migrate": "npm run db:migrate -w packages/backend",
     "db:seed": "npm run db:seed -w packages/backend",
-    "db:studio": "npm run db:studio -w packages/backend"
+    "db:studio": "npm run db:studio -w packages/backend",
+    "build:frontend": "npm run build --workspace @bizforce/frontend-next",
+    "build:backend": "npm run build --workspace @bizforce/backend",
+    "start:frontend": "npm run start --workspace @bizforce/frontend-next",
+    "start:backend": "npm run start --workspace @bizforce/backend",
+    "typecheck:frontend": "npm run typecheck --workspace @bizforce/frontend-next",
+    "typecheck:backend": "npm run typecheck --workspace @bizforce/backend"
   },
   "engines": {
     "node": ">=22.0.0"

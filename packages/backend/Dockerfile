@@ -4,8 +4,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY packages/backend/package.json packages/backend/package.json
-COPY packages/frontend-next/package.json packages/frontend-next/package.json
-RUN npm ci
+RUN npm ci --workspace @bizforce/backend --include-workspace-root=false
 
 COPY packages/backend packages/backend
 RUN npm run db:generate --workspace @bizforce/backend \

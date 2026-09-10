@@ -26,7 +26,7 @@ export function CookiePolicyPage() {
         you from signing in to the platform.
       </p>
       <h2 className="text-base font-semibold text-slate-900 dark:text-white pt-2">4. Contact Us</h2>
-      <p>If you have questions about this Cookie Policy, contact us at sajjad@bizforce-crm.online.</p>
+      <p>If you have questions about this Cookie Policy, contact us through our <a href="/contact" className="underline">contact form</a>.</p>
     </LegalPage>
   )
 }

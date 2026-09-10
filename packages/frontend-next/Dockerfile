@@ -3,9 +3,8 @@ FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-COPY packages/backend/package.json packages/backend/package.json
 COPY packages/frontend-next/package.json packages/frontend-next/package.json
-RUN npm ci
+RUN npm ci --workspace @bizforce/frontend-next --include-workspace-root=false
 
 COPY packages/frontend-next packages/frontend-next
 

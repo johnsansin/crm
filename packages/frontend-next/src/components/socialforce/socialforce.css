@@ -43,3 +43,12 @@
 .sf-bizforce .sf-ai-panel > small { color: var(--sf-muted); }
 .sf-bizforce .sf-orbit-icon, .sf-bizforce .sf-center-mark, .sf-bizforce .sf-floating-note,
 .sf-bizforce .sf-white-button, .sf-bizforce .sf-command-bar { box-shadow: none; }
+
+.sf-platform[data-platform="facebook"] { background: #1877f2; }
+.sf-platform[data-platform="instagram"] { background: #c13584; }
+.sf-platform[data-platform="linkedin"] { background: #0a66c2; }
+.sf-platform[data-platform="x"] { background: #18202d; }
+.sf-platform[data-platform="youtube"] { background: #e52828; }
+.sf-platform[data-platform="tiktok"] { background: #121923; }
+.sf-platform[data-platform="threads"] { background: #303743; }
+.sf-platform[data-platform="pinterest"] { background: #bd081c; }

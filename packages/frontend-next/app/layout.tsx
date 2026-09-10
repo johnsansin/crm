@@ -1,9 +1,13 @@
 import type { Metadata, Viewport } from 'next'
 import { Suspense } from 'react'
+import { headers } from 'next/headers'
+
 import './globals.css'
 import { Providers } from './providers'
 import { CookieConsent } from '@/components/ui/cookie-consent'
 import { ConsentScripts } from '@/components/ui/consent-scripts'
+
+export const dynamic = 'force-dynamic'
 
 const gaMeasurementId = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || ''
 
@@ -64,7 +68,8 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const nonce = (await headers()).get('x-nonce') || undefined
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -78,8 +83,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="ICBM" content="31.5204, 74.3587" />
       </head>
       <body>
-        {gaMeasurementId && <Suspense fallback={null}><ConsentScripts measurementId={gaMeasurementId} /></Suspense>}
-        <Suspense fallback={null}><Providers>{children}</Providers></Suspense>
+        {gaMeasurementId && <Suspense fallback={null}><ConsentScripts measurementId={gaMeasurementId} nonce={nonce} /></Suspense>}
+        <Suspense fallback={null}><Providers nonce={nonce}>{children}</Providers></Suspense>
         <Suspense fallback={null}><CookieConsent /></Suspense>
       </body>
     </html>
