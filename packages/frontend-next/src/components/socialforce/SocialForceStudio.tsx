@@ -18,7 +18,7 @@ const blankPost = (): Post => ({ id: '', title: '', content: '', variants: [], s
 const label = (s: string) => s.replaceAll('_', ' ').toLowerCase().replace(/^./, c => c.toUpperCase())
 function Platform({ id, small = false }: { id: string; small?: boolean }) {
   const p = platforms.find(x => x.id === id)
-  return <span className={`sf-platform ${small ? 'sf-platform-small' : ''}`} style={{ background: p?.color }} aria-label={p?.name}>{p?.mark}</span>
+  return <span className={`sf-platform ${small ? 'sf-platform-small' : ''}`} data-platform={p?.id} aria-label={p?.name}>{p?.mark}</span>
 }
 export function SocialForceStudio({ demo = false, initialView = 'Dashboard', crmTheme = 'light' }: { demo?: boolean; initialView?: View; crmTheme?: 'light' | 'dark' }) {
   const [view, setView] = useState<View>(initialView)

@@ -42,7 +42,7 @@ export function ContactUsPage() {
   }
 
   const infoItems = [
-    { icon: Mail, label: 'Email', value: 'sajjad@bizforce-crm.online' },
+    { icon: Mail, label: 'Message us', value: 'Use the form below' },
     { icon: Phone, label: 'Phone', value: '+92-345-4452741' },
     { icon: MapPin, label: 'Address', value: '125-F1, Johar Town\nLahore - Pakistan' },
   ]

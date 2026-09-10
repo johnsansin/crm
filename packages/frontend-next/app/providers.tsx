@@ -2,11 +2,14 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+import { setNonce } from 'get-nonce'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ThemeProvider } from '@/lib/theme'
 import { ToastProvider } from '@/lib/toast'
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children, nonce }: { children: React.ReactNode; nonce?: string }) {
+  // Radix scroll-lock styles must carry the current document nonce.
+  if (typeof window !== 'undefined' && nonce) setNonce(nonce)
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: {
     retry: 1,
     staleTime: 30_000,

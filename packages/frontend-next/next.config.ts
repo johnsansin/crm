@@ -5,6 +5,7 @@ const basePath = ''
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
   output: 'standalone',
   // Type checking runs as a separate build step. Next 16.3.2 currently fails
   // while parsing TypeScript 5.9's otherwise valid `tsc --showConfig` output.
@@ -12,16 +13,6 @@ const nextConfig: NextConfig = {
   experimental: { useTypeScriptCli: false },
   basePath,
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
-  async headers() {
-    return [
-      {
-        source: '/((?!api|_next|uploads|robots|sitemap|manifest|sw\\.js|favicon|icon|apple-touch).*)',
-        headers: [
-          { key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' },
-        ],
-      },
-    ]
-  },
   async rewrites() {
     return [
       { source: '/api/:path*', destination: `${backendOrigin}/api/:path*`, basePath: false },
