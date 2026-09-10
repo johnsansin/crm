@@ -21,3 +21,5 @@ Also inspect browser CSP errors on public pages and authenticated workflows when
 Reference: https://nextjs.org/docs/app/guides/content-security-policy
 
 Public contact email references were replaced with the existing contact form, including JSON-LD, metadata, the footer, and policy pages. Backend mail delivery and authenticated CRM contact emails are unchanged. The robots file remains public by design and now discourages crawling API and upload paths; it does not authorize access. The public contacts API returned 401 without authentication during verification. Cloudflare adds its own managed crawler rules at the public domain.
+
+`upgrade-insecure-requests` is emitted only for HTTPS requests (including TLS terminated by Nginx, which overwrites `X-Forwarded-Proto`). HTTP LAN deployments keep same-origin assets on HTTP. Verify the actual LAN address in a browser, because localhost handling can conceal HTTPS upgrade failures.
