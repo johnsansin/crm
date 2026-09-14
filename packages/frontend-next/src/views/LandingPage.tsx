@@ -1,6 +1,6 @@
 'use client'
 
-import { useNavigate } from '@/lib/navigation'
+import { Link } from '@/lib/navigation'
 import { Button } from '@/components/ui/button'
 import {
   Building2, TrendingUp, Shield, Users, BarChart3, Zap, Sparkles,
@@ -91,7 +91,6 @@ const integrations = [
 ]
 
 export function LandingPage() {
-  const navigate = useNavigate()
   useEffect(() => {
     const hash = window.location.hash
     const frame = window.requestAnimationFrame(() => {
@@ -130,18 +129,22 @@ export function LandingPage() {
             <Button
               size="lg"
               className="relative h-13 overflow-hidden rounded-xl text-white text-base font-semibold px-8 border-none bg-gradient-to-b from-sky-500 via-blue-600 to-blue-700 hover:from-sky-400 hover:via-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/40 transition-all"
-              onClick={() => navigate('/signup')}
+              asChild
             >
-              <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
-              <span className="relative inline-flex items-center"><Sparkles size={18} className="mr-2" />Start Free Trial</span>
+              <Link to="/signup">
+                <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-lg pointer-events-none" />
+                <span className="relative inline-flex items-center"><Sparkles size={18} className="mr-2" />Start Free Trial</span>
+              </Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
               className="h-13 px-8 text-base rounded-xl border-white/70 dark:border-white/15 bg-white/70 dark:bg-white/10 backdrop-blur text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-white/20"
-              onClick={() => navigate('/login')}
+              asChild
             >
-              Sign In
+              <Link to="/login">
+                Sign In
+              </Link>
             </Button>
           </div>
 
@@ -321,15 +324,17 @@ export function LandingPage() {
                 </ul>
                 <Button
                   className={`relative mt-8 w-full h-11 overflow-hidden rounded-lg !text-white font-semibold text-sm !border-0 shadow-lg transition-all hover:shadow-xl ${plan.highlight ? '!bg-gradient-to-b !from-sky-500 !via-blue-600 !to-blue-700 hover:!from-sky-400 hover:!via-blue-500 hover:!to-blue-600 shadow-blue-500/40' : '!bg-gradient-to-b !from-slate-600 !to-slate-800 hover:!from-slate-500 hover:!to-slate-700 shadow-slate-500/30'}`}
-                  onClick={() => navigate(plan.name === 'Enterprise' ? '/contact' : '/signup')}
+                  asChild
                 >
-                  <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent rounded-t-lg pointer-events-none" />
-                  <span className="relative">{plan.cta}</span>
+                  <Link to={plan.name === 'Enterprise' ? '/contact' : '/signup'}>
+                    <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent rounded-t-lg pointer-events-none" />
+                    <span className="relative">{plan.cta}</span>
+                  </Link>
                 </Button>
               </div>
             ))}
           </div>
-          <p className="mt-12 text-center text-sm text-slate-500 dark:text-slate-400">Need a custom plan? <button onClick={() => navigate('/contact')} className="text-blue-600 dark:text-blue-400 font-medium hover:underline">Contact our sales team</button></p>
+          <p className="mt-12 text-center text-sm text-slate-500 dark:text-slate-400">Need a custom plan? <Link to="/contact" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">Contact our sales team</Link></p>
         </div>
       </section>
 
@@ -366,23 +371,27 @@ export function LandingPage() {
                   size="lg"
                   variant="secondary"
                   className="relative h-12 px-8 text-base overflow-hidden rounded-xl bg-white text-blue-700 font-semibold border-none hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all"
-                  onClick={() => navigate('/signup')}
+                  asChild
                 >
-                  <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/0 to-transparent rounded-t-lg pointer-events-none" />
-                  <span className="relative inline-flex items-center"><Sparkles size={18} className="mr-2" />Get Started Free</span>
+                  <Link to="/signup">
+                    <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/0 to-transparent rounded-t-lg pointer-events-none" />
+                    <span className="relative inline-flex items-center"><Sparkles size={18} className="mr-2" />Get Started Free</span>
+                  </Link>
                 </Button>
                 <Button
                   size="lg"
                   className="h-12 px-8 text-base rounded-xl font-semibold bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white border-none shadow-lg shadow-emerald-500/30 hover:shadow-xl transition-all"
-                  onClick={() => navigate('/contact')}
+                  asChild
                 >
-                  Talk to Sales <ArrowRight size={16} className="ml-2" />
+                  <Link to="/contact">
+                    Talk to Sales <ArrowRight size={16} className="ml-2" />
+                  </Link>
                 </Button>
               </div>
               <div className="mt-6 flex items-center justify-center gap-6 text-sm text-blue-100">
-                <button onClick={() => navigate('/pricing')} className="hover:text-white transition-colors underline underline-offset-2">View Pricing</button>
-                <button onClick={() => navigate('/faq')} className="hover:text-white transition-colors underline underline-offset-2">Read FAQ</button>
-                <button onClick={() => navigate('/blog')} className="hover:text-white transition-colors underline underline-offset-2">Visit Blog</button>
+                <Link to="/pricing" className="hover:text-white transition-colors underline underline-offset-2">View Pricing</Link>
+                <Link to="/faq" className="hover:text-white transition-colors underline underline-offset-2">Read FAQ</Link>
+                <Link to="/blog" className="hover:text-white transition-colors underline underline-offset-2">Visit Blog</Link>
               </div>
             </div>
           </div>
