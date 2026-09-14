@@ -68,10 +68,14 @@ export function SiteFooter() {
               <h3 className="text-lg font-bold text-white">Stay up to date</h3>
               <p className="text-sm text-blue-100 mt-1">Get the latest CRM tips, product updates, and industry insights.</p>
             </div>
-            <form onSubmit={handleSubscribe} className="flex w-full md:w-auto">
+            <form aria-label="Newsletter subscription" onSubmit={handleSubscribe} className="flex w-full md:w-auto">
               <div className="relative flex-1 md:w-72">
                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <label htmlFor="newsletter-email" className="sr-only">Email address for newsletter</label>
                 <input
+                  id="newsletter-email"
+                  name="email"
+                  autoComplete="email"
                   type="email"
                   placeholder="Enter your email"
                   value={email}

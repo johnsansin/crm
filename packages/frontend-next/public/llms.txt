@@ -1,0 +1,27 @@
+# BizForce CRM
+
+> BizForce CRM is customer relationship management software for growing businesses, with contact management, sales pipelines, email follow-ups, workflow automation, and team collaboration.
+
+This file describes the public website. CRM workspaces and customer records require authentication and appropriate organization permissions. Refer to the linked pages for current product details and pricing.
+
+## Product
+
+- [Home](https://bizforce-crm.online/): Product overview.
+- [Features](https://bizforce-crm.online/features): CRM capabilities and modules.
+- [Pricing](https://bizforce-crm.online/pricing): Plans and pricing.
+- [Integrations](https://bizforce-crm.online/integrations): Supported integrations.
+
+## Help and getting started
+
+- [FAQ](https://bizforce-crm.online/faq): Frequently asked questions.
+- [Blog](https://bizforce-crm.online/blog): CRM articles and guides.
+- [Contact](https://bizforce-crm.online/contact): Contact the sales and support team.
+- [Sign up](https://bizforce-crm.online/signup): Create an account.
+- [Sign in](https://bizforce-crm.online/login): Access an existing account.
+
+## Policies
+
+- [Privacy policy](https://bizforce-crm.online/privacy-policy): How information is handled.
+- [Terms of service](https://bizforce-crm.online/terms): Terms for using BizForce CRM.
+- [Cookie policy](https://bizforce-crm.online/cookie-policy): Cookie information.
+- [Refund policy](https://bizforce-crm.online/refund-policy): Refund terms.
